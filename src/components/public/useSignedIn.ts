@@ -9,8 +9,11 @@ export function useSignedIn(): boolean {
   const [signedIn, setSignedIn] = useState(false)
   useEffect(() => {
     let alive = true
-    createClient().auth.getSession().then(({ data }: any) => { if (alive) setSignedIn(!!data?.session) }, () => {})
-    return () => { alive = false }
+    const sb = createClient()
+    sb.auth.getSession().then(({ data }: any) => { if (alive) setSignedIn(!!data?.session) }, () => {})
+    // follows sign-in / sign-out on the page itself (e.g. right after deleting the account, round-4 UX-147)
+    const { data: sub } = sb.auth.onAuthStateChange((_ev: any, session: any) => { if (alive) setSignedIn(!!session) })
+    return () => { alive = false; sub?.subscription?.unsubscribe() }
   }, [])
   return signedIn
 }

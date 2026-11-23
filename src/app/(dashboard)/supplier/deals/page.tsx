@@ -28,6 +28,8 @@ export default function SupplierDealsPage() {
   // round-2 UX-002: never fetch rfqs.title (the buyer's project name stays hidden from suppliers)
   // UX-119: a failed load is said as such (never «no deals yet»); with a cached list, say it may be old
   const [failed, setFailed] = useState(false)
+  // round-4 UX-080: a team member follows the company's deals; the owner does the steps
+  const [isMember, setIsMember] = useState(false)
   const L = (en: string, ur: string, ar: string) => (locale === 'en' ? en : locale === 'ur' ? ur : ar)
   const FWD = dir === 'rtl' ? '←' : '→'
 
@@ -42,9 +44,10 @@ export default function SupplierDealsPage() {
       if (snap) { setDeals(snap); setLoading(false) }
       const { data: actRaw } = await supabase.rpc('acting_uid') // a team member sees the company's deals
       const actId: string = (actRaw as any) || session.user.id
+      setIsMember(actId !== session.user.id)
       const { data, error } = await supabase
         .from('offers')
-        .select('*, rfq:rfqs(id, product_name, ref_no, items, contractor:profiles!contractor_id(company_name_ar))')
+        .select('*, rfq:rfqs(id, product_name, ref_no, items, contractor:profiles!contractor_id(company_name_ar, full_name))')
         .eq('supplier_id', actId)
         .eq('status', 'accepted')
         .order('accepted_at', { ascending: false })
@@ -71,6 +74,17 @@ export default function SupplierDealsPage() {
   useEffect(() => { load() }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   if (loading) return <PageLoader />
+
+  // round-4 UX-080: the stage in the third person for a team member (the owner invoices, delivers and confirms payment)
+  const memberLabel = (d: any, st: any): string => {
+    if (st.key === 'disputed' || st.done) return st.label
+    if (st.key === 'paid') return L('The buyer paid; waiting for the account owner to confirm the payment', 'خریدار نے ادائیگی کر دی؛ اکاؤنٹ کے مالک کی تصدیق کا انتظار', 'دفع المشتري، وبانتظار تأكيد صاحب الحساب لاستلام المبلغ')
+    if (st.key === 'received') return L('The buyer received the goods; waiting for payment', 'خریدار کو سامان مل گیا؛ ادائیگی کا انتظار', 'استلم المشتري البضاعة، وبانتظار الدفع')
+    if (st.key === 'delivered') return L('The account owner delivered; waiting for the buyer to confirm', 'اکاؤنٹ کے مالک نے ڈیلیور کر دیا؛ خریدار کی تصدیق کا انتظار', 'سلّم صاحب الحساب البضاعة، وبانتظار تأكيد المشتري')
+    return (d.invoice_url || d.supplier_invoice_url)
+      ? L('The account owner uploaded the invoice; waiting for delivery', 'اکاؤنٹ کے مالک نے انوائس اپ لوڈ کر دی؛ ڈیلیوری کا انتظار', 'رفع صاحب الحساب الفاتورة، وبانتظار التسليم')
+      : L('The buyer chose the company; waiting for the account owner to upload the invoice', 'خریدار نے کمپنی کو منتخب کیا؛ اکاؤنٹ کے مالک کی انوائس کا انتظار', 'اختار المشتري الشركة، وبانتظار رفع صاحب الحساب للفاتورة')
+  }
 
   const shown = deals.filter((d: any) => {
     const st = dealStage(d, 'supplier', locale)
@@ -109,13 +123,13 @@ export default function SupplierDealsPage() {
         {failed && deals.length === 0 ? null : shown.length === 0 && deals.length > 0 ? (
           <div className="bg-white rounded-2xl p-8 text-center border border-gray-100 shadow-sm">
             <p className="text-gray-600">{L('No deals match this search or filter.', 'اس تلاش یا فلٹر سے کوئی ڈیل نہیں ملتی۔', 'لا توجد صفقات تطابق هذا البحث أو التصفية.')}</p>
-            <button type="button" onClick={() => { setSearch(''); setFilter('all') }} className="mt-4 min-h-[44px] px-5 rounded-xl text-sm font-bold text-white" style={{ background: '#0B2438' }}>{L('Show all deals', 'تمام ڈیلز دکھائیں', 'عرض كل الصفقات')}</button>
+            <button type="button" onClick={() => { setSearch(''); setFilter('all') }} className="mt-4 min-h-[44px] px-5 rounded-xl text-sm font-bold text-[#071827]" style={{ background: '#D4A543' }}>{L('Show all deals', 'تمام ڈیلز دکھائیں', 'عرض كل الصفقات')}</button>
           </div>
         ) : shown.length === 0 ? (
           <div className="bg-white rounded-2xl p-14 text-center border border-gray-100 shadow-sm">
             <div className="text-5xl mb-3"><Glyph e="📦" /></div>
             <p className="text-gray-600">{L('No deals yet. Once a buyer chooses one of your offers, the deal appears here.', 'ابھی کوئی ڈیل نہیں۔ جب خریدار آپ کی کوئی آفر چنے گا تو ڈیل یہاں نظر آئے گی۔', 'لا توجد صفقات بعد. عندما يختار أحد المشترين عرضك تظهر الصفقة هنا.')}</p>
-            <Link href="/supplier/dashboard" className="inline-flex items-center gap-1 mt-4 min-h-[44px] px-5 rounded-xl text-sm font-bold text-white" style={{ background: '#0B2438' }}>{L('Browse requests', 'درخواستیں دیکھیں', 'تصفّح الطلبات')} <span aria-hidden="true">{FWD}</span></Link>
+            <Link href="/supplier/dashboard" className="inline-flex items-center gap-1 mt-4 min-h-[44px] px-5 rounded-xl text-sm font-bold text-[#071827]" style={{ background: '#D4A543' }}>{L('Browse requests', 'درخواستیں دیکھیں', 'تصفّح الطلبات')} <span aria-hidden="true">{FWD}</span></Link>
           </div>
         ) : (
           <div className="space-y-3">
@@ -126,11 +140,12 @@ export default function SupplierDealsPage() {
                   className="flex items-center justify-between gap-3 bg-white rounded-2xl p-4 border border-gray-100 shadow-sm hover:border-[#D4A543]/50 transition-colors">
                   <div className="min-w-0 flex-1">
                     <div className="font-bold text-sm line-clamp-2" style={{ color: '#0B2438' }}>{d.rfq ? rfqDisplayName({ ...d.rfq, title: null }, locale) : L('Deal', 'ڈیل', 'صفقة')}</div>
-                    <div className="text-[13px] text-gray-600 mt-0.5 truncate"><Glyph e="👤" /> {d.rfq?.contractor?.company_name_ar || L('Individual buyer', 'انفرادی خریدار', 'مشتري فرد')} · {(+offerComparable(d).toFixed(2)).toLocaleString('en-US')} {L('SAR', 'ریال', 'ر.س')} <span className="text-gray-500">{d.vat_status === 'not_registered' ? L('(final price)', '(حتمی قیمت)', '(سعر نهائي)') : L('incl. VAT', 'ٹیکس سمیت', 'شامل الضريبة')}</span></div>
+                    <div className="text-[13px] text-gray-600 mt-0.5 flex flex-wrap gap-x-1 min-w-0"><Glyph e="👤" /> {d.rfq?.contractor?.company_name_ar || d.rfq?.contractor?.full_name || L('Individual buyer', 'انفرادی خریدار', 'مشتري فرد')} · {(+offerComparable(d).toFixed(2)).toLocaleString('en-US')} {L('SAR', 'ریال', 'ر.س')} <span className="text-gray-500">{d.vat_status === 'not_registered' ? L('(final price)', '(حتمی قیمت)', '(سعر نهائي)') : L('incl. VAT', 'ٹیکس سمیت', 'شامل الضريبة')}</span></div>
                     <div className="mt-1.5 flex items-center gap-1.5 text-[13px] font-bold" style={{ color: st.done ? '#0F6E56' : '#0B2438' }}>
                       <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: st.done ? '#0F6E56' : st.key === 'disputed' ? '#DC2626' : '#D4A543' }} aria-hidden />
-                      {st.label}
+                      {isMember ? memberLabel(d, st) : st.label}
                     </div>
+                    {isMember && !st.done && <span className="inline-block mt-1 text-[12px] font-semibold px-2 py-0.5 rounded-full bg-gray-100 text-gray-600">{L('Managed by the account owner', 'اکاؤنٹ کا مالک سنبھالتا ہے', 'يديرها صاحب الحساب')}</span>}
                     {d.invoice_number && <div className="text-[12px] text-gray-500 mt-0.5" dir="ltr">{d.invoice_number}</div>}
                   </div>
                   <span className="shrink-0 text-[#8F6820] text-lg" aria-hidden="true">{FWD}</span>

@@ -4,12 +4,25 @@
 
 export type DealStage = {
   step: number // 1..4 (0 عند وجود نزاع)
-  key: 'accepted' | 'delivered' | 'received' | 'paid' | 'disputed'
+  key: 'accepted' | 'delivered' | 'received' | 'paid' | 'disputed' | 'advance_due' | 'closed'
   label: string // نص "وين صارت الطلبية"
   short: string // a short badge for lists and cards (UX-054): never «تم التسليم» before the buyer confirms
   emoji: string
   done: boolean // الصفقة مكتملة (مدفوعة وموثّقة)
   tone: string // لون المؤشّر (hex)
+  payDue?: string | null // «آجل 30/60»: when the payment is due (ISO), after receipt (round-4 UX-034)
+}
+
+// «آجل 30/60 يوماً»: the payment falls due that many days after the buyer confirms receipt (round-4 UX-034).
+const NET_DAYS: Record<string, number> = { net30: 30, net60: 60 }
+export function payDueAt(offer: any): Date | null {
+  const d = NET_DAYS[offer?.payment_terms]
+  return d && offer?.received_at ? new Date(new Date(offer.received_at).getTime() + d * 86400000) : null
+}
+/** Credit terms: paying becomes the buyer's step only in the last 3 days before it is due. */
+export function payDueSoon(offer: any, now: number = Date.now()): boolean {
+  const due = payDueAt(offer)
+  return !due || now >= due.getTime() - 3 * 86400000
 }
 
 export const DEAL_STEPS = ['قبول', 'تسليم', 'استلام', 'دفع'] as const
@@ -24,6 +37,8 @@ const LABELS: Record<string, { buyer: [string, string, string]; supplier: [strin
   received: { buyer: ['تمّ الاستلام — بانتظار الدفع', 'Received — waiting for payment', 'وصول ہو گیا — ادائیگی کا انتظار'], supplier: ['استلم المشتري البضاعة — بانتظار الدفع', 'The buyer received the goods — waiting for payment', 'خریدار کو سامان مل گیا — ادائیگی کا انتظار'] },
   delivered: { buyer: ['أكّد المورد التسليم — بانتظار تأكيد استلامك', 'The supplier delivered — confirm you received it', 'سپلائر نے ڈیلیور کر دیا — وصولی کی تصدیق کریں'], supplier: ['سلّمتَ البضاعة — بانتظار تأكيد المشتري', 'You delivered — waiting for the buyer to confirm', 'آپ نے ڈیلیور کر دیا — خریدار کی تصدیق کا انتظار'] },
   accepted: { buyer: ['تمّ اختيار العرض — بانتظار تسليم المورد', 'Offer chosen — waiting for delivery', 'آفر منتخب ہو گئی — ڈیلیوری کا انتظار'], supplier: ['اختارك المشتري: ارفع الفاتورة، ثم سلّم البضاعة', 'The buyer chose you: upload the invoice, then deliver the goods', 'خریدار نے آپ کو منتخب کیا: انوائس اپ لوڈ کریں، پھر سامان دیں'] },
+  advance_due: { buyer: ['بانتظار دفعتك المقدّمة، ثم يسلّم المورد', 'Waiting for your advance payment, then the supplier delivers', 'آپ کی پیشگی ادائیگی کا انتظار، پھر سپلائر سامان دے گا'], supplier: ['بانتظار دفعة المشتري المقدّمة، ثم تسلّم البضاعة', 'Waiting for the buyer’s advance payment, then you deliver', 'خریدار کی پیشگی ادائیگی کا انتظار، پھر آپ سامان دیں'] },
+  closed: { buyer: ['أُلغيت الصفقة', 'Deal cancelled', 'ڈیل منسوخ'], supplier: ['أُلغيت الصفقة', 'Deal cancelled', 'ڈیل منسوخ'] },
 }
 function lbl(k: string, who: Who, locale: string) { const t = LABELS[k][who]; return locale === 'en' ? t[1] : locale === 'ur' ? t[2] : t[0] }
 
@@ -38,11 +53,16 @@ const SHORT: Record<string, { buyer: [string, string, string]; supplier: [string
   received: { buyer: ['ادفع للمورد', 'Pay the supplier', 'سپلائر کو ادائیگی کریں'], supplier: ['بانتظار الدفع', 'Waiting for payment', 'ادائیگی کا انتظار'] },
   delivered: { buyer: ['أكّد الاستلام', 'Confirm receipt', 'وصولی کی تصدیق کریں'], supplier: ['بانتظار تأكيد المشتري', 'Waiting for the buyer', 'خریدار کی تصدیق کا انتظار'] },
   accepted: { buyer: ['بانتظار تسليم المورد', 'Waiting for delivery', 'ڈیلیوری کا انتظار'], supplier: ['سلّم البضاعة', 'Deliver the goods', 'سامان پہنچائیں'] },
+  advance_due: { buyer: ['ادفع الدفعة المقدّمة', 'Pay the advance', 'پیشگی ادائیگی کریں'], supplier: ['بانتظار الدفعة المقدّمة', 'Waiting for the advance', 'پیشگی ادائیگی کا انتظار'] },
+  closed: { buyer: ['أُلغيت الصفقة', 'Deal cancelled', 'ڈیل منسوخ'], supplier: ['أُلغيت الصفقة', 'Deal cancelled', 'ڈیل منسوخ'] },
 }
 function sh(k: string, who: Who, locale: string) { const t = SHORT[k][who]; return locale === 'en' ? t[1] : locale === 'ur' ? t[2] : t[0] }
 const pick = (t: [string, string, string], locale: string) => (locale === 'en' ? t[1] : locale === 'ur' ? t[2] : t[0])
 
 export function dealStage(offer: any, who: Who = 'buyer', locale: string = 'ar'): DealStage {
+  // closed by an admin decision (round-4 UX-088; needs offers.deal_closed_at from the server)
+  if (offer?.deal_closed_at)
+    return { step: 0, key: 'closed', label: lbl('closed', who, locale), short: sh('closed', who, locale), emoji: 'ℹ', done: false, tone: '#6B7280' }
   if (offer?.dispute_status === 'open')
     return { step: 0, key: 'disputed', label: lbl('disputed', who, locale), short: sh('disputed', who, locale), emoji: '⚠', done: false, tone: '#DC2626' }
 
@@ -54,8 +74,20 @@ export function dealStage(offer: any, who: Who = 'buyer', locale: string = 'ar')
   if (offer?.received_at) {
     if (paid)
       return { step: 4, key: 'paid', label: lbl('paid_pending', who, locale), short: sh('paid_pending', who, locale), emoji: '💵', done: false, tone: '#0F6E56' }
+    const due = payDueAt(offer)
+    if (due) {
+      // «آجل»: the label names the due date instead of asking for payment at once (round-4 UX-034)
+      const dt = due.toLocaleDateString(locale === 'en' ? 'en-GB' : locale === 'ur' ? 'ur-PK-u-nu-latn' : 'ar-SA-u-ca-gregory-nu-latn', { day: 'numeric', month: 'long', timeZone: 'Asia/Riyadh' })
+      const label = pick([`تمّ الاستلام — الدفع مستحق في ${dt}`, `Received — payment due on ${dt}`, `وصول ہو گیا — ادائیگی کی تاریخ ${dt}`], locale)
+      const short = payDueSoon(offer) ? sh('received', who, locale) : pick([`الدفع مستحق في ${dt}`, `Payment due ${dt}`, `ادائیگی ${dt}`], locale)
+      return { step: 3, key: 'received', label, short, emoji: '📥', done: false, tone: '#0B2438', payDue: due.toISOString() }
+    }
     return { step: 3, key: 'received', label: lbl('received', who, locale), short: sh('received', who, locale), emoji: '📥', done: false, tone: '#0B2438' }
   }
+
+  // «دفع مقدّم»: the buyer pays before the supplier delivers (round-4 UX-034)
+  if (offer?.payment_terms === 'advance' && !paid && !offer?.supplier_delivered_at)
+    return { step: 1, key: 'advance_due', label: lbl('advance_due', who, locale), short: sh('advance_due', who, locale), emoji: '💵', done: false, tone: '#D4A543' }
 
   if (offer?.supplier_delivered_at)
     return { step: 2, key: 'delivered', label: lbl('delivered', who, locale), short: sh('delivered', who, locale), emoji: '📦', done: false, tone: '#D4A543' }
@@ -70,6 +102,9 @@ export function buyerTodo(st: DealStage | string, locale: string = 'ar'): string
   const key = typeof st === 'string' ? st : st.key
   const L = (en: string, ur: string, ar: string) => (locale === 'en' ? en : locale === 'ur' ? ur : ar)
   if (key === 'delivered') return L('Your turn: confirm receipt', 'آپ کی باری: وصولی کی تصدیق کریں', 'مطلوب منك: تأكيد الاستلام')
+  if (key === 'advance_due') return L('Your turn: the advance payment', 'آپ کی باری: پیشگی ادائیگی', 'مطلوب منك: الدفعة المقدّمة')
+  // credit terms: the payment is the buyer's step only in the last 3 days before it is due (round-4 UX-034)
+  if (key === 'received' && typeof st !== 'string' && st.payDue && Date.now() < new Date(st.payDue).getTime() - 3 * 86400000) return null
   if (key === 'received') return L('Your turn: pay the supplier and record it', 'آپ کی باری: سپلائر کو ادائیگی کریں اور درج کریں', 'مطلوب منك: الدفع للمورد وتسجيله')
   return null
 }
@@ -79,7 +114,8 @@ export function buyerActionLabel(st: DealStage | string, locale: string = 'ar'):
   const key = typeof st === 'string' ? st : st.key
   const L = (en: string, ur: string, ar: string) => (locale === 'en' ? en : locale === 'ur' ? ur : ar)
   if (key === 'delivered') return L('Confirm receipt', 'وصولی کی تصدیق کریں', 'أكّد الاستلام')
-  if (key === 'received') return L('Record the payment', 'ادائیگی درج کریں', 'سجّل الدفع')
+  if (key === 'received' && typeof st !== 'string' && st.payDue && Date.now() < new Date(st.payDue).getTime() - 3 * 86400000) return L('Follow the deal', 'ڈیل دیکھیں', 'تابع الصفقة')
+  if (key === 'received' || key === 'advance_due') return L('Record the payment', 'ادائیگی درج کریں', 'سجّل الدفع')
   return L('Follow the deal', 'ڈیل دیکھیں', 'تابع الصفقة')
 }
 

@@ -11,6 +11,7 @@ import AutoTr from '@/components/shared/AutoTr'
 import { tierLabel, tierIcon } from '@/lib/sellers'
 import SellerIcon from '@/components/shared/SellerIcon'
 import Glyph from '@/components/shared/Glyph'
+import { FEATURES } from '@/lib/features'
 
 // navy text on the gold/grey score circle, white only on green (UX-103)
 const scoreText = (s: number) => (s >= 75 ? '#fff' : '#071827')
@@ -30,11 +31,11 @@ export default function SupplierProfile({ s, score }: { s: any; score: number })
   return (
     <main className="max-w-3xl mx-auto px-4 py-8" dir={dir}>
       <Link href="/suppliers" className="inline-flex items-center gap-1 min-h-[44px] text-sm font-semibold text-[#0B2438] hover:underline">
-        <span aria-hidden className="inline-block ltr:rotate-180">→</span> {L('Supplier leaderboard', 'سپلائرز کی درجہ بندی', 'لوحة شرف الموردين')}
+        <span aria-hidden className="inline-block ltr:rotate-180">→</span> {FEATURES.gamification ? L('Supplier leaderboard', 'سپلائرز کی درجہ بندی', 'لوحة شرف الموردين') : L('Supplier directory', 'سپلائر ڈائریکٹری', 'دليل الموردين')}
       </Link>
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 mt-4">
         <div className="flex items-start gap-4">
-          <div className="w-16 h-16 shrink-0 grid place-items-center rounded-2xl text-2xl text-[#F5C55B]" style={{ background: '#0B2438' }}><Glyph e="🏢" /></div>
+          <div className="w-16 h-16 shrink-0 grid place-items-center rounded-2xl text-2xl text-[#F5C55B]" style={{ background: '#0B2438' }}><SellerIcon name={s.supplier_tier ? tierIcon(s.supplier_tier) : 'store'} /></div>
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
               <h1 className="text-xl font-extrabold" style={{ color: '#0B2438' }}>{name}</h1>
@@ -64,9 +65,9 @@ export default function SupplierProfile({ s, score }: { s: any; score: number })
 
         <div className="grid grid-cols-3 gap-3 mt-6">
           {[
-            { l: L('Rating', 'ریٹنگ', 'التقييم'), v: rating > 0 ? rating.toFixed(1) : '—', sub: ratingCount ? L(`${ratingCount} ratings`, `${ratingCount} ریٹنگز`, arCount(ratingCount, 'تقييم واحد', 'تقييمان', 'تقييمات', 'تقييماً')) : '' },
-            { l: L('Offers', 'آفرز', 'العروض'), v: total.toLocaleString('en-US'), sub: L('offers sent', 'بھیجی گئی آفرز', 'عرض مقدَّم') },
-            { l: L('Won', 'جیتی گئی', 'الفوز'), v: won.toLocaleString('en-US'), sub: L('requests won', 'جیتی گئی درخواستیں', 'طلب فاز به') },
+            { l: L('Rating', 'ریٹنگ', 'التقييم'), v: rating > 0 ? rating.toFixed(1) : '—', sub: ratingCount ? L(ratingCount === 1 ? '1 rating' : `${ratingCount} ratings`, `${ratingCount} ریٹنگز`, arCount(ratingCount, 'تقييم واحد', 'تقييمان', 'تقييمات', 'تقييماً')) : '' },
+            { l: L('Offers sent', 'بھیجی گئی آفرز', 'العروض المقدَّمة'), v: total.toLocaleString('en-US'), sub: '' },
+            { l: L('Requests won', 'جیتی گئی درخواستیں', 'طلبات فاز بها'), v: won.toLocaleString('en-US'), sub: '' },
           ].map((k: any) => (
             <div key={k.l} className="rounded-xl bg-[#f7f8fa] p-3 text-center">
               <div className="text-lg font-extrabold" style={{ color: '#0B2438' }}>{k.v}</div>
@@ -80,7 +81,7 @@ export default function SupplierProfile({ s, score }: { s: any; score: number })
           <div className="mt-5">
             <div className="text-[13px] font-bold text-gray-700 mb-2"><Glyph e="🏅" /> {L('Approvals from major bodies', 'بڑے اداروں کی منظوریاں', 'اعتمادات جهات كبرى')}</div>
             <div className="flex gap-1.5 flex-wrap">
-              {s.approvals.map((a: string) => <span key={a} className="text-[12px] px-2 py-1 rounded-lg" style={{ background: '#0B24380d', color: '#0B2438' }}><Glyph e="🏅" /> {approvalLabel(a)}</span>)}
+              {s.approvals.map((a: string) => <span key={a} className="text-[12px] px-2 py-1 rounded-lg" style={{ background: '#0B24380d', color: '#0B2438' }}><Glyph e="🏅" /> {approvalLabel(a, locale)}</span>)}
             </div>
           </div>
         )}
@@ -106,7 +107,7 @@ export default function SupplierProfile({ s, score }: { s: any; score: number })
 
         <div className="mt-6 pt-5 border-t border-gray-100 text-center">
           <p className="text-sm text-gray-600 mb-3">{L('Send a free price request: it reaches the suppliers who specialise in your materials in your region.', 'مفت قیمت کی درخواست بھیجیں: یہ آپ کے علاقے میں آپ کے سامان کے ماہر سپلائرز تک پہنچتی ہے۔', 'أرسل طلب تسعير مجاناً، فيصل إلى الموردين المختصين بموادك في منطقتك.')}</p>
-          <Link href="/contractor/rfq/quick" className="btn-orange text-sm">{L('Request a price for free', 'مفت قیمت معلوم کریں', 'اطلب تسعيرة مجاناً')}</Link>
+          <Link href="/contractor/rfq/quick" className="btn-orange text-sm">{L('Request a price', 'قیمت معلوم کریں', 'اطلب سعراً')}</Link>
         </div>
       </div>
       {s.member_since && <p className="text-center text-[12px] text-gray-600 mt-6">{L('Member since', 'رکن از', 'عضو منذ')} {new Date(s.member_since).toLocaleDateString(dateLocale)}</p>}

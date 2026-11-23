@@ -11,7 +11,7 @@ import { getUnitLabelLong } from '@/types'
 import { arCount } from '@/lib/text'
 import { calcQuantity, type PackCalc } from '@/lib/homePacks'
 
-const toLatinNumber = (v: string) => v.replace(/[٠-٩]/g, d => String('٠١٢٣٤٥٦٧٨٩'.indexOf(d))).replace(/[۰-۹]/g, d => String('۰۱۲۳۴۵۶۷۸۹'.indexOf(d))).replace(/[٫,]/g, '.').replace(/[^0-9.]/g, '')
+import { toLatinNumber } from '@/lib/number' // «2,500» = 2500: commas are thousands separators (round-4 UX-002)
 
 /** The order units the calculator can work out. */
 export const calcSupported = (unit: string) => unit === 'جالون' || unit === 'م²' || unit === 'لفة'

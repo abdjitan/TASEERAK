@@ -157,7 +157,8 @@ function MyRequests() {
       || items.some((it: any) => has(it.product_name) || has(getProductLabel(it.product_name, locale)))
   })
     // what needs the buyer first (a choice to make, a deal step to do), newest first otherwise (UX-055)
-    .map((r: any, i: number) => ({ r, i, k: stateOf(r) === 'choose' || dealTodoOf(r) ? 0 : 1 }))
+    // an open request that already has offers comes right after them (round-4 UX-130)
+    .map((r: any, i: number) => ({ r, i, k: stateOf(r) === 'choose' || dealTodoOf(r) ? 0 : rstate(r) === 'offers' ? 1 : 2 }))
     .sort((a, b) => a.k - b.k || a.i - b.i)
     .map(x => x.r)
 
@@ -259,8 +260,8 @@ function MyRequests() {
         {/* row 1: the requests/deals tabs and the main action (UX-105) */}
         <div className="flex items-center justify-between gap-2 flex-wrap">
           <h1 className="sr-only">{L('My requests', 'میری درخواستیں', 'طلباتي')}</h1>
+          {/* «+ طلب جديد» lives in the tabs, so it shows on «صفقاتي» too (round-4 UX-133) */}
           <RequestsTabs active="requests" locale={locale} />
-          <Link href="/contractor/rfq/quick" className="btn-orange mb-4 inline-flex items-center min-h-[44px] px-4 rounded-xl font-bold text-sm">+ {L('New request', 'نئی درخواست', 'طلب جديد')}</Link>
         </div>
         {/* row 2: search */}
         <input value={q} onChange={e => setQ(e.target.value)} className="input-field w-full text-base sm:text-sm" type="search"
@@ -299,7 +300,7 @@ function MyRequests() {
                 {cancelling ? L('Cancelling…', 'منسوخ ہو رہا ہے…', 'جارٍ الإلغاء…') : L(`Cancel selected requests (${sel.size})`, `منتخب درخواستیں منسوخ کریں (${sel.size})`, `إلغاء الطلبات المحددة (${sel.size})`)}
               </button>
               <button type="button" onClick={() => { setSelecting(false); setSel(new Set()) }} className="min-h-[44px] px-3 text-sm font-bold text-gray-600 hover:underline">
-                {L('Done', 'ختم', 'تم')}
+                {L('Done', 'ہو گیا', 'تم')}
               </button>
             </>))}
           </div>
@@ -360,7 +361,7 @@ function MyRequests() {
               const canExtend = extendable(r)
               return (
                 <div key={r.id}
-                  className={`bg-white rounded-2xl border shadow-sm hover:shadow transition-all ${sel.has(r.id) ? 'border-[#0B2438] ring-2 ring-[#0B2438]/15' : st === 'choose' || todo ? 'border-[#D4A543]/60' : 'border-gray-100 hover:border-[#D4A543]/50'} ${selecting && !cancellable(r) ? 'opacity-50' : ''}`}>
+                  className={`bg-white rounded-2xl border shadow-sm hover:shadow transition-all ${sel.has(r.id) ? 'border-[#0B2438] ring-2 ring-[#0B2438]/15' : st === 'choose' || todo ? 'border-[#D4A543]/60' : rs === 'offers' ? 'border-[#D4A543]/40' : 'border-gray-100 hover:border-[#D4A543]/50'} ${selecting && !cancellable(r) ? 'opacity-50' : ''}`}>
                   <Link href={`/contractor/rfq/${r.id}`} aria-pressed={selecting ? sel.has(r.id) : undefined}
                     onClick={(e: any) => { if (selecting) { e.preventDefault(); if (cancellable(r)) toggle(r.id) } }}
                     className="block p-4 sm:p-5 rounded-2xl">
@@ -403,6 +404,7 @@ function MyRequests() {
                       {items.length > 6 && <span className="self-center text-xs text-gray-500">+{items.length - 6}</span>}
                     </div>
                     {best && <div className="mt-3 text-[13px] font-extrabold text-[#0B2438]">{best}</div>}
+                    {rs === 'offers' && st !== 'choose' && <div className="mt-1 text-[13px] font-bold text-[#8F6820]">{L('You can compare and choose now', 'آپ ابھی موازنہ اور انتخاب کر سکتے ہیں', 'يمكنك المقارنة والاختيار الآن')} <span aria-hidden="true">{dir === 'rtl' ? '←' : '→'}</span></div>}
                     {st === 'choose' && (
                       <div className="mt-2 text-sm font-bold text-[#071827]">
                         {L('Open the request and choose one of the offers', 'درخواست کھولیں اور کوئی آفر منتخب کریں', 'افتح الطلب واختر أحد العروض')} <span aria-hidden="true" className="inline-block rtl:rotate-180">→</span>

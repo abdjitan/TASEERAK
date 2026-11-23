@@ -13,6 +13,7 @@ import { useTranslation } from '@/i18n'
 import PhoneVerify from '@/components/shared/PhoneVerify'
 import EmailVerify from '@/components/shared/EmailVerify'
 import GateHeader from './GateHeader'
+import { isAccountVerified } from '@/components/shared/verifyRule'
 
 export default function VerifyPage() {
   return <Suspense fallback={<div className="min-h-screen bg-[#F5F7FA]"><GateHeader /></div>}><Verify /></Suspense>
@@ -26,6 +27,9 @@ function Verify() {
   const [p, setP] = useState<any>(null)
   const [email, setEmail] = useState<string>('')
   const [state, setState] = useState<'loading' | 'ready' | 'failed'>('loading')
+  // the admin switch (phone_verify_required): off while the SMS provider is down, then nothing blocks (round-4 UX-089)
+  const [required, setRequired] = useState<boolean>(true)
+  const [smsDown, setSmsDown] = useState(false)
 
   async function load() {
     try {
@@ -33,8 +37,12 @@ function Verify() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) { window.location.href = '/login?next=/verify'; return }
       setEmail(user.email || '')
-      const { data, error } = await supabase.from('profiles').select('role, phone, phone_verified_at, whatsapp_verified_at, email_verified_at').eq('id', user.id).single()
+      const [{ data, error }, { data: req }] = await Promise.all([
+        supabase.from('profiles').select('role, phone, phone_verified_at, whatsapp_verified_at, email_verified_at').eq('id', user.id).single(),
+        supabase.rpc('phone_verify_required'),
+      ])
       if (error || !data) throw error || new Error('no profile')
+      setRequired(req === true)
       setP(data)
       setState('ready')
     } catch {
@@ -46,6 +54,8 @@ function Verify() {
   const isBuyer = p?.role === 'contractor'
   const phoneOk = !!p?.phone_verified_at
   const emailOk = !!p?.email_verified_at || isBuyer // optional for buyers
+  const canGo = p ? isAccountVerified(p, required) : false
+  const optional = L('(optional)', '(اختیاری)', '(اختياري)')
   const home = p?.role === 'supplier' ? '/supplier/dashboard' : '/contractor'
   const tick = <Check className="inline w-4 h-4 text-[#0F6E56]" aria-label={L('done', 'مکمل', 'تم')} />
 
@@ -78,27 +88,34 @@ function Verify() {
 
         {state === 'ready' && p && (<>
           <section className={`rounded-2xl border p-4 ${phoneOk ? 'border-emerald-200 bg-emerald-50/50' : 'border-gray-200 bg-white'}`}>
-            <div className="font-bold text-[#0B2438] mb-1">1. {L('Mobile number', 'موبائل نمبر', 'رقم الجوال')} {phoneOk && tick}</div>
+            <div className="font-bold text-[#0B2438] mb-1">1. {L('Mobile number', 'موبائل نمبر', 'رقم الجوال')} {!required && !phoneOk && <span className="font-semibold text-gray-600">{optional}</span>} {phoneOk && tick}</div>
             <PhoneVerify initialPhone={p.phone || ''} locale={locale} verified={phoneOk} waVerified={!!p.whatsapp_verified_at} autoOpen
-              onDone={() => load()} />
+              onDone={() => load()} onProviderDown={() => setSmsDown(true)} />
           </section>
 
           <section className={`rounded-2xl border p-4 ${p.email_verified_at ? 'border-emerald-200 bg-emerald-50/50' : 'border-gray-200 bg-white'}`}>
             <div className="font-bold text-[#0B2438] mb-2">
-              2. {isBuyer ? L('Email (optional)', 'ای میل (اختیاری)', 'البريد الإلكتروني (اختياري)') : L('Email', 'ای میل', 'البريد الإلكتروني')} {p.email_verified_at && tick}
+              2. {isBuyer || !required ? <>{L('Email', 'ای میل', 'البريد الإلكتروني')} <span className="font-semibold text-gray-600">{optional}</span></> : L('Email', 'ای میل', 'البريد الإلكتروني')} {p.email_verified_at && tick}
             </div>
             <EmailVerify currentEmail={email} verified={!!p.email_verified_at} locale={locale} optional={isBuyer} onDone={() => load()} />
           </section>
 
-          <button type="button" disabled={!phoneOk || !emailOk}
+          <button type="button" disabled={!canGo}
             onClick={() => { window.location.href = next || home }}
             className="w-full min-h-[48px] rounded-xl bg-[#D4A543] text-[#071827] font-bold py-3 disabled:opacity-50">
-            {phoneOk && emailOk ? L('Continue', 'جاری رکھیں', 'متابعة')
+            {canGo ? L('Continue', 'جاری رکھیں', 'متابعة')
               : isBuyer ? L('Verify your mobile to continue', 'جاری رکھنے کے لیے موبائل تصدیق کریں', 'وثّق جوالك للمتابعة')
               : L('Finish both steps to continue', 'جاری رکھنے کے لیے دونوں قدم مکمل کریں', 'أكمل الخطوتين للمتابعة')}
           </button>
         </>)}
 
+        {state === 'ready' && required && !phoneOk && smsDown && (
+          <p role="status" className="text-[13px] text-gray-700 bg-white border border-gray-200 rounded-xl p-3 leading-relaxed">
+            {L('The text-message service is temporarily down, and the admin team has been told. You can continue once an admin pauses this requirement, or contact support.',
+              'ٹیکسٹ میسج سروس عارضی طور پر بند ہے، اور انتظامیہ کو اطلاع دے دی گئی ہے۔ منتظم کے اس شرط کو عارضی طور پر روکنے کے بعد آپ جاری رکھ سکتے ہیں، یا سپورٹ سے رابطہ کریں۔',
+              'خدمة الرسائل متوقفة مؤقتاً، وقد أُبلغت الإدارة. يمكنك المتابعة بعد أن يوقف المشرف هذا الشرط مؤقتاً، أو التواصل مع الدعم.')}
+          </p>
+        )}
         <p className="text-sm text-gray-600 text-center">
           {L('Did the code not arrive?', 'کوڈ نہیں ملا؟', 'لم يصلك الرمز؟')}{' '}
           <Link href="/support" className="font-bold text-[#8F6820] underline underline-offset-2 inline-flex min-h-[44px] items-center">{L('Contact support', 'سپورٹ سے رابطہ کریں', 'تواصل مع الدعم')}</Link>

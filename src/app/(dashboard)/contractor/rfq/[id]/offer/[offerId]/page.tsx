@@ -58,6 +58,7 @@ export default function OfferDetailPage() {
   const pname = (n: string) => (home && locale === 'ar' ? cleanArName(n || '') : getProductLabel(n || '', locale))
   const unitL = (u: string) => getUnitLabelLong(u, locale)
   const showErr = (m: string) => { setErr(m); setTimeout(() => document.getElementById('offer-err')?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 30) }
+  const [declinedNote, setDeclinedNote] = useState('') // after «رفض»: what happened (round-4 UX-123)
 
   async function submitReductionRequest() {
     setReqBusy(true)
@@ -66,6 +67,8 @@ export default function OfferDetailPage() {
     setReqBusy(false)
     if (error) { showErr(dbMessage(error, L('Could not send the request. Please try again.', 'درخواست نہیں بھیجی جا سکی۔ دوبارہ کوشش کریں۔', 'تعذّر إرسال الطلب. حاول مرة أخرى.'))); setReqOpen(false); return }
     setReqOpen(false); setReqDone(true)
+    // the reply deadline shows at once, without a reload (round-4 UX-123)
+    setOffer((o: any) => (o ? { ...o, reduction_deadline: new Date(Date.now() + Number(reqHours) * 3600000).toISOString(), reduction_note: reqNote.trim() || null } : o))
   }
 
   async function cancelReduction() {
@@ -140,10 +143,13 @@ export default function OfferDetailPage() {
     if (!(await ensureVerified())) return
     const who = offer?.supplier?.company_name_ar || L('this supplier', 'اس سپلائر', 'هذا المورد')
     const total = offerComparable(offer).toLocaleString('en-US', { maximumFractionDigits: 0 })
+    // an expired price: confirm it in messages before choosing (round-4 UX-123)
+    const gone = offer?.price_valid_until && new Date(offer.price_valid_until) < new Date()
+      ? '\n\n' + L('This offer’s price has expired. Confirm the price with the supplier in messages before choosing it.', 'اس آفر کی قیمت کی مدت ختم ہو گئی ہے۔ منتخب کرنے سے پہلے پیغامات میں سپلائر سے قیمت کنفرم کریں۔', 'انتهت صلاحية سعر هذا العرض. تأكّد من السعر مع المورد عبر الرسائل قبل اختياره.') : ''
     if (!(await askConfirm(L(
-      `Choose the offer from ${who} for ${total} SAR (${vatTag(offer, 'en')})?\nWe will tell the other suppliers and close the request, and a deal opens with this supplier.`,
-      `${who} کی آفر ${total} ریال (${vatTag(offer, 'ur')}) میں منتخب کریں؟\nہم باقی سپلائرز کو بتا دیں گے اور درخواست بند ہو جائے گی، اور اس سپلائر کے ساتھ ڈیل کھل جائے گی۔`,
-      `اختيار عرض ${who} بمبلغ ${total} ر.س (${vatTag(offer, 'ar')})؟\nسنُبلغ بقية الموردين ويُغلق الطلب، وتُفتح صفقة مع هذا المورد.`),
+      `Choose the offer from ${who} for ${total} SAR (${vatTag(offer, 'en')})?\nWe will tell the other suppliers and close the request, and a deal opens with this supplier.${gone}`,
+      `${who} کی آفر ${total} ریال (${vatTag(offer, 'ur')}) میں منتخب کریں؟\nہم باقی سپلائرز کو بتا دیں گے اور درخواست بند ہو جائے گی، اور اس سپلائر کے ساتھ ڈیل کھل جائے گی۔${gone}`,
+      `اختيار عرض ${who} بمبلغ ${total} ر.س (${vatTag(offer, 'ar')})؟\nسنُبلغ بقية الموردين ويُغلق الطلب، وتُفتح صفقة مع هذا المورد.${gone}`),
       { okLabel: L('Choose this offer', 'یہ آفر منتخب کریں', 'اختر هذا العرض'), cancelLabel: L('Go back', 'واپس', 'تراجع') }))) return
     setActing(true)
     const supabase = createClient()
@@ -158,8 +164,11 @@ export default function OfferDetailPage() {
     setActing(true)
     const supabase = createClient()
     const { error } = await supabase.from('offers').update({ status: 'rejected' }).eq('id', offerId)
-    if (error) { setActing(false); showErr(L('Could not decline the offer. Refresh and try again.', 'آفر رد نہیں ہو سکی۔ صفحہ ریفریش کر کے دوبارہ کوشش کریں۔', 'تعذّر رفض العرض. حدّث الصفحة وحاول مرة أخرى.')); return }
-    router.push(`/contractor/rfq/${id}`)
+    setActing(false)
+    if (error) { showErr(L('Could not decline the offer. Refresh and try again.', 'آفر رد نہیں ہو سکی۔ صفحہ ریفریش کر کے دوبارہ کوشش کریں۔', 'تعذّر رفض العرض. حدّث الصفحة وحاول مرة أخرى.')); return }
+    setOffer((o: any) => (o ? { ...o, status: 'rejected' } : o))
+    setDeclinedNote(L('The offer was declined, and any material chosen from it was unselected.', 'آفر رد کر دی گئی، اور اس سے منتخب کیا گیا سامان غیر منتخب ہو گیا۔', 'رُفض العرض، وأُلغي اختيار أي مادة كانت منه.'))
+    window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
   const nav = getNav('contractor', locale, '/contractor/rfqs')
@@ -178,6 +187,13 @@ export default function OfferDetailPage() {
   const exList = Array.isArray(offer.extra_charges) ? offer.extra_charges : []
   const exSum = exList.reduce((a: any, e: any) => a + (Number(e.amount) || 0), 0)
   const goods = (Number(offer.total_price) || 0) - exSum
+  // which request items this offer priced (lines with a positive amount), round-4 UX-031
+  const reqItems: any[] = Array.isArray(rfq.items) ? rfq.items : []
+  const pricedIdx = new Set<number>((Array.isArray(offer.item_prices) ? offer.item_prices : []).filter((e: any) => Number(e?.total) > 0).map((e: any) => Number(e.item_index)))
+  const allN = reqItems.length
+  const pricedN = reqItems.filter((_: any, i: number) => pricedIdx.has(i)).length
+  const partial = allN > 1 && pricedN > 0 && pricedN < allN
+  const missingNames = reqItems.filter((_: any, i: number) => !pricedIdx.has(i)).map((it: any) => (home && locale === 'ar' ? cleanArName(String(it?.product_name || '')) : getProductLabel(it?.product_name, locale))).join(locale === 'ar' || locale === 'ur' ? '، ' : ', ')
   const ip = Array.isArray(offer.item_prices) ? offer.item_prices : []
   const tierText = tierLabel(s.supplier_tier, locale)
   // Supplier privacy: the contact number (and WhatsApp) only after the offer is chosen; before that
@@ -207,7 +223,7 @@ export default function OfferDetailPage() {
           <div className="w-11 h-11 rounded-xl flex items-center justify-center text-xl text-[#D4A543]" style={{ background: '#0B2438' }}><Glyph e="🏪" /></div>
           <div className="min-w-0 flex-1">
             <h1 className="text-xl font-bold truncate" style={{ color: '#0B2438' }}>{s.company_name_ar || L('Supplier', 'سپلائر', 'مورد')}</h1>
-            <p className="text-gray-500 text-sm"><span className="font-mono font-bold text-[#8F6820]" dir="auto">{rfqRefLine(rfq, locale)}</span> · {rfqDesc(rfq, locale)}</p>
+            <p className="text-gray-500 text-sm"><span className="tabular-nums font-bold text-[#8F6820]" dir="auto">{rfqRefLine(rfq, locale)}</span> · {rfqDesc(rfq, locale)}</p>
           </div>
           <span className={`badge text-xs ms-auto ${statusBadge.c}`}>{statusBadge.t}</span>
         </div>
@@ -219,6 +235,18 @@ export default function OfferDetailPage() {
           </div>
         )}
 
+        {declinedNote && (
+          <div role="status" className="rounded-xl border border-[#0B2438]/20 bg-white px-4 py-3 text-sm font-semibold text-[#0B2438] flex flex-wrap items-center justify-between gap-2">
+            <span>{declinedNote}</span>
+            <Link href={`/contractor/rfq/${id}`} className="min-h-11 inline-flex items-center px-4 rounded-xl text-sm font-bold text-white" style={{ background: '#0B2438' }}>{L('Back to the request', 'درخواست پر واپس', 'العودة إلى الطلب')}</Link>
+          </div>
+        )}
+        {/* a priced subset of the request: say so, so it never looks cheaper than complete offers (round-4 UX-031) */}
+        {isMulti && partial && (
+          <div className="rounded-xl border-2 border-[#D4A543] bg-[#D4A543]/10 px-4 py-2.5 text-sm font-semibold text-[#0B2438]">
+            <Glyph e="⚠" /> {L(`This offer prices ${pricedN} of ${allN} items. Not priced: ${missingNames}.`, `یہ آفر ${allN} میں سے ${pricedN} اشیاء کی قیمت دیتی ہے۔ قیمت نہیں دی: ${missingNames}۔`, `يسعّر هذا العرض ${pricedN} من ${allN} مواد. لم يسعّر: ${missingNames}.`)}
+          </div>
+        )}
         {offer.status === 'pending' && offer.price_valid_until && (
           new Date(offer.price_valid_until) < new Date()
             ? <div className="bg-amber-50 border border-amber-200 text-amber-800 text-sm rounded-xl px-4 py-2.5 font-semibold"><Glyph e="⏱" /> {L('This offer price has expired. Confirm the price with the supplier in messages before choosing it.', 'اس آفر کی قیمت کی مدت ختم ہو گئی۔ منتخب کرنے سے پہلے پیغامات میں سپلائر سے قیمت کنفرم کریں۔', 'انتهت صلاحية سعر هذا العرض. تأكّد من السعر مع المورد عبر الرسائل قبل اختياره.')}</div>
@@ -304,7 +332,7 @@ export default function OfferDetailPage() {
               if (error || !data) { showErr(dbMessage(error, L('Could not open the conversation. Please try again.', 'گفتگو نہیں کھل سکی۔ دوبارہ کوشش کریں۔', 'تعذّر فتح المحادثة. حاول مرة أخرى.'))); return }
               router.push(`/messages?c=${data}`)
             }} className="min-h-11 text-sm px-4 rounded-xl font-semibold text-white" style={{ background: '#0B2438' }}><Glyph e="💬" /> {L('Message the supplier', 'سپلائر کو پیغام', 'راسل المورد')}</button>
-            {wa && <a href={wa} target="_blank" rel="noreferrer" className="min-h-11 inline-flex items-center text-sm px-4 rounded-xl font-bold" style={{ background: '#25D366', color: '#071827' }}>{L('WhatsApp', 'واٹس ایپ', 'تواصل واتساب')}</a>}
+            {wa && <a href={wa} target="_blank" rel="noreferrer" className="min-h-11 inline-flex items-center text-sm px-4 rounded-xl font-bold border border-[#0B2438] text-[#0B2438] bg-white hover:bg-[#0B2438]/5">{L('WhatsApp', 'واٹس ایپ', 'تواصل واتساب')}</a>}
             {mapsUrl && <a href={mapsUrl} target="_blank" rel="noreferrer" className="min-h-11 inline-flex items-center text-sm px-4 rounded-xl border border-gray-200 text-gray-700"><Glyph e="🗺" /> {L('Supplier location', 'سپلائر کا مقام', 'موقع المورد')}</a>}
           </div>
         </div>
@@ -358,7 +386,7 @@ export default function OfferDetailPage() {
           <div className="bg-amber-50 border border-amber-100 rounded-xl p-3 my-3 text-sm">
             {home ? (
               <>
-                <div className="flex justify-between items-baseline gap-3 font-extrabold text-gray-900"><span>{L('The amount you pay', 'آپ کی ادا کردہ رقم', 'المبلغ الذي تدفعه')}</span><span className="text-lg">{fmt(offerComparable(offer))} {SAR}</span></div>
+                <div className="flex justify-between items-baseline gap-3 font-extrabold text-gray-900"><span>{partial ? L('The amount for what the supplier priced', 'سپلائر کی قیمت دی گئی اشیاء کی رقم', 'المبلغ لما سعّره المورد') : L('The amount you pay', 'آپ کی ادا کردہ رقم', 'المبلغ الذي تدفعه')}</span><span className="text-lg">{fmt(offerComparable(offer))} {SAR}</span></div>
                 <div className="text-xs text-gray-600 mt-0.5">{vatTag(offer, locale)}{exSum > 0 ? ` · ${L(`includes delivery and charges ${fmt(lineComparable(exSum, offer))} SAR`, `ڈیلیوری اور چارجز ${fmt(lineComparable(exSum, offer))} ریال شامل`, `يشمل التوصيل والرسوم ${fmt(lineComparable(exSum, offer))} ر.س`)}` : ''}</div>
               </>
             ) : (<>
@@ -414,7 +442,8 @@ export default function OfferDetailPage() {
           )}
         </div>
 
-        {/* more product information */}
+        {/* more product information: only while the offer is open or a question exists (round-4 UX-123) */}
+        {(offer.status === 'pending' || !!offer.info_request) && (
         <div className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm">
           <div className="flex items-center justify-between gap-2 mb-2">
             <h2 className="font-bold text-sm" style={{ color: '#0B2438' }}><Glyph e="❓" /> {L('More product information', 'پروڈکٹ کے بارے میں مزید معلومات', 'معلومات إضافية عن المنتج')}</h2>
@@ -435,6 +464,8 @@ export default function OfferDetailPage() {
             <p className="text-xs text-gray-600">{L('Ask the supplier for more product details (type, specs, origin, warranty…).', 'سپلائر سے پروڈکٹ کی مزید تفصیل مانگیں (قسم، اسپیسیفکیشن، کہاں کا بنا ہے، وارنٹی…)۔', 'اطلب من المورد تفاصيل إضافية عن المنتج (النوع، المواصفات، المنشأ، الضمان…).')}</p>
           )}
         </div>
+
+        )}
 
         {/* the request ended while the offer was still waiting: no actions, a way to ask again (UX-023) */}
         {offer.status === 'pending' && !rfqOpen && (

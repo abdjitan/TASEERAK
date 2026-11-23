@@ -6,6 +6,7 @@ import { SECTOR_LABELS } from '@/types'
 import PublicHeader from '@/components/public/PublicHeader'
 import PublicFooter from '@/components/public/PublicFooter'
 import Glyph from '@/components/shared/Glyph'
+import PricesComingSoon from '@/components/public/PricesComingSoon'
 
 export const dynamic = 'force-dynamic' // عرض وقت الطلب — يتفادى إنشاء عميل Supabase وقت البناء (build-safe)
 
@@ -46,6 +47,14 @@ export default async function PricesPage() {
   }
   const sectors = Object.keys(bySector)
 
+  if (!FEATURES.priceBoard) return (
+    <div className="min-h-screen bg-[#f7f8fa]">
+      <PublicHeader active="prices" />
+      <main className="max-w-4xl mx-auto px-4 py-10"><PricesComingSoon /></main>
+      <PublicFooter />
+    </div>
+  )
+
   return (
     <div className="min-h-screen bg-[#f7f8fa]" dir="rtl">
       <PublicHeader active="prices" />
@@ -63,7 +72,7 @@ export default async function PricesPage() {
             <div className="text-4xl mb-3"><Glyph e="📊" /></div>
             <p className="font-bold text-gray-700 mb-1">قريباً</p>
             <p className="text-sm text-gray-600 max-w-sm mx-auto">سيظهر هنا مؤشّر أسعار مواد البناء قريباً. وحتى ذلك الحين، أرسل طلب تسعير مجاناً لتصلك أسعار الموردين لموادك.</p>
-            <Link href="/contractor/rfq/quick" className="inline-flex items-center min-h-[44px] mt-5 px-6 rounded-xl font-bold text-[#071827] text-sm" style={{ background: '#D4A543' }}>اطلب تسعيرة مجاناً</Link>
+            <Link href="/contractor/rfq/quick" className="inline-flex items-center min-h-[44px] mt-5 px-6 rounded-xl font-bold text-[#071827] text-sm" style={{ background: '#D4A543' }}>اطلب سعراً</Link>
           </div>
         ) : (
           <div className="space-y-6">

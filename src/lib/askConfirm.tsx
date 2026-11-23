@@ -42,13 +42,13 @@ function Dialog({ message, opts, done }: { message: string; opts: Opts; done: (v
         {opts.title && <h2 className="text-base font-bold text-[#071827] mb-1.5">{opts.title}</h2>}
         <p className="text-[15px] leading-relaxed text-[#071827] whitespace-pre-line">{message}</p>
         <div className="mt-5 flex gap-2">
+          {/* the shared button classes (round-4 UX-103): gold main action, red only when destructive */}
           <button ref={okRef} type="button" onClick={() => done(true)}
-            className="flex-1 min-h-11 rounded-xl text-sm font-bold"
-            style={opts.danger ? { background: '#B42318', color: '#fff' } : { background: '#D4A543', color: '#071827' }}>
+            className={`${opts.danger ? 'btn-danger' : 'btn-primary'} flex-1 text-sm`}>
             {opts.okLabel || l.ok}
           </button>
           <button ref={cancelRef} type="button" onClick={() => done(false)}
-            className="flex-1 min-h-11 rounded-xl text-sm font-bold border border-gray-200 text-[#0B2438] bg-white hover:bg-gray-50">
+            className="btn-ghost flex-1 text-sm">
             {opts.cancelLabel || l.cancel}
           </button>
         </div>
@@ -86,7 +86,7 @@ function Notice({ message, opts, done }: { message: string; opts: NotifyOpts; do
           </div>
         </div>
         <button ref={okRef} type="button" onClick={() => done(true)}
-          className="mt-5 w-full min-h-11 rounded-xl text-sm font-bold" style={{ background: '#D4A543', color: '#071827' }}>
+          className="btn-primary mt-5 w-full text-sm">
           {opts.okLabel || l.done}
         </button>
       </div>

@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState, Suspense } from 'react'
 import Link from 'next/link'
-import { useSearchParams } from 'next/navigation'
+import { useSearchParams, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { useTranslation } from '@/i18n'
 import AppShell from '@/components/shared/AppShell'
@@ -16,7 +16,7 @@ import AutoTr from '@/components/shared/AutoTr'
 import { realtimeTopic } from '@/lib/realtimeTopic'
 import { useEnsureVerified } from '@/components/shared/VerifyGate'
 import { askConfirm } from '@/lib/askConfirm'
-import { timeAgo, dateLocale, arMessages, countLabel } from '@/lib/text'
+import { timeAgo, dateLocale, arMessages, countLabel, dayBucket, dayBucketLabel } from '@/lib/text'
 
 // under a day: «قبل 5 دقائق»; older: the date (UX-160: no «قبل 5 د» abbreviations)
 function fmtTime(d: any, locale: string = 'ar') {
@@ -26,11 +26,24 @@ function fmtTime(d: any, locale: string = 'ar') {
   return dt.toLocaleDateString(dateLocale(locale), { timeZone: 'Asia/Riyadh', day: 'numeric', month: 'short' })
 }
 
+// the clock time of a message (round-4 UX-104): every bubble shows it, the day is in the separators
+function clockTime(d: any, locale: string) {
+  if (!d) return ''
+  return new Date(d).toLocaleTimeString(dateLocale(locale), { timeZone: 'Asia/Riyadh', hour: 'numeric', minute: '2-digit' })
+}
+const riyadhDay = (d: any) => new Date(d).toLocaleDateString('en-CA', { timeZone: 'Asia/Riyadh' })
+function dayLabel(d: any, locale: string) {
+  const b = dayBucket(d)
+  if (b !== 'earlier') return dayBucketLabel(b, locale)
+  return new Date(d).toLocaleDateString(dateLocale(locale), { timeZone: 'Asia/Riyadh', weekday: 'long', day: 'numeric', month: 'long' })
+}
+
 function Messages() {
   const { locale, dir } = useTranslation()
   const ensureVerified = useEnsureVerified()
   const L = (en: string, ur: string, ar: string) => (locale === 'en' ? en : locale === 'ur' ? ur : ar)
   const sp = useSearchParams()
+  const router = useRouter()
   const [me, setMe] = useState<any>(null)
   const [role, setRole] = useState('contractor')
   const [isMember, setIsMember] = useState(false) // a company team member: chats belong to the owner (UX-126)
@@ -58,6 +71,13 @@ function Messages() {
   const [reportMsgId, setReportMsgId] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
   const [notice, setNotice] = useState('')
+
+  const spC = sp.get('c') || ''
+  useEffect(() => { if (spC) setActiveId(prev => (prev === spC ? prev : spC)) }, [spC])
+  const openConvo = (id: string) => {
+    setActiveId(id)
+    router.replace(id ? `/messages?c=${encodeURIComponent(id)}` : '/messages', { scroll: false })
+  }
 
   const PREAWARD_MAX = 20
   // الرسائل الفاشلة لا تُحتسب ضمن الحد (لم تُرسَل فعلاً)؛ الحد للطرفين معاً
@@ -111,6 +131,18 @@ function Messages() {
       setLoading(false)
     })()
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    if (!me) return
+    const supabase = createClient()
+    let t: any
+    const refresh = () => { clearTimeout(t); t = setTimeout(() => loadConvos(me), 700) }
+    const ch = supabase.channel(realtimeTopic(`convos-${me}`))
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'conversations', filter: `contractor_id=eq.${me}` }, refresh)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'conversations', filter: `supplier_id=eq.${me}` }, refresh)
+      .subscribe()
+    return () => { clearTimeout(t); supabase.removeChannel(ch) }
+  }, [me]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // افتح المحادثة المختارة + علّم رسائلها مقروءة + استمع للجديد
   useEffect(() => {
@@ -339,7 +371,7 @@ function Messages() {
             const first = buyer ? counterpart(c) : (ctx(c) || counterpart(c))
             const second = buyer ? ctx(c) : (ctx(c) ? counterpart(c) : '')
             return (
-              <button key={c.id} onClick={() => setActiveId(c.id)} aria-current={activeId === c.id ? 'true' : undefined}
+              <button key={c.id} onClick={() => openConvo(c.id)} aria-current={activeId === c.id ? 'true' : undefined}
                 className={`w-full text-start px-4 py-3 border-b border-gray-50 hover:bg-gray-50 transition-colors ${activeId === c.id ? 'bg-[#D4A543]/10' : ''}`}>
                 <div className="flex items-center justify-between gap-2">
                   <span className={`text-sm truncate ${n ? 'font-bold' : 'font-semibold'}`} style={{ color: '#0B2438' }} dir="auto">
@@ -369,7 +401,7 @@ function Messages() {
               <div>
                 <div className="text-3xl mb-2 text-[#0B2438]"><Glyph e="🔎" /></div>
                 <p className="text-sm font-semibold text-gray-700">{L('We could not find this conversation.', 'یہ گفتگو نہیں ملی۔', 'تعذّر العثور على هذه المحادثة.')}</p>
-                <button type="button" onClick={() => setActiveId('')} className="mt-4 inline-flex items-center justify-center min-h-[44px] px-5 rounded-xl text-sm font-bold text-white" style={{ background: '#0B2438' }}>
+                <button type="button" onClick={() => openConvo('')} className="mt-4 inline-flex items-center justify-center min-h-[44px] px-5 rounded-xl text-sm font-bold text-[#071827]" style={{ background: '#D4A543' }}>
                   <span aria-hidden="true">{BACK}</span>&nbsp;{L('Back to conversations', 'گفتگو کی فہرست پر واپس', 'رجوع إلى المحادثات')}
                 </button>
               </div>
@@ -379,7 +411,7 @@ function Messages() {
           ) : (
             <>
               <div className="px-2 py-1.5 border-b border-gray-100 flex items-center gap-1">
-                <button onClick={() => setActiveId('')} aria-label={L('Back to conversations', 'گفتگو کی فہرست پر واپس', 'رجوع إلى المحادثات')} className="lg:hidden min-w-[44px] min-h-[44px] grid place-items-center rounded-lg hover:bg-gray-100">{BACK}</button>
+                <button onClick={() => openConvo('')} aria-label={L('Back to conversations', 'گفتگو کی فہرست پر واپس', 'رجوع إلى المحادثات')} className="lg:hidden min-w-[44px] min-h-[44px] grid place-items-center rounded-lg hover:bg-gray-100">{BACK}</button>
                 <div className="min-w-0 ps-1">
                   <div className="font-bold text-sm truncate" style={{ color: '#0B2438' }}>{counterpart(active)}</div>
                   {ctx(active) && (rfqHref(active)
@@ -425,17 +457,24 @@ function Messages() {
                   <div className="h-full grid place-items-center text-sm text-gray-500" role="status">{L('Loading messages…', 'پیغامات لوڈ ہو رہے ہیں…', 'جارٍ تحميل الرسائل…')}</div>
                 ) : msgs.length === 0 ? (
                   <div className="h-full grid place-items-center text-sm text-gray-500 text-center px-4">{L('No messages yet. Write the first one below.', 'ابھی کوئی پیغام نہیں۔ نیچے پہلا پیغام لکھیں۔', 'لا توجد رسائل بعد. اكتب أول رسالة في الأسفل.')}</div>
-                ) : msgs.map(m => {
+                ) : msgs.map((m, i) => {
                   const mine = m.sender_id === me
+                  const newDay = i === 0 || riyadhDay(msgs[i - 1].created_at) !== riyadhDay(m.created_at)
                   return (
-                    <div key={m.id} className={`flex ${mine ? 'justify-start' : 'justify-end'}`}>
+                    <div key={m.id}>
+                    {newDay && (
+                      <div className="flex justify-center my-2" role="separator" aria-label={dayLabel(m.created_at, locale)}>
+                        <span className="text-[12px] font-semibold text-gray-600 bg-white border border-gray-200 rounded-full px-3 py-0.5">{dayLabel(m.created_at, locale)}</span>
+                      </div>
+                    )}
+                    <div className={`flex ${mine ? 'justify-start' : 'justify-end'}`}>
                       <div className={`max-w-[75%] rounded-2xl px-3.5 py-2 text-sm ${mine ? 'text-white' : 'bg-white border border-gray-100 text-gray-800'}`} style={mine ? { background: m._status === 'failed' ? '#B42318' : '#0B2438' } : {}}>
                         <div className="whitespace-pre-wrap break-words">{mine ? m.body : <AutoTr text={m.body} locale={locale} />}</div>
                         <div className={`text-xs mt-1 ${mine ? 'text-white/80' : 'text-gray-500'}`}>
                           {m._status === 'pending' ? `${L('Sending…', 'بھیجا جا رہا ہے…', 'جارٍ الإرسال…')}`
                             : m._status === 'failed'
                               ? <button type="button" onClick={() => retry(m)} className="underline font-semibold text-white min-h-[44px] inline-flex items-center gap-1"><Glyph e="⚠" /> {L('Failed to send — retry', 'نہیں بھیجا جا سکا — دوبارہ کوشش کریں', 'تعذّر الإرسال — إعادة المحاولة')}</button>
-                              : <span className="inline-flex items-center gap-1">{fmtTime(m.created_at, locale)}{mine && (m.read_at
+                              : <span className="inline-flex items-center gap-1">{clockTime(m.created_at, locale)}{mine && (m.read_at
                                 ? <span className="inline-flex items-center gap-0.5" title={L('Read', 'پڑھ لیا گیا', 'قُرئت')}><CheckCheck className="w-3.5 h-3.5 text-[#F5C55B]" aria-hidden /><span className="sr-only">{L('Read', 'پڑھ لیا گیا', 'قُرئت')}</span></span>
                                 : <span className="inline-flex items-center" title={L('Sent', 'بھیج دیا', 'أُرسلت')}><Check className="w-3.5 h-3.5" aria-hidden /><span className="sr-only">{L('Sent', 'بھیج دیا', 'أُرسلت')}</span></span>)}{!mine && bstate?.other_id && typeof m.id === 'string' && !m.id.startsWith('temp-') && (
                                 <button type="button" onClick={() => openReport(m.id)} aria-label={L('Report this message', 'اس پیغام کی رپورٹ کریں', 'الإبلاغ عن هذه الرسالة')} title={L('Report', 'رپورٹ', 'إبلاغ')}
@@ -443,6 +482,7 @@ function Messages() {
                               )}</span>}
                         </div>
                       </div>
+                    </div>
                     </div>
                   )
                 })}

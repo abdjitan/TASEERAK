@@ -13,6 +13,8 @@ import { askConfirm } from '@/lib/askConfirm'
 import { storedBuyerType } from '@/lib/buyerType'
 import { paymentTermsLabel } from '@/lib/paymentTerms'
 import { offerComparable, sellerInvoiceLabel, invoiceGateText, isIndependentOffer, sarLabel } from '@/lib/vat'
+import { buttonClass } from '@/components/shared/Button'
+import { payDueAt, payDueSoon } from '@/lib/dealStage'
 
 // حماية الصفقة: محضر استلام + تأكيد دفع + نزاع (للطرفين).
 // مكوّن مشترك يُعرض في صفحة الصفقة لكلٍّ من المشتري والمورد (كلٌّ يرى أزراره).
@@ -24,9 +26,11 @@ import { offerComparable, sellerInvoiceLabel, invoiceGateText, isIndependentOffe
 type Party = { company_name_ar?: string; company_name_en?: string; phone?: string; contact_phone?: string; supplier_tier?: string; provider_type?: string } | null
 
 const GOLD = { background: '#D4A543', color: '#071827' }
+// the shared button (round-4 UX-103): gold = the next step, navy outline = the rest, 44px tall
+const LAYOUT = 'w-full sm:w-auto px-4 text-sm whitespace-nowrap gap-1.5'
 const BTN = 'min-h-11 w-full sm:w-auto px-4 py-2 rounded-xl text-sm font-bold disabled:opacity-50 whitespace-nowrap inline-flex items-center justify-center gap-1.5'
-const PRIMARY = `${BTN} font-extrabold`
-const OUTLINE = `${BTN} border border-[#0B2438] text-[#0B2438] bg-white hover:bg-[#0B2438]/5`
+const PRIMARY = buttonClass('primary', `${LAYOUT} font-extrabold`)
+const OUTLINE = buttonClass('ghost', `${LAYOUT} border border-[#0B2438] text-[#0B2438] bg-white hover:bg-[#0B2438]/5`)
 
 export default function DealProtection({
   offer: initialOffer,
@@ -40,6 +44,8 @@ export default function DealProtection({
   managedByOwner,
   hideContact,
   isHome,
+  pickup,
+  pickupPlace,
   onChange,
 }: {
   offer: any
@@ -60,10 +66,16 @@ export default function DealProtection({
   hideContact?: boolean
   /** The buyer is a home buyer (profiles.buyer_type), from the page's profile: wins over the device copy (UX-068). */
   isHome?: boolean
+  /** The buyer collects the goods from the supplier's shop (rfqs.delivery_required = false) (round-4 UX-035). */
+  pickup?: boolean
+  /** Where the goods are collected (the supplier's city), shown on a pickup deal. */
+  pickupPlace?: string | null
   /** Called with the updated offer after every deal step, so the page's copy never goes stale (UX-069). */
   onChange?: (offer: any) => void
 }) {
   const [offer, setOffer] = useState<any>(initialOffer)
+  // a fresh copy from the page (realtime, tab focus) replaces ours (round-4 UX-004)
+  useEffect(() => { setOffer(initialOffer) }, [initialOffer])
   const [busy, setBusy] = useState('')
   const [showDispute, setShowDispute] = useState(false)
   const [disputeReason, setDisputeReason] = useState('')
@@ -116,7 +128,11 @@ export default function DealProtection({
 
   if (offer.status !== 'accepted' || !(isContractor || isSupplier)) return null
 
-  const canAct = !managedByOwner
+  // a deal the admins closed (a dispute resolved by cancelling it): no buttons, no delay alerts (round-4 UX-088)
+  const closed = !!offer.deal_closed_at
+  // a company team member follows the deal; the owner acts on it (round-4 UX-079)
+  const observer = !!managedByOwner
+  const canAct = !observer && !closed
   const ref = rfqRefNo != null && rfqRefNo !== '' ? String(rfqRefNo) : ''
   const waText = isContractor
     ? L(`Regarding my deal${ref ? ` on request no. ${ref}` : ` ${poNumber}`} on Taseerak`,
@@ -130,13 +146,21 @@ export default function DealProtection({
   // Late stages: a visual alert on top of the hourly bell reminders. No agreed delivery time → no
   // «late» accusation, an amber note instead (UX-095).
   const hasDays = Number(offer.delivery_days) > 0
-  const deliverOverdue = hasDays && !offer.supplier_delivered_at && !!offer.accepted_at && (new Date(offer.accepted_at).getTime() + Number(offer.delivery_days) * 86400000 < Date.now())
+  const deliverOverdue = !closed && hasDays && !offer.supplier_delivered_at && !offer.received_at && !!offer.accepted_at && (new Date(offer.accepted_at).getTime() + Number(offer.delivery_days) * 86400000 < Date.now())
   // the expected delivery day, shown before any delay (UX-145)
   const dueAt = hasDays && offer.accepted_at ? new Date(new Date(offer.accepted_at).getTime() + Number(offer.delivery_days) * 86400000) : null
   const dueToday = !!dueAt && new Date().toDateString() === dueAt.toDateString()
   const dueText = dueAt ? dueAt.toLocaleDateString(dloc, { weekday: 'long', day: 'numeric', month: 'long', timeZone: 'Asia/Riyadh' }) : ''
-  const receiptOverdue = !!offer.supplier_delivered_at && !offer.received_at && (new Date(offer.supplier_delivered_at).getTime() + 48 * 3600000 < Date.now())
+  const receiptOverdue = !closed && !!offer.supplier_delivered_at && !offer.received_at && (new Date(offer.supplier_delivered_at).getTime() + 48 * 3600000 < Date.now())
   const paid = offer.payment_status === 'paid'
+  // payment terms (round-4 UX-034): «دفع مقدّم» is paid before delivery; «آجل» is due 30/60 days after receipt
+  const advance = offer.payment_terms === 'advance'
+  const advanceDue = advance && !paid && !offer.supplier_delivered_at && !offer.received_at
+  const dueAtPay = payDueAt(offer)
+  const dueSoon = payDueSoon(offer)
+  const dueTextPay = dueAtPay ? dueAtPay.toLocaleDateString(dloc, { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'Asia/Riyadh' }) : ''
+  // the buyer's payment button is gold when paying is the next step
+  const payIsNext = !paid && (advanceDue || (!!offer.received_at && (!dueAtPay || dueSoon)))
   const fmtDate = (d: any) => new Date(d).toLocaleString(dloc)
   const SAR = sarLabel(locale)
   const dealAmount = amount != null && amount > 0 ? amount
@@ -156,12 +180,14 @@ export default function DealProtection({
   }
 
   // The tracker: the seller's invoice is a step of its own on the seller's side (UX-127).
+  const paidStep = { k: 'paid', label: advance ? L('Advance payment', 'پیشگی ادائیگی', 'الدفعة المقدّمة') : L('Payment', 'ادائیگی', 'الدفع'), done: paid && !!offer.payment_confirmed_at, at: offer.payment_confirmed_at || offer.paid_marked_at }
   const steps: { k: string; label: string; done: boolean; at: any }[] = [
     { k: 'accept', label: L('Offer chosen', 'آفر منتخب', 'اختيار العرض'), done: true, at: offer.accepted_at },
+    ...(advance ? [paidStep] : []),
     ...(isSupplier ? [{ k: 'invoice', label: L('Invoice', 'انوائس', 'الفاتورة'), done: !!offer.supplier_invoice_url, at: offer.supplier_invoice_at }] : []),
-    { k: 'deliver', label: L('Delivery', 'ڈیلیوری', 'التسليم'), done: !!offer.supplier_delivered_at, at: offer.supplier_delivered_at },
+    { k: 'deliver', label: pickup ? L('Ready for pickup', 'وصولی کے لیے تیار', 'تجهيز الطلب') : L('Delivery', 'ڈیلیوری', 'التسليم'), done: !!offer.supplier_delivered_at, at: offer.supplier_delivered_at },
     { k: 'receipt', label: isContractor ? L('Your receipt', 'آپ کی وصولی', 'استلامك') : L('Buyer receipt', 'خریدار کی وصولی', 'استلام المشتري'), done: !!offer.received_at, at: offer.received_at },
-    { k: 'paid', label: L('Payment', 'ادائیگی', 'الدفع'), done: paid && !!offer.payment_confirmed_at, at: offer.payment_confirmed_at || offer.paid_marked_at },
+    ...(advance ? [] : [paidStep]),
   ]
   const current = steps.findIndex(s => !s.done)
 
@@ -180,9 +206,9 @@ export default function DealProtection({
         <div className="font-semibold text-gray-700"><Glyph e="🧾" /> {invoiceTitle}</div>
         <div className="text-xs text-gray-500 mt-0.5 leading-relaxed">
           {offer.supplier_invoice_url
-            ? <><Check className="inline w-3.5 h-3.5 text-[#0F6E56]" aria-hidden="true" /> {isSupplier ? L('You attached it', 'آپ نے منسلک کر دی', 'أرفقتَها') : L('Attached by the supplier', 'سپلائر نے منسلک کر دی', 'أرفقها المورد')} · {fmtDate(offer.supplier_invoice_at)}</>
+            ? <><Check className="inline w-3.5 h-3.5 text-[#0F6E56]" aria-hidden="true" /> {isSupplier ? (observer ? L('The account owner attached it', 'اکاؤنٹ کے مالک نے منسلک کر دی', 'أرفقها صاحب الحساب') : L('You attached it', 'آپ نے منسلک کر دی', 'أرفقتَها')) : L('Attached by the supplier', 'سپلائر نے منسلک کر دی', 'أرفقها المورد')} · {fmtDate(offer.supplier_invoice_at)}</>
             : isSupplier
-              ? invoiceGateText(vo, locale)
+              ? (observer ? L('Waiting for the account owner to upload the invoice', 'اکاؤنٹ کے مالک کی طرف سے انوائس اپ لوڈ کا انتظار', 'بانتظار رفع صاحب الحساب للفاتورة') : invoiceGateText(vo, locale))
               : L('The supplier attaches it before confirming delivery, and it will show here.', 'سپلائر ڈیلیوری کی تصدیق سے پہلے اسے منسلک کرے گا، اور یہ یہاں نظر آئے گی۔', 'يرفقها المورد قبل تأكيد التسليم، وستظهر هنا.')}
         </div>
       </div>
@@ -205,12 +231,15 @@ export default function DealProtection({
   const deliverySection = (
     <div key="deliver" className={row} style={{ background: offer.supplier_delivered_at ? '#E1F5EE' : '#f9fafb' }}>
       <div className="text-sm min-w-0">
-        <div className="font-semibold text-gray-700">{L('Delivery of goods', 'مال کی ڈیلیوری', 'تسليم البضاعة')}</div>
+        <div className="font-semibold text-gray-700">{pickup ? L('Preparing the order for pickup', 'آرڈر کی وصولی کے لیے تیاری', 'تجهيز الطلب للاستلام') : L('Delivery of goods', 'مال کی ڈیلیوری', 'تسليم البضاعة')}</div>
         <div className="text-xs text-gray-500 mt-0.5">
           {offer.supplier_delivered_at
-            ? <><Check className="inline w-3.5 h-3.5 text-[#0F6E56]" aria-hidden="true" /> {isSupplier ? L('You confirmed delivery', 'آپ نے ڈیلیوری کنفرم کر دی', 'أكّدتَ التسليم') : L('Delivery confirmed', 'ڈیلیوری کی تصدیق ہو گئی', 'تمّ تأكيد التسليم')} · {fmtDate(offer.supplier_delivered_at)}</>
+            ? <><Check className="inline w-3.5 h-3.5 text-[#0F6E56]" aria-hidden="true" /> {isSupplier ? (observer ? L('The account owner confirmed delivery', 'اکاؤنٹ کے مالک نے ڈیلیوری کنفرم کر دی', 'أكّد صاحب الحساب التسليم') : L('You confirmed delivery', 'آپ نے ڈیلیوری کنفرم کر دی', 'أكّدتَ التسليم')) : L('Delivery confirmed', 'ڈیلیوری کی تصدیق ہو گئی', 'تمّ تأكيد التسليم')} — {fmtDate(offer.supplier_delivered_at)}</>
             : isSupplier
-              ? (offer.supplier_invoice_url ? L('Confirm once all the goods are delivered.', 'سارا مال پہنچنے پر تصدیق کریں۔', 'أكّد بعد تسليم كل البضاعة.') : invoiceGateText(vo, locale))
+              ? (observer ? L('Waiting for the account owner to confirm delivery', 'اکاؤنٹ کے مالک کی طرف سے ڈیلیوری کی تصدیق کا انتظار', 'بانتظار تأكيد صاحب الحساب للتسليم')
+                : advanceDue ? L('Waiting for the buyer’s advance payment; then deliver the goods.', 'خریدار کی پیشگی ادائیگی کا انتظار؛ پھر سامان پہنچائیں۔', 'بانتظار دفعة المشتري المقدّمة، ثم تسلّم البضاعة.')
+                : offer.supplier_invoice_url ? L('Confirm once all the goods are delivered.', 'سارا مال پہنچنے پر تصدیق کریں۔', 'أكّد بعد تسليم كل البضاعة.') : invoiceGateText(vo, locale))
+              : pickup ? L('Waiting for the supplier to prepare the order', 'سپلائر کی طرف سے آرڈر کی تیاری کا انتظار', 'بانتظار تجهيز المورد للطلب')
               : L('Waiting for the supplier to deliver and confirm', 'سپلائر کی ڈیلیوری اور تصدیق کا انتظار ہے', 'بانتظار تسليم المورد وتأكيده')}
         </div>
       </div>
@@ -233,7 +262,10 @@ export default function DealProtection({
           {offer.received_at
             ? <><Check className="inline w-3.5 h-3.5 text-[#0F6E56]" aria-hidden="true" /> {isContractor ? L('Recorded: you confirmed receipt', 'ریکارڈ ہو گیا: آپ نے وصولی کنفرم کر دی', 'موثّق: أكّدتَ الاستلام') : L('Recorded: the buyer confirmed receipt', 'ریکارڈ ہو گیا: خریدار نے وصولی کنفرم کر دی', 'موثّق: أكّد المشتري الاستلام')} · {fmtDate(offer.received_at)}</>
             : isContractor && !offer.supplier_delivered_at && !deliverOverdue
-              ? L('Waiting for the supplier to deliver. You confirm receipt once the goods arrive.', 'سپلائر کی ڈیلیوری کا انتظار ہے۔ مال پہنچنے پر وصولی کی تصدیق کریں۔', 'بانتظار تسليم المورد. تؤكّد الاستلام بعد وصول البضاعة.')
+              // the buyer can confirm before the supplier does: the goods may already be there (round-4 UX-003)
+              ? (pickup
+                ? L('Waiting for the supplier to prepare the order. Confirm receipt after you collect the goods from the shop.', 'سپلائر کی طرف سے آرڈر کی تیاری کا انتظار ہے۔ دکان سے سامان لینے کے بعد وصولی کی تصدیق کریں۔', 'بانتظار تجهيز المورد للطلب. أكّد الاستلام بعد استلامك البضاعة من المحل.')
+                : L('Waiting for the supplier to deliver. If the goods have reached you, confirm receipt here.', 'سپلائر کی ڈیلیوری کا انتظار ہے۔ اگر سامان آپ تک پہنچ گیا ہے تو یہاں وصولی کی تصدیق کریں۔', 'بانتظار تسليم المورد. إذا وصلتك البضاعة، أكّد استلامها هنا.'))
               : isContractor
                 ? L('Check the goods, then confirm receipt.', 'سامان چیک کریں، پھر وصولی کی تصدیق کریں۔', 'تحقّق من البضاعة، ثم أكّد استلامها.')
                 : L('Waiting for the buyer to confirm receipt of the goods', 'خریدار کی طرف سے مال کی وصولی کی تصدیق کا انتظار ہے', 'بانتظار تأكيد المشتري لاستلام البضاعة')}
@@ -242,15 +274,15 @@ export default function DealProtection({
           <div className="text-xs text-gray-600 mt-0.5">{L('Confirming means the material arrived as you ordered it.', 'تصدیق کا مطلب ہے کہ مال آپ کے آرڈر کے مطابق پہنچ گیا ہے۔', 'تأكيدك يعني أن المادة وصلت كما طلبت.')}</div>
         )}
       </div>
-      {!offer.received_at && isContractor && canAct && (offer.supplier_delivered_at || deliverOverdue) && (
+      {!offer.received_at && isContractor && canAct && (
         <div className={actions}>
           <button type="button" onClick={async () => {
             if (!(await askConfirm(home ? L('Did the goods reach you complete and as you ordered?\n\nWe will save the date of receipt, and this confirmation cannot be undone.', 'کیا آپ کو سامان پورا اور آرڈر کے مطابق مل گیا؟\n\nہم وصولی کی تاریخ محفوظ کریں گے، اور یہ تصدیق واپس نہیں لی جا سکتی۔', 'هل وصلتك البضاعة كاملة وكما طلبت؟\n\nسنحفظ تاريخ الاستلام، ولا يمكن التراجع عن هذا التأكيد.') : L('Have you actually received the goods, matching the order?\n\nA dated receipt record will be saved. Note: confirming receipt without actually receiving lowers your rating and makes you accountable.', 'کیا آپ کو واقعی مال مل گیا ہے اور وہ آرڈر کے مطابق ہے؟\n\nتاریخ کے ساتھ وصولی کا ریکارڈ محفوظ ہو جائے گا۔ نوٹ: مال ملے بغیر وصولی کنفرم کرنے سے آپ کی ریٹنگ کم ہو گی اور آپ جواب دہ ہوں گے۔', 'هل استلمت البضاعة فعلياً ومطابقة للمطلوب؟\n\nسيُسجَّل محضر استلام موثّق بالتاريخ. تنبيه: تأكيد الاستلام دون استلام فعلي يُخفّض تقييمك ويُعرّضك للمساءلة.'), { okLabel: L('Yes, I received it', 'ہاں، مل گیا', 'نعم، استلمتها'), cancelLabel: L('Go back', 'واپس', 'تراجع') }))) return
             if (await callRpc('confirm_receipt', { p_offer_id: offer.id }, 'receipt')) setJustReceived(true)
-          }} disabled={busy === 'receipt'} className={offer.supplier_delivered_at ? PRIMARY : OUTLINE} style={offer.supplier_delivered_at ? GOLD : undefined}>
-            <Check className="w-4 h-4" aria-hidden="true" /> {L('I confirm receipt', 'میں وصولی کنفرم کرتا ہوں', 'أؤكّد الاستلام')}
+          }} disabled={busy === 'receipt'} className={offer.supplier_delivered_at && !payIsNext ? PRIMARY : OUTLINE} style={offer.supplier_delivered_at && !payIsNext ? GOLD : undefined}>
+            <Check className="w-4 h-4" aria-hidden="true" /> {pickup ? L('I collected the goods from the shop', 'میں نے دکان سے سامان لے لیا', 'استلمتُ البضاعة من المحل') : L('I received the goods', 'مجھے سامان مل گیا', 'استلمتُ البضاعة')}
           </button>
-          {offer.dispute_status !== 'open' && (
+          {offer.dispute_status !== 'open' && (offer.supplier_delivered_at || deliverOverdue) && (
             <button type="button" onClick={() => openDispute(L('The goods were not delivered or do not match the order', 'مال ڈیلیور نہیں ہوا یا آرڈر کے مطابق نہیں ہے', 'البضاعة لم تُسلَّم أو لم تتطابق مع المطلوب'))}
               className={`${BTN} border border-red-300 text-red-700 bg-white hover:bg-red-50`}>
               {L('Not received', 'وصول نہیں ہوا', 'لم يتم الاستلام')}
@@ -273,10 +305,17 @@ export default function DealProtection({
         <div className="text-xs text-gray-500 mt-0.5 leading-relaxed">
           {paid
             ? (offer.payment_confirmed_at
-              ? <><Check className="inline w-3.5 h-3.5 text-[#0F6E56]" aria-hidden="true" /> {L('Supplier confirmed receiving the payment', 'سپلائر نے ادائیگی وصول ہونا کنفرم کر دیا', 'أكّد المورد استلام الدفعة')} · {fmtDate(offer.payment_confirmed_at)}</>
-              : (isSupplier ? L('The buyer says they paid: confirm once you receive the amount.', 'خریدار کے مطابق ادائیگی ہو گئی: رقم ملنے پر تصدیق کریں۔', 'يقول المشتري إنه دفع: أكّد بعد استلامك المبلغ.') : L('You confirmed payment; waiting for the supplier to confirm receiving it', 'آپ نے ادائیگی کنفرم کر دی؛ سپلائر کی تصدیق کا انتظار ہے', 'أكّدتَ الدفع، وبانتظار تأكيد المورد استلامه')))
+              ? <><Check className="inline w-3.5 h-3.5 text-[#0F6E56]" aria-hidden="true" /> {isSupplier ? (observer ? L('The account owner confirmed receiving the payment', 'اکاؤنٹ کے مالک نے ادائیگی وصول ہونا کنفرم کر دیا', 'أكّد صاحب الحساب استلام الدفعة') : L('You confirmed receiving the payment', 'آپ نے ادائیگی وصول ہونا کنفرم کر دیا', 'أكّدتَ استلام الدفعة')) : L('Supplier confirmed receiving the payment', 'سپلائر نے ادائیگی وصول ہونا کنفرم کر دیا', 'أكّد المورد استلام الدفعة')} — {fmtDate(offer.payment_confirmed_at)}</>
+              : (isSupplier
+                ? (observer ? L('The buyer paid; waiting for the account owner to confirm receiving the amount.', 'خریدار نے ادائیگی کر دی؛ اکاؤنٹ کے مالک کی طرف سے رقم ملنے کی تصدیق کا انتظار ہے۔', 'دفع المشتري، وبانتظار تأكيد صاحب الحساب لاستلام المبلغ.') : L('The buyer says they paid: confirm once you receive the amount.', 'خریدار کے مطابق ادائیگی ہو گئی: رقم ملنے پر تصدیق کریں۔', 'يقول المشتري إنه دفع: أكّد بعد استلامك المبلغ.'))
+                : L('You confirmed payment; waiting for the supplier to confirm receiving it', 'آپ نے ادائیگی کنفرم کر دی؛ سپلائر کی تصدیق کا انتظار ہے', 'أكّدتَ الدفع، وبانتظار تأكيد المورد استلامه')))
             : <>
-                {dealAmount ? <>{L('Amount', 'رقم', 'المبلغ')}: <b className="text-[#0B2438]">{dealAmount.toLocaleString('en-US', { maximumFractionDigits: 2 })} {SAR}</b>{extrasPending ? <span className="font-semibold text-[#8F6820]"> {L('+ delivery charges once the supplier confirms them', '+ سپلائر کی تصدیق کے بعد ڈیلیوری چارجز', '+ رسوم التوصيل بعد تأكيد المورد')}</span> : null}{terms ? ` · ${terms}` : ''}. </> : terms ? <>{terms}. </> : null}
+                {dealAmount ? <>{L('Amount', 'رقم', 'المبلغ')}: <b className="text-[#0B2438]">{dealAmount.toLocaleString('en-US', { maximumFractionDigits: 2 })} {SAR}</b>{extrasPending ? <span className="font-semibold text-[#8F6820]"> {isSupplier ? L('+ delivery charges once you confirm them', '+ آپ کی تصدیق کے بعد ڈیلیوری چارجز', '+ رسوم التوصيل بعد تأكيدك لها') : L('+ delivery charges once the supplier confirms them', '+ سپلائر کی تصدیق کے بعد ڈیلیوری چارجز', '+ رسوم التوصيل بعد تأكيد المورد')}</span> : null}{terms ? ` · ${terms}` : ''}. </> : terms ? <>{terms}. </> : null}
+                {/* «آجل»: the due date; «مقدّم»: paid before delivery (round-4 UX-034) */}
+                {dueAtPay && <span className="block mt-1 font-bold text-[#0B2438]">{L(`Payment is due on ${dueTextPay}.`, `ادائیگی کی آخری تاریخ: ${dueTextPay}۔`, `الدفع مستحق في ${dueTextPay}.`)}</span>}
+                {advanceDue && (isContractor
+                  ? <span className="block mt-1 font-bold text-[#0B2438]">{L('Waiting for your advance payment; then the supplier delivers. Do not pay before agreeing on the delivery date in messages.', 'آپ کی پیشگی ادائیگی کا انتظار ہے؛ پھر سپلائر سامان پہنچائے گا۔ پیغامات میں ڈیلیوری کی تاریخ طے کیے بغیر ادائیگی نہ کریں۔', 'بانتظار دفعتك المقدّمة، ثم يسلّم المورد. لا تدفع قبل الاتفاق على موعد التسليم عبر الرسائل.')}</span>
+                  : <span className="block mt-1 font-bold text-[#0B2438]">{L('This offer asks for payment in advance: waiting for the buyer’s payment.', 'اس آفر میں پیشگی ادائیگی ہے: خریدار کی ادائیگی کا انتظار ہے۔', 'يطلب هذا العرض الدفع مقدّماً: بانتظار دفعة المشتري.')}</span>)}
                 {isContractor
                   ? L('Pay the supplier directly; the platform never receives any money.', 'سپلائر کو براہ راست ادائیگی کریں؛ پلیٹ فارم کوئی رقم وصول نہیں کرتا۔', 'ادفع للمورد مباشرةً؛ فالمنصة لا تستلم أي مبالغ.')
                   : L('The buyer pays you directly; the platform never receives any money.', 'خریدار آپ کو براہ راست ادائیگی کرتا ہے؛ پلیٹ فارم کوئی رقم وصول نہیں کرتا۔', 'يدفع لك المشتري مباشرةً؛ فالمنصة لا تستلم أي مبالغ.')}
@@ -287,8 +326,8 @@ export default function DealProtection({
       <div className={actions}>
         {!paid && isContractor && canAct && (
           <button type="button" onClick={async () => { if ((await askConfirm(dealAmount ? L(`Have you paid the supplier ${fmtAmt(dealAmount)} SAR for this order?${extrasPending ? '\n\nDelivery charges may still be added once the supplier confirms them, so it is better to pay after that.' : ''}\n\nThis confirmation is recorded with its date and cannot be undone.`, `کیا آپ نے اس آرڈر کے لیے سپلائر کو ${fmtAmt(dealAmount)} ریال ادا کر دیے ہیں؟${extrasPending ? '\n\nسپلائر کی تصدیق کے بعد ڈیلیوری چارجز شامل ہو سکتے ہیں، اس لیے بہتر ہے کہ اس کے بعد ادائیگی کریں۔' : ''}\n\nیہ تصدیق تاریخ کے ساتھ ریکارڈ ہو گی اور واپس نہیں لی جا سکتی۔`, `هل دفعت للمورد مبلغ ${fmtAmt(dealAmount)} ر.س لهذا الطلب؟${extrasPending ? '\n\nقد تُضاف رسوم التوصيل بعد تأكيد المورد لها، فيُفضّل الدفع بعد تأكيدها.' : ''}\n\nسيُسجَّل هذا التأكيد بتاريخه ولا يمكن التراجع عنه.`) : L('Have you paid the supplier the amount of this order?\n\nThis confirmation is recorded with its date and cannot be undone.', 'کیا آپ نے اس آرڈر کی رقم سپلائر کو ادا کر دی ہے؟\n\nیہ تصدیق تاریخ کے ساتھ ریکارڈ ہو گی اور واپس نہیں لی جا سکتی۔', 'هل دفعت للمورد مبلغ هذا الطلب؟\n\nسيُسجَّل هذا التأكيد بتاريخه ولا يمكن التراجع عنه.'), { okLabel: L('Yes, I paid', 'ہاں، ادا کر دیا', 'نعم، دفعت'), cancelLabel: L('Go back', 'واپس', 'تراجع') }))) callRpc('mark_paid', { p_offer_id: offer.id }, 'paid') }}
-            disabled={busy === 'paid'} className={offer.received_at ? PRIMARY : OUTLINE} style={offer.received_at ? GOLD : undefined}>
-            <Check className="w-4 h-4" aria-hidden="true" /> {L('Confirm payment', 'ادائیگی کی تصدیق کریں', 'تأكيد الدفع')}
+            disabled={busy === 'paid'} className={payIsNext ? PRIMARY : OUTLINE} style={payIsNext ? GOLD : undefined}>
+            <Check className="w-4 h-4" aria-hidden="true" /> {advanceDue ? L('Record the advance payment', 'پیشگی ادائیگی درج کریں', 'سجّل الدفع') : L('Confirm payment', 'ادائیگی کی تصدیق کریں', 'تأكيد الدفع')}
           </button>
         )}
         {paid && !offer.payment_confirmed_at && isSupplier && canAct && (
@@ -302,35 +341,49 @@ export default function DealProtection({
   )
 
   const sections = isSupplier
-    ? [invoiceSection, deliverySection, receiptSection, paymentSection]
-    : [deliverySection, invoiceSection, receiptSection, rateCta, paymentSection]
+    ? (advanceDue ? [paymentSection, invoiceSection, deliverySection, receiptSection] : [invoiceSection, deliverySection, receiptSection, paymentSection])
+    : (advanceDue ? [paymentSection, deliverySection, invoiceSection, receiptSection, rateCta] : [deliverySection, invoiceSection, receiptSection, rateCta, paymentSection])
 
   return (
     <div id="deal" className="bg-white rounded-2xl shadow-sm border border-gray-200 p-4 sm:p-6 print:hidden scroll-mt-20" dir={dir}>
       <h3 className="text-base font-bold mb-1" style={{ color: '#0B2438' }}><Glyph e="🛡" /> {L('Deal steps', 'ڈیل کے مراحل', 'خطوات الصفقة')}</h3>
       <p className="text-xs text-gray-500 mb-3">{L('The platform records each stage of the deal as proof that protects both sides; it never holds any money.', 'پلیٹ فارم ڈیل کے ہر مرحلے کو ریکارڈ کرتا ہے تاکہ دونوں فریقوں کا تحفظ ہو؛ یہ کوئی رقم اپنے پاس نہیں رکھتا۔', 'توثّق المنصة مراحل الصفقة دليلاً يحمي الطرفين، ولا تحتفظ بأي مبالغ.')}</p>
-      {managedByOwner && (
-        <div className="mb-4 rounded-xl bg-[#0B2438]/5 border border-[#0B2438]/15 text-[#0B2438] text-xs font-semibold px-3 py-2">
-          <Glyph e="ℹ" /> {L('The account owner manages this deal.', 'اس ڈیل کا انتظام اکاؤنٹ کا مالک کرتا ہے۔', 'إدارة هذه الصفقة لدى صاحب الحساب.')}
+      {closed && (
+        <div role="status" className="mb-4 rounded-xl bg-gray-100 border border-gray-300 text-gray-800 text-sm font-semibold px-3 py-2 leading-relaxed">
+          <Glyph e="ℹ" /> {L('This deal was cancelled by an admin decision', 'یہ ڈیل انتظامیہ کے فیصلے سے منسوخ کر دی گئی', 'أُلغيت هذه الصفقة بقرار الإدارة')}{offer.deal_closed_reason ? <>: <span dir="auto">{offer.deal_closed_reason}</span></> : '.'}
         </div>
       )}
-      {dueAt && !deliverOverdue && !offer.supplier_delivered_at && (
+      {/* a team member: the supplier page shows the one «يدير صاحب الحساب» note (round-4 UX-079) */}
+      {pickup && (
+        <div className="mb-4 rounded-xl bg-[#0B2438]/5 border border-[#0B2438]/15 text-[#0B2438] text-xs font-semibold px-3 py-2 leading-relaxed">
+          <Glyph e="📍" /> {pickupPlace
+            ? L(`Pickup place: ${pickupPlace}`, `وصولی کی جگہ: ${pickupPlace}`, `مكان الاستلام: ${pickupPlace}`)
+            : L('The buyer collects the goods from the supplier’s shop.', 'خریدار سامان سپلائر کی دکان سے لے گا۔', 'يستلم المشتري البضاعة من محل المورد.')}
+        </div>
+      )}
+      {!closed && dueAt && !deliverOverdue && !offer.supplier_delivered_at && !offer.received_at && (
         <div className="mb-4 rounded-xl bg-[#0B2438]/5 border border-[#0B2438]/15 text-[#0B2438] text-xs font-semibold px-3 py-2 leading-relaxed">
           <Glyph e="📅" /> {isSupplier
-            ? L(`The delivery date you committed to: ${dueText}`, `آپ کی طے کردہ ڈیلیوری کی تاریخ: ${dueText}`, `موعد التوصيل الذي التزمتَ به: ${dueText}`)
-            : dueToday
-              ? L('Your order is expected to arrive today, by the supplier’s date.', 'سپلائر کی تاریخ کے مطابق آپ کا آرڈر آج پہنچنے کی توقع ہے۔', 'يُتوقَّع وصول طلبك اليوم بحسب موعد المورد.')
-              : L(`Expected delivery date: ${dueText}`, `متوقع ڈیلیوری کی تاریخ: ${dueText}`, `موعد التوصيل المتوقَّع: ${dueText}`)}
+            ? (observer ? L(`The committed delivery date: ${dueText}`, `طے شدہ ڈیلیوری کی تاریخ: ${dueText}`, `موعد التوصيل الملتزَم به: ${dueText}`) : pickup ? L(`The date you committed to have the order ready: ${dueText}`, `آرڈر تیار کرنے کی طے کردہ تاریخ: ${dueText}`, `موعد تجهيز الطلب الذي التزمتَ به: ${dueText}`) : L(`The delivery date you committed to: ${dueText}`, `آپ کی طے کردہ ڈیلیوری کی تاریخ: ${dueText}`, `موعد التوصيل الذي التزمتَ به: ${dueText}`))
+            : pickup
+              ? L(`The order is expected to be ready: ${dueText}`, `آرڈر کی تیاری کی متوقع تاریخ: ${dueText}`, `موعد تجهيز الطلب المتوقَّع: ${dueText}`)
+              : dueToday
+                ? L('Your order is expected to arrive today, by the supplier’s date.', 'سپلائر کی تاریخ کے مطابق آپ کا آرڈر آج پہنچنے کی توقع ہے۔', 'يُتوقَّع وصول طلبك اليوم بحسب موعد المورد.')
+                : L(`Expected delivery date: ${dueText}`, `متوقع ڈیلیوری کی تاریخ: ${dueText}`, `موعد التوصيل المتوقَّع: ${dueText}`)}
         </div>
       )}
-      {deliverOverdue && (
+      {deliverOverdue && !pickup && (
         <div className="mb-4 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-xs font-semibold px-3 py-2 leading-relaxed">
-          <Glyph e="⏰" /> {isSupplier ? L('You are past the agreed delivery date. Please confirm delivery or contact the buyer.', 'آپ طے شدہ ڈیلیوری کی تاریخ سے لیٹ ہیں۔ براہ کرم ڈیلیوری کنفرم کریں یا خریدار سے رابطہ کریں۔', 'تأخّرت عن موعد التوصيل المتّفق عليه. يُرجى تأكيد التسليم أو التواصل مع المشتري.') : L('The supplier is past the agreed delivery date. Follow up with them, or report a problem below.', 'سپلائر طے شدہ ڈیلیوری کی تاریخ سے لیٹ ہے۔ اس سے رابطہ کریں یا نیچے مسئلہ بتائیں۔', 'تأخّر المورد عن موعد التوصيل المتّفق عليه. تابع معه، أو أبلغ عن مشكلة أدناه.')}
+          <Glyph e="⏰" /> {isSupplier
+            ? (observer ? L('The agreed delivery date has passed; the account owner follows it up.', 'طے شدہ ڈیلیوری کی تاریخ گزر گئی؛ اکاؤنٹ کا مالک اسے دیکھ رہا ہے۔', 'تجاوز موعد التوصيل المتّفق عليه، ويتابعه صاحب الحساب.') : L('You are past the agreed delivery date. Please confirm delivery or contact the buyer.', 'آپ طے شدہ ڈیلیوری کی تاریخ سے لیٹ ہیں۔ براہ کرم ڈیلیوری کنفرم کریں یا خریدار سے رابطہ کریں۔', 'تأخّرت عن موعد التوصيل المتّفق عليه. يُرجى تأكيد التسليم أو التواصل مع المشتري.'))
+            : L('The supplier is past the agreed delivery date. Follow up with them, or report a problem below.', 'سپلائر طے شدہ ڈیلیوری کی تاریخ سے لیٹ ہے۔ اس سے رابطہ کریں یا نیچے مسئلہ بتائیں۔', 'تأخّر المورد عن موعد التوصيل المتّفق عليه. تابع معه، أو أبلغ عن مشكلة أدناه.')}
         </div>
       )}
-      {!hasDays && !offer.supplier_delivered_at && (
+      {!closed && !hasDays && !offer.supplier_delivered_at && !offer.received_at && !pickup && (
         <div className="mb-4 rounded-xl bg-amber-50 border border-amber-200 text-amber-800 text-xs font-semibold px-3 py-2 leading-relaxed">
-          <Glyph e="⏱" /> {isSupplier ? L('Your offer gave no delivery time. Agree on a delivery date with the buyer in messages.', 'آپ کی آفر میں ڈیلیوری کا وقت نہیں تھا۔ پیغامات میں خریدار سے تاریخ طے کریں۔', 'لم تحدّد مدة التوصيل في عرضك. اتفق مع المشتري على موعد التسليم عبر الرسائل.') : L('The supplier gave no delivery time. Agree on a delivery date with them in messages.', 'سپلائر نے ڈیلیوری کا وقت نہیں بتایا۔ پیغامات میں ان سے تاریخ طے کریں۔', 'لم يحدّد المورد مدة التوصيل. اتفق معه على موعد التسليم عبر الرسائل.')}
+          <Glyph e="⏱" /> {isSupplier
+            ? (observer ? L('The offer gave no delivery time; the account owner agrees on a date with the buyer.', 'آفر میں ڈیلیوری کا وقت نہیں تھا؛ اکاؤنٹ کا مالک خریدار سے تاریخ طے کرے گا۔', 'لم يحدّد العرض مدة التوصيل، ويتفق صاحب الحساب مع المشتري على الموعد.') : L('Your offer gave no delivery time. Agree on a delivery date with the buyer in messages.', 'آپ کی آفر میں ڈیلیوری کا وقت نہیں تھا۔ پیغامات میں خریدار سے تاریخ طے کریں۔', 'لم تحدّد مدة التوصيل في عرضك. اتفق مع المشتري على موعد التسليم عبر الرسائل.'))
+            : L('The supplier gave no delivery time. Agree on a delivery date with them in messages.', 'سپلائر نے ڈیلیوری کا وقت نہیں بتایا۔ پیغامات میں ان سے تاریخ طے کریں۔', 'لم يحدّد المورد مدة التوصيل. اتفق معه على موعد التسليم عبر الرسائل.')}
         </div>
       )}
       {receiptOverdue && (
@@ -338,7 +391,7 @@ export default function DealProtection({
           <Glyph e="⏰" /> {isContractor ? L('More than 48 hours since delivery was confirmed. Please confirm receipt or report a problem.', 'ڈیلیوری کنفرم ہوئے 48 گھنٹے سے زیادہ ہو گئے۔ براہ کرم وصولی کنفرم کریں یا مسئلہ بتائیں۔', 'مضى أكثر من 48 ساعة على تأكيد التسليم. يُرجى تأكيد الاستلام أو الإبلاغ عن مشكلة.') : L('Waiting for the buyer to confirm receipt of the goods.', 'خریدار کی طرف سے مال کی وصولی کی تصدیق کا انتظار ہے۔', 'بانتظار تأكيد المشتري لاستلام البضاعة.')}
         </div>
       )}
-      {w && !hideContact && (
+      {w && !hideContact && !observer && !closed && (
         <a href={w} target="_blank" rel="noopener noreferrer"
           className="inline-flex items-center gap-1.5 text-sm mb-4 px-4 min-h-11 rounded-xl font-semibold border border-[#0B2438] text-[#0B2438] bg-white hover:bg-[#0B2438]/5">
           <Glyph e="💬" /> {isContractor ? L('Contact the supplier on WhatsApp', 'سپلائر سے واٹس ایپ پر رابطہ کریں', 'تواصل مع المورد عبر واتساب') : L('Contact the buyer on WhatsApp', 'خریدار سے واٹس ایپ پر رابطہ کریں', 'تواصل مع المشتري عبر واتساب')}
@@ -377,7 +430,9 @@ export default function DealProtection({
               <div className="text-xs text-gray-800 mt-1 leading-relaxed">
                 {L('The buyer reported a problem with this deal: ', 'خریدار نے اس ڈیل میں ایک مسئلہ رپورٹ کیا: ', 'أبلغ المشتري عن مشكلة في هذه الصفقة: ')}<b className="text-red-700" dir="auto">{offer.dispute_reason}</b>
               </div>
-              <div className="text-xs text-gray-600 mt-1 leading-relaxed">{L('The Taseerak team will contact you. You can explain your side to the buyer and attach the invoice or a delivery photo.', 'تسعیرک کی ٹیم آپ سے رابطہ کرے گی۔ آپ خریدار کو اپنا موقف سمجھا سکتے ہیں اور انوائس یا ڈیلیوری کی تصویر منسلک کر سکتے ہیں۔', 'سيتواصل معك فريق تسعيرك. يمكنك توضيح موقفك للمشتري، وإرفاق الفاتورة أو صورة التسليم.')}</div>
+              <div className="text-xs text-gray-600 mt-1 leading-relaxed">{observer
+                ? L('The Taseerak team will contact the account owner.', 'تسعیرک کی ٹیم اکاؤنٹ کے مالک سے رابطہ کرے گی۔', 'سيتواصل فريق تسعيرك مع صاحب الحساب.')
+                : L('The Taseerak team will contact you. You can explain your side to the buyer and attach the invoice or a delivery photo.', 'تسعیرک کی ٹیم آپ سے رابطہ کرے گی۔ آپ خریدار کو اپنا موقف سمجھا سکتے ہیں اور انوائس یا ڈیلیوری کی تصویر منسلک کر سکتے ہیں۔', 'سيتواصل معك فريق تسعيرك. يمكنك توضيح موقفك للمشتري، وإرفاق الفاتورة أو صورة التسليم.')}</div>
               {canAct && (
                 <button type="button" onClick={messageOtherSide} className={`${OUTLINE} mt-2`}><Glyph e="💬" /> {L('Message the buyer', 'خریدار کو پیغام بھیجیں', 'راسل المشتري')}</button>
               )}

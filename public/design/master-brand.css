@@ -242,6 +242,11 @@ html[dir="ltr"] #taseerak-landing .hero::after {
 @media (max-width: 860px) {
   #taseerak-landing .nav.scrolled .nav-links { background: rgba(5,17,29,.97); border: 1px solid rgba(245,197,91,.18); }
   #taseerak-landing .nav.scrolled .nav-links a { color: #fff; }
+  /* the open menu after scrolling: white links and «تسجيل الدخول» on the navy panel (round-4 UX-020) */
+  #taseerak-landing .nav.scrolled.mobile-open .nav-links a,
+  #taseerak-landing .nav.scrolled.mobile-open .nav-links .btn-ghost { color: #fff !important; opacity: 1; }
+  #taseerak-landing .nav.scrolled.mobile-open .nav-links .btn-ghost { border-color: rgba(255,255,255,.35); }
+  #taseerak-landing .nav.scrolled.mobile-open .nav-links .nav-mobile-extra { border-top-color: rgba(255,255,255,.14); }
 }
 @media (max-width: 560px) {
   #taseerak-landing .hero { padding: 112px 0 66px; background-position: 44% center; }
@@ -333,7 +338,6 @@ html[dir="ltr"] #taseerak-landing .hero::after {
   #taseerak-landing .cat-card h3 { font-size: 15px; margin: 0; }
   #taseerak-landing .cat-card p { display: none; }
   #taseerak-landing .cat-grid .cat-card:last-child:nth-child(odd) { grid-column: 1 / -1; }
-  #taseerak-landing .live-card .offer + .offer + .offer { display: none; }
 }
 /* 44px targets on the landing (nav links, language buttons, FAQ link) */
 #taseerak-landing .nav-links a, #taseerak-landing .lang button, #taseerak-landing .faq-more a { min-height: 44px; display: inline-flex; align-items: center; }

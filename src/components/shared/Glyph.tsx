@@ -1,3 +1,4 @@
+// Round-4 UX-113: warning/waiting marks in dark gold #9D7425, the orange dot in brand gold (the orange palette is remapped).
 // Inline line icons that replace the old emoji (design language: one stroke icon set, no emoji).
 // Sized 1em so it follows the surrounding text size (text-5xl empty-state tiles stay big).
 import {
@@ -14,12 +15,12 @@ import {
 const MAP: Record<string, [any, string?]> = {
   '🏢': [Building2], '📍': [MapPin], '📞': [Phone], '🗑': [Trash2], '🕐': [Clock], '👤': [User], '👥': [Users],
   '🔍': [Search], '📈': [TrendingUp], '📊': [BarChart3], '🏆': [Trophy, 'text-[#D4A543]'], '📦': [Package],
-  '🎉': [Sparkles, 'text-[#D4A543]'], '🧾': [ReceiptText], '🔔': [Bell], '🔒': [Lock], '⚠': [AlertTriangle, 'text-amber-600'],
+  '🎉': [Sparkles, 'text-[#D4A543]'], '🧾': [ReceiptText], '🔔': [Bell], '🔒': [Lock], '⚠': [AlertTriangle, 'text-[#9D7425]'],
   '❌': [XCircle, 'text-red-500'], '✅': [CheckCircle2, 'text-emerald-600'], '📋': [ClipboardList], '📤': [Upload],
-  '🎯': [Target], '⏳': [Hourglass, 'text-amber-600'], '⭐': [Star, 'text-[#D4A543]'], '👋': [Hand, 'text-[#D4A543]'],
+  '🎯': [Target], '⏳': [Hourglass, 'text-[#9D7425]'], '⭐': [Star, 'text-[#D4A543]'], '👋': [Hand, 'text-[#D4A543]'],
   '📥': [Inbox], '💵': [Wallet],
   '📭': [Inbox], '🟢': [Circle, 'text-emerald-500 fill-emerald-500'], '🔴': [Circle, 'text-red-500 fill-red-500'],
-  '🟠': [Circle, 'text-orange-500 fill-orange-500'], '⏰': [AlarmClock], '🗓': [CalendarDays], '📅': [CalendarDays],
+  '🟠': [Circle, 'text-[#D4A543] fill-[#D4A543]'], '⏰': [AlarmClock], '🗓': [CalendarDays], '📅': [CalendarDays],
   '⚙': [Settings2], '💬': [MessageCircle], '🚫': [Ban, 'text-red-500'], '⚡': [Zap], '📎': [Paperclip], '📷': [Camera],
   '🛡': [ShieldCheck], '📉': [TrendingDown], '❓': [HelpCircle], '📄': [FileText], '📝': [PenLine], '🏗': [HardHat],
   '🚚': [Truck], '🏘': [Home], '💳': [CreditCard], '💡': [Lightbulb, 'text-[#D4A543]'], '🎁': [Sparkles], '🏷': [Tag],

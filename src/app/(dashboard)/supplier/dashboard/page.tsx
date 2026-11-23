@@ -12,7 +12,7 @@ import { toast } from 'sonner'
 import Logo from '@/components/shared/Logo'
 import LanguageSwitcher from '@/components/shared/LanguageSwitcher'
 import { useTranslation } from '@/i18n'
-import { getSubCategoryLabel, getProductLabel, getUnitLabel, getRegionLabel, SUB_CATEGORIES } from '@/types'
+import { getSubCategoryLabel, getProductLabel, getUnitLabel, getRegionLabel, SUB_CATEGORIES, detectSubCategory } from '@/types'
 import { sectionOfSub, BROWSE_SECTIONS } from '@/lib/browseCategories'
 import { rfqDisplayName } from '@/lib/rfqName'
 import AppShell from '@/components/shared/AppShell'
@@ -26,7 +26,7 @@ import { clearAllLocalDrafts } from '@/lib/localDraft'
 import Glyph from '@/components/shared/Glyph'
 import { daysText, arMaterials, arCount } from '@/lib/text'
 import { askConfirm } from '@/lib/askConfirm'
-import { Check, ChevronDown, ChevronUp } from 'lucide-react'
+import { Check, ChevronDown, ChevronUp, X } from 'lucide-react'
 import { realtimeTopic } from '@/lib/realtimeTopic'
 
 const txt = {
@@ -42,7 +42,7 @@ const txt = {
     sar: 'ر.س',
   },
   en: {
-    welcome: 'Hello', subtitle: 'Browse available RFQs and submit your offers',
+    welcome: 'Hello', subtitle: 'Browse open price requests and send your offers',
     logout: 'Logout', openRfqs: 'Waiting for your price', pendingOffers: 'Waiting for the buyer',
     acceptedOffers: 'Chosen offers', revenue: 'Need your reply',
     tabRfqs: 'Price requests', tabOffers: 'My Offers',
@@ -53,14 +53,14 @@ const txt = {
     sar: 'SAR',
   },
   ur: {
-    welcome: 'خوش آمدید', subtitle: 'دستیاب درخواستیں دیکھیں اور اپنی پیشکشیں جمع کریں',
+    welcome: 'خوش آمدید', subtitle: 'کھلی قیمت کی درخواستیں دیکھیں اور اپنی آفرز بھیجیں',
     logout: 'لاگ آؤٹ', openRfqs: 'آپ کی قیمت کی منتظر', pendingOffers: 'خریدار کے فیصلے کی منتظر',
     acceptedOffers: 'منتخب آفرز', revenue: 'آپ کے جواب کی منتظر',
-    tabRfqs: 'قیمت کی درخواستیں', tabOffers: 'میری پیشکشیں',
-    noRfqs: 'کوئی کھلی درخواست نہیں', noRfqsSub: 'یقینی بنائیں کہ آپ کی مہارتیں اور مقام مکمل ہیں تاکہ پہلی مماثل درخواست آپ تک پہنچے؛ ہم فوراً آپ کو بتائیں گے۔',
-    noOffers: 'ابھی تک کوئی پیشکش نہیں', noOffersSub: 'درخواستیں دیکھیں اور پہلی پیشکش جمع کریں',
-    submitOffer: 'ابھی قیمت دیں', offerSubmitted: 'آفر بھیج دی گئی', accepted: 'قبول', rejected: 'منتخب نہیں ہوئی', pending: 'خریدار کے فیصلے کی منتظر',
-    day: 'دن', offer: 'پیشکش', loading: 'لوڈ ہو رہا ہے...',
+    tabRfqs: 'قیمت کی درخواستیں', tabOffers: 'میری آفرز',
+    noRfqs: 'کوئی کھلی درخواست نہیں', noRfqsSub: 'یقینی بنائیں کہ آپ کے تخصصات اور مقام مکمل ہیں تاکہ پہلی مماثل درخواست آپ تک پہنچے؛ ہم فوراً آپ کو بتائیں گے۔',
+    noOffers: 'ابھی تک کوئی آفر نہیں', noOffersSub: 'درخواستیں دیکھیں اور پہلی آفر بھیجیں',
+    submitOffer: 'ابھی قیمت دیں', offerSubmitted: 'آفر بھیج دی گئی', accepted: 'منتخب', rejected: 'منتخب نہیں ہوئی', pending: 'خریدار کے فیصلے کی منتظر',
+    day: 'دن', offer: 'آفر', loading: 'لوڈ ہو رہا ہے...',
     sar: 'ریال',
   },
 }
@@ -84,6 +84,15 @@ export default function SupplierDashboard() {
   const [pricesCount, setPricesCount] = useState<any>(null)
   // UX-169: product names with a saved price, so a card can say «لديك أسعار محفوظة لـ X من Y»
   const [savedNames, setSavedNames] = useState<Set<string>>(new Set())
+  // round-4 UX-188: market average per material + unit (get_market_prices, 3+ accepted prices, before VAT)
+  const [market, setMarket] = useState<Record<string, number>>({})
+  useEffect(() => {
+    Promise.resolve(createClient().rpc('get_market_prices')).then(({ data }: any) => {
+      const m: Record<string, number> = {}
+      for (const r of (data || [])) if (Number(r.offer_count) >= 3 && Number(r.avg_price) > 0) m[`${r.product_name}__${r.unit || ''}`] = Number(r.avg_price)
+      setMarket(m)
+    }, () => {})
+  }, [])
   // UX-082: filter chips on «عروضي» (?status=pending|won|lost|reply)
   const [offerFilter, setOfferFilter] = useState<'all' | 'pending' | 'won' | 'lost' | 'reply'>('all')
   const [openRfqs, setOpenRfqs] = useState<any[]>([])
@@ -96,7 +105,9 @@ export default function SupplierDashboard() {
   const autoTabDone = useRef(false)
   // UX-125: back from the set-up page: say the profile is ready
   const [welcome, setWelcome] = useState(false)
-  useEffect(() => { try { if (new URLSearchParams(window.location.search).get('welcome') === '1') { setWelcome(true); window.history.replaceState(null, '', '/supplier/dashboard') } } catch {} }, [])
+  // round-4 UX-140: a new team member lands here after joining
+  const [joined, setJoined] = useState(false)
+  useEffect(() => { try { const q = new URLSearchParams(window.location.search); if (q.get('welcome') === '1') setWelcome(true); if (q.get('joined') === '1') setJoined(true); if (q.get('welcome') || q.get('joined')) window.history.replaceState(null, '', '/supplier/dashboard') } catch {} }, [])
   // ?tab=offers opens «عروضي» (from «عروضي وصفقاتي»)
   useEffect(() => {
     try {
@@ -166,7 +177,7 @@ export default function SupplierDashboard() {
         supabase.from('branches').select('region').eq('supplier_id', actId),
         supabase.from('rfq_dismissals').select('rfq_id').eq('supplier_id', actId),
         supabase.from('offers').select('*, rfq:rfqs(product_name, sector, sub_category, quantity, unit, region, status, ref_no, items, created_at)').eq('supplier_id', actId).order('created_at', { ascending: false }).limit(200),
-        supabase.from('live_prices').select('product_name', { count: 'exact' }).eq('supplier_id', actId).limit(1000),
+        supabase.from('live_prices').select('product_name, unit, region', { count: 'exact' }).eq('supplier_id', actId).limit(1000),
       ])
       // a failed read must not look like «no requests / no offers»: keep what is shown and say so
       if (pErr || secErr || specErr || offersErr) throw (pErr || secErr || specErr || offersErr)
@@ -184,7 +195,8 @@ export default function SupplierDashboard() {
       setLaunchUntil(cfg?.launch_free_until || null)
       setMyOffers(offers)
       setPricesCount(lpCount ?? 0)
-      const savedList: string[] = [...new Set<string>((lpRows || []).map((r: any) => String(r.product_name || '')).filter(Boolean))]
+      // round-4 UX-065: the same rule as the pricing page: product OR its category name, with the unit, and the region (or none)
+      const savedList: string[] = [...new Set<string>((lpRows || []).filter((r: any) => r.product_name).map((r: any) => `${r.product_name}__${r.unit || ''}__${r.region || ''}`))]
       setSavedNames(new Set(savedList))
       // UX-030: the buyer is waiting for a reply: open «عروضي» first (once per visit)
       // round-2 UX-009: an answered question or a closed discount request no longer counts
@@ -223,8 +235,11 @@ export default function SupplierDashboard() {
           if (mySpecialties.length > 0 && it.sub_category && !mySpecialties.includes(it.sub_category)) return false
           return true
         }).length
-        const myNames = its.filter((it: any) => (mySectors.length === 0 || mySectors.includes(it.sector)) && (mySpecialties.length === 0 || !it.sub_category || mySpecialties.includes(it.sub_category))).map((it: any) => it.product_name).filter(Boolean)
-        return { ...r, _myItemCount: myCount, _myNames: myNames } // عدد أصناف هذا المورد فقط (لا الإجمالي)
+        const mine = its.filter((it: any) => (mySectors.length === 0 || mySectors.includes(it.sector)) && (mySpecialties.length === 0 || !it.sub_category || mySpecialties.includes(it.sub_category)))
+        const myNames = mine.map((it: any) => it.product_name).filter(Boolean)
+        const myLines = mine.filter((it: any) => it.product_name).map((it: any) => ({ product_name: it.product_name, unit: it.unit || '', sector: it.sector || r.sector, sub_category: it.sub_category || null, quantity: Number(it.quantity) || 0 }))
+        if (!myLines.length && r.product_name) myLines.push({ product_name: r.product_name, unit: r.unit || '', sector: r.sector, sub_category: r.sub_category || null, quantity: Number(r.quantity) || 0 })
+        return { ...r, _myItemCount: myCount, _myNames: myNames, _myLines: myLines } // عدد أصناف هذا المورد فقط (لا الإجمالي)
       }).filter((r: any) => r._myItemCount > 0)
 
       // ✅ فلترة حسب استهداف المقاول: فئة المورد (شركة معتمدة/محل/مستقل) + الموثّقون فقط
@@ -375,9 +390,24 @@ export default function SupplierDashboard() {
     return first ? sectionName(first.sector || rfq.sector, first.sub_category) : sectionName(rfq?.sector, rfq?.sub_category)
   }
   // UX-169: how many of my materials in this request already have a saved price
+  // round-4 UX-065: a line has a saved price for its product or its category, in its unit, for this region or any region
+  const hasSaved = (name: string, unit: string, region: string) => savedNames.has(`${name}__${unit}__`) || (!!region && savedNames.has(`${name}__${unit}__${region}`))
   const savedOf = (rfq: any): { have: number; of: number } => {
-    const names: string[] = Array.isArray(rfq._myNames) ? rfq._myNames : []
-    return { have: names.filter((n: string) => savedNames.has(n)).length, of: names.length }
+    const lines: any[] = Array.isArray(rfq._myLines) ? rfq._myLines : []
+    const have = lines.filter((l: any) => {
+      if (hasSaved(l.product_name, l.unit || '', rfq.region || '')) return true
+      const sub = l.sub_category || detectSubCategory(l.product_name, l.sector)
+      const subName = sub ? getSubCategoryLabel(l.sector, sub, 'ar') : ''
+      return !!subName && hasSaved(subName, l.unit || '', rfq.region || '')
+    }).length
+    return { have, of: lines.length }
+  }
+  // round-4 UX-188: an estimated value from the market index (accepted prices, before VAT), when known
+  const estimateOf = (rfq: any): number => {
+    const lines: any[] = Array.isArray(rfq._myLines) ? rfq._myLines : []
+    let sum = 0
+    for (const l of lines) { const m = market[`${l.product_name}__${l.unit || ''}`]; if (m && l.quantity > 0) sum += m * l.quantity }
+    return Math.round(sum)
   }
   const shownOffers = myOffers.filter((o: any) => {
     const k = outcomeOf(o)
@@ -408,7 +438,13 @@ export default function SupplierDashboard() {
         {welcome && (
           <div role="status" className="mb-5 flex items-start justify-between gap-3 rounded-2xl p-4 border border-emerald-200 bg-emerald-50 text-emerald-900 animate-fade-in">
             <span className="font-bold"><Glyph e="✅" /> {L('Your profile is saved, and you are ready to receive requests.', 'آپ کی پروفائل محفوظ ہو گئی، اور آپ درخواستیں وصول کرنے کے لیے تیار ہیں۔', 'تم حفظ ملفك، وأصبحت جاهزاً لاستقبال الطلبات.')}</span>
-            <button type="button" onClick={() => setWelcome(false)} className="w-8 h-8 grid place-items-center shrink-0 text-emerald-700" aria-label={L('Close', 'بند کریں', 'إغلاق')}>×</button>
+            <button type="button" onClick={() => setWelcome(false)} className="w-11 h-11 -m-2 grid place-items-center shrink-0 text-emerald-700" aria-label={L('Close', 'بند کریں', 'إغلاق')}><X className="w-4 h-4" aria-hidden /></button>
+          </div>
+        )}
+        {joined && (
+          <div role="status" className="mb-5 flex items-start justify-between gap-3 rounded-2xl p-4 border border-emerald-200 bg-emerald-50 text-emerald-900 animate-fade-in">
+            <span className="leading-relaxed"><b>{L(`You joined the team of ${companyName || 'the company'}.`, `آپ ${companyName || 'کمپنی'} کی ٹیم میں شامل ہو گئے۔`, `انضممت إلى فريق ${companyName || 'الشركة'}.`)}</b> {L('Price the requests below in the company name; the account owner manages the deals and the conversations with buyers.', 'نیچے دی گئی درخواستوں کی قیمت کمپنی کے نام سے دیں؛ سودے اور خریداروں سے بات چیت اکاؤنٹ کا مالک سنبھالتا ہے۔', 'سعّر الطلبات أدناه باسم الشركة، ويدير صاحب الحساب الصفقات والمحادثات مع المشترين.')}</span>
+            <button type="button" onClick={() => setJoined(false)} className="w-11 h-11 -m-2 grid place-items-center shrink-0 text-emerald-700" aria-label={L('Close', 'بند کریں', 'إغلاق')}><X className="w-4 h-4" aria-hidden /></button>
           </div>
         )}
         {(() => {
@@ -485,7 +521,7 @@ export default function SupplierDashboard() {
                 <span className="text-3xl shrink-0"><Glyph e="🔒" /></span>
                 <div className="flex-1">
                   <div className="font-extrabold text-sm" style={{ color: '#8F6820' }}><Glyph e="⚠" /> {L('Complete your profile to receive requests', 'درخواستیں وصول کرنے کے لیے اپنی پروفائل مکمل کریں', 'أكمل ملفك لاستلام الطلبات')}</div>
-                  <div className="text-[13px] text-gray-600 mt-1 leading-relaxed">{L("Without your location, sectors and specialties you won't appear to buyers and won't receive any matching requests. One minute is enough.", 'اپنے مقام، شعبوں اور مہارتوں کے بغیر آپ خریداروں کو نظر نہیں آئیں گے اور کوئی مماثل درخواست موصول نہیں ہوگی۔', 'بدون تحديد موقعك وقطاعاتك وتخصصاتك لن تظهر للمشترين، ولن تصلك أي طلبات مطابقة. دقيقة واحدة تكفي.')}</div>
+                  <div className="text-[13px] text-gray-600 mt-1 leading-relaxed">{L("Without your location and what you sell you won't appear to buyers and won't receive any requests. One minute is enough.", 'اپنے مقام اور آپ کیا بیچتے ہیں، اس کے بغیر آپ خریداروں کو نظر نہیں آئیں گے اور کوئی درخواست موصول نہیں ہوگی۔ ایک منٹ کافی ہے۔', 'بدون موقعك وما تبيعه لن تظهر للمشترين ولن تصلك أي طلبات. دقيقة واحدة تكفي.')}</div>
                   <span className="inline-block mt-2.5 text-sm font-bold text-[#071827] px-4 py-2 rounded-xl" style={{ background: '#D4A543' }}>{L('Complete now →', 'ابھی مکمل کریں ←', 'أكمل ملفك الآن ←')}</span>
                 </div>
               </div>
@@ -511,7 +547,7 @@ export default function SupplierDashboard() {
                 </div>
               </div>
               <div className="flex flex-wrap gap-2">
-                <Link href="/settings" className="inline-flex items-center min-h-[44px] text-sm px-5 rounded-xl font-extrabold text-[#071827]" style={{ background: 'linear-gradient(135deg,#F5C55B,#D4A543)' }}>
+                <Link href={sellerKindOf(profile?.provider_type) === 'independent' ? '/settings' : '/settings?tab=docs'} className="inline-flex items-center min-h-[44px] text-sm px-5 rounded-xl font-extrabold text-[#071827]" style={{ background: 'linear-gradient(135deg,#F5C55B,#D4A543)' }}>
                   {sellerKindOf(profile?.provider_type) === 'independent' ? L('Update my details', 'میری تفصیلات اپ ڈیٹ کریں', 'تحديث بياناتي') : L('Update my commercial registration', 'تجارتی رجسٹریشن اپ ڈیٹ کریں', 'تحديث السجل التجاري')}
                 </Link>
                 <Link href="/support" className="inline-flex items-center min-h-[44px] text-sm px-5 rounded-xl font-bold text-white" style={{ background: '#0B2438' }}>
@@ -526,7 +562,7 @@ export default function SupplierDashboard() {
               <div className="flex items-center gap-4">
                 <div className="text-3xl"><Glyph e="🎯" /></div>
                 <div className="flex-1">
-                  <div className="font-bold" style={{ color: '#0B2438' }}>{L('Set your exact specialties for precise matching!', 'درست مماثلت کے لیے اپنی مہارتیں مقرر کریں!', 'حدّد تخصصاتك الدقيقة لتصلك الطلبات المطابقة تماماً!')}</div>
+                  <div className="font-bold" style={{ color: '#0B2438' }}>{L('Set your exact specialties for precise matching!', 'درست مماثلت کے لیے اپنے تخصصات مقرر کریں!', 'حدّد تخصصاتك الدقيقة لتصلك الطلبات المطابقة تماماً!')}</div>
                   <div className="text-sm text-gray-500 mt-0.5">{L('e.g. only "Bricks" or only "Marble" — get only relevant requests', 'مثلاً صرف "اینٹ" یا صرف "سنگ مرمر"', 'مثلاً: محل طوب فقط، أو محل رخام فقط — تصلك الطلبات المطابقة لتخصصك')}</div>
                 </div>
                 <div className="text-sm font-semibold whitespace-nowrap" style={{ color: '#8F6820' }}>{L('Setup →', 'ترتیب دیں ←', 'إعداد ←')}</div>
@@ -542,7 +578,7 @@ export default function SupplierDashboard() {
                   ? L('We are reviewing your details. This usually takes up to 24 hours.', 'ہم آپ کی تفصیلات کا جائزہ لے رہے ہیں۔ اس میں عموماً 24 گھنٹے لگتے ہیں۔', 'نراجع بياناتك، وعادةً يستغرق ذلك 24 ساعة.')
                   : L('We are reviewing your details and documents; this usually takes 24 hours.', 'ہم آپ کی تفصیلات اور دستاویزات کا جائزہ لے رہے ہیں؛ اس میں عموماً 24 گھنٹے لگتے ہیں۔', 'نراجع بياناتك ومستنداتك، وتستغرق المراجعة عادةً 24 ساعة.')}</div>
                 {/* UX-093: what to do meanwhile, and when to ask for help */}
-                <div className="text-sm text-amber-800 mt-1.5">{L('Meanwhile you can complete your specialties, location and prices. If the review takes more than 24 hours, contact support.', 'اس دوران آپ اپنی مہارتیں، مقام اور قیمتیں مکمل کر سکتے ہیں۔ اگر جائزے میں 24 گھنٹے سے زیادہ لگیں تو سپورٹ سے رابطہ کریں۔', 'يمكنك خلال المراجعة إكمال تخصصاتك وموقعك وأسعارك. إن تجاوزت المراجعة 24 ساعة فتواصل مع الدعم.')}</div>
+                <div className="text-sm text-amber-800 mt-1.5">{L('Meanwhile you can complete your specialties, location and prices. If the review takes more than 24 hours, contact support.', 'اس دوران آپ اپنے تخصصات، مقام اور قیمتیں مکمل کر سکتے ہیں۔ اگر جائزے میں 24 گھنٹے سے زیادہ لگیں تو سپورٹ سے رابطہ کریں۔', 'يمكنك خلال المراجعة إكمال تخصصاتك وموقعك وأسعارك. إن تجاوزت المراجعة 24 ساعة فتواصل مع الدعم.')}</div>
                 <Link href="/support" className="inline-flex items-center min-h-[44px] mt-1 text-sm font-bold text-[#8F6820] underline">{L('Contact support', 'سپورٹ سے رابطہ کریں', 'تواصل مع الدعم')}</Link>
               </div>
             </div>
@@ -614,6 +650,10 @@ export default function SupplierDashboard() {
         <div className="mb-4 sm:mb-6 animate-fade-in">
           <h1 className="text-xl sm:text-2xl font-bold" style={{ color: '#0B2438' }}>{t.welcome}، {companyName || profile?.full_name || L('Supplier', 'سپلائر', 'مورّد')} <Glyph e="👋" /></h1>
           <p className="text-gray-500 mt-1 text-sm">{t.subtitle}</p>
+          {/* round-4 UX-087: the rating buyers gave this seller */}
+          {Number(profile?.rating_count) > 0 && (
+            <p className="mt-1 text-[13px] font-semibold text-[#0B2438]"><span className="text-[#D4A543]" aria-hidden>★</span> {L(`Your rating: ${Number(profile.rating_avg || 0).toFixed(1)} of 5 (${profile.rating_count} rating${Number(profile.rating_count) === 1 ? '' : 's'})`, `آپ کی ریٹنگ: 5 میں سے ${Number(profile.rating_avg || 0).toFixed(1)} (${profile.rating_count} ریٹنگ)`, `تقييمك: ${Number(profile.rating_avg || 0).toFixed(1)} من 5 (${arCount(Number(profile.rating_count), 'تقييم واحد', 'تقييمان', 'تقييمات', 'تقييماً')})`)}</p>
+          )}
         </div>
 
         {/* نقاط اكتمال الملف + خطوات رفعها — مخفية على الجوال افتراضياً كي تظهر الطلبات أولاً */}
@@ -622,8 +662,9 @@ export default function SupplierDashboard() {
           const isIndependent = sellerKindOf(profile?.provider_type) === 'independent'
           const allChecks = [
             // UX-037: verification is optional: a light weight, said as optional, never a red alarm on day one
-            { cr: true, ok: profile?.verification_status === 'verified', w: 15, label: L('Verify your business (optional, adds a «Verified» badge to your offers)', 'اپنے ادارے کی تصدیق کریں (اختیاری، آپ کی آفرز پر «تصدیق شدہ» بیج)', 'وثّق منشأتك (اختياري، يمنح عروضك شارة «موثّق»)'), href: '/settings' },
-            { ok: hasSpecialties, w: 25, label: L('Add specialties', 'مہارتیں شامل کریں', 'أضف تخصصاتك'), href: '/supplier/specialties' },
+            // round-4: for a company or shop the commercial registration is REQUIRED to price (my_pricing_gate), never «optional»
+            { cr: true, ok: !!(profile?.commercial_registration || '').trim() || profile?.verification_status === 'verified', w: 25, label: L('Add your commercial registration (required to price)', 'اپنا تجارتی رجسٹریشن شامل کریں (قیمت دینے کے لیے ضروری)', 'أضف سجلك التجاري (مطلوب للتسعير)'), href: '/settings?tab=docs' },
+            { ok: hasSpecialties, w: 25, label: L('Add specialties', 'تخصصات شامل کریں', 'أضف تخصصاتك'), href: '/supplier/specialties' },
             { ok: !!(profile?.latitude || profile?.national_short_address), w: 20, label: L('Add map location', 'نقشے پر مقام شامل کریں', 'حدّد موقعك'), href: '/location' },
             // UX-149: the rating comes from buyers after a deal, so it is not part of «completing» the profile
           ]
@@ -703,6 +744,10 @@ export default function SupplierDashboard() {
             { n: pending, color: '#D4A543', label: L('Waiting for the buyer', 'خریدار کے فیصلے کی منتظر', 'بانتظار قرار المشتري') },
             { n: rejected, color: '#B4B2A9', label: L('Not chosen', 'منتخب نہیں', 'لم تُختر') }, // neutral grey (UX-116)
           ]
+          // round-4 UX-068: the VAT wording follows the accepted offers themselves
+          const acc = myOffers.filter((o: any) => o.status === 'accepted')
+          const nReg = acc.filter((o: any) => o.vat_status === 'not_registered').length
+          const vatTag = acc.length && nReg === acc.length ? L('(final prices)', '(حتمی قیمتیں)', '(أسعار نهائية)') : nReg > 0 ? L('(what the buyer pays)', '(جو خریدار ادا کرتا ہے)', '(ما يدفعه المشتري)') : L('(incl. VAT)', '(ٹیکس سمیت)', '(شاملة الضريبة)')
           const thisM = months[months.length - 1], lastM = months[months.length - 2]
           const salesDelta = lastM.sales ? Math.round(((thisM.sales - lastM.sales) / lastM.sales) * 100) : null
           const dealsDelta = thisM.deals - lastM.deals
@@ -743,7 +788,7 @@ export default function SupplierDashboard() {
                 {/* number + arrow vs last month */}
                 <div className="grid grid-cols-2 gap-3">
                   <div className="rounded-xl bg-[#F6F7F9] p-3.5">
-                    <div className="text-[12px] text-gray-500">{L('Sales this month (incl. VAT)', 'اس ماہ کی فروخت (ٹیکس سمیت)', 'مبيعات هذا الشهر (شاملة الضريبة)')}</div>
+                    <div className="text-[12px] text-gray-500">{L('Sales this month', 'اس ماہ کی فروخت', 'مبيعات هذا الشهر')} {vatTag}</div>
                     <div className="text-xl sm:text-2xl font-extrabold text-[#0B2438] tabular-nums">{thisM.sales.toLocaleString('en-US')} <span className="text-xs text-gray-500 font-bold">{t.sar}</span></div>
                     {salesDelta !== null
                       ? <Arrow up={salesDelta >= 0} text={L(`${Math.abs(salesDelta)}% vs last month`, `${Math.abs(salesDelta)}% پچھلے ماہ سے`, `${Math.abs(salesDelta)}% عن الشهر الماضي`)} />
@@ -757,7 +802,7 @@ export default function SupplierDashboard() {
                       : <div className="text-xs text-gray-500 mt-0.5">{L('Same as last month', 'پچھلے ماہ جتنی', 'مثل الشهر الماضي')}</div>}
                   </div>
                   <div className="rounded-xl bg-[#F6F7F9] p-3.5">
-                    <div className="text-[12px] text-gray-500">{L('Deals value (SAR, incl. VAT)', 'سودوں کی مالیت (ریال، ٹیکس سمیت)', 'قيمة الصفقات (ر.س، شاملة الضريبة)')}</div>
+                    <div className="text-[12px] text-gray-500">{L('Deals value', 'سودوں کی مالیت', 'قيمة الصفقات')} {vatTag}</div>
                     <div className="text-lg font-extrabold text-[#0B2438] tabular-nums">{totalRevenue.toLocaleString('en-US')} <span className="text-xs text-gray-500 font-bold">{t.sar}</span></div>
                   </div>
                   <div className="rounded-xl bg-[#F6F7F9] p-3.5">
@@ -784,7 +829,12 @@ export default function SupplierDashboard() {
 
         {tab === 'rfqs' && (() => {
           const expiringList = openRfqs.filter((r: any) => { const u = deadlineUrgency(r.expires_at); return u === 'soon' || u === 'critical' })
-          const displayedRfqs = rfqFilter === 'expiring' ? expiringList : rfqFilter === 'toprice' ? sortedOpen.filter((r: any) => !offeredRfqIds.has(r.id)) : sortedOpen
+          const displayedRfqs = rfqFilter === 'expiring' ? expiringList
+            : rfqFilter === 'toprice' ? sortedOpen.filter((r: any) => !offeredRfqIds.has(r.id))
+            // round-4 UX-188: the highest estimated value first (requests without an estimate last)
+            : rfqFilter === 'top' ? [...sortedOpen].filter((r: any) => !offeredRfqIds.has(r.id)).sort((a: any, b: any) => estimateOf(b) - estimateOf(a))
+            : sortedOpen
+          const anyEstimate = openRfqs.some((r: any) => estimateOf(r) > 0)
           return (
           <div className="stagger">
             {/* فلاتر الطلبات — منها «تنتهي قريباً» (قابلة للضغط) */}
@@ -793,6 +843,7 @@ export default function SupplierDashboard() {
                 { key: 'toprice', label: `${L('Waiting for your price', 'آپ کی قیمت کی منتظر', 'بانتظار تسعيرك')} (${toPrice.length})`, icon: <Glyph e="💰" /> },
                 { key: 'all', label: `${L('All', 'سب', 'الكل')} (${openRfqs.length})`, icon: <Glyph e="📋" /> },
                 { key: 'expiring', label: `${L('Ending soon', 'جلد ختم ہونے والی', 'تنتهي قريباً')} (${expiringList.length})`, icon: <Glyph e="⏰" /> },
+                ...(anyEstimate ? [{ key: 'top', label: L('Highest value', 'سب سے زیادہ مالیت', 'الأعلى قيمة'), icon: <Glyph e="💰" /> }] : []),
               ].map((f: any) => (
                 <button key={f.key} onClick={() => setRfqFilter(f.key)} aria-pressed={rfqFilter === f.key}
                   className={`min-h-[44px] px-4 rounded-xl text-[13px] font-bold transition-all border ${rfqFilter === f.key ? 'text-white border-transparent' : 'bg-white text-gray-600 border-gray-200'}`}
@@ -808,7 +859,7 @@ export default function SupplierDashboard() {
                 <h3 className="text-lg font-bold mb-2" style={{ color: '#0B2438' }}>{rfqFilter === 'expiring' ? L('Nothing ending soon', 'کوئی درخواست جلد ختم نہیں ہو رہی', 'لا توجد طلبات تنتهي قريباً') : rfqFilter === 'toprice' && openRfqs.length > 0 ? L('You have priced every open request', 'آپ نے ہر کھلی درخواست کی قیمت دے دی ہے', 'سعّرتَ كل الطلبات المفتوحة') : t.noRfqs}</h3>
                 <p className="text-sm text-gray-600">{rfqFilter === 'expiring' ? L('All open requests still have time.', 'تمام کھلی درخواستوں کے پاس ابھی کافی وقت ہے۔', 'ما زال لدى كل الطلبات المفتوحة متّسع من الوقت.') : rfqFilter === 'toprice' && openRfqs.length > 0 ? L('We will alert you as soon as a new matching request arrives.', 'نئی مماثل درخواست آتے ہی ہم آپ کو بتائیں گے۔', 'سننبّهك فور وصول طلب جديد مطابق.') : t.noRfqsSub}</p>
                 {rfqFilter === 'toprice' && openRfqs.length > 0 && <button type="button" onClick={() => setRfqFilter('all')} className="inline-flex items-center mt-4 me-2 min-h-[44px] px-5 rounded-xl text-sm font-bold text-white" style={{ background: '#0B2438' }}>{L('Show all requests', 'تمام درخواستیں دکھائیں', 'عرض كل الطلبات')}</button>}
-                {rfqFilter === 'all' && !isMember && <Link href="/supplier/specialties" className="inline-flex items-center mt-4 min-h-[44px] px-5 rounded-xl text-sm font-bold text-white" style={{ background: '#0B2438' }}>{L('Review my specialties', 'میری مہارتیں دیکھیں', 'راجِع تخصصاتي')}</Link>}
+                {rfqFilter === 'all' && !isMember && <Link href="/supplier/specialties" className="inline-flex items-center mt-4 min-h-[44px] px-5 rounded-xl text-sm font-bold text-white" style={{ background: '#0B2438' }}>{L('Review my specialties', 'میرے تخصصات دیکھیں', 'راجِع تخصصاتي')}</Link>}
               </div>
             ) : (
               <div className="space-y-3">
@@ -837,11 +888,9 @@ export default function SupplierDashboard() {
                                 <Glyph e="🎯" /> {getSubCategoryLabel(rfq.sector, rfq.sub_category, locale)}
                               </span>
                             )}
-                            {/* هوية المقاول مخفية في القائمة — تظهر فقط بعد قبول العرض (خصوصية) */}
-                            {rfq.contractor?.company_name_ar && (
-                              <span className="text-[12px] text-gray-500">
-                                <Glyph e="🏢" /> {locale === 'en' && rfq.contractor.company_name_en ? rfq.contractor.company_name_en : rfq.contractor.company_name_ar}
-                              </span>
+                            {/* round-4 UX-184: the buyer identity is never shown in the list (revealed only after the award, on the request page) */}
+                            {!offeredRfqIds.has(rfq.id) && estimateOf(rfq) > 0 && (
+                              <span className="badge text-[12px] font-semibold bg-[#0B2438]/5 text-[#0B2438]">{L(`Estimated value about ${estimateOf(rfq).toLocaleString('en-US')} SAR before VAT`, `اندازاً مالیت تقریباً ${estimateOf(rfq).toLocaleString('en-US')} ریال ٹیکس سے پہلے`, `قيمة تقديرية نحو ${estimateOf(rfq).toLocaleString('en-US')} ر.س قبل الضريبة`)}</span>
                             )}
                           </div>
                         </div>
@@ -849,7 +898,7 @@ export default function SupplierDashboard() {
                     </div>
                     <div className="flex items-center gap-4 text-xs text-gray-500 font-medium flex-wrap">
                       {Array.isArray(rfq.items) && rfq.items.length > 1
-                        ? (() => { const n = Number(rfq._myItemCount) || rfq.items.length; return <span><Glyph e="📦" /> {L(`${n} ${n === 1 ? 'material' : 'materials'} in your specialty`, `آپ کی مہارت میں ${n} اشیاء`, `${arMaterials(n)} ضمن تخصصك`)}</span> })()
+                        ? (() => { const n = Number(rfq._myItemCount) || rfq.items.length; return <span><Glyph e="📦" /> {L(`${n} ${n === 1 ? 'material' : 'materials'} in your specialty`, `آپ کے تخصص میں ${n} اشیاء`, `${arMaterials(n)} ضمن تخصصك`)}</span> })()
                         : <span><Glyph e="📦" /> {rfq.quantity} {getUnitLabel(rfq.unit, locale)}</span>}
                       <span><Glyph e="📍" /> {getRegionLabel(rfq.region, locale)}</span>
                       {rfq.created_at && <span><Glyph e="🗓" /> {formatDateTime(rfq.created_at)}</span>}
@@ -919,12 +968,12 @@ export default function SupplierDashboard() {
                     oc === 'won' ? 'border-emerald-200 bg-emerald-50/50' :
                     oc !== 'pending' ? 'border-gray-200 bg-gray-50' : 'border-gray-100'
                   }`}>
-                    <div className="flex items-center justify-between mb-2">
-                      <div className="flex items-center gap-3">
+                    <div className="flex flex-wrap items-start justify-between gap-2 mb-2">
+                      <div className="flex items-center gap-3 min-w-0">
                         <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-lg ${
                           oc === 'won' ? 'bg-emerald-100' : oc !== 'pending' ? 'bg-gray-100 text-gray-500' : 'bg-amber-50'
                         }`}>{oc === 'won' ? <Glyph e="✅" /> : oc !== 'pending' ? <Glyph e="📭" /> : <Glyph e="⏳" />}</div>
-                        <div>
+                        <div className="min-w-0">
                           <span className="font-bold line-clamp-2" style={{ color: '#0B2438' }}>{offer.rfq ? rfqDisplayName({ ...offer.rfq, title: null }, locale) : '—'}</span>
                           {offer.rfq?.sector && (
                             <span className="badge text-[12px] bg-[#0B2438]/5 text-[#0B2438] mx-2">{rfqSection(offer.rfq)}</span>
@@ -946,7 +995,7 @@ export default function SupplierDashboard() {
                         )}
                       </div>
                     </div>
-                    <div className="flex items-center gap-4 text-xs text-gray-500 font-medium">
+                    <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-gray-500 font-medium">
                       {offer.delivery_days && <span><Glyph e="📦" /> {daysText(offer.delivery_days, locale)}</span>}
                       {offer.rfq?.region && <span><Glyph e="📍" /> {getRegionLabel(offer.rfq.region, locale)}</span>}
                       {sentBy(offer) && <span className="font-semibold text-gray-500">{sentBy(offer)}</span>}

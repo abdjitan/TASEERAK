@@ -30,7 +30,7 @@ export function getNav(role: string | undefined, locale: string, active: string)
       { href: '/admin/reports', icon: '🚩', label: L('User reports', 'رپورٹس', 'البلاغات'), section: sec },
       { href: '/admin/invites', icon: '💬', label: L('Supplier invites', 'سپلائر دعوتیں', 'دعوات الموردين'), section: sec },
       { href: '/admin/whatsapp', icon: '💬', label: L('WhatsApp support', 'واٹس ایپ سپورٹ', 'واتساب الدعم'), section: sec },
-      { href: '/messages', icon: '💬', label: L('Messages', 'پیغامات', 'الرسائل'), section: secTools, mobile: 4 },
+      { href: '/messages', icon: '💬', label: L('Messages', 'پیغامات', 'الرسائل'), section: sec, mobile: 4 },
       notifItem,
       { href: '/settings', icon: '⚙️', label: L('Settings', 'ترتیبات', 'الإعدادات'), section: secAccount },
     ]
@@ -39,14 +39,14 @@ export function getNav(role: string | undefined, locale: string, active: string)
     items = [
       { href: '/supplier/dashboard', icon: '🏠', label: L('Dashboard', 'ڈیش بورڈ', 'الرئيسية'), section: sec, mobile: 1 },
       { href: '/supplier/deals', icon: '📦', label: L('My offers and deals', 'آفرز اور ڈیلز', 'عروضي وصفقاتي'), mobileLabel: L('My offers', 'میری آفرز', 'عروضي'), section: sec, mobile: 2 },
-      { href: '/supplier/specialties', icon: '🎯', label: L('Specialties', 'مہارتیں', 'تخصصاتي'), section: sec },
+      { href: '/supplier/specialties', icon: '🎯', label: L('My specialties', 'میرے تخصصات', 'تخصصاتي'), section: sec },
       // «أسعاري» is private since migration 160 and the only place to save pack prices: always in the menu (UX-031)
       { href: '/supplier/prices', icon: '📈', label: L('My prices', 'میری قیمتیں', 'أسعاري'), section: sec },
       { href: '/supplier/analytics', icon: '🏆', label: L('Performance', 'کارکردگی', 'أدائي'), section: sec, off: !FEATURES.analyticsNav },
       { href: '/supplier/branches', icon: '🏢', label: L('Branches', 'شاخیں', 'فروع الشركة'), section: sec, only: 'company' },
       { href: '/supplier/team', icon: '👥', label: L('Team', 'ٹیم', 'فريق العمل'), section: sec, only: 'company' },
       { href: '/supplier/subscription', icon: '⭐', label: L('Subscription', 'سبسکرپشن', 'الاشتراك'), section: sec, off: !FEATURES.subscription },
-      { href: '/messages', icon: '💬', label: L('Messages', 'پیغامات', 'الرسائل'), section: secTools, mobile: 4 },
+      { href: '/messages', icon: '💬', label: L('Messages', 'پیغامات', 'الرسائل'), section: sec, mobile: 4 },
       { href: '/market', icon: '📊', label: L('Price Index', 'انڈیکس', 'البورصة'), section: secTools, off: !FEATURES.priceBoard },
       { href: '/location', icon: '📍', label: L('Location', 'مقام', 'الموقع'), section: secTools, off: !FEATURES.locationNav },
       { href: '/invite-friends', icon: '🤝', label: L('Invite someone', 'دعوت دیں', 'ادعُ من تعرفه'), section: secAccount },
@@ -65,7 +65,7 @@ export function getNav(role: string | undefined, locale: string, active: string)
       // One name for each tool everywhere (UX-144): «جدول الكميات» and «تسعير مناقصة».
       { href: '/contractor/project/new', icon: '📋', label: L('Bill of quantities', 'مقداروں کا جدول', 'جدول الكميات'), section: sec, only: 'business' },
       { href: '/contractor/tender', icon: '📑', label: L('Tender pricing', 'ٹینڈر کی قیمت', 'تسعير مناقصة'), section: sec, only: 'business' },
-      { href: '/messages', icon: '💬', label: L('Messages', 'پیغامات', 'الرسائل'), section: secTools, mobile: 4 },
+      { href: '/messages', icon: '💬', label: L('Messages', 'پیغامات', 'الرسائل'), section: sec, mobile: 4 },
       { href: '/market', icon: '📈', label: L('Price Index', 'بورس', 'البورصة'), section: secTools, off: !FEATURES.priceBoard },
       { href: '/location', icon: '📍', label: L('Location', 'مقام', 'الموقع'), section: secTools, off: !FEATURES.locationNav },
       { href: '/invite-friends', icon: '🤝', label: L('Invite someone', 'دعوت دیں', 'ادعُ من تعرفه'), section: secAccount },

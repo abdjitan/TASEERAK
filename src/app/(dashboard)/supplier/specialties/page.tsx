@@ -60,11 +60,11 @@ const txt = {
     stPending: 'Under review', stApproved: 'Approved', stRejected: 'Rejected',
   },
   ur: {
-    title: 'میری مہارتیں', sub: 'بالکل وہی منتخب کریں جو آپ فراہم کرتے ہیں',
-    back: '→ واپس', save: 'تبدیلیاں محفوظ کریں', saving: 'محفوظ ہو رہا ہے...', saved: 'آپ کی مہارتیں محفوظ ہو گئیں۔',
-    selectSectors: 'یا تفصیل سے مال منتخب کریں', thenSpecialties: 'پھر اپنی مہارتیں منتخب کریں',
-    selected: 'منتخب', noSectors: 'مہارتیں دکھانے کے لیے کم از کم ایک شعبہ منتخب کریں',
-    hint: 'جتنی درست مہارت، اتنی متعلقہ درخواستیں',
+    title: 'میرے تخصصات', sub: 'بالکل وہی منتخب کریں جو آپ فراہم کرتے ہیں',
+    back: '→ واپس', save: 'تبدیلیاں محفوظ کریں', saving: 'محفوظ ہو رہا ہے...', saved: 'آپ کے تخصصات محفوظ ہو گئیں۔',
+    selectSectors: 'یا تفصیل سے مال منتخب کریں', thenSpecialties: 'پھر اپنے تخصصات منتخب کریں',
+    selected: 'منتخب', noSectors: 'تخصصات دکھانے کے لیے کم از کم ایک شعبہ منتخب کریں',
+    hint: 'جتنا درست تخصص، اتنی متعلقہ درخواستیں',
     loading: 'لوڈ ہو رہا ہے...',
     suggestTitle: 'اپنا مواد نہیں ملا؟',
     suggestSub: 'تجویز کریں، ٹیم جائزہ لے کر شامل کرے گی',
@@ -115,21 +115,24 @@ export default function SpecialtiesPage() {
   const [crActivity, setCrActivity] = useState('')
   const [companyName, setCompanyName] = useState('')
   const [detectMsg, setDetectMsg] = useState('')
+  // round-4 UX-139: say «we read your CR and picked…» only when it really happened
+  const [autoDetected, setAutoDetected] = useState(false)
 
   // يقرأ نشاط السجل التجاري ويحدّد التخصصات تلقائياً (يضيف فوق المحدد، لا يحذف)
   function analyzeFromCR(activity: any, name: any, silent = false) {
     const text = [name, activity].filter(Boolean).join(' ')
     const { sectors, specialties } = detectSpecialtiesFromText(text)
     if (!specialties.length) {
-      if (!silent) setDetectMsg(locale === 'en' ? "Couldn't detect specialties from your CR activity — pick them manually." : locale === 'ur' ? 'سرگرمی سے مہارتیں نہیں ملیں — دستی منتخب کریں۔' : 'لم نتعرّف على تخصصات من نشاط سجلك، فاخترها يدوياً.')
+      if (!silent) setDetectMsg(locale === 'en' ? "Couldn't detect specialties from your CR activity — pick them manually." : locale === 'ur' ? 'سرگرمی سے تخصصات نہیں ملیں — دستی منتخب کریں۔' : 'لم نتعرّف على تخصصات من نشاط سجلك، فاخترها يدوياً.')
       return
     }
     setMySectors(prev => Array.from(new Set([...prev, ...sectors])))
     setMySpecialties(prev => Array.from(new Set([...prev, ...specialties])))
+    setAutoDetected(true)
     if (sectors.length) setOpenSector(sectors[0])
     setDetectMsg(
       locale === 'en' ? `Detected ${specialties.length} specialties across ${sectors.length} sectors from your CR — review, adjust, then save.`
-      : locale === 'ur' ? `آپ کے ریکارڈ سے ${specialties.length} مہارتیں ${sectors.length} شعبوں میں ملیں — جائزہ لے کر محفوظ کریں۔`
+      : locale === 'ur' ? `آپ کے ریکارڈ سے ${specialties.length} تخصصات ${sectors.length} شعبوں میں ملیں — جائزہ لے کر محفوظ کریں۔`
       : `تعرّفنا على ${arCount(specialties.length, 'تخصص واحد', 'تخصصين', 'تخصصات', 'تخصصاً')} في ${arCount(sectors.length, 'قطاع واحد', 'قطاعين', 'قطاعات', 'قطاعاً')} من نشاط سجلك. راجِعها وعدّلها ثم احفظ.`
     )
   }
@@ -234,10 +237,11 @@ export default function SpecialtiesPage() {
       p_specialties: mySpecialties,
     })
     setSaving(false)
-    if (error) { setMsgErr(true); setMsg(locale === 'en' ? 'Could not save — please try again.' : locale === 'ur' ? 'محفوظ نہیں ہو سکا — دوبارہ کوشش کریں۔' : 'تعذّر الحفظ، حاول مرة أخرى.'); return }
+    if (error) { setMsgErr(true); setMsg(locale === 'en' ? 'Could not save your specialties. Check your connection and try again.' : locale === 'ur' ? 'آپ کے تخصصات محفوظ نہیں ہو سکے۔ کنکشن چیک کر کے دوبارہ کوشش کریں۔' : 'تعذّر حفظ تخصصاتك. تحقّق من اتصالك وحاول مرة أخرى.'); return }
     setMySectors(secs)
     setSavedKey(selKey(secs, mySpecialties))
-    setMsg(T.saved) // no automatic redirect (UX-124): the seller stays and sees the saved state
+    // round-4 UX-141: one success sign only (the «saved» bar below); no second green message
+    setMsg('')
   }
 
   async function submitSuggestion() {
@@ -270,7 +274,7 @@ export default function SpecialtiesPage() {
       spec_file_url,
     }).select().single()
     setSuggestSubmitting(false)
-    if (error) { setSuggestErr(true); setSuggestMsg(locale === 'en' ? 'Something went wrong — please try again.' : locale === 'ur' ? 'خرابی ہوئی — دوبارہ کوشش کریں۔' : 'حدث خطأ، حاول مرة أخرى.'); return }
+    if (error) { setSuggestErr(true); setSuggestMsg(locale === 'en' ? 'Could not send your suggestion. Check your connection and try again.' : locale === 'ur' ? 'آپ کی تجویز نہیں بھیجی جا سکی۔ کنکشن چیک کر کے دوبارہ کوشش کریں۔' : 'تعذّر إرسال اقتراحك. تحقّق من اتصالك وحاول مرة أخرى.'); return }
     setMyRequests(prev => [data, ...prev])
     setSuggestName(''); setSuggestSector(''); setSuggestDesc(''); setSuggestGroup(''); setSuggestFile(null)
     setSuggestMsg(T.sSent)
@@ -289,14 +293,14 @@ export default function SpecialtiesPage() {
 
         {isMember && (
           <div className="rounded-xl p-3 mb-5 text-sm bg-[#0B2438]/5 border border-[#0B2438]/15 text-[#0B2438] font-semibold">
-            {locale === 'en' ? "These are your company's specialties, shown for reading. The account owner edits them." : locale === 'ur' ? 'یہ آپ کی کمپنی کی مہارتیں ہیں، صرف دیکھنے کے لیے۔ اکاؤنٹ کا مالک انہیں بدلتا ہے۔' : 'هذه تخصصات شركتك للاطّلاع فقط، ويعدّلها صاحب الحساب.'}
+            {locale === 'en' ? "These are your company's specialties, shown for reading. The account owner edits them." : locale === 'ur' ? 'یہ آپ کی کمپنی کی تخصصات ہیں، صرف دیکھنے کے لیے۔ اکاؤنٹ کا مالک انہیں بدلتا ہے۔' : 'هذه تخصصات شركتك للاطّلاع فقط، ويعدّلها صاحب الحساب.'}
           </div>
         )}
         <div className="bg-[#0B2438]/5 border border-[#0B2438]/15 rounded-xl p-3 mb-5 text-sm text-[#0B2438]">{T.hint}</div>
 
         {loadFailed && (
           <LoadError onRetry={load} className="mb-5"
-            message={locale === 'en' ? 'We could not load your saved specialties, so saving is disabled to keep them safe. Check your connection and try again.' : locale === 'ur' ? 'آپ کی محفوظ مہارتیں لوڈ نہیں ہو سکیں، اس لیے انہیں محفوظ رکھنے کے لیے «محفوظ کریں» بند ہے۔ کنکشن چیک کر کے دوبارہ کوشش کریں۔' : 'تعذّر تحميل تخصصاتك المحفوظة، لذلك عُطّل الحفظ حمايةً لها. تحقّق من اتصالك ثم أعد المحاولة.'} />
+            message={locale === 'en' ? 'We could not load your saved specialties, so saving is disabled to keep them safe. Check your connection and try again.' : locale === 'ur' ? 'آپ کی محفوظ تخصصات لوڈ نہیں ہو سکیں، اس لیے انہیں محفوظ رکھنے کے لیے «محفوظ کریں» بند ہے۔ کنکشن چیک کر کے دوبارہ کوشش کریں۔' : 'تعذّر تحميل تخصصاتك المحفوظة، لذلك عُطّل الحفظ حمايةً لها. تحقّق من اتصالك ثم أعد المحاولة.'} />
         )}
 
         {/* تحليل النشاط التجاري — يُحدّد التخصصات تلقائياً من السجل التجاري */}
@@ -308,15 +312,19 @@ export default function SpecialtiesPage() {
                   <Glyph e="🔍" /> {locale === 'en' ? 'Detected from your CR activity' : locale === 'ur' ? 'آپ کے ریکارڈ سے ملا' : 'تحليل نشاطك التجاري'}
                 </div>
                 <div className="text-xs text-gray-600 mt-0.5 leading-relaxed">
-                  {locale === 'en' ? 'We read your official CR activity and pre-selected your specialties below — review and adjust freely, then save.'
-                  : locale === 'ur' ? 'ہم نے آپ کے سرکاری ریکارڈ سے مہارتیں منتخب کیں — جائزہ لے کر محفوظ کریں۔'
-                  : 'قرأنا نشاطك في السجل التجاري وحدّدنا تخصصاتك بالأسفل تلقائياً. راجِعها وعدّلها ثم احفظ.'}
+                  {autoDetected
+                    ? (locale === 'en' ? 'We read your official CR activity and pre-selected your specialties below. Review and adjust them, then save.'
+                      : locale === 'ur' ? 'ہم نے آپ کے سرکاری ریکارڈ کی سرگرمی پڑھ کر نیچے آپ کے تخصصات منتخب کیے۔ جائزہ لے کر محفوظ کریں۔'
+                      : 'قرأنا نشاطك في السجل التجاري وحدّدنا تخصصاتك بالأسفل. راجِعها وعدّلها ثم احفظ.')
+                    : (locale === 'en' ? 'We can suggest what you sell from your commercial registration activity.'
+                      : locale === 'ur' ? 'ہم آپ کی تجارتی رجسٹریشن کی سرگرمی سے تجویز کر سکتے ہیں کہ آپ کیا بیچتے ہیں۔'
+                      : 'يمكننا اقتراح ما تبيعه من نشاط سجلك التجاري.')}
                 </div>
                 {detectMsg && <div className="text-[13px] font-semibold mt-1.5 text-[#0B2438]">{detectMsg}</div>}
               </div>
               <button onClick={() => analyzeFromCR(crActivity, companyName)} disabled={isMember}
                 className="min-h-[44px] px-4 rounded-xl font-bold text-white text-sm shrink-0 hover:shadow transition-all disabled:opacity-50" style={{ background: '#0B2438' }}>
-                {locale === 'en' ? 'Re-analyze' : locale === 'ur' ? 'دوبارہ تجزیہ' : 'إعادة التحليل'}
+                {autoDetected ? (locale === 'en' ? 'Re-analyze' : locale === 'ur' ? 'دوبارہ تجزیہ' : 'إعادة التحليل') : (locale === 'en' ? 'Suggest from my CR' : locale === 'ur' ? 'میری رجسٹریشن سے تجویز کریں' : 'اقترح من سجلي')}
               </button>
             </div>
           </div>
@@ -340,7 +348,7 @@ export default function SpecialtiesPage() {
           </>) : (
             <button type="button" onClick={() => setShowDetailed(true)}
               className="w-full inline-flex items-center justify-center gap-1 min-h-[44px] text-sm font-bold py-3 rounded-xl border border-dashed border-gray-300 text-gray-600 hover:border-[#D4A543] hover:text-[#8F6820]">
-              {locale === 'en' ? 'Fine-tune exact specialties (optional)' : locale === 'ur' ? 'تفصیلی مہارتیں (اختیاری)' : 'تخصيص دقيق للتخصصات (اختياري)'} <ChevronDown className="w-4 h-4" aria-hidden />
+              {locale === 'en' ? 'Fine-tune exact specialties (optional)' : locale === 'ur' ? 'تفصیلی تخصصات (اختیاری)' : 'تخصيص دقيق للتخصصات (اختياري)'} <ChevronDown className="w-4 h-4" aria-hidden />
             </button>
           )}
         </fieldset>
@@ -371,7 +379,7 @@ export default function SpecialtiesPage() {
           </div>
         ) : !loadFailed && (
           <div role="status" className="bg-amber-50 rounded-2xl p-5 border border-amber-200 text-center text-amber-900 text-sm font-semibold mb-5">
-            {locale === 'en' ? 'You have not chosen what you sell yet, so no requests will reach you. Pick a kind of business above or your exact specialties.' : locale === 'ur' ? 'آپ نے ابھی منتخب نہیں کیا کہ آپ کیا بیچتے ہیں، اس لیے کوئی درخواست نہیں آئے گی۔ اوپر کاروبار کی قسم یا مہارتیں منتخب کریں۔' : 'لم تختر بعد ما تبيعه، ولن تصلك طلبات حتى تختار. اختر نوع محلك من الأعلى أو تخصصاتك الدقيقة.'}
+            {locale === 'en' ? 'You have not chosen what you sell yet, so no requests will reach you. Pick a kind of business above or your exact specialties.' : locale === 'ur' ? 'آپ نے ابھی منتخب نہیں کیا کہ آپ کیا بیچتے ہیں، اس لیے کوئی درخواست نہیں آئے گی۔ اوپر کاروبار کی قسم یا تخصصات منتخب کریں۔' : 'لم تختر بعد ما تبيعه، ولن تصلك طلبات حتى تختار. اختر نوع ما تبيعه من الأعلى أو تخصصاتك الدقيقة.'}
           </div>
         )}
 
@@ -393,19 +401,29 @@ export default function SpecialtiesPage() {
           {suggestSector && (() => {
             const gks = sortGroupKeys([...new Set(Object.values((SUB_CATEGORIES as any)[suggestSector] || {}).map((x: any) => x.group))] as string[])
             return (
-              <select value={suggestGroup} onChange={e => setSuggestGroup(e.target.value)} className="input-field mt-3">
+              <select value={suggestGroup} onChange={e => setSuggestGroup(e.target.value)} className="input-field mt-3" aria-label={locale === 'en' ? 'Which group fits it' : locale === 'ur' ? 'یہ کس گروپ میں آتا ہے' : 'المجموعة المناسبة'}>
                 <option value="">{locale === 'en' ? 'Which group / list fits it?' : locale === 'ur' ? 'یہ کس گروپ میں آتا ہے؟' : 'أي مجموعة/قائمة تناسبها؟'}</option>
                 {gks.map((g: string) => <option key={g} value={g}>{(() => { const gl = (GROUP_LABELS as any)[g]; return gl ? (locale === 'en' ? gl.en : locale === 'ur' ? gl.ur : gl.ar) : g })()}</option>)}
                 <option value="__other__">{locale === 'en' ? 'Not listed — I will describe below' : locale === 'ur' ? 'فہرست میں نہیں — نیچے وضاحت کروں گا' : 'غير مذكورة — أوضّح بالوصف'}</option>
               </select>
             )
           })()}
-          <textarea value={suggestDesc} onChange={e => setSuggestDesc(e.target.value)}
+          <textarea value={suggestDesc} onChange={e => setSuggestDesc(e.target.value)} aria-label={T.sDescPh}
             className="input-field mt-3" rows={2} placeholder={T.sDescPh} />
-          <label className="block mt-3">
-            <span className="text-xs font-bold text-gray-500">{locale === 'en' ? 'Attach product details (photo / spec / PDF)' : locale === 'ur' ? 'پروڈکٹ کی تفصیل لگائیں (تصویر / تفصیل / PDF)' : 'أرفق تفاصيل المنتج (صورة / مواصفة / PDF)'}</span>
-            <input type="file" accept="image/*,.pdf,.doc,.docx,.xls,.xlsx" onChange={e => setSuggestFile((e.target as any).files?.[0] || null)} className="input-field mt-1 text-sm" />
-          </label>
+          {/* round-4 UX-141: a dashed upload area in the page language (no browser «Choose file») */}
+          {suggestFile ? (
+            <div className="mt-3 flex items-center gap-3 bg-[#0B2438]/5 rounded-xl p-2.5 border border-[#0B2438]/20">
+              <span className="text-xl"><Glyph e="📄" /></span>
+              <span className="text-xs font-semibold flex-1 truncate text-[#0B2438]">{suggestFile.name}</span>
+              <button type="button" onClick={() => setSuggestFile(null)} className="min-h-[44px] px-2 text-xs font-bold text-[#B42318] hover:underline">{locale === 'en' ? 'Remove' : locale === 'ur' ? 'ہٹائیں' : 'إزالة'}</button>
+            </div>
+          ) : (
+            <label className="mt-3 flex items-center gap-3 min-h-[52px] border-2 border-dashed border-gray-200 rounded-xl p-3 cursor-pointer hover:border-[#D4A543]/50 transition-all">
+              <input type="file" className="sr-only" accept="image/*,.pdf,.doc,.docx,.xls,.xlsx" onChange={e => setSuggestFile((e.target as any).files?.[0] || null)} />
+              <span className="text-lg"><Glyph e="📤" /></span>
+              <span className="text-sm text-gray-600">{locale === 'en' ? 'Attach a photo or the specification file (optional)' : locale === 'ur' ? 'تصویر یا تفصیلات کی فائل منسلک کریں (اختیاری)' : 'أرفق صورة أو ملف المواصفات (اختياري)'}</span>
+            </label>
+          )}
 
           {suggestMsg && <div role={suggestErr ? 'alert' : 'status'} className={`text-sm rounded-xl p-2.5 mt-3 border ${suggestErr ? 'text-red-700 bg-red-50 border-red-200' : 'text-emerald-700 bg-emerald-50 border-emerald-200'}`}>{suggestMsg}</div>}
 
@@ -447,7 +465,7 @@ export default function SpecialtiesPage() {
           </button>
           ) : !loadFailed && mySpecialties.length > 0 && (
             <div className="w-full min-h-[52px] py-3 rounded-xl text-center font-bold text-base bg-white border border-emerald-200 text-emerald-700 shadow" aria-live="polite">
-              {locale === 'en' ? `Specialties saved (${mySpecialties.length})` : locale === 'ur' ? `مہارتیں محفوظ ہیں (${mySpecialties.length})` : `التخصصات محفوظة (${mySpecialties.length})`}
+              {locale === 'en' ? `Specialties saved (${mySpecialties.length})` : locale === 'ur' ? `تخصصات محفوظ ہیں (${mySpecialties.length})` : `التخصصات محفوظة (${mySpecialties.length})`}
             </div>
           )}
         </div>

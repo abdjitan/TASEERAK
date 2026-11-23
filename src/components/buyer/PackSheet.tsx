@@ -6,10 +6,11 @@ import { X, Calculator } from 'lucide-react'
 import QuantityCalc, { calcSupported } from '@/components/buyer/QuantityCalc'
 import { getUnitLabelLong, getDefaultUnit, getProductLabel } from '@/types'
 import { productImageUrl } from '@/lib/productImage'
-import { homeName, packUnitMismatches, type HomePack } from '@/lib/homePacks'
+import { homeName, packUnitMismatches, deriveQty, type HomePack } from '@/lib/homePacks'
+import { askConfirm } from '@/lib/askConfirm'
 import type { Sector } from '@/types'
 
-const toLatinNumber = (v: string) => v.replace(/[٠-٩]/g, d => String('٠١٢٣٤٥٦٧٨٩'.indexOf(d))).replace(/[۰-۹]/g, d => String('۰۱۲۳۴۵۶۷۸۹'.indexOf(d))).replace(/[٫,]/g, '.').replace(/[^0-9.]/g, '')
+import { toLatinNumber } from '@/lib/number' // «2,500» = 2500: commas are thousands separators (round-4 UX-002)
 
 export type PackLine = { name: string; sector: Sector; quantity: string; unit: string }
 
@@ -28,18 +29,40 @@ export default function PackSheet({ pack, locale, onAdd, onClose }: {
   const L = (en: string, ur: string, ar: string) => (locale === 'en' ? en : locale === 'ur' ? ur : ar)
   const pick = (o: { ar: string; en: string; ur: string }) => (locale === 'en' ? o.en : locale === 'ur' ? o.ur : o.ar)
   const [rows, setRows] = useState(() => pack.items.map(it => ({
-    ...it, on: true, quantity: it.qty != null ? String(it.qty) : '', unit: it.unit || getDefaultUnit(it.name, it.sector) || 'حبة',
+    ...it, on: true, quantity: it.qty != null ? String(it.qty) : '', unit: it.unit || getDefaultUnit(it.name, it.sector) || 'حبة', edited: false,
   })))
+  const [dirty, setDirty] = useState(false) // something changed: closing asks first (round-4 UX-025)
   const chosen = rows.filter(r => r.on)
-  const set = (i: number, patch: Partial<(typeof rows)[number]>) => setRows(prev => prev.map((r, k) => k === i ? { ...r, ...patch } : r))
+  // a derived row (tile adhesive) follows its source rows until the buyer edits it (round-4 UX-185)
+  const set = (i: number, patch: Partial<(typeof rows)[number]>) => {
+    setDirty(true)
+    setRows(prev => {
+      const next = prev.map((r, k) => k === i ? { ...r, ...patch, ...(patch.quantity !== undefined && r.derive ? { edited: true } : {}) } : r)
+      return next.map(r => (r.derive && !r.edited ? { ...r, quantity: deriveQty(r.derive, next) } : r))
+    })
+  }
   const name = (n: string) => locale === 'ar' ? homeName(n) : getProductLabel(n, locale)
   const boxRef = useRef<HTMLDivElement>(null)
   const [calcFor, setCalcFor] = useState<number | null>(null)
   const ready = chosen.filter(r => parseFloat(r.quantity) > 0).length
   const noQty = chosen.length - ready
   // a new onClose on every parent render must not re-run the effect (focus jumped while typing, round-2 UX-036)
-  const closeRef = useRef(onClose)
-  closeRef.current = onClose
+  const dirtyRef = useRef(false)
+  dirtyRef.current = dirty
+  const askingRef = useRef(false)
+  async function tryClose() {
+    if (askingRef.current) return
+    if (dirtyRef.current) {
+      askingRef.current = true
+      const ok = await askConfirm(L('Close the list? The quantities you entered will be lost.', 'فہرست بند کریں؟ آپ کی لکھی ہوئی مقداریں ضائع ہو جائیں گی۔', 'هل تريد إغلاق القائمة؟ ستضيع الكميات التي أدخلتها.'),
+        { okLabel: L('Close', 'بند کریں', 'إغلاق'), cancelLabel: L('Keep editing', 'ترمیم جاری رکھیں', 'متابعة التعديل') })
+      askingRef.current = false
+      if (!ok) return
+    }
+    onClose()
+  }
+  const closeRef = useRef(tryClose)
+  closeRef.current = tryClose
 
   // a real dialog: Escape closes, the page behind does not scroll, focus starts inside (once)
   useEffect(() => {
@@ -61,7 +84,7 @@ export default function PackSheet({ pack, locale, onAdd, onClose }: {
   }, [])
 
   return (
-    <div className="fixed inset-0 z-[70] bg-[#071827]/60 flex items-end sm:items-center justify-center" onClick={onClose}>
+    <div className="fixed inset-0 z-[70] bg-[#071827]/60 flex items-end sm:items-center justify-center" onClick={() => tryClose()}>
       <div ref={boxRef} tabIndex={-1} role="dialog" aria-modal="true" aria-labelledby="pack-title" onClick={e => e.stopPropagation()}
         className="bg-white w-full sm:max-w-lg max-h-[92vh] rounded-t-3xl sm:rounded-3xl flex flex-col overflow-hidden outline-none">
         <div className="relative shrink-0 flex items-center gap-3 px-4 py-3 border-b border-gray-100">
@@ -71,7 +94,7 @@ export default function PackSheet({ pack, locale, onAdd, onClose }: {
             <div id="pack-title" className="text-lg font-extrabold text-[#0B2438]">{pick(pack)}</div>
             <div className="text-[13px] text-gray-600">{L('Untick what you don’t need and set the quantities', 'جو نہیں چاہیے اسے ہٹائیں اور مقدار لکھیں', 'أزل ما لا تحتاجه، وحدّد الكميات')}</div>
           </div>
-          <button type="button" onClick={onClose} aria-label={L('Close', 'بند', 'إغلاق')}
+          <button type="button" onClick={() => tryClose()} aria-label={L('Close', 'بند', 'إغلاق')}
             className="w-[44px] h-[44px] grid place-items-center rounded-full bg-gray-100 text-[#0B2438] shrink-0 hover:bg-gray-200">
             <X className="w-5 h-5" aria-hidden />
           </button>

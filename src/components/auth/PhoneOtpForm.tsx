@@ -234,7 +234,7 @@ export default function PhoneOtpForm({ onSignedIn, onUseEmail, registerHref = '/
           <span>{t.terms1} <Link href="/terms" target="_blank" className="font-bold underline">{t.terms}</Link> {t.and} <Link href="/privacy" target="_blank" className="font-bold underline">{t.privacy}</Link></span>
         </label>
         <button type="submit" disabled={loading} className="btn-orange w-full btn-lg">{loading ? t.creating : t.create}</button>
-        <p className="text-sm text-center text-ink-2">{locale === 'en' ? 'Not a buyer?' : locale === 'ur' ? 'خریدار نہیں؟' : 'لست مشترياً؟'} <a href="/join" className="inline-flex items-center min-h-[44px] font-bold text-orange-dark hover:underline">{locale === 'en' ? 'Sign up as a supplier' : locale === 'ur' ? 'سپلائر کے طور پر رجسٹر کریں' : 'سجّل كمورد'}</a></p>
+        {/* the supplier link lives once under the form on the login page (round-4 UX-115) */}
       </form>
     )
   }

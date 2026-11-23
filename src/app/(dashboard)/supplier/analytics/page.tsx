@@ -10,6 +10,7 @@ import { SECTOR_LABELS } from '@/types'
 import Glyph from '@/components/shared/Glyph'
 import LoadError from '@/components/shared/LoadError'
 import { arCount } from '@/lib/text'
+import Link from 'next/link'
 
 // أداء المورّد: قمع (عرض → فوز/خسارة/انتظار) + نسبة الفوز حسب القطاع + اتجاه شهري.
 // بيانات المورّد نفسه فقط — لا أسعار منافسين (H2). المصدر: get_my_supplier_analytics().
@@ -77,6 +78,7 @@ export default function SupplierAnalyticsPage() {
             <div className="text-4xl mb-3"><Glyph e="🏆" /></div>
             <p className="font-bold text-gray-700 mb-1">{L('No offers yet', 'ابھی کوئی آفر نہیں', 'لا توجد عروض بعد')}</p>
             <p className="text-sm text-gray-500">{L('Submit offers on requests and your results will appear here.', 'درخواستوں پر آفرز دیں، آپ کے نتائج یہاں نظر آئیں گے۔', 'قدّم عروضاً على الطلبات وستظهر نتائجك هنا.')}</p>
+            <Link href="/supplier/dashboard" className="inline-flex items-center justify-center mt-4 min-h-[44px] px-5 rounded-xl font-extrabold text-sm text-[#071827]" style={{ background: 'linear-gradient(135deg,#F5C55B,#D4A543)' }}>{L('Price the open requests', 'کھلی درخواستوں کی قیمت دیں', 'سعّر الطلبات المفتوحة')}</Link>
           </div>
         ) : (
           <>
@@ -115,7 +117,7 @@ export default function SupplierAnalyticsPage() {
                         <span className="text-gray-700">{dec
                           ? L(`Chosen in ${w} of ${dec}`, `${dec} میں سے ${w} منتخب`, `اختيرت ${w} من ${dec}`)
                           : L('Waiting for the buyer', 'خریدار کے فیصلے کی منتظر', 'بانتظار قرار المشتري')}
-                          <span className="text-gray-500"> · {L(`${t} offers`, `${t} آفرز`, arCount(t, 'عرض واحد', 'عرضان', 'عروض', 'عرضاً'))}</span></span>
+                          <span className="text-gray-500"> · {L(`${t} offer${t === 1 ? '' : 's'}`, `${t} آفر`, arCount(t, 'عرض واحد', 'عرضان', 'عروض', 'عرضاً'))}</span></span>
                       </li>
                     )
                   })}
@@ -134,7 +136,7 @@ export default function SupplierAnalyticsPage() {
                       <li key={m.month} className="py-2.5 flex items-center justify-between gap-3 text-sm">
                         <span className="font-semibold text-[#0B2438]">{monthLabel(m.month)}</span>
                         <span className="text-gray-700">{offs
-                          ? L(`${offs} offers, ${w} chosen`, `${offs} آفرز، ${w} منتخب`, `${arCount(offs, 'عرض واحد', 'عرضان', 'عروض', 'عرضاً')}، اختير منها ${w}`)
+                          ? L(`${offs} offer${offs === 1 ? '' : 's'}, ${w} chosen`, `${offs} آفر، ${w} منتخب`, `${arCount(offs, 'عرض واحد', 'عرضان', 'عروض', 'عرضاً')}، اختير منها ${w}`)
                           : L('No offers', 'کوئی آفر نہیں', 'لا عروض')}</span>
                       </li>
                     )
@@ -144,6 +146,10 @@ export default function SupplierAnalyticsPage() {
             )}
 
             <p className="text-center text-[13px] text-gray-600 mt-5">{L('Buyers usually choose by price and delivery time; a complete offer with clear specifications helps.', 'خریدار عموماً قیمت اور ڈیلیوری کے وقت سے انتخاب کرتے ہیں؛ واضح تفصیلات والی مکمل آفر مدد دیتی ہے۔', 'يختار المشتري عادةً بحسب السعر ومدة التوصيل، والعرض الكامل بمواصفات واضحة يرفع فرصتك.')}</p>
+            <div className="mt-5 flex flex-wrap justify-center gap-2">
+              <Link href="/supplier/dashboard" className="inline-flex items-center justify-center min-h-[44px] px-5 rounded-xl font-extrabold text-sm text-[#071827]" style={{ background: 'linear-gradient(135deg,#F5C55B,#D4A543)' }}>{L('Price the open requests', 'کھلی درخواستوں کی قیمت دیں', 'سعّر الطلبات المفتوحة')}</Link>
+              <Link href="/supplier/prices" className="inline-flex items-center justify-center min-h-[44px] px-5 rounded-xl font-bold text-sm text-[#0B2438] border border-[#0B2438]/30 bg-white">{L('Update my prices', 'میری قیمتیں اپ ڈیٹ کریں', 'حدّث أسعاري')}</Link>
+            </div>
             <p className="text-center text-[12px] text-gray-500 mt-5">{L('Based on your own offers only. Competitor prices are never shown.', 'صرف آپ کی اپنی آفرز کی بنیاد پر۔ حریفوں کی قیمتیں کبھی نہیں دکھائی جاتیں۔', 'محسوبة من عروضك أنت فقط، ولا تُعرض أسعار المنافسين إطلاقاً.')}</p>
           </>
         )}

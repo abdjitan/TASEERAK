@@ -22,6 +22,7 @@ import Glyph from '@/components/shared/Glyph'
 import { takePostSignupNext } from '@/lib/postSignupNext'
 import { toast } from 'sonner'
 import { normalizeCrInput, isUnifiedCr, crTakenText, isCrTaken, crSupportHref } from '@/lib/cr'
+import BuyerTypeCards, { BuyerTypeSummary } from '@/components/auth/BuyerTypeCards'
 
 // ── إعداد ملفك التجاري (Progressive profiling) ────────────────────────────
 // تُعبّأ هنا البيانات المنقولة خارج التسجيل: الموقع + القطاعات + (للمقاول: الدرجة)
@@ -35,66 +36,69 @@ const SECTOR_TR: Record<string, any> = {
 
 const TR = {
   ar: {
-    title: 'إعداد ملفك التجاري', subC: 'أضف موقعك، ليصل طلبك إلى الموردين القريبين منك.', subS: 'أضف موقعك وتخصصاتك لتظهر للمشترين وتصلك الطلبات المطابقة',
+    title: 'إعداد ملفك التجاري', subC: 'أضف موقعك، ليصل طلبك إلى الموردين القريبين منك.', subS: 'أضف موقعك وما تبيعه لتظهر للمشترين وتصلك الطلبات المطابقة',
     location: 'الموقع', region: 'المنطقة', selectRegion: '-- اختر --', city: 'المدينة', district: 'الحي',
     sectorsTitleC: 'قطاعات عملك', sectorsHintC: 'اختياري: يمكنك تخطّي هذه الخطوة، فطلبك يصل إلى الموردين المناسبين بحسب المواد التي تطلبها.',
     sectorsTitleS: 'تخصصاتك والمواد', sectorsHintS: 'اختر ما تبيعه، وتُحدَّد قطاعاتك منه تلقائياً',
     classTitle: 'نوع الحساب', classHint: 'هل تمثّل شركة أو محلاً، أم تعمل وسيط تسعير؟ لا يمكن تغييره لاحقاً إلا بطلب من الدعم وموافقة الإدارة.',
     minOrder: 'الحد الأدنى لقيمة الطلب (ر.س) — اختياري', minOrderPh: 'مثال: 50000', minOrderHint: 'اتركه فارغاً لقبول كل الطلبات، أو حدّده لتصفية الطلبات حسب قدرتك التوريدية.',
     gradeTitle: 'درجة تصنيف شركتك (للمقاولين)', gradeSub: 'من رخصتك (وزارة الشؤون البلدية) — يستخدمها الموردون لفلترة الطلبات حسب حجم المشروع. اختياري.',
-    verifyTitle: 'وثّق نشاطك التجاري', verifyBody: 'التوثيق اختياري: يضيف شارة «موثّق» إلى عروضك لدى المشترين، فترتفع موثوقيتك وفرصك في الفوز بالطلبات.', verifyCta: 'احفظ وابدأ التوثيق ←', verifyLocked: 'أكمل موقعك وقطاعاتك وتخصصاتك أعلاه لتُفتح خطوة التوثيق.',
+    verifyTitle: 'وثّق نشاطك التجاري', verifyBody: 'أرفق مستندات منشأتك ليراجعها الفريق، فتظهر شارة «موثّق» على عروضك لدى المشترين وترتفع فرصك في الفوز بالطلبات.', verifyCta: 'احفظ وابدأ التوثيق ←', verifyLocked: 'أكمل موقعك وما تبيعه أعلاه لتُفتح خطوة التوثيق.',
     addMatTitle: 'لا تجد مادة تورّدها في القائمة؟', addMatPh: 'اسم المادة...', addMatBtn: 'إضافة', remove: 'إزالة',
     save: 'حفظ ومتابعة ←', saving: 'جارٍ الحفظ...', later: 'لاحقاً', selected: 'محدد',
     needLoc: 'اختر المنطقة والمدينة', needSector: 'اختر قطاعاً واحداً على الأقل', saved: 'تم حفظ ملفك',
-    progress: 'اكتمال ملفك', stepKind: 'نوع الحساب', stepActivity: 'النشاط الرئيسي', stepLocation: 'الموقع', stepSectors: 'القطاعات', stepSpecialties: 'ما تبيعه', stepVerify: 'التوثيق (لاحقاً)', stepMap: 'الموقع على الخريطة', stepBiz: 'اسم المحل',
-    warn: 'بدون تحديد موقعك وقطاعاتك وتخصصاتك لن تظهر للمشترين ولن تصلك أي طلبات مطابقة.',
+    progress: 'اكتمال ملفك', stepKind: 'نوع الحساب', stepActivity: 'النشاط الرئيسي', stepLocation: 'الموقع', stepSectors: 'القطاعات', stepSpecialties: 'ما تبيعه', stepVerify: 'التوثيق (لاحقاً)', stepMap: 'الموقع على الخريطة', stepBiz: 'اسم المحل', stepCr: 'السجل التجاري', left: 'باقٍ',
+    warn: 'بدون موقعك وما تبيعه لن تظهر للمشترين ولن تصلك أي طلبات.',
     company: 'ملف الشركة', required: 'مطلوب', optional: 'اختياري',
     loadFailed: 'تعذّر تحميل بيانات ملفك. حدّث الصفحة وحاول مرة أخرى قبل الحفظ حتى لا تُستبدل بياناتك المحفوظة.',
-    saveFailed: 'تعذّر حفظ ملفك، ولم يُغيَّر شيء من قطاعاتك وتخصصاتك المحفوظة. تحقّق من اتصالك ثم حاول مرة أخرى.',
+    saveFailed: 'تعذّر حفظ ملفك، ولم يُغيَّر شيء مما تبيعه في ملفك المحفوظ. تحقّق من اتصالك ثم حاول مرة أخرى.',
+    addrFailed: 'تعذّر حفظ عنوان التوصيل. تحقّق من اتصالك ثم حاول مرة أخرى.',
     profileFailed: 'تعذّر حفظ الموقع والبيانات الأساسية. تحقّق من اتصالك ثم حاول مرة أخرى.',
     matFailed: 'حُفظ ملفك، لكن تعذّر إرسال بعض المواد المقترحة. اضغط «حفظ» مرة أخرى لإعادة إرسالها.',
     kindFailed: 'تعذّر تطبيق نوع الحساب تلقائياً، يُرجى اختياره يدوياً أدناه.',
     bizName: 'اسم المحل أو النشاط التجاري', bizHint: 'يظهر للمشترين على عروضك', bizPh: 'مثال: مؤسسة الصخر لمواد البناء', needBiz: 'اكتب اسم المحل أو النشاط التجاري', needSpec: 'اختر نوعاً واحداً على الأقل مما تبيعه حتى تصلك الطلبات',
   },
   en: {
-    title: 'Set up your business profile', subC: 'Add your location, so your request reaches the suppliers near you.', subS: 'Add your location and specialties to appear to buyers and receive matching requests',
+    title: 'Set up your business profile', subC: 'Add your location, so your request reaches the suppliers near you.', subS: 'Add your location and what you sell to appear to buyers and receive matching requests',
     location: 'Location', region: 'Region', selectRegion: '-- Select --', city: 'City', district: 'District',
     sectorsTitleC: 'Your sectors', sectorsHintC: 'Optional: you can skip this. Your request reaches the right suppliers based on the materials you ask for.',
     sectorsTitleS: 'Specialties & materials', sectorsHintS: 'Choose what you sell; your sectors follow from it',
     classTitle: 'Account type', classHint: 'Do you represent a company or shop, or work as a pricing agent? It can only be changed later through Support, with admin approval.',
     minOrder: 'Min order value (SAR) — optional', minOrderPh: 'e.g. 50000', minOrderHint: 'Leave empty to accept all requests — or set it to filter by your supply capacity.',
     gradeTitle: 'Company grade (contractors)', gradeSub: 'From your license (Ministry of Municipal Affairs) — suppliers use it to filter by project size. Optional.',
-    verifyTitle: 'Verify your business', verifyBody: 'Optional: verification adds a «Verified» badge to your quotes for buyers, making your shop highly trusted and raising your chance of winning requests.', verifyCta: 'Save & start verification →', verifyLocked: 'Complete your location, sectors and specialties above to unlock verification.',
+    verifyTitle: 'Verify your business', verifyBody: 'Attach your business documents for the team to review; a «Verified» badge then shows on your offers and raises your chance of winning requests.', verifyCta: 'Save & start verification →', verifyLocked: 'Complete your location and what you sell above to unlock verification.',
     addMatTitle: "Can't find a material you supply?", addMatPh: 'Material name...', addMatBtn: 'Add', remove: 'Remove',
     save: 'Save & continue →', saving: 'Saving...', later: 'Later', selected: 'selected',
     needLoc: 'Select region and city', needSector: 'Select at least one sector', saved: 'Profile saved',
-    progress: 'Profile completion', stepKind: 'Account type', stepActivity: 'Main activity', stepLocation: 'Location', stepSectors: 'Sectors', stepSpecialties: 'What you sell', stepVerify: 'Verification (later)', stepMap: 'Map location', stepBiz: 'Shop name',
-    warn: "Without your location, sectors and specialties you won't appear to buyers and won't receive any matching requests.",
+    progress: 'Profile completion', stepKind: 'Account type', stepActivity: 'Main activity', stepLocation: 'Location', stepSectors: 'Sectors', stepSpecialties: 'What you sell', stepVerify: 'Verification (later)', stepMap: 'Map location', stepBiz: 'Shop name', stepCr: 'Commercial registration', left: 'Left',
+    warn: "Without your location and what you sell you won't appear to buyers and won't receive any requests.",
     company: 'Company profile', required: 'Required', optional: 'Optional',
     loadFailed: 'Could not load your profile. Refresh the page and try again before saving so your saved data is not replaced.',
-    saveFailed: 'Could not save your profile; your saved sectors and specialties were not changed. Check your connection and try again.',
+    saveFailed: 'Could not save your profile; what you sell in your saved profile was not changed. Check your connection and try again.',
+    addrFailed: 'Could not save the delivery address. Check your connection and try again.',
     profileFailed: 'Could not save your location and basic details. Check your connection and try again.',
     matFailed: 'Your profile was saved, but some suggested materials could not be sent. Press Save again to resend them.',
     kindFailed: 'Could not apply your account type automatically; please pick it below.',
     bizName: 'Shop or business name', bizHint: 'Shown to buyers on your offers', bizPh: 'e.g. Al-Sakhr Building Materials', needBiz: 'Write your shop or business name', needSpec: 'Pick at least one thing you sell so requests can reach you',
   },
   ur: {
-    title: 'اپنی کاروباری پروفائل ترتیب دیں', subC: 'اپنا مقام شامل کریں تاکہ آپ کی درخواست قریبی سپلائرز تک پہنچے۔', subS: 'خریداروں کو نظر آنے اور مماثل درخواستیں وصول کرنے کے لیے مقام اور مہارتیں شامل کریں',
+    title: 'اپنی کاروباری پروفائل ترتیب دیں', subC: 'اپنا مقام شامل کریں تاکہ آپ کی درخواست قریبی سپلائرز تک پہنچے۔', subS: 'خریداروں کو نظر آنے اور مماثل درخواستیں وصول کرنے کے لیے مقام اور آپ کیا بیچتے ہیں شامل کریں',
     location: 'مقام', region: 'علاقہ', selectRegion: '-- منتخب کریں --', city: 'شہر', district: 'محلہ',
     sectorsTitleC: 'آپ کے شعبے', sectorsHintC: 'اختیاری: آپ یہ مرحلہ چھوڑ سکتے ہیں۔ آپ کی درخواست مطلوبہ مواد کے مطابق درست سپلائرز تک پہنچتی ہے۔',
-    sectorsTitleS: 'مہارتیں اور مواد', sectorsHintS: 'منتخب کریں آپ کیا بیچتے ہیں؛ آپ کے شعبے اسی سے طے ہوں گے',
+    sectorsTitleS: 'تخصصات اور مال', sectorsHintS: 'منتخب کریں آپ کیا بیچتے ہیں؛ آپ کے شعبے اسی سے طے ہوں گے',
     classTitle: 'اکاؤنٹ کی قسم', classHint: 'کیا آپ کمپنی یا دکان کی نمائندگی کرتے ہیں یا قیمت ایجنٹ ہیں؟ بعد میں صرف سپورٹ کے ذریعے، انتظامیہ کی منظوری سے بدلا جا سکتا ہے۔',
     minOrder: 'کم از کم آرڈر قیمت (ریال) — اختیاری', minOrderPh: 'مثال: 50000', minOrderHint: 'تمام درخواستوں کے لیے خالی چھوڑیں یا اپنی صلاحیت کے مطابق مقرر کریں۔',
     gradeTitle: 'کمپنی کا درجہ (ٹھیکیداروں کے لیے)', gradeSub: 'آپ کے لائسنس سے — سپلائرز پروجیکٹ سائز کے مطابق فلٹر کرتے ہیں۔ اختیاری۔',
-    verifyTitle: 'اپنے کاروبار کی تصدیق کریں', verifyBody: 'اختیاری: تصدیق آپ کی آفرز پر «تصدیق شدہ» بیج دکھاتی ہے، جس سے خریداروں کا اعتماد بڑھتا ہے۔', verifyCta: 'محفوظ کریں اور تصدیق شروع کریں ←', verifyLocked: 'تصدیق کھولنے کے لیے اوپر اپنا مقام، شعبے اور مہارتیں مکمل کریں۔',
+    verifyTitle: 'اپنے کاروبار کی تصدیق کریں', verifyBody: 'اپنے ادارے کی دستاویزات منسلک کریں تاکہ ٹیم جائزہ لے؛ پھر آپ کی آفرز پر «تصدیق شدہ» بیج دکھے گا۔', verifyCta: 'محفوظ کریں اور تصدیق شروع کریں ←', verifyLocked: 'تصدیق کھولنے کے لیے اوپر اپنا مقام اور آپ کیا بیچتے ہیں مکمل کریں۔',
     addMatTitle: 'فہرست میں کوئی مواد نہیں؟', addMatPh: 'مواد کا نام...', addMatBtn: 'شامل کریں', remove: 'ہٹائیں',
     save: 'محفوظ کریں اور جاری رکھیں ←', saving: 'محفوظ ہو رہا ہے...', later: 'بعد میں', selected: 'منتخب',
     needLoc: 'علاقہ اور شہر منتخب کریں', needSector: 'کم از کم ایک شعبہ منتخب کریں', saved: 'پروفائل محفوظ',
-    progress: 'پروفائل تکمیل', stepKind: 'اکاؤنٹ کی قسم', stepActivity: 'بنیادی سرگرمی', stepLocation: 'مقام', stepSectors: 'شعبے', stepSpecialties: 'آپ کیا بیچتے ہیں', stepVerify: 'تصدیق (بعد میں)', stepMap: 'نقشے پر مقام', stepBiz: 'دکان کا نام',
-    warn: 'مقام، شعبوں اور مہارتوں کے بغیر آپ خریداروں کو نظر نہیں آئیں گے اور کوئی درخواست موصول نہیں ہوگی۔',
+    progress: 'پروفائل تکمیل', stepKind: 'اکاؤنٹ کی قسم', stepActivity: 'بنیادی سرگرمی', stepLocation: 'مقام', stepSectors: 'شعبے', stepSpecialties: 'آپ کیا بیچتے ہیں', stepVerify: 'تصدیق (بعد میں)', stepMap: 'نقشے پر مقام', stepBiz: 'دکان کا نام', stepCr: 'تجارتی رجسٹریشن', left: 'باقی',
+    warn: 'اپنے مقام اور آپ کیا بیچتے ہیں، اس کے بغیر آپ خریداروں کو نظر نہیں آئیں گے اور کوئی درخواست موصول نہیں ہوگی۔',
     company: 'کمپنی پروفائل', required: 'ضروری', optional: 'اختیاری',
     loadFailed: 'آپ کی پروفائل لوڈ نہیں ہو سکی۔ محفوظ کرنے سے پہلے صفحہ ریفریش کریں تاکہ آپ کا محفوظ ڈیٹا تبدیل نہ ہو۔',
-    saveFailed: 'پروفائل محفوظ نہیں ہو سکی؛ آپ کے محفوظ شعبے اور مہارتیں تبدیل نہیں ہوئیں۔ کنکشن چیک کر کے دوبارہ کوشش کریں۔',
+    saveFailed: 'پروفائل محفوظ نہیں ہو سکی؛ آپ کی محفوظ پروفائل میں کچھ تبدیل نہیں ہوا۔ کنکشن چیک کر کے دوبارہ کوشش کریں۔',
+    addrFailed: 'ڈیلیوری کا پتہ محفوظ نہیں ہو سکا۔ کنکشن چیک کر کے دوبارہ کوشش کریں۔',
     profileFailed: 'مقام اور بنیادی معلومات محفوظ نہیں ہو سکیں۔ کنکشن چیک کر کے دوبارہ کوشش کریں۔',
     matFailed: 'پروفائل محفوظ ہو گئی، لیکن کچھ تجویز کردہ مواد نہیں بھیجے جا سکے۔ دوبارہ بھیجنے کے لیے پھر سے محفوظ کریں۔',
     kindFailed: 'اکاؤنٹ کی قسم خود بخود لاگو نہیں ہو سکی، براہ کرم نیچے منتخب کریں۔',
@@ -152,10 +156,21 @@ export default function OnboardingPage() {
   const [err, setErr] = useState('')
   // فشل تحميل القطاعات/التخصصات المحفوظة: نمنع الحفظ حتى لا تُستبدل البيانات المحفوظة بقائمة فارغة.
   const [loadFailed, setLoadFailed] = useState(false)
+  const [stepsOpen, setStepsOpen] = useState(false) // round-4 UX-059: the phone list of steps
 
-  function showErr(m: string) {
+  // round-4 UX-059: an error takes the seller to the field it is about (and is also shown at the bottom)
+  function showErr(m: string, field?: string) {
     setErr(m)
-    setTimeout(() => { try { document.getElementById('onboarding-err')?.scrollIntoView({ behavior: 'smooth', block: 'center' }) } catch {} }, 50)
+    setTimeout(() => {
+      try {
+        const el = field ? document.getElementById(field) : null
+        if (el) {
+          el.scrollIntoView({ behavior: 'smooth', block: 'center' })
+          if (/^(INPUT|SELECT|TEXTAREA|BUTTON)$/.test(el.tagName)) (el as HTMLElement).focus({ preventScroll: true })
+          else { el.style.outline = '2px solid #D4A543'; el.style.borderRadius = '16px'; setTimeout(() => { el.style.outline = '' }, 1800) }
+        } else document.getElementById('onboarding-err')?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      } catch {}
+    }, 50)
   }
 
   useEffect(() => {
@@ -222,7 +237,7 @@ export default function OnboardingPage() {
       const c = normalizeCrInput(crInput)
       if (!isUnifiedCr(c)) {
         setCrAsk(true)
-        showErr(locale === 'en' ? 'A company or shop needs its commercial registration number (10 digits starting with 7). No registration? Choose «Pricing agent».' : locale === 'ur' ? 'کمپنی یا دکان کے لیے تجارتی رجسٹریشن نمبر ضروری ہے (7 سے شروع، 10 ہندسے)۔ رجسٹریشن نہیں؟ «قیمت ایجنٹ» منتخب کریں۔' : 'الشركة أو المحل تحتاج رقم السجل التجاري (10 أرقام يبدأ بـ7). ليس لديك سجل؟ اختر «وسيط تسعير».')
+        showErr(locale === 'en' ? 'A company or shop needs its commercial registration number (10 digits starting with 7). No registration? Choose «Pricing agent».' : locale === 'ur' ? 'کمپنی یا دکان کے لیے تجارتی رجسٹریشن نمبر ضروری ہے (7 سے شروع، 10 ہندسے)۔ رجسٹریشن نہیں؟ «قیمت ایجنٹ» منتخب کریں۔' : 'تحتاج الشركة أو المحل إلى رقم السجل التجاري (10 أرقام يبدأ بـ7). ليس لديك سجل؟ اختر «وسيط تسعير».')
         setTimeout(() => document.getElementById('ob-cr')?.focus(), 50)
         return
       }
@@ -272,22 +287,28 @@ export default function OnboardingPage() {
   async function save(dest?: string) {
     setErr('')
     if (loadFailed) { showErr(t.loadFailed); return }
-    if (role === 'supplier' && !providerType) { showErr(locale === 'en' ? 'Choose your account type first.' : locale === 'ur' ? 'پہلے اکاؤنٹ کی قسم منتخب کریں۔' : 'اختر نوع حسابك أولاً.'); return }
+    if (role === 'supplier' && !providerType) { showErr(locale === 'en' ? 'Choose your account type first.' : locale === 'ur' ? 'پہلے اکاؤنٹ کی قسم منتخب کریں۔' : 'اختر نوع حسابك أولاً.', 'ob-kind'); return }
     // UX-038: a company names its main activity (the star on «ما نشاطك الرئيسي؟» is enforced)
-    if (role === 'supplier' && !isIndividual && !hasActivity) { showErr(locale === 'en' ? 'Choose your main activity: building-materials shop, agent / distributor, trading company or factory.' : locale === 'ur' ? 'اپنی بنیادی سرگرمی منتخب کریں: تعمیراتی سامان کی دکان، ایجنٹ / ڈسٹری بیوٹر، تجارتی کمپنی یا فیکٹری۔' : 'اختر نشاطك الرئيسي: محل مواد بناء، أو وكيل وموزّع، أو شركة تجارية، أو مصنع.'); return }
+    if (role === 'supplier' && !isIndividual && !hasActivity) { showErr(locale === 'en' ? 'Choose your main activity: building-materials shop, agent / distributor, trading company or factory.' : locale === 'ur' ? 'اپنی بنیادی سرگرمی منتخب کریں: تعمیراتی سامان کی دکان، ایجنٹ / ڈسٹری بیوٹر، تجارتی کمپنی یا فیکٹری۔' : 'اختر نشاطك الرئيسي: محل مواد بناء، أو وكيل وموزّع، أو شركة تجارية، أو مصنع.', 'ob-kind'); return }
     // UX-060: a buyer says who they buy for before anything else
-    if (role !== 'supplier' && !buyerType) { showErr(locale === 'en' ? 'Choose who you are buying for first.' : locale === 'ur' ? 'پہلے منتخب کریں کہ آپ کس کے لیے خرید رہے ہیں۔' : 'اختر لمن تشتري أولاً.'); return }
-    if (!region || !city) { showErr(t.needLoc); return }
+    if (role !== 'supplier' && !buyerType) { showErr(locale === 'en' ? 'Choose who you are buying for first.' : locale === 'ur' ? 'پہلے منتخب کریں کہ آپ کس کے لیے خرید رہے ہیں۔' : 'اختر لمن تشتري أولاً.', 'ob-buyer'); return }
+    // round-4 UX-059: a company or shop cannot finish without its commercial registration (a CR held by another account keeps blocking)
+    if (role === 'supplier' && !isIndividual && !crNo) { setCrAsk(true); showErr(locale === 'en' ? 'Add your commercial registration number (10 digits starting with 7) and press «Save».' : locale === 'ur' ? 'اپنا تجارتی رجسٹریشن نمبر (7 سے شروع، 10 ہندسے) درج کریں اور «محفوظ کریں» دبائیں۔' : 'أدخل رقم سجلك التجاري (10 أرقام يبدأ بـ7) واضغط «حفظ».', 'ob-cr2'); return }
+    if (role === 'supplier' && !isIndividual && bizName.trim().length < 2) { showErr(t.needBiz, 'ob-biz'); return }
+    if (!region || !city) { showErr(t.needLoc, !region ? 'ob-region' : 'ob-city'); return }
     // القطاعات إلزامية للمورّد فقط؛ المشتري يكفيه الموقع (التوجيه يتم من مواد الطلب).
-    if (role === 'supplier' && specialties.length === 0) { showErr(t.needSpec); return }
-    if (role === 'supplier' && !isIndividual && bizName.trim().length < 2) { showErr(t.needBiz); return }
+    // UX-139: a material typed but not added with «إضافة» is added on save
+    const pendingMat = extraMaterialInput.trim()
+    const extraNow = pendingMat && role === 'supplier' ? [...extraMaterials.filter(m => !(m.name === pendingMat)), { sector: openSector || sectors[0] || '', name: pendingMat }] : extraMaterials
+    if (pendingMat && role === 'supplier') { setExtraMaterials(extraNow); setExtraMaterialInput('') }
+    if (role === 'supplier' && specialties.length === 0) { showErr(t.needSpec, 'ob-specs'); return }
     // نتحقّق من البيانات قبل أي كتابة: قطاعات معروفة فقط (عمود enum) وبلا تكرار.
     // UX-038: the sectors follow from the materials chosen (picking materials without ticking a sector still saves)
     const validSectors = Array.from(new Set(sectorsFor(sectors, specialties).filter(s => Object.prototype.hasOwnProperty.call(SECTOR_LABELS, s))))
     const validSpecialties = Array.from(new Set(specialties.filter(k => typeof k === 'string' && k.trim() !== '')))
-    if (role === 'supplier' && validSectors.length === 0) { showErr(t.needSector); return }
+    if (role === 'supplier' && validSectors.length === 0) { showErr(t.needSector, 'ob-specs'); return }
     if (role === 'supplier' && !isIndividual && (lat == null || lng == null)) {
-      showErr(locale === 'en' ? 'Set your shop location on the map, so buyers near you receive your offers.' : locale === 'ur' ? 'نقشے پر اپنی دکان کا مقام منتخب کریں تاکہ قریبی خریداروں تک آپ پہنچیں۔' : 'حدّد موقع محلك على الخريطة، ليصل إليك المشترون القريبون منك.')
+      showErr(locale === 'en' ? 'Set your shop location on the map, so buyers near you receive your offers.' : locale === 'ur' ? 'نقشے پر اپنی دکان کا مقام منتخب کریں تاکہ قریبی خریداروں تک آپ پہنچیں۔' : 'حدّد موقع محلك على الخريطة، ليصل إليك المشترون القريبون منك.', 'ob-map')
       return
     }
     setSaving(true)
@@ -301,20 +322,23 @@ export default function OnboardingPage() {
         update.vat_number = buyerVat.trim() || null
       }
       const { error: upErr } = await supabase.from('profiles').update(update).eq('id', uid)
-      if (upErr) { showErr(t.profileFailed); setSaving(false); return }
+      if (upErr) { showErr(homeBuyer && role !== 'supplier' ? t.addrFailed : t.profileFailed); setSaving(false); return }
 
       // حفظ ذرّي للقطاعات والتخصصات: حذف + إدراج داخل معاملة واحدة على الخادم (RPC من الترحيل 100)،
       // فإن فشل الإدراج يتراجع الحذف ولا تُمسح البيانات المحفوظة. للمشتري نمرّر تخصصاته كما حُمّلت فلا تتغيّر.
-      const { error: secErr } = await supabase.rpc('save_supplier_specialties', {
-        p_sectors: validSectors,
-        p_specialties: validSpecialties,
-      })
-      if (secErr) { showErr(t.saveFailed); setSaving(false); return }
+      // round-4 UX-118: only a seller saves sectors and specialties; a business buyer keeps its optional sectors; a home buyer has none
+      if (role === 'supplier' || buyerType === 'business') {
+        const { error: secErr } = await supabase.rpc('save_supplier_specialties', {
+          p_sectors: validSectors,
+          p_specialties: validSpecialties,
+        })
+        if (secErr) { showErr(role === 'supplier' ? t.saveFailed : t.profileFailed); setSaving(false); return }
+      }
 
       if (role === 'supplier') {
         // المواد المقترحة: نزيل ما أُرسل بنجاح من القائمة، فإعادة الحفظ ترسل الفاشل فقط بلا تكرار.
         const failed: { sector: string; name: string }[] = []
-        for (const m of extraMaterials) {
+        for (const m of extraNow) {
           try {
             const { error: mErr } = await supabase.from('material_requests').insert({ supplier_id: uid, name: m.name, sector: m.sector || null })
             if (mErr) failed.push(m)
@@ -337,7 +361,7 @@ export default function OnboardingPage() {
       window.location.href = go
     } catch {
       // خطأ شبكة غير متوقّع: تبقى اختيارات المستخدم كما هي على الشاشة.
-      showErr(t.saveFailed); setSaving(false)
+      showErr(role === 'supplier' ? t.saveFailed : homeBuyer ? t.addrFailed : t.profileFailed); setSaving(false)
     }
   }
 
@@ -346,18 +370,24 @@ export default function OnboardingPage() {
 
   // ── التقدّم ──
   // UX-125: every requirement of «save» is a step (the map pin and the shop name too), so 100% means ready
-  const steps = role === 'supplier'
+  // round-4 UX-059: the steps follow the screen order (type card on top, then location, then what you sell),
+  // and a company or shop has the commercial registration as a step, so 100% means ready to price
+  const steps: { label: string; done: boolean; target: string }[] = role === 'supplier'
     ? [
-        // UX-038: the account type (and a company's main activity) are steps, so 100% really means ready
-        { label: t.stepKind, done: !!providerType },
-        ...(!isIndividual ? [{ label: t.stepActivity, done: hasActivity }] : []),
-        { label: t.stepLocation, done: !!(region && city) },
-        ...(!isIndividual ? [{ label: t.stepMap, done: lat != null && lng != null }, { label: t.stepBiz, done: bizName.trim().length >= 2 }] : []),
-        { label: t.stepSpecialties, done: specialties.length > 0 },
+        { label: t.stepKind, done: !!providerType, target: 'ob-kind' },
+        ...(!isIndividual ? [
+          { label: t.stepActivity, done: hasActivity, target: 'ob-kind' },
+          { label: t.stepCr, done: !!crNo, target: crNo ? 'ob-kind' : (providerType ? 'ob-cr2' : 'ob-cr') },
+          { label: t.stepBiz, done: bizName.trim().length >= 2, target: 'ob-biz' },
+        ] : []),
+        { label: t.stepLocation, done: !!(region && city), target: 'ob-region' },
+        ...(!isIndividual ? [{ label: t.stepMap, done: lat != null && lng != null, target: 'ob-map' }] : []),
+        { label: t.stepSpecialties, done: specialties.length > 0, target: 'ob-specs' },
       ]
-    : [{ label: t.stepLocation, done: !!(region && city) }] // المشتري: الموقع فقط مطلوب، والقطاعات اختيارية
+    : [{ label: t.stepLocation, done: !!(region && city), target: 'ob-region' }] // المشتري: الموقع فقط مطلوب، والقطاعات اختيارية
+  const firstMissing = steps.find(s => !s.done) || null
   const pct = Math.round((steps.filter(s => s.done).length / steps.length) * 100)
-  const canSave = !loadFailed && !!(region && city) && (role === 'supplier' ? (!!providerType && (isIndividual || hasActivity) && specialties.length > 0 && (isIndividual || bizName.trim().length >= 2)) : !!buyerType)
+  const canSave = !loadFailed && !!(region && city) && (role === 'supplier' ? (!!providerType && (isIndividual || hasActivity) && specialties.length > 0 && (isIndividual || (bizName.trim().length >= 2 && !!crNo && lat != null && lng != null))) : !!buyerType)
   // اكتمال كل المطلوب أعلاه (يفتح خطوة التوثيق للمورّد)
   const profileComplete = canSave && (role !== 'supplier' || specialties.length > 0)
   const ringC = 2 * Math.PI * 24
@@ -380,7 +410,7 @@ export default function OnboardingPage() {
     </div>
   ) : null
   const kindCard = (
-              <div className={cardCls} style={{ borderInlineStartWidth: 4, borderInlineStartColor: '#0B2438' }}>
+              <div id="ob-kind" className={`${cardCls} scroll-mt-24`} style={{ borderInlineStartWidth: 4, borderInlineStartColor: '#0B2438' }}>
                 <div className="flex items-center justify-between mb-1">
                   <h2 className="text-sm font-bold text-navy"><Glyph e="🏢" /> {t.classTitle}</h2>
                 </div>
@@ -472,36 +502,25 @@ export default function OnboardingPage() {
 
       <div className="max-w-6xl mx-auto px-4 py-6 lg:py-8">
         <div className="mb-6">
-          <h1 className="text-2xl font-extrabold text-navy">{role !== 'supplier' && homeBuyer ? (locale === 'en' ? 'Your delivery address' : locale === 'ur' ? 'آپ کا ڈیلیوری پتہ' : 'عنوان التوصيل') : role !== 'supplier' && !buyerType ? (locale === 'en' ? 'Complete your details' : locale === 'ur' ? 'اپنی تفصیلات مکمل کریں' : 'أكمل بياناتك') : t.title}</h1>
+          <h1 className="text-2xl font-extrabold text-navy">{role !== 'supplier' && homeBuyer ? (locale === 'en' ? 'Your delivery address' : locale === 'ur' ? 'آپ کا ڈیلیوری پتہ' : 'عنوان التوصيل') : role !== 'supplier' && !buyerType ? (locale === 'en' ? 'Complete your details' : locale === 'ur' ? 'اپنی تفصیلات مکمل کریں' : 'أكمل بياناتك') : role === 'supplier' && isIndividual ? (locale === 'en' ? 'Set up your profile as a pricing agent' : locale === 'ur' ? 'قیمت ایجنٹ کے طور پر اپنی پروفائل ترتیب دیں' : 'إعداد ملفك كوسيط تسعير') : t.title}</h1>
           <p className="text-ink-2 mt-1.5 text-sm">{role === 'supplier' ? t.subS : !buyerType ? (locale === 'en' ? 'Choose who you are buying for, then add the delivery address.' : locale === 'ur' ? 'منتخب کریں کہ آپ کس کے لیے خرید رہے ہیں، پھر ڈیلیوری کا پتہ شامل کریں۔' : 'اختر لمن تشتري، ثم أضف عنوان التوصيل.') : homeBuyer ? (locale === 'en' ? 'So suppliers near you can price your requests.' : locale === 'ur' ? 'تاکہ قریبی سپلائرز قیمت دے سکیں۔' : 'ليصل طلبك إلى الموردين القريبين منك.') : t.subC}</p>
         </div>
 
         <div className="lg:flex lg:gap-6 lg:items-start">
           {/* ═══ العمود الرئيسي ═══ */}
           <div className="flex-1 min-w-0 space-y-4 pb-28 lg:pb-0">
-            {role === 'supplier' && !providerType && kindCard}
+            {/* round-4 UX-059: the account type and activity card is always first */}
+            {role === 'supplier' && kindCard}
             {role !== 'supplier' && (
               <div className={cardCls}>
-                {/* round-2 UX-130: asked once; when already chosen it is one line with «تغيير» */}
+                {/* round-4 UX-112: the same cards (with their descriptions) as sign-up and the home prompt */}
+                <div id="ob-buyer" className="scroll-mt-24">
                 {buyerType && !editBuyer ? (
-                  <div className="flex items-center justify-between gap-2">
-                    <p className="text-sm font-bold text-navy flex items-center gap-2">{buyerType === 'individual' ? <Glyph e="🏘" /> : <SellerIcon name="building" />}{buyerType === 'individual' ? (locale === 'en' ? 'You are buying for your home' : locale === 'ur' ? 'آپ اپنے گھر کے لیے خرید رہے ہیں' : 'تشتري لبيتك') : (locale === 'en' ? 'You are buying as a contractor or company' : locale === 'ur' ? 'آپ ٹھیکیدار یا کمپنی کے طور پر خرید رہے ہیں' : 'تشتري كمقاول أو شركة')}</p>
-                    <button type="button" onClick={() => setEditBuyer(true)} className="min-h-[44px] px-2 text-sm font-bold text-[#8F6820] underline shrink-0">{locale === 'en' ? 'Change' : locale === 'ur' ? 'تبدیل کریں' : 'تغيير'}</button>
-                  </div>
-                ) : (<>
-                <h2 className="text-sm font-bold text-navy mb-3">{locale === 'en' ? 'Who are you buying for?' : locale === 'ur' ? 'آپ کس کے لیے خرید رہے ہیں؟' : 'لمن تشتري؟'}</h2>
-                <div className="grid grid-cols-2 gap-3" role="radiogroup">
-                  {([['individual', locale === 'en' ? 'For my home' : locale === 'ur' ? 'اپنے گھر کے لیے' : 'لبيتي', 'home'], ['business', locale === 'en' ? 'Contractor or company' : locale === 'ur' ? 'ٹھیکیدار یا کمپنی' : 'مقاول أو شركة', 'building']] as const).map(([k, label, icon]) => {
-                    const on = buyerType === k
-                    return (
-                      <button key={k} type="button" role="radio" aria-checked={on} onClick={() => { chooseBuyerType(k); setEditBuyer(false) }}
-                        className={`min-h-[56px] p-3 rounded-xl border-2 text-start font-bold text-sm text-[#071827] flex items-center gap-2 transition-all ${on ? 'border-[#D4A543] bg-[#D4A543]/10' : 'border-gray-200 bg-white hover:border-[#D4A543]/50'}`}>
-                        {on ? <Check className="w-4 h-4 shrink-0" aria-hidden /> : icon === 'home' ? <Glyph e="🏘" /> : <SellerIcon name={icon} />}{label}
-                      </button>
-                    )
-                  })}
+                  <BuyerTypeSummary value={buyerType === 'individual' ? 'individual' : 'business'} onChange={() => setEditBuyer(true)} locale={locale} />
+                ) : (
+                  <BuyerTypeCards value={(buyerType === 'individual' || buyerType === 'business') ? buyerType : ''} onChange={(k) => { chooseBuyerType(k); setEditBuyer(false) }} locale={locale} />
+                )}
                 </div>
-                </>)}
                 {/* UX-080: a business buyer's company on purchase orders (optional) */}
                 {buyerType === 'business' && (
                   <div className="mt-4 grid sm:grid-cols-2 gap-3">
@@ -523,7 +542,7 @@ export default function OnboardingPage() {
               // round-2 UX-037: a buyer starts with «use my current location», then «or choose manually»
               const mapFirst = role !== 'supplier'
               const mapBlock = (
-              <div className={mapFirst ? 'mb-4' : 'mt-4'}>
+              <div id="ob-map" className={`${mapFirst ? 'mb-4' : 'mt-4'} scroll-mt-24`}>
                 <label className="block text-xs font-semibold text-gray-600 mb-1">
                   <Glyph e="📍" /> {mapFirst ? (locale === 'en' ? 'Use my current location' : locale === 'ur' ? 'میرا موجودہ مقام استعمال کریں' : 'استخدم موقعي الحالي') : (locale === 'en' ? 'Your location on the map' : locale === 'ur' ? 'نقشے پر آپ کا مقام' : 'موقعك على الخريطة')}
                   {role === 'supplier' && !isIndividual
@@ -566,7 +585,7 @@ export default function OnboardingPage() {
                   <label htmlFor="ob-city" className="block text-xs font-semibold text-gray-600 mb-1">{t.city} *</label>
                   <select id="ob-city" value={city} onChange={e => { setCity(e.target.value); setCityNote('') }} className="input-field" disabled={!region}>
                     <option value="">{region ? t.selectRegion : '—'}</option>
-                    {(CITIES_BY_REGION[region] || []).map((c: any) => <option key={c.ar} value={c.ar}>{locale === 'en' ? c.en : c.ar}</option>)}
+                    {(CITIES_BY_REGION[region] || []).map((c: any) => <option key={c.ar} value={c.ar}>{locale === 'ar' ? c.ar : (locale === 'ur' ? (c.ur || c.en) : c.en)}</option>)}
                   </select>
                 </div>
               </div>
@@ -583,7 +602,7 @@ export default function OnboardingPage() {
             })()}
 
             {/* القطاعات / التخصصات (مطلوب للمورّد، اختياري للمشتري؛ مخفي لصاحب البيت) */}
-            <div className={`${cardCls} ${role !== 'supplier' && buyerType !== 'business' ? 'hidden' : ''}`} style={{ borderInlineStartWidth: 4, borderInlineStartColor: '#0B2438' }}>
+            <div id="ob-specs" className={`${cardCls} scroll-mt-24 ${role !== 'supplier' && buyerType !== 'business' ? 'hidden' : ''}`} style={{ borderInlineStartWidth: 4, borderInlineStartColor: '#0B2438' }}>
               <div className="flex items-center justify-between mb-0.5">
                 <h2 className="text-sm font-bold text-navy"><Glyph e="🧩" /> {role === 'supplier' ? t.sectorsTitleS : t.sectorsTitleC}</h2>
                 {role === 'supplier'
@@ -653,9 +672,6 @@ export default function OnboardingPage() {
                 </div>
               )}
             </div>
-
-            {/* the account-type card comes first while the kind is still empty (UX-038) */}
-            {role === 'supplier' && providerType && kindCard}
 
             {CONTRACTOR_FEATURES && role === 'contractor' && (
               <div className={cardCls} style={{ borderInlineStartWidth: 4, borderInlineStartColor: '#0F6E56' }}>
@@ -772,7 +788,27 @@ export default function OnboardingPage() {
           {role === 'supplier' && <div className="h-1 w-full bg-canvas-2">
             <div className="h-full transition-all duration-300" style={{ width: pct + '%', background: pct === 100 ? '#22c55e' : '#D4A543' }} />
           </div>}
-          {role === 'supplier' && pct < 100 && <div className="max-w-6xl mx-auto px-4 pt-2 text-[12px] font-semibold text-amber-900"><Glyph e="⚠" /> {t.warn}</div>}
+          {role === 'supplier' && pct < 100 && firstMissing && (
+            <div className="max-w-6xl mx-auto px-4 pt-2">
+              <button type="button" onClick={() => setStepsOpen(v => !v)} aria-expanded={stepsOpen} className="w-full min-h-[44px] flex items-center justify-between gap-2 text-start text-[13px] font-bold text-amber-900">
+                <span><Glyph e="⚠" /> {t.left}: {firstMissing.label}</span>
+                <span className="text-[12px] font-semibold text-[#8F6820] underline">{stepsOpen ? (locale === 'en' ? 'Hide' : locale === 'ur' ? 'چھپائیں' : 'إخفاء') : (locale === 'en' ? 'All steps' : locale === 'ur' ? 'تمام مراحل' : 'كل الخطوات')}</span>
+              </button>
+              {stepsOpen && (
+                <ul className="pb-1 space-y-1 max-h-[45vh] overflow-y-auto">
+                  {steps.map((s, i) => (
+                    <li key={i}>
+                      <button type="button" onClick={() => { setStepsOpen(false); const el = document.getElementById(s.target); if (el) { el.scrollIntoView({ behavior: 'smooth', block: 'center' }); if (/^(INPUT|SELECT)$/.test(el.tagName)) (el as HTMLElement).focus({ preventScroll: true }) } }}
+                        className="w-full min-h-[44px] flex items-center gap-2 text-start text-sm rounded-lg px-2 hover:bg-gray-50">
+                        <span className={`w-5 h-5 grid place-items-center rounded-full shrink-0 ${s.done ? 'bg-[#0F6E56] text-white' : 'border-2 border-gray-300'}`}>{s.done ? <Check className="w-3.5 h-3.5" aria-hidden /> : null}</span>
+                        <span className={s.done ? 'text-gray-500' : 'font-semibold text-navy'}>{s.label}</span>
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          )}
           <div className="max-w-6xl mx-auto px-4 py-2.5 flex items-center gap-3">
             {/* النسبة + عدّاد الخطوات (المورد فقط) */}
             {role === 'supplier' && <div className="shrink-0 leading-tight">

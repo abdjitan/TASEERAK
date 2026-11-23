@@ -24,6 +24,8 @@ import { installTotalOf } from '@/lib/installation'
 import { daysText } from '@/lib/text'
 import { waLink } from '@/lib/wa'
 import { SourceShopBadge } from '@/components/rfq/SourceShop'
+import { realtimeTopic } from '@/lib/realtimeTopic'
+import { dealStage } from '@/lib/dealStage'
 
 const SECTOR_I18N: Record<string, Record<string, string>> = {
   en: { civil: 'Civil', architectural: 'Architectural', electrical: 'Electrical', mechanical: 'Mechanical', equipment: 'Machinery', supply_store: 'Supply Store' },
@@ -36,6 +38,14 @@ const REVIEW_TAGS: { key: string; ar: string; en: string; ur: string }[] = [
   { key: 'quality', ar: 'جودة المواد', en: 'Material quality', ur: 'سامان کا معیار' },
   { key: 'dealing', ar: 'حسن التعامل', en: 'Good dealing', ur: 'اچھا برتاؤ' },
 ]
+// a saved comment starts with «نقاط القوة: …» in Arabic: shown as chips in the reader's language (round-4 UX-132)
+function splitReview(comment: any): { tags: string[]; text: string } {
+  const s = String(comment || '')
+  const m = s.match(/^نقاط القوة:\s*([^\n]*)\n?/)
+  if (!m) return { tags: [], text: s }
+  const tags = m[1].split('،').map(x => x.trim()).map(ar => REVIEW_TAGS.find(t => t.ar === ar)?.key).filter(Boolean) as string[]
+  return { tags, text: s.slice(m[0].length).trim() }
+}
 const STAR_WORDS: Record<string, string[]> = {
   ar: ['ضعيف', 'مقبول', 'جيد', 'جيد جداً', 'ممتاز'],
   en: ['Poor', 'Fair', 'Good', 'Very good', 'Excellent'],
@@ -74,6 +84,8 @@ export default function OrderDetailPage() {
   const [chatBusy, setChatBusy] = useState(false)
   const [chatErr, setChatErr] = useState('')
   const [justRated, setJustRated] = useState(false) // the rating card stays on top right after rating (UX-069)
+  const [editingReview, setEditingReview] = useState(false) // «عدّل تقييمك» within 24 hours (round-4 UX-132)
+  const [roleHint, setRoleHint] = useState('')
 
   const load = useCallback(async () => {
     setLoadFailed(false)
@@ -105,14 +117,20 @@ export default function OrderDetailPage() {
         const buyer = rfqData.contractor_id === session.user.id
         const [{ data: contractorData }, { data: others }] = await Promise.all([
           supabase.from('profiles').select('*').eq('id', rfqData.contractor_id).maybeSingle(),
-          buyer ? supabase.from('offers').select('id, total_price, vat_included, vat_status, status').eq('rfq_id', rfqData.id) : Promise.resolve({ data: [] as any[] }),
+          buyer ? supabase.from('offers').select('id, total_price, vat_included, vat_status, status, item_prices').eq('rfq_id', rfqData.id) : Promise.resolve({ data: [] as any[] }),
         ])
         setContractor(contractorData)
         // the profile is the source of truth (a deal link opened on a new device, UX-068)
         if (buyer && contractorData?.buyer_type) rememberBuyerType(contractorData.buyer_type)
         setHome(buyer && (contractorData?.buyer_type ? contractorData.buyer_type === 'individual' : storedBuyerType() === 'individual'))
-        const cmp = ((others as any[]) || []).filter((o: any) => o.status !== 'withdrawn').map((o: any) => offerComparable(o))
-        if (cmp.length > 1) setMaxOther(Math.max(...cmp))
+        // «وفّرت»: only live offers that priced the same materials (round-4 UX-036), at least two of them
+        const itemsOf = (o: any) => (Array.isArray(o?.item_prices) ? o.item_prices : []).filter((e: any) => Number(e?.total) > 0).map((e: any) => Number(e.item_index)).sort((a: number, b: number) => a - b).join(',')
+        const mine = itemsOf(offerData)
+        const cmp = ((others as any[]) || [])
+          .filter((o: any) => !['withdrawn', 'cancelled', 'rejected'].includes(o.status) || o.id === offerData.id)
+          .filter((o: any) => itemsOf(o) === mine)
+          .map((o: any) => offerComparable(o))
+        setMaxOther(cmp.length > 1 ? Math.max(...cmp) : 0)
       }
     } catch (e) {
       console.error('[orders/id] load failed:', e)
@@ -124,8 +142,34 @@ export default function OrderDetailPage() {
 
   useEffect(() => { load() }, [load])
   useEffect(() => {
-    try { setIsNew(new URLSearchParams(window.location.search).get('new') === '1') } catch {}
+    try {
+      const nw = new URLSearchParams(window.location.search).get('new') === '1'
+      setIsNew(nw)
+      // the success note shows once: a reload does not bring it back (round-4 UX-129)
+      if (nw) { const u = new URL(window.location.href); u.searchParams.delete('new'); window.history.replaceState(null, '', u.pathname + u.search + u.hash) }
+    } catch {}
+    try { setRoleHint(localStorage.getItem('tsk_role_hint') || '') } catch {}
   }, [])
+
+  // a live deal page (round-4 UX-004): the offer row updates in place, and coming back to the tab re-reads it
+  const refreshDeal = useCallback(async () => {
+    if (!id) return
+    const { data } = await createClient().from('offers').select('*').eq('id', id).maybeSingle()
+    if (data) setOffer((o: any) => (o ? { ...o, ...data } : o))
+  }, [id])
+  useEffect(() => {
+    if (!id) return
+    const supabase = createClient()
+    const ch = supabase.channel(realtimeTopic(`deal-${id}`))
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'offers', filter: `id=eq.${id}` }, (payload: any) => {
+        if (payload?.new) setOffer((o: any) => (o ? { ...o, ...payload.new } : o))
+      })
+      .subscribe()
+    const onVis = () => { if (document.visibilityState === 'visible') refreshDeal() }
+    document.addEventListener('visibilitychange', onVis)
+    window.addEventListener('focus', onVis)
+    return () => { supabase.removeChannel(ch); document.removeEventListener('visibilitychange', onVis); window.removeEventListener('focus', onVis) }
+  }, [id, refreshDeal])
 
   // a link that ends in #deal or #rate opens at that part once the page has loaded (UX-059)
   useEffect(() => {
@@ -156,22 +200,35 @@ export default function OrderDetailPage() {
     // the optional chips are kept with the comment (no separate column)
     const tagsLine = reviewTags.length ? `نقاط القوة: ${REVIEW_TAGS.filter(t => reviewTags.includes(t.key)).map(t => t.ar).join('، ')}` : ''
     const comment = [tagsLine, reviewComment.trim()].filter(Boolean).join('\n') || null
-    const { error } = await supabase.from('reviews').insert({
+    const saveErr = L('Could not save the rating. Check your connection and try again.', 'ریٹنگ محفوظ نہیں ہو سکی۔ کنکشن چیک کریں اور دوبارہ کوشش کریں۔', 'تعذّر حفظ التقييم. تحقّق من اتصالك وحاول مرة أخرى.')
+    // «عدّل تقييمك» (round-4 UX-132): an update of the buyer's own review within 24 hours
+    if (editingReview && existingReview?.id) {
+      const { data: upd, error: uErr } = await supabase.from('reviews').update({ rating, comment }).eq('id', existingReview.id).eq('reviewer_id', myId).select('id')
+      setReviewSubmitting(false)
+      if (uErr || !upd?.length) { setReviewMsg(saveErr); return }
+      setExistingReview({ ...existingReview, rating, comment }); setEditingReview(false); setJustRated(true)
+      return
+    }
+    const { data: ins, error } = await supabase.from('reviews').insert({
       reviewer_id: myId,
       reviewed_id: supplier.id,
       offer_id: offer.id,
       rating,
       comment,
-    })
+    }).select('*').maybeSingle()
     setReviewSubmitting(false)
     if (error) {
       setReviewMsg((error as any).code === '23505'
         ? L('You have already rated this deal.', 'آپ اس ڈیل کی ریٹنگ پہلے دے چکے ہیں۔', 'سبق أن قيّمت هذه الصفقة.')
-        : L('Something went wrong, please try again.', 'کوئی خرابی ہوئی، دوبارہ کوشش کریں۔', 'حدث خطأ، حاول مرة أخرى.'))
+        : saveErr)
       return
     }
-    setExistingReview({ rating, comment })
+    setExistingReview(ins || { rating, comment, created_at: new Date().toISOString() })
     setJustRated(true)
+  }
+  function startEditReview() {
+    const sp = splitReview(existingReview?.comment)
+    setRating(Number(existingReview?.rating) || 0); setReviewTags(sp.tags); setReviewComment(sp.text); setReviewMsg(''); setEditingReview(true)
   }
 
   // open (or create) the conversation with the other side of the deal
@@ -193,12 +250,14 @@ export default function OrderDetailPage() {
     </AppShell>
   )
 
+  // a supplier who opens a deal it cannot see gets the supplier menu and its own deals (round-4 UX-086)
+  const sellerSide = roleHint === 'supplier'
   if (!offer || !rfq) return (
-    <AppShell title={L('Deal', 'ڈیل', 'الصفقة')} nav={getNav('contractor', locale, '/contractor/rfqs')} dir={dir}>
+    <AppShell title={L('Deal', 'ڈیل', 'الصفقة')} nav={sellerSide ? getNav('supplier', locale, '/supplier/deals') : getNav('contractor', locale, '/contractor/rfqs')} dir={dir}>
       <div className="max-w-xl mx-auto mt-6 bg-white rounded-2xl p-10 text-center border border-gray-100 shadow-sm">
         <div className="text-4xl mb-2 text-[#0B2438]"><Glyph e="🔎" /></div>
         <p className="text-gray-700 font-semibold mb-4">{L('This deal was not found, or you do not have access to it.', 'یہ ڈیل نہیں ملی، یا آپ کو اس تک رسائی نہیں ہے۔', 'لم نجد هذه الصفقة، أو لا تملك صلاحية الاطلاع عليها.')}</p>
-        <Link href="/contractor/orders" className="inline-flex items-center justify-center min-h-[44px] px-5 rounded-xl text-sm font-bold text-white" style={{ background: '#0B2438' }}>{L('My deals', 'میری ڈیلز', 'صفقاتي')}</Link>
+        <Link href={sellerSide ? '/supplier/deals' : '/contractor/orders'} className="inline-flex items-center justify-center min-h-[44px] px-5 rounded-xl text-sm font-bold text-white" style={{ background: '#0B2438' }}>{L('My deals', 'میری ڈیلز', 'صفقاتي')}</Link>
       </div>
     </AppShell>
   )
@@ -246,6 +305,8 @@ export default function OrderDetailPage() {
   // a seller without a VAT number (offers.vat_status): amounts are final, no VAT is split out or added
   const vatBreak = showsVatBreakdown(offer)
   const toNet = (n: any) => (vatBreak && vatIncl ? (Number(n) || 0) / 1.15 : (Number(n) || 0))
+  // a home buyer reads every line as what they pay, VAT included, so the lines add up to one amount (round-4 UX-046)
+  const shown = (n: any) => (home && vatBreak ? (Number(n) || 0) * 1.15 : Number(n) || 0)
   // ZATCA: every displayed line is ex-VAT so the amount column sums to the pre-VAT subtotal, and
   // extra charges (delivery/installation/fees) show as their own line items — not hidden in the total (B1).
   // «مع التركيب»: a line whose price includes installation shows the material and the installation
@@ -265,9 +326,28 @@ export default function OrderDetailPage() {
   const dealVat = vatBreak ? dealNet * 0.15 : 0
   const dealGross = dealNet + dealVat
   const money = (n: number) => `${n.toLocaleString('en-US', { maximumFractionDigits: 2 })} ${SAR}`
-  const grandLabel = home ? L('Deal total', 'ڈیل کی کل رقم', 'إجمالي الصفقة') : totalLabel(offer, locale)
+  const grandLabel = home ? L('The amount you pay', 'آپ کی ادا کردہ رقم', 'المبلغ الذي تدفعه') : totalLabel(offer, locale)
   const showSector = !home
   const saved = isNew && !hasAwards && maxOther > 0 ? maxOther - offerComparable(offer) : 0
+  // the supplier side: the deal's current stage, and whether this viewer is a team member (round-4 UX-086)
+  const supStage = dealStage(offer, 'supplier', locale)
+  const teamMember = !isBuyer && !!myId && myId !== offer.supplier_id
+  // «اطلب مرة أخرى» from a partly awarded deal: only this supplier's materials (round-4 UX-131)
+  const againHref = `/contractor/rfq/quick?from=${offer.rfq_id}${hasAwards ? `&items=${awards.map((a: any) => a.item_index).join(',')}` : ''}`
+  const pickupDeal = rfq.delivery_required === false
+  const supplierPlace = supplier?.city || supplier?.region || ''
+  const reviewParts = splitReview(existingReview?.comment)
+  const canEditReview = !!existingReview?.id && !!existingReview?.created_at && Date.now() - new Date(existingReview.created_at).getTime() < 24 * 3600000
+  // the stars move with the arrow keys (roving tabindex, round-4 UX-116)
+  const onStarKey = (e: any, n: number) => {
+    const fwd = dir === 'rtl' ? 'ArrowLeft' : 'ArrowRight', back = dir === 'rtl' ? 'ArrowRight' : 'ArrowLeft'
+    let v = 0
+    if (e.key === fwd || e.key === 'ArrowUp') v = Math.min(5, n + 1)
+    else if (e.key === back || e.key === 'ArrowDown') v = Math.max(1, n - 1)
+    if (!v) return
+    e.preventDefault(); setRating(v)
+    setTimeout(() => (document.getElementById(`star-${v}`) as HTMLButtonElement | null)?.focus(), 0)
+  }
   const rowName = (it: any) => it.installOf ? `${L('Installation', 'تنصیب', 'تركيب')}: ${pname(it.installOf)}` : it.isExtra ? it.product_name : pname(it.product_name)
   const qtyText = (it: any) => it.quantity === '' || it.quantity == null ? '—' : `${it.quantity} ${getUnitLabelLong(it.unit, locale)}`
 
@@ -276,11 +356,12 @@ export default function OrderDetailPage() {
   const independent = isIndependentOffer(offer)
   const disclosure = independent
     ? (isBuyer
-      ? L('Taseerak’s deal statement of the agreed amount, not a tax invoice. The tax invoice is issued by the source shop in your name and attached below.', 'تسعیرک کا ڈیل بیان جو طے شدہ رقم دکھاتا ہے، ٹیکس انوائس نہیں۔ ٹیکس انوائس ماخذ دکان آپ کے نام جاری کرتی ہے اور نیچے منسلک ہوتی ہے۔', 'بيان من تسعيرك بالمبلغ المتفق عليه، وليس فاتورة ضريبية. الفاتورة الضريبية يصدرها المحل المصدر باسمك، وتُرفق أدناه.')
-      : L('Taseerak’s deal statement of the agreed amount, not a tax invoice. The tax invoice is issued by the source shop in the buyer’s name; you attach it on the deal page.', 'تسعیرک کا ڈیل بیان، ٹیکس انوائس نہیں۔ ٹیکس انوائس ماخذ دکان خریدار کے نام جاری کرتی ہے؛ آپ اسے ڈیل کے صفحے پر منسلک کرتے ہیں۔', 'بيان من تسعيرك بالمبلغ المتفق عليه، وليس فاتورة ضريبية. الفاتورة الضريبية يصدرها المحل المصدر باسم المشتري، وترفقها أنت من صفحة إدارة الصفقة.'))
+      // the source shop may not be VAT-registered: never promise a «tax» invoice from it (round-4 UX-069)
+      ? L('Taseerak’s deal statement of the agreed amount, not a tax invoice. The invoice is issued by the source shop in your name and attached below.', 'تسعیرک کا ڈیل بیان جو طے شدہ رقم دکھاتا ہے، ٹیکس انوائس نہیں۔ انوائس ماخذ دکان آپ کے نام جاری کرتی ہے اور نیچے منسلک ہوتی ہے۔', 'بيان من تسعيرك بالمبلغ المتفق عليه، وليس فاتورة ضريبية. الفاتورة يصدرها المحل المصدر باسمك، وتُرفق أدناه.')
+      : L('Taseerak’s deal statement of the agreed amount, not a tax invoice. The invoice is issued by the source shop in the buyer’s name; you attach it in the deal steps.', 'تسعیرک کا ڈیل بیان، ٹیکس انوائس نہیں۔ انوائس ماخذ دکان خریدار کے نام جاری کرتی ہے؛ آپ اسے ڈیل کے مراحل میں منسلک کرتے ہیں۔', 'بيان من تسعيرك بالمبلغ المتفق عليه، وليس فاتورة ضريبية. الفاتورة يصدرها المحل المصدر باسم المشتري، وترفقها أنت من خطوات الصفقة.'))
     : vatBreak
-      ? L('Taseerak’s deal statement of the agreed amount, not a tax invoice. The tax invoice is issued by the seller and attached below.', 'تسعیرک کا ڈیل بیان جو طے شدہ رقم دکھاتا ہے، ٹیکس انوائس نہیں۔ ٹیکس انوائس فروخت کنندہ جاری کرتا ہے اور نیچے منسلک ہوتی ہے۔', 'بيان من تسعيرك بالمبلغ المتفق عليه، وليس فاتورة ضريبية. الفاتورة الضريبية يصدرها البائع، وتُرفق أدناه.')
-      : L('Taseerak’s deal statement of the agreed amount. The seller is not VAT-registered, so the price is final and the seller attaches a sales invoice (not a tax invoice) below.', 'تسعیرک کا ڈیل بیان۔ فروخت کنندہ VAT میں رجسٹرڈ نہیں، اس لیے قیمت حتمی ہے اور وہ نیچے سیلز انوائس (ٹیکس انوائس نہیں) منسلک کرتا ہے۔', 'بيان من تسعيرك بالمبلغ المتفق عليه. البائع غير مسجّل في ضريبة القيمة المضافة، فالسعر نهائي، ويرفق فاتورة بيع (ليست فاتورة ضريبية) أدناه.')
+      ? L('Taseerak’s deal statement of the agreed amount, not a tax invoice. The tax invoice is issued by the supplier and attached below.', 'تسعیرک کا ڈیل بیان جو طے شدہ رقم دکھاتا ہے، ٹیکس انوائس نہیں۔ ٹیکس انوائس سپلائر جاری کرتا ہے اور نیچے منسلک ہوتی ہے۔', 'بيان من تسعيرك بالمبلغ المتفق عليه، وليس فاتورة ضريبية. الفاتورة الضريبية يصدرها المورد، وتُرفق أدناه.')
+      : L('Taseerak’s deal statement of the agreed amount. The supplier is not VAT-registered, so the price is final and the supplier attaches a sales invoice (not a tax invoice) below.', 'تسعیرک کا ڈیل بیان۔ سپلائر VAT میں رجسٹرڈ نہیں، اس لیے قیمت حتمی ہے اور وہ نیچے سیلز انوائس (ٹیکس انوائس نہیں) منسلک کرتا ہے۔', 'بيان من تسعيرك بالمبلغ المتفق عليه. المورد غير مسجّل في ضريبة القيمة المضافة، فالسعر نهائي، ويرفق فاتورة بيع (ليست فاتورة ضريبية) أدناه.')
 
   // the other side's phone (after the choice) and a WhatsApp text in plain words for a home buyer
   const otherPhone = isBuyer ? (supplier?.contact_phone || supplier?.phone) : (contractor?.contact_phone || contractor?.phone)
@@ -318,7 +399,7 @@ export default function OrderDetailPage() {
           <Link href={backHref} className="inline-flex items-center min-h-[44px] text-sm font-semibold text-gray-600 hover:text-gray-800"><span aria-hidden="true">{BACK}</span>&nbsp;{L('My deals', 'میری ڈیلز', 'صفقاتي')}</Link>
           <div className="flex items-center gap-2 flex-wrap">
             {isBuyer && offer?.rfq_id && (
-              <Link href={`/contractor/rfq/quick?from=${offer.rfq_id}`}
+              <Link href={againHref}
                 className="inline-flex items-center gap-1.5 min-h-[44px] border border-[#0B2438] text-[#0B2438] px-4 rounded-xl text-sm font-semibold hover:bg-[#0B2438]/5 transition-colors">
                 <Glyph e="🔁" /> {L('Request again', 'دوبارہ منگوائیں', 'اطلب مرة أخرى')}
               </Link>
@@ -335,7 +416,7 @@ export default function OrderDetailPage() {
           <div className="print:hidden rounded-2xl border border-[#0F6E56]/30 bg-[#0F6E56]/5 p-4 sm:p-5" role="status">
             <div className="font-bold text-[#0F6E56] flex items-center gap-2"><Glyph e="✅" /> {L(`You chose ${supplier?.company_name_ar || 'the supplier'}’s offer.`, `آپ نے ${supplier?.company_name_ar || 'سپلائر'} کی آفر منتخب کر لی۔`, `تمّ اختيار عرض ${supplier?.company_name_ar || 'المورد'}.`)}</div>
             <p className="text-sm text-gray-700 mt-1.5 leading-relaxed">{L('Next step: the supplier prepares your order and confirms delivery; you will get a message then.', 'اگلا مرحلہ: سپلائر آپ کا آرڈر تیار کر کے ڈیلیوری کی تصدیق کرے گا، اور تب آپ کو پیغام ملے گا۔', 'الخطوة التالية: يجهّز المورد طلبك ويؤكّد التوصيل، وستصلك رسالة عند ذلك.')}</p>
-            {saved >= 1 && <p className="text-sm font-bold text-[#8F6820] mt-1.5">{L(`You saved ${money(saved)} compared with the highest offer.`, `سب سے زیادہ آفر کے مقابلے میں آپ نے ${money(saved)} بچائے۔`, `وفّرت ${money(saved)} مقارنة بأعلى عرض.`)}</p>}
+            {saved >= 1 && <p className="text-sm font-bold text-[#8F6820] mt-1.5">{L(`You saved ${money(saved)} compared with the highest offer on the same materials.`, `انہی اشیاء پر سب سے زیادہ آفر کے مقابلے میں آپ نے ${money(saved)} بچائے۔`, `وفّرت ${money(saved)} مقارنة بأعلى عرض على المواد نفسها.`)}</p>}
           </div>
         )}
 
@@ -348,15 +429,24 @@ export default function OrderDetailPage() {
         )}
 
         {/* the supplier manages the deal on its request page (UX-026) */}
-        {isSupplierView && offer.status === 'accepted' && (
-          <Link href={manageHref} className="print:hidden flex items-center justify-between gap-3 rounded-2xl px-5 py-4 transition-all hover:shadow" style={{ background: 'linear-gradient(135deg,#F5C55B,#D4A543)', color: '#071827' }}>
+        {/* the subtitle is the deal's current stage; a finished deal or a team member gets a navy link (round-4 UX-086) */}
+        {isSupplierView && offer.status === 'accepted' && (supStage.done || teamMember ? (
+          <Link href={manageHref} className="print:hidden flex items-center justify-between gap-3 rounded-2xl px-5 py-4 min-h-[44px] border border-[#0B2438] bg-white text-[#0B2438] hover:bg-[#0B2438]/5">
             <span className="min-w-0">
-              <span className="block font-bold">{L('Manage the deal', 'ڈیل سنبھالیں', 'إدارة الصفقة')}</span>
-              <span className="block text-sm font-semibold opacity-80">{L('Upload the invoice, then confirm delivery', 'انوائس اپ لوڈ کریں، پھر ڈیلیوری کی تصدیق کریں', 'ارفع الفاتورة ثم أكّد التسليم')}</span>
+              <span className="block font-bold">{teamMember ? L('Follow the deal', 'ڈیل دیکھیں', 'تابع الصفقة') : L('View the deal steps', 'ڈیل کے مراحل دیکھیں', 'عرض خطوات الصفقة')}</span>
+              <span className="block text-sm font-semibold text-gray-600">{teamMember ? L('The account owner handles the invoice and delivery', 'انوائس اور ڈیلیوری اکاؤنٹ کا مالک سنبھالتا ہے', 'يدير صاحب الحساب الفاتورة والتسليم') : supStage.label}</span>
             </span>
             <span aria-hidden="true" className="text-xl font-bold">{FWD}</span>
           </Link>
-        )}
+        ) : (
+          <Link href={manageHref} className="print:hidden flex items-center justify-between gap-3 rounded-2xl px-5 py-4 transition-all hover:shadow" style={{ background: 'linear-gradient(135deg,#F5C55B,#D4A543)', color: '#071827' }}>
+            <span className="min-w-0">
+              <span className="block font-bold">{L('Manage the deal', 'ڈیل سنبھالیں', 'إدارة الصفقة')}</span>
+              <span className="block text-sm font-semibold opacity-80">{supStage.label}</span>
+            </span>
+            <span aria-hidden="true" className="text-xl font-bold">{FWD}</span>
+          </Link>
+        ))}
 
         {/* the deal steps (delivery, receipt, payment, «أبلغ عن مشكلة») on top of the deal page (UX-017) */}
         {isBuyer && offer.status === 'accepted' && (
@@ -371,6 +461,8 @@ export default function OrderDetailPage() {
               amount={dealGross}
               rfqRefNo={rfq.ref_no}
               isHome={home}
+              pickup={pickupDeal}
+              pickupPlace={supplierPlace}
               onChange={(o: any) => setOffer((prev: any) => (prev ? { ...prev, ...o } : prev))}
             />
           </div>
@@ -409,6 +501,8 @@ export default function OrderDetailPage() {
                 <div className="text-sm text-[#F5C55B] print:text-[#9D7425]">{home ? L('Deal no.', 'ڈیل نمبر', 'رقم الصفقة') : L('Order no.', 'آرڈر نمبر', 'رقم الأمر')}</div>
                 <div className="text-xl font-bold" dir="auto">{dealNo}</div>
                 <div className="text-sm text-[#F5C55B] print:text-[#9D7425] mt-1">{L('Date:', 'تاریخ:', 'التاريخ:')} {date}</div>
+                {/* the printed copy names what the date is; the on-screen badge is hidden in print (round-4 UX-129) */}
+                <div className="hidden print:block text-sm text-[#9D7425] mt-1">{home ? L('Chosen on:', 'انتخاب کی تاریخ:', 'تاريخ الاختيار:') : L('Approved on:', 'منظوری کی تاریخ:', 'تاريخ الاعتماد:')} {date}</div>
                 {!home && ref && <div className="text-sm text-[#F5C55B] print:text-[#9D7425] mt-1">{L('Request:', 'درخواست:', 'الطلب:')} <span dir="ltr">{rfqRef(rfq)}</span></div>}
               </div>
             </div>
@@ -426,8 +520,11 @@ export default function OrderDetailPage() {
               {(contractor?.city || contractor?.region) && <div className="text-sm text-gray-600">{contractor.city || contractor.region}</div>}
             </div>
             <div>
-              <div className="text-xs font-bold text-gray-500 mb-2">{L('Seller (supplier)', 'بیچنے والا (سپلائر)', 'البائع (المورد)')}</div>
-              <div className="font-bold text-gray-900">{supplier?.company_name_ar || '—'}</div>
+              <div className="text-xs font-bold text-gray-500 mb-2">{L('Supplier', 'سپلائر', 'المورد')}</div>
+              {/* the supplier's public page (round-4 UX-189) */}
+              {supplier?.id && isBuyer
+                ? <Link href={`/suppliers/${supplier.id}`} className="font-bold text-gray-900 hover:underline print:no-underline">{supplier?.company_name_ar || '—'}</Link>
+                : <div className="font-bold text-gray-900">{supplier?.company_name_ar || '—'}</div>}
               {supplier?.commercial_registration && (
                 <div className="text-sm text-gray-600 mt-1">{L('CR:', 'کمرشل رجسٹریشن:', 'سجل تجاري:')} {supplier.commercial_registration}</div>
               )}
@@ -445,7 +542,7 @@ export default function OrderDetailPage() {
               {supplier?.latitude && supplier?.longitude && (
                 <a href={`https://www.google.com/maps?q=${supplier.latitude},${supplier.longitude}`}
                   target="_blank" rel="noopener noreferrer"
-                  className="inline-flex items-center min-h-[36px] text-sm text-[#8F6820] hover:underline print:hidden">
+                  className="inline-flex items-center min-h-[44px] text-sm text-[#8F6820] hover:underline print:hidden">
                   <Glyph e="🗺" />&nbsp;{L('View location on map', 'نقشے پر مقام دیکھیں', 'عرض الموقع على الخريطة')} <span aria-hidden="true">&nbsp;{FWD}</span>
                 </a>
               )}
@@ -469,7 +566,7 @@ export default function OrderDetailPage() {
               )}
               {offer?.attachment_url && (
                 <a href={fileHref(offer.attachment_url)} target="_blank" rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 min-h-[36px] text-sm font-semibold text-[#8F6820] hover:underline print:hidden">
+                  className="inline-flex items-center gap-2 min-h-[44px] text-sm font-semibold text-[#8F6820] hover:underline print:hidden">
                   <Glyph e="📎" /> {offer.attachment_name || L('Product catalog', 'پروڈکٹ کیٹلاگ', 'كتالوج المنتج')} <span aria-hidden="true">{FWD}</span>
                 </a>
               )}
@@ -486,7 +583,7 @@ export default function OrderDetailPage() {
                   {showSector && <th className="text-start text-xs font-bold text-gray-600 pb-3">{L('Sector', 'شعبہ', 'القطاع')}</th>}
                   <th className="text-start text-xs font-bold text-gray-600 pb-3">{L('Quantity', 'مقدار', 'الكمية')}</th>
                   <th className="text-start text-xs font-bold text-gray-600 pb-3">{L('Unit price', 'فی یونٹ قیمت', 'سعر الوحدة')}</th>
-                  <th className="text-start text-xs font-bold text-gray-600 pb-3">{vatBreak ? L('Total (before VAT)', 'کل (ٹیکس سے پہلے)', 'الإجمالي (قبل الضريبة)') : L('Total', 'کل', 'الإجمالي')}</th>
+                  <th className="text-start text-xs font-bold text-gray-600 pb-3">{vatBreak && !home ? L('Total (before VAT)', 'کل (ٹیکس سے پہلے)', 'الإجمالي (قبل الضريبة)') : L('Total', 'کل', 'الإجمالي')}</th>
                 </tr>
               </thead>
               <tbody>
@@ -498,13 +595,13 @@ export default function OrderDetailPage() {
                       {(it.specification || it.notes) && <div className="text-xs text-gray-500 mt-0.5">{it.specification || it.notes}</div>}
                       {it.warranty && <div className="text-xs text-gray-600 mt-0.5"><Glyph e="🛡" /> {L('Warranty:', 'وارنٹی:', 'الضمان:')} {it.warranty}</div>}
                       {it.attachment_url && (
-                        <a href={fileHref(it.attachment_url)} target="_blank" rel="noopener noreferrer" className="text-xs text-[#8F6820] hover:underline print:hidden"><Glyph e="📎" /> {it.attachment_name || L('Specs file', 'اسپیسیفکیشن فائل', 'ملف المواصفات')}</a>
+                        <a href={fileHref(it.attachment_url)} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 min-h-[44px] text-xs text-[#8F6820] hover:underline print:hidden"><Glyph e="📎" /> {it.attachment_name || L('Specs file', 'اسپیسیفکیشن فائل', 'ملف المواصفات')}</a>
                       )}
                     </td>
                     {showSector && <td className="py-4 text-sm text-gray-600">{it.sector ? ((locale !== 'ar' && SECTOR_I18N[locale]?.[it.sector]) || (SECTOR_LABELS as any)[it.sector] || it.sector) : '—'}</td>}
                     <td className="py-4 text-sm text-gray-600">{qtyText(it)}</td>
-                    <td className="py-4 text-sm text-gray-600">{Number(it.unitNet) > 0 ? money(Number(it.unitNet)) : '—'}</td>
-                    <td className="py-4 font-bold text-gray-900">{money(Number(it.net))}</td>
+                    <td className="py-4 text-sm text-gray-600">{Number(it.unitNet) > 0 ? money(shown(it.unitNet)) : '—'}</td>
+                    <td className="py-4 font-bold text-gray-900">{money(shown(it.net))}</td>
                   </tr>
                 ))}
               </tbody>
@@ -518,25 +615,26 @@ export default function OrderDetailPage() {
                       {(it.specification || it.notes) && <div className="text-xs text-gray-500 mt-0.5">{it.specification || it.notes}</div>}
                       {it.warranty && <div className="text-xs text-gray-600 mt-0.5"><Glyph e="🛡" /> {L('Warranty:', 'وارنٹی:', 'الضمان:')} {it.warranty}</div>}
                       <div className="text-sm text-gray-600 mt-0.5">
-                        {qtyText(it)}{Number(it.unitNet) > 0 ? ` × ${money(Number(it.unitNet))}` : ''}
+                        {qtyText(it)}{Number(it.unitNet) > 0 ? ` × ${money(shown(it.unitNet))}` : ''}
                       </div>
                       {it.attachment_url && (
-                        <a href={fileHref(it.attachment_url)} target="_blank" rel="noopener noreferrer" className="text-xs text-[#8F6820] hover:underline"><Glyph e="📎" /> {it.attachment_name || L('Specs file', 'اسپیسیفکیشن فائل', 'ملف المواصفات')}</a>
+                        <a href={fileHref(it.attachment_url)} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 min-h-[44px] text-xs text-[#8F6820] hover:underline"><Glyph e="📎" /> {it.attachment_name || L('Specs file', 'اسپیسیفکیشن فائل', 'ملف المواصفات')}</a>
                       )}
                     </div>
-                    <div className="font-bold text-gray-900 shrink-0 text-sm">{money(Number(it.net))}</div>
+                    <div className="font-bold text-gray-900 shrink-0 text-sm">{money(shown(it.net))}</div>
                   </div>
                 </li>
               ))}
             </ul>
-            {vatBreak && <p className="sm:hidden print:hidden text-xs text-gray-500 mt-1">{L('Line amounts are before VAT.', 'لائن کی رقمیں VAT سے پہلے ہیں۔', 'مبالغ البنود قبل الضريبة.')}</p>}
+            {vatBreak && !home && <p className="sm:hidden print:hidden text-xs text-gray-500 mt-1">{L('Line amounts are before VAT.', 'لائن کی رقمیں VAT سے پہلے ہیں۔', 'مبالغ البنود قبل الضريبة.')}</p>}
+            {vatBreak && home && <p className="text-xs text-gray-500 mt-1">{L('Prices include VAT.', 'قیمتیں VAT سمیت ہیں۔', 'الأسعار شاملة الضريبة.')}</p>}
           </div>
 
           {/* Totals */}
           <div className="p-4 sm:p-8 border-b border-gray-100">
             <div className="flex justify-end">
               <div className="w-full sm:w-72 space-y-2">
-                {vatBreak && (<>
+                {vatBreak && !home && (<>
                 <div className="flex justify-between gap-3 text-sm">
                   <span className="text-gray-600">{L('Subtotal (before VAT)', 'ذیلی کل (ٹیکس سے پہلے)', 'المجموع الفرعي (قبل الضريبة)')}</span>
                   <span className="text-gray-900">{money(dealNet)}</span>
@@ -564,7 +662,7 @@ export default function OrderDetailPage() {
 
           {/* Terms */}
           <div className="p-4 sm:p-8 border-b border-gray-100">
-            <h3 className="text-sm font-bold text-gray-900 mb-3">{L('Delivery and payment', 'ڈیلیوری اور ادائیگی', 'التسليم والدفع')}</h3>
+            <h3 className="text-sm font-bold text-gray-900 mb-3">{home ? L('Delivery and how to pay', 'ڈیلیوری اور ادائیگی کا طریقہ', 'التسليم وطريقة الدفع') : L('Delivery and payment', 'ڈیلیوری اور ادائیگی', 'التسليم والدفع')}</h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm text-gray-700">
               <div className="flex items-center gap-2">
                 <span className="text-[#0B2438]">{rfq.delivery_required ? <Glyph e="🚚" /> : <Glyph e="🏪" />}</span>
@@ -578,6 +676,12 @@ export default function OrderDetailPage() {
                   <span>{L('Delivery location:', 'ڈیلیوری کی جگہ:', 'موقع التسليم:')} {rfq.city || rfq.region}</span>
                 </div>
               )}
+              {pickupDeal && supplierPlace && (
+                <div className="flex items-center gap-2">
+                  <span className="text-[#0B2438]"><Glyph e="📍" /></span>
+                  <span>{L('Pickup place:', 'وصولی کی جگہ:', 'مكان الاستلام:')} {supplierPlace}</span>
+                </div>
+              )}
               {!home && (
                 <div className="flex items-center gap-2">
                   <span className="text-[#0B2438]"><Glyph e="🧾" /></span>
@@ -587,7 +691,12 @@ export default function OrderDetailPage() {
               {offer.payment_terms && (
                 <div className="flex items-center gap-2">
                   <span className="text-[#0B2438]"><Glyph e="💳" /></span>
-                  <span>{L('Payment terms:', 'ادائیگی کی شرائط:', 'شروط الدفع:')} <b>{paymentTermsLabel(offer.payment_terms, locale)}</b></span>
+                  <span>{home ? L('How to pay:', 'ادائیگی کا طریقہ:', 'طريقة الدفع:') : L('Payment terms:', 'ادائیگی کی شرائط:', 'شروط الدفع:')} <b>{paymentTermsLabel(offer.payment_terms, locale)}</b></span>
+                </div>
+              )}
+              {offer.payment_terms === 'advance' && isBuyer && (
+                <div className="sm:col-span-2 rounded-lg border border-[#D4A543]/60 bg-[#D4A543]/10 px-3 py-2 text-[13px] font-semibold text-[#0B2438]">
+                  <Glyph e="⚠" /> {L('The supplier asks for payment before delivery, so do not pay before agreeing on the delivery date in messages.', 'سپلائر ڈیلیوری سے پہلے ادائیگی مانگتا ہے، اس لیے پیغامات میں ڈیلیوری کی تاریخ طے کیے بغیر ادائیگی نہ کریں۔', 'يطلب المورد الدفع قبل التسليم، فلا تدفع قبل الاتفاق على موعد التسليم عبر الرسائل.')}
                 </div>
               )}
               {offer.delivery_days && (
@@ -605,7 +714,7 @@ export default function OrderDetailPage() {
           </div>
 
           {/* Status Badge */}
-          <div className="p-4 sm:p-8 text-center">
+          <div className="p-4 sm:p-8 text-center print:hidden">
             <div className="inline-flex items-center gap-2 bg-green-50 border border-green-200 text-green-800 px-6 py-3 rounded-xl">
               <span className="text-xl"><Glyph e="✅" /></span>
               <div>
@@ -618,7 +727,7 @@ export default function OrderDetailPage() {
 
         {/* 🧾 بيان الصفقة: مستند صوري غير رسمي لمبلغ الصفقة. الفاتورة الرسمية يصدرها البائع
             (من عنده، أو من المحل الذي اشترى منه) ويرفعها في صفحة الصفقة، وتظهر هنا للمشتري. */}
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden order-3">
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden order-3 print:break-before-page">
           {home ? (
             <div className="p-4 sm:p-6 pb-3">
               <h2 className="text-base font-bold" style={{ color: '#0B2438' }}>{invLabel}</h2>
@@ -671,7 +780,7 @@ export default function OrderDetailPage() {
               </div>
             ) : (
               <div className="rounded-xl border border-dashed border-[#D4A543]/60 bg-[#D4A543]/5 p-3 text-sm text-gray-700 leading-relaxed print:hidden">
-                <Glyph e="🧾" /> {L(`You have not attached your invoice yet («${invLabel}»). Upload it on the deal page before you confirm delivery.`, `آپ نے ابھی اپنی انوائس منسلک نہیں کی («${invLabel}»)۔ ڈیلیوری کی تصدیق سے پہلے ڈیل کے صفحے پر اپ لوڈ کریں۔`, `لم ترفق فاتورتك بعد («${invLabel}»). ارفعها من صفحة إدارة الصفقة قبل تأكيد التسليم.`)}{' '}
+                <Glyph e="🧾" /> {L(`You have not uploaded the invoice yet («${invLabel}»); upload it from the deal steps before confirming delivery.`, `آپ نے ابھی انوائس اپ لوڈ نہیں کی («${invLabel}»)؛ ڈیلیوری کی تصدیق سے پہلے ڈیل کے مراحل سے اپ لوڈ کریں۔`, `لم ترفع الفاتورة بعد («${invLabel}»)؛ ارفعها من خطوات الصفقة قبل تأكيد التسليم.`)}{' '}
                 <Link href={manageHref} className="font-bold text-[#8F6820] underline">{L('Upload the invoice', 'انوائس اپ لوڈ کریں', 'ارفع الفاتورة')}</Link>
               </div>
             )}
@@ -681,7 +790,7 @@ export default function OrderDetailPage() {
         {/* تقييم المورد — للمشتري فقط بعد تأكيد الاستلام (لا يكفي القبول). Moves up once it is due (UX-021). */}
         {offer.status === 'accepted' && myId && isBuyer && (
           <div id="rate" className={`bg-white rounded-2xl shadow-sm border p-4 sm:p-6 print:hidden scroll-mt-20 ${needsRating ? 'order-1 border-[#D4A543]/60' : justRated ? 'order-1 border-[#0F6E56]/40' : 'order-4 border-gray-200'}`} dir={dir}>
-            {existingReview ? (
+            {existingReview && !editingReview ? (
               <div className="text-center">
                 <div className="text-sm font-bold text-gray-900 mb-2">{L('Thanks for your rating', 'ریٹنگ کا شکریہ', 'شكراً لتقييمك')}</div>
                 <div className="flex items-center justify-center gap-0.5 text-2xl" aria-label={L(`${existingReview.rating} of 5 stars`, `5 میں سے ${existingReview.rating} ستارے`, `${existingReview.rating} من 5 نجوم`)}>
@@ -689,10 +798,25 @@ export default function OrderDetailPage() {
                     <Star key={n} aria-hidden="true" className="w-6 h-6" style={{ color: n <= existingReview.rating ? '#D4A543' : '#E5E7EB' }} fill="currentColor" strokeWidth={1.5} />
                   ))}
                 </div>
-                {existingReview.comment && <p className="text-sm text-gray-600 mt-2 whitespace-pre-line">{existingReview.comment}</p>}
+                {reviewParts.tags.length > 0 && (
+                  <div className="flex flex-wrap justify-center gap-1.5 mt-2">
+                    {REVIEW_TAGS.filter(t => reviewParts.tags.includes(t.key)).map(t => (
+                      <span key={t.key} className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-[13px] font-semibold border border-[#D4A543] bg-[#D4A543]/10 text-[#071827]"><Check aria-hidden="true" className="w-3.5 h-3.5" />{L(t.en, t.ur, t.ar)}</span>
+                    ))}
+                  </div>
+                )}
+                {reviewParts.text && <p className="text-sm text-gray-600 mt-2 whitespace-pre-line" dir="auto">{reviewParts.text}</p>}
                 {justRated && <p className="text-sm font-semibold text-[#0F6E56] mt-2" role="status">{L('Your rating will show on the supplier’s page.', 'آپ کی ریٹنگ سپلائر کے صفحے پر نظر آئے گی۔', 'سيظهر تقييمك في صفحة المورد.')}</p>}
+                <div className="mt-2 flex flex-wrap justify-center gap-2">
+                  {canEditReview && (
+                    <button type="button" onClick={startEditReview} className="min-h-[44px] px-4 rounded-xl text-sm font-bold border border-[#0B2438] text-[#0B2438] bg-white hover:bg-[#0B2438]/5">{L('Edit your rating', 'اپنی ریٹنگ میں ترمیم کریں', 'عدّل تقييمك')}</button>
+                  )}
+                  {supplier?.id && (
+                    <Link href={`/suppliers/${supplier.id}`} className="min-h-[44px] px-4 inline-flex items-center rounded-xl text-sm font-bold text-[#8F6820] hover:underline">{L('View the supplier’s page', 'سپلائر کا صفحہ دیکھیں', 'عرض صفحة المورد')}</Link>
+                  )}
+                </div>
               </div>
-            ) : offer.received_at && disputeOpen ? (
+            ) : offer.received_at && disputeOpen && !editingReview ? (
               <div className="text-center py-2">
                 <div className="text-2xl mb-1 text-[#0B2438]"><Glyph e="⭐" /></div>
                 <p className="text-sm text-gray-700">{L('You can rate the supplier once the report is handled.', 'رپورٹ نمٹنے کے بعد آپ سپلائر کی ریٹنگ دے سکتے ہیں۔', 'يمكنك تقييم المورد بعد معالجة البلاغ.')}</p>
@@ -703,7 +827,8 @@ export default function OrderDetailPage() {
                 <p className="text-sm text-gray-600 mb-3">{L('Your rating helps other buyers choose suppliers', 'آپ کی ریٹنگ دوسرے خریداروں کو سپلائر چننے میں مدد دیتی ہے', 'تقييمك يساعد بقية المشترين على اختيار الموردين')}</p>
                 <div className="flex items-center gap-1" role="radiogroup" aria-label={L('Rating', 'ریٹنگ', 'التقييم')}>
                   {[1, 2, 3, 4, 5].map((n: any) => (
-                    <button key={n} type="button" role="radio" aria-checked={rating === n}
+                    <button key={n} id={`star-${n}`} type="button" role="radio" aria-checked={rating === n}
+                      tabIndex={(rating || 1) === n ? 0 : -1} onKeyDown={(e: any) => onStarKey(e, n)}
                       aria-label={`${n} / 5 · ${(STAR_WORDS[locale] || STAR_WORDS.ar)[n - 1]}`}
                       onClick={() => setRating(n)}
                       onMouseEnter={() => setHoverRating(n)}
@@ -732,8 +857,11 @@ export default function OrderDetailPage() {
                 <button onClick={submitReview} disabled={!rating || reviewSubmitting}
                   className="min-h-[44px] px-6 rounded-xl font-bold text-sm disabled:opacity-50 transition-all hover:shadow"
                   style={{ background: '#D4A543', color: '#071827' }}>
-                  {reviewSubmitting ? L('Sending...', 'بھیجا جا رہا ہے...', 'جارٍ الإرسال...') : L('Submit rating', 'ریٹنگ بھیجیں', 'إرسال التقييم')}
+                  {reviewSubmitting ? L('Sending...', 'بھیجا جا رہا ہے...', 'جارٍ الإرسال...') : editingReview ? L('Save the change', 'تبدیلی محفوظ کریں', 'حفظ التعديل') : L('Submit rating', 'ریٹنگ بھیجیں', 'إرسال التقييم')}
                 </button>
+                {editingReview && (
+                  <button type="button" onClick={() => { setEditingReview(false); setReviewMsg('') }} className="ms-2 min-h-[44px] px-4 rounded-xl text-sm font-bold text-gray-600">{L('Cancel', 'منسوخ', 'إلغاء')}</button>
+                )}
               </div>
             ) : (
               <div className="text-center py-2">

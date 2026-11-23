@@ -4,7 +4,7 @@
 // يتخلّص من «أسمنت +2 أصناف أخرى» غير المنطقية (والقاعدة تحفظ الاسم بالصيغة الجديدة، migration 133).
 import { getProductLabel } from '@/types'
 import { storedBuyerType } from '@/lib/buyerType'
-import { cleanArName } from '@/lib/displayName'
+import { homeName } from '@/lib/homePacks'
 
 // a home buyer («لبيتي») on this device: plain words instead of procurement codes (owner 2026-11-22)
 const homeMode = () => storedBuyerType() === 'individual'
@@ -41,11 +41,11 @@ export function rfqDesc(rfq: any, locale: string, itemCount?: number): string {
   // a home buyer: the request is named by what is in it («سبوت سقف، خلاط مغسلة و٣ أخرى»), not «حزمة توريدات»
   if (homeMode() && Array.isArray(rfq?.items) && rfq.items.length) {
     const names = rfq.items.map((it: any) => String(it?.product_name || '')).filter(Boolean)
-      .map((n: string) => locale === 'ar' ? cleanArName(n) : getProductLabel(n, locale))
+      .map((n: string) => locale === 'ar' ? homeName(n) : getProductLabel(n, locale)) // the plain home name, no model codes (round-4 UX-024)
     if (names.length) {
       const head = names.slice(0, 2).join(locale === 'en' ? ', ' : '، ')
       const more = names.length - 2
-      return more > 0 ? head + (locale === 'en' ? ` and ${more} more` : locale === 'ur' ? ` اور ${more} مزید` : ` و${more} أخرى`) : head
+      return more > 0 ? head + (locale === 'en' ? ` and ${more} more` : locale === 'ur' ? ` اور ${more} مزید` : more === 1 ? ' ومادة أخرى' : more === 2 ? ' ومادتان أخريان' : more <= 10 ? ` و${more} مواد أخرى` : ` و${more} مادة أخرى`) : head
     }
   }
   const n = itemCount != null ? itemCount : (Array.isArray(rfq?.items) && rfq.items.length ? rfq.items.length : 1)

@@ -18,7 +18,7 @@
           <button type="button" data-lang="en">EN</button>
           <button type="button" data-lang="ur">اردو</button>
         </div>
-        <a href="/login?m=email" class="btn btn-ghost" data-i18n="login">تسجيل الدخول</a>
+        <a href="/login" class="btn btn-ghost" data-i18n="login">تسجيل الدخول</a>
       </div>
     </nav>
 
@@ -28,8 +28,8 @@
         <button type="button" data-lang="en">EN</button>
         <button type="button" data-lang="ur">اردو</button>
       </div>
-      <a href="/login?m=email" class="btn btn-ghost" data-i18n="login">تسجيل الدخول</a>
-      <a href="/login" class="btn btn-primary" data-i18n="register">ابدأ الآن</a>
+      <a href="/login" class="btn btn-ghost" data-i18n="login">تسجيل الدخول</a>
+      <a href="/contractor/rfq/quick" class="btn btn-primary" data-i18n="register">ابدأ الآن</a>
       <button type="button" class="menu-toggle" aria-label="Menu" aria-expanded="false" aria-controls="nav-links"><span></span></button>
     </div>
   </div>
@@ -99,15 +99,15 @@
   <div class="wrap hero-inner">
     <div class="hero-copy">
       <span class="eyebrow hero-in"><span class="dot"></span><span data-i18n="hero_eyebrow">قارن أسعار السوق بين يديك</span></span>
-      <h1 class="hero-in d1">
+      <h1>
         <span data-i18n="hero_h1a">اطلب ما تحتاجه</span>
         <span data-i18n="hero_h1b">وقارن عروض</span>
         <span class="hl" data-i18n="hero_h1c">عدة موردين</span>
       </h1>
-      <p class="lead hero-in d2" data-i18n="hero_lead">اكتب ما تحتاجه أو صوّره، أو ارفع قائمة المواد. نوجّه طلبك إلى الموردين الذين يبيعون ما تحتاجه، لتستقبل عروضهم وتقارن بينها وتختار الأنسب لبيتك أو مشروعك، مجاناً، بلا رسوم ولا عمولة.</p>
+      <p class="lead hero-in d2" data-i18n="hero_lead">اكتب ما تحتاجه أو صوّره، أو ارفع قائمة المواد. نوجّه طلبك إلى الموردين الذين يبيعون ما تحتاجه، لتستقبل عروضهم وتقارن بينها وتختار الأنسب لبيتك أو مشروعك، مجاناً خلال مرحلة الإطلاق، بلا رسوم ولا عمولة.</p>
 
-      <div class="hero-cta hero-in d3">
-        <a href="/login" class="btn btn-primary btn-lg">
+      <div class="hero-cta">
+        <a href="/contractor/rfq/quick" class="btn btn-primary btn-lg">
           <span data-i18n="hero_cta1">ابدأ الآن مجاناً</span>
           <svg class="dir-arrow" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
         </a>
@@ -119,16 +119,16 @@
       <p class="hero-seller hero-in d3"><span data-i18n="hero_seller_q">صاحب محل أو مورد مواد؟</span> <a href="/join" class="seller-pill" data-i18n="hero_seller_cta">سجّل كمورد</a></p>
 
       <div class="hero-trust hero-in d4">
-        <div class="t"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 12l2 2 4-4"/><circle cx="12" cy="12" r="9"/></svg><span data-i18n="trust1">ترى توثيق السجل التجاري لكل مورد</span></div>
-        <div class="t"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M7 12h10M11 18h2"/></svg><span data-i18n="trust2">تصنيف ذكي للطلبات</span></div>
+        <div class="t"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 12l2 2 4-4"/><circle cx="12" cy="12" r="9"/></svg><span data-i18n="trust1">حالة توثيق كل مورد ظاهرة أمامك</span></div>
+        <div class="t"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M7 12h10M11 18h2"/></svg><span data-i18n="trust2">يصل طلبك إلى الموردين المختصين فقط</span></div>
         <div class="t"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18a14 14 0 0 1 0-18"/></svg><span data-i18n="trust3">ثلاث لغات: عربي · إنجليزي · أردو</span></div>
       </div>
     </div>
 
     <!-- Live offer card -->
     <div class="hero-visual hero-in d2">
-      <div class="float-chip c1"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" class="ck" stroke-linecap="round" stroke-linejoin="round"><path d="M9 12l2 2 4-4"/><circle cx="12" cy="12" r="9"/></svg><span data-i18n="chip1">تطابق فوري</span></div>
-      <div class="float-chip c2"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 2h6l4 4v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2z"/><path d="M9 12l2 2 4-4"/></svg><span data-i18n="chip2">عروض بأسعار واضحة</span></div>
+      <div class="float-chip c1"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" class="ck" stroke-linecap="round" stroke-linejoin="round"><path d="M9 12l2 2 4-4"/><circle cx="12" cy="12" r="9"/></svg><span data-i18n="chip1">تصلك العروض على جوالك</span></div>
+      <div class="float-chip c2"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 2h6l4 4v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2z"/><path d="M9 12l2 2 4-4"/></svg><span data-i18n="chip2">قارن الأسعار واختر الأنسب</span></div>
 
       <div class="live-card">
         <div class="lc-head">
@@ -157,7 +157,7 @@
 
         <div class="lc-foot">
           <span class="saved"><span data-i18n="lc_saved">الفرق بين أعلى عرض وأقلّه في هذا المثال:</span> <b>5%</b></span>
-          <a href="/login" class="btn btn-navy" style="padding:8px 18px;font-size:13px" data-i18n="hero_cta1">ابدأ الآن مجاناً</a>
+          <a href="/contractor/rfq/quick" class="btn btn-navy" style="padding:8px 18px;font-size:13px" data-i18n="hero_cta1">ابدأ الآن مجاناً</a>
         </div>
       </div>
     </div>
@@ -202,13 +202,13 @@
       <p data-i18n="packs_p">اختر ما تريد تجديده، ونجهّز لك قائمة المواد لتصلك عروض الموردين.</p>
     </div>
     <div class="pack-row">
-      <a class="pack-card reveal" href="/login?next=%2Fcontractor%2Frfq%2Fquick%3Fpack%3Dbathroom"><img src="/images/packs/bathroom.webp" alt="" loading="lazy"><span data-i18n="pk_bathroom">تجديد حمّام</span></a>
-      <a class="pack-card reveal" href="/login?next=%2Fcontractor%2Frfq%2Fquick%3Fpack%3Dpaint"><img src="/images/packs/paint.webp" alt="" loading="lazy"><span data-i18n="pk_paint">دهان شقة</span></a>
-      <a class="pack-card reveal" href="/login?next=%2Fcontractor%2Frfq%2Fquick%3Fpack%3Dlighting"><img src="/images/packs/lighting.webp" alt="" loading="lazy"><span data-i18n="pk_lighting">إنارة غرفة</span></a>
-      <a class="pack-card reveal" href="/login?next=%2Fcontractor%2Frfq%2Fquick%3Fpack%3Dac"><img src="/images/packs/ac.webp" alt="" loading="lazy"><span data-i18n="pk_ac">تكييف غرفة</span></a>
-      <a class="pack-card reveal" href="/login?next=%2Fcontractor%2Frfq%2Fquick%3Fpack%3Dheater"><img src="/images/packs/heater.webp" alt="" loading="lazy"><span data-i18n="pk_heater">تغيير سخان</span></a>
-      <a class="pack-card reveal" href="/login?next=%2Fcontractor%2Frfq%2Fquick%3Fpack%3Dcurtains"><img src="/images/packs/curtains.webp" alt="" loading="lazy"><span data-i18n="pk_curtains">ستائر غرفة</span></a>
-      <a class="pack-card reveal" href="/login?next=%2Fcontractor%2Frfq%2Fquick%3Fpack%3Doutdoor"><img src="/images/packs/outdoor.webp" alt="" loading="lazy"><span data-i18n="pk_outdoor">جلسة خارجية</span></a>
+      <a class="pack-card reveal" href="/contractor/rfq/quick?pack=bathroom"><img src="/images/packs/bathroom.webp" alt="" loading="lazy"><span data-i18n="pk_bathroom">تجديد حمّام</span></a>
+      <a class="pack-card reveal" href="/contractor/rfq/quick?pack=paint"><img src="/images/packs/paint.webp" alt="" loading="lazy"><span data-i18n="pk_paint">دهان شقة</span></a>
+      <a class="pack-card reveal" href="/contractor/rfq/quick?pack=lighting"><img src="/images/packs/lighting.webp" alt="" loading="lazy"><span data-i18n="pk_lighting">إنارة غرفة</span></a>
+      <a class="pack-card reveal" href="/contractor/rfq/quick?pack=ac"><img src="/images/packs/ac.webp" alt="" loading="lazy"><span data-i18n="pk_ac">تكييف غرفة</span></a>
+      <a class="pack-card reveal" href="/contractor/rfq/quick?pack=heater"><img src="/images/packs/heater.webp" alt="" loading="lazy"><span data-i18n="pk_heater">تغيير سخان</span></a>
+      <a class="pack-card reveal" href="/contractor/rfq/quick?pack=curtains"><img src="/images/packs/curtains.webp" alt="" loading="lazy"><span data-i18n="pk_curtains">ستائر غرفة</span></a>
+      <a class="pack-card reveal" href="/contractor/rfq/quick?pack=outdoor"><img src="/images/packs/outdoor.webp" alt="" loading="lazy"><span data-i18n="pk_outdoor">جلسة خارجية</span></a>
     </div>
   </div>
 </section>
@@ -259,31 +259,31 @@
       <p data-i18n="sectors_p">من مصباح لمنزلك إلى مواد مشروع كامل — نوجّه طلبك إلى الموردين المختصين.</p>
     </div>
     <div class="cat-grid">
-      <a class="cat-card reveal" href="/login?next=%2Fcontractor%2Frfq%2Fquick%3Fsection%3Dbuilding" style="--img:url('/images/sections/building.webp')">
+      <a class="cat-card reveal" href="/contractor/rfq/quick?section=building" style="--img:url('/images/sections/building.webp')">
         <span class="cat-body"><h3 data-i18n="cat_build">البناء والإنشاءات</h3><p data-i18n="cat_build_p">أسمنت، حديد، بلوك، خرسانة، عوازل.</p></span>
       </a>
-      <a class="cat-card reveal d1" href="/login?next=%2Fcontractor%2Frfq%2Fquick%3Fsection%3Dfinishing" style="--img:url('/images/sections/finishing.webp')">
+      <a class="cat-card reveal d1" href="/contractor/rfq/quick?section=finishing" style="--img:url('/images/sections/finishing.webp')">
         <span class="cat-body"><h3 data-i18n="cat_finish">التشطيبات</h3><p data-i18n="cat_finish_p">بلاط، رخام، دهانات، جبس، أبواب.</p></span>
       </a>
-      <a class="cat-card reveal d2" href="/login?next=%2Fcontractor%2Frfq%2Fquick%3Fsection%3Delectrical" style="--img:url('/images/sections/lighting.webp')">
+      <a class="cat-card reveal d2" href="/contractor/rfq/quick?section=electrical" style="--img:url('/images/sections/lighting.webp')">
         <span class="cat-body"><h3 data-i18n="cat_light">الكهرباء والإنارة</h3><p data-i18n="cat_light_p">ثريات، سبوتات، إنارة خارجية وديكور.</p></span>
       </a>
-      <a class="cat-card reveal d3" href="/login?next=%2Fcontractor%2Frfq%2Fquick%3Fsection%3Dplumbing" style="--img:url('/images/sections/plumbing.webp')">
+      <a class="cat-card reveal d3" href="/contractor/rfq/quick?section=plumbing" style="--img:url('/images/sections/plumbing.webp')">
         <span class="cat-body"><h3 data-i18n="cat_bath">السباكة والمياه</h3><p data-i18n="cat_bath_p">خلاطات، أدوات صحية، مواسير، سخانات.</p></span>
       </a>
-      <a class="cat-card reveal" href="/login?next=%2Fcontractor%2Frfq%2Fquick%3Fsection%3Dhvac_fire" style="--img:url('/images/sections/hvac_fire.webp')">
+      <a class="cat-card reveal" href="/contractor/rfq/quick?section=hvac_fire" style="--img:url('/images/sections/hvac_fire.webp')">
         <span class="cat-body"><h3 data-i18n="cat_hvac">التكييف والحريق</h3><p data-i18n="cat_hvac_p">مكيفات، دكت، مراوح، رشاشات وإطفاء.</p></span>
       </a>
-      <a class="cat-card reveal d1" href="/login?next=%2Fcontractor%2Frfq%2Fquick%3Fsection%3Dfurniture" style="--img:url('/images/sections/furniture.webp')">
+      <a class="cat-card reveal d1" href="/contractor/rfq/quick?section=furniture" style="--img:url('/images/sections/furniture.webp')">
         <span class="cat-body"><h3 data-i18n="cat_furn">الأثاث والديكور</h3><p data-i18n="cat_furn_p">طاولات، كنب، خزائن، ستائر، مجالس.</p></span>
       </a>
-      <a class="cat-card reveal d2" href="/login?next=%2Fcontractor%2Frfq%2Fquick%3Fsection%3Dtools" style="--img:url('/images/sections/tools.webp')">
+      <a class="cat-card reveal d2" href="/contractor/rfq/quick?section=tools" style="--img:url('/images/sections/tools.webp')">
         <span class="cat-body"><h3 data-i18n="cat_tools">العُدد والسلامة</h3><p data-i18n="cat_tools_p">عُدد يدوية وكهربائية، مسامير وأقفال، سقالات، سلامة.</p></span>
       </a>
-      <a class="cat-card reveal d3" href="/login?next=%2Fcontractor%2Frfq%2Fquick%3Fsection%3Dmachinery" style="--img:url('/images/sections/machinery.webp')">
+      <a class="cat-card reveal d3" href="/contractor/rfq/quick?section=machinery" style="--img:url('/images/sections/machinery.webp')">
         <span class="cat-body"><h3 data-i18n="cat_mach">الآليات الثقيلة</h3><p data-i18n="cat_mach_p">حفارات، رافعات، شاحنات، مضخات خرسانة.</p></span>
       </a>
-      <a class="cat-card reveal" href="/login?next=%2Fcontractor%2Frfq%2Fquick%3Fsection%3Doutdoor" style="--img:url('/images/sections/outdoor.webp')">
+      <a class="cat-card reveal" href="/contractor/rfq/quick?section=outdoor" style="--img:url('/images/sections/outdoor.webp')">
         <span class="cat-body"><h3 data-i18n="cat_out">الحدائق والخارجيات</h3><p data-i18n="cat_out_p">عشب، ري، إنترلوك، أسوار.</p></span>
       </a>
     </div>
@@ -353,8 +353,8 @@
     <div class="why-grid">
       <div class="feature reveal">
         <div class="f-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></div>
-        <h3 data-i18n="f1_t">مجاناً، بلا رسوم ولا عمولة</h3>
-        <p data-i18n="f1_p">قارن عروض الموردين في مكان واحد. لا تدفع شيئاً للمنصة، فالطلب والمقارنة مجانيان.</p>
+        <h3 data-i18n="f1_t">مجاني خلال الإطلاق، بلا رسوم ولا عمولة</h3>
+        <p data-i18n="f1_p">قارن عروض الموردين في مكان واحد. لا تدفع شيئاً للمنصة خلال مرحلة الإطلاق، فالطلب والمقارنة مجانيان.</p>
       </div>
       <div class="feature reveal d1">
         <div class="f-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M7 12h10M11 18h2"/></svg></div>
@@ -373,7 +373,7 @@
       </div>
       <div class="feature reveal d1">
         <div class="f-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 12l2 2 4-4"/><path d="M12 2l8 4v6c0 5-3.5 8-8 10-4.5-2-8-5-8-10V6z"/></svg></div>
-        <h3 data-i18n="f5_t">ترى توثيق السجل التجاري لكل مورد</h3>
+        <h3 data-i18n="f5_t">تعرف من تتعامل معه</h3>
         <p data-i18n="f5_p">يظهر بجانب كل مورد ما إذا كان سجلّه التجاري موثّقاً، لتعرف مع من تتعامل.</p>
       </div>
       <div class="feature reveal d2">
@@ -395,7 +395,7 @@
     <div class="faq-list">
       <details class="reveal"><summary data-i18n="faq_q1">كيف أدفع؟</summary><p data-i18n="faq_a1">تدفع للمورد مباشرة بالطريقة التي تتفقان عليها عند التسليم أو قبله. لا تحتفظ تسعيرك بأي مبالغ.</p></details>
       <details class="reveal"><summary data-i18n="faq_q2">من يوصل الطلب؟</summary><p data-i18n="faq_a2">المورد الذي تختار عرضه هو من يوصل المواد إلى موقعك، أو تستلمها منه بنفسك إن اخترت الاستلام. يظهر في العرض هل يشمل التوصيل وموعده.</p></details>
-      <details class="reveal"><summary data-i18n="faq_q3">هل الخدمة مجانية؟</summary><p data-i18n="faq_a3">نعم. إرسال طلب التسعير ومقارنة العروض مجانيان، بلا رسوم ولا عمولة.</p></details>
+      <details class="reveal"><summary data-i18n="faq_q3">هل الخدمة مجانية؟</summary><p data-i18n="faq_a3">نعم. إرسال طلب التسعير ومقارنة العروض مجانيان خلال مرحلة الإطلاق، بلا رسوم ولا عمولة.</p></details>
       <details class="reveal"><summary data-i18n="faq_q4">كيف أعرف المورد؟</summary><p data-i18n="faq_a4">يظهر بجانب كل مورد ما إذا كان سجلّه التجاري موثّقاً، مع تقييمات المشترين السابقين. ولا يرى المورد اسمك أو رقمك حتى تختار عرضه.</p></details>
     </div>
     <p class="faq-more"><a href="/deal-protection" data-i18n="faq_more">اعرف كيف نحمي صفقتك</a></p>
@@ -411,8 +411,8 @@
         <h2 data-i18n="cta_h">هل أنت مستعد لتسعير طلبك القادم؟</h2>
         <p data-i18n="cta_p">انضم إلى تسعيرك اليوم، ودع الموردين يتنافسون على طلبك.</p>
         <div class="cta-btns">
-          <a href="/login" class="btn btn-primary btn-lg" data-i18n="cta_b1">ابدأ الآن مجاناً</a>
-          <a href="mailto:info@taseerak.com" class="btn btn-light btn-lg" data-i18n="cta_b2">تواصل معنا</a>
+          <a href="/contractor/rfq/quick" class="btn btn-primary btn-lg" data-i18n="cta_b1">ابدأ الآن مجاناً</a>
+          <a href="https://wa.me/12135614366" target="_blank" rel="noopener noreferrer" class="btn btn-light btn-lg" data-i18n="cta_b2">تواصل معنا عبر واتساب</a>
         </div>
       </div>
     </div>
@@ -438,11 +438,12 @@
         <a href="/join" data-i18n="foot_c2_1">انضم كمورد</a>
         <a href="/join/seller" data-i18n="foot_c2_6">انضم كوسيط تسعير</a>
         <a href="/join/company" data-i18n="foot_c2_5">انضم كشركة أو محل</a>
-        <a href="#sectors" data-i18n="foot_c2_3">التصنيفات</a>
+        <a href="/join" data-i18n="foot_c2_3">كيف تصلك الطلبات</a>
       </div>
       <div class="foot-col">
         <h4 data-i18n="foot_c3">الشركة</h4>
-        <a href="mailto:info@taseerak.com" data-i18n="foot_c3_2">تواصل معنا</a>
+        <a href="https://wa.me/12135614366" target="_blank" rel="noopener noreferrer" data-i18n="foot_c3_6">تواصل معنا عبر واتساب</a>
+        <a href="mailto:info@taseerak.com" data-i18n="foot_c3_2">راسلنا بالبريد</a>
         <a href="/privacy" data-i18n="foot_c3_3">الخصوصية</a>
         <a href="/terms" data-i18n="foot_c3_4">الشروط</a>
         <a href="/deal-protection" data-i18n="foot_c3_5">كيف نحمي صفقتك</a>

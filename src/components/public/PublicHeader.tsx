@@ -7,8 +7,8 @@ import { useSignedIn } from './useSignedIn'
 
 // «أسعار المواد» stays out of the header while the price board is off (UX-162); the public suppliers
 // directory stays unlinked until real suppliers are listed (UX-003).
-// Translated, with the language switcher (UX-115). «دخول» opens the email sign-in (a returning
-// account), «ابدأ الآن» the quick mobile start, like every other «start» button.
+// Translated, with the language switcher (UX-115). «دخول» opens /login (phone first, email one tap away,
+// round-4 UX-111), «ابدأ الآن» the request page, open to visitors (round-4 UX-056), like every other «start» button.
 export default function PublicHeader({ active }: { active?: string }) {
   const { locale, dir } = useTranslation()
   const L = (en: string, ur: string, ar: string) => (locale === 'en' ? en : locale === 'ur' ? ur : ar)
@@ -39,8 +39,8 @@ export default function PublicHeader({ active }: { active?: string }) {
           {signedIn ? (
             <Link href="/login" className="inline-flex items-center min-h-[44px] px-4 rounded-xl text-[#071827] font-bold whitespace-nowrap" style={{ background: '#D4A543' }}>{L('My account', 'میرا اکاؤنٹ', 'حسابي')}</Link>
           ) : (<>
-            <Link href="/login?m=email" className="inline-flex items-center min-h-[44px] px-3 rounded-lg text-[#0B2438] hover:bg-gray-100 whitespace-nowrap">{L('Sign in', 'سائن اِن', 'دخول')}</Link>
-            <Link href="/login" className="inline-flex items-center min-h-[44px] px-4 rounded-xl text-[#071827] font-bold whitespace-nowrap" style={{ background: '#D4A543' }}>{L('Start now', 'ابھی شروع کریں', 'ابدأ الآن')}</Link>
+            <Link href="/login" className="inline-flex items-center min-h-[44px] px-3 rounded-lg text-[#0B2438] hover:bg-gray-100 whitespace-nowrap">{L('Sign in', 'سائن اِن', 'دخول')}</Link>
+            <Link href="/contractor/rfq/quick" className="inline-flex items-center min-h-[44px] px-4 rounded-xl text-[#071827] font-bold whitespace-nowrap" style={{ background: '#D4A543' }}>{L('Start now', 'ابھی شروع کریں', 'ابدأ الآن')}</Link>
           </>)}
         </nav>
       </div>

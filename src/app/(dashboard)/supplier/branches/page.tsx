@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { toLocalSa, toLatinDigits } from '@/lib/phone'
 import PageLoader from '@/components/shared/PageLoader'
 import { createClient } from '@/lib/supabase/client'
 import { useTranslation } from '@/i18n'
@@ -77,15 +78,18 @@ export default function SupplierBranchesPage() {
     if (!name.trim()) { setErr(L('Write the branch name.', 'شاخ کا نام لکھیں۔', 'اكتب اسم الفرع.')); return }
     if (!region) { setErr(L('Choose the branch region.', 'شاخ کا علاقہ منتخب کریں۔', 'اختر منطقة الفرع.')); return }
     if (lat == null || lng == null) { setErr(L('Set the branch location on the map, so requests near it reach you.', 'شاخ کا مقام نقشے پر مقرر کریں تاکہ اس کے قریب کی درخواستیں آپ تک پہنچیں۔', 'حدّد موقع الفرع على الخريطة لتصلك الطلبات القريبة منه.')); return }
+    // round-4 UX-141: the branch mobile is normalised and checked (05XXXXXXXX)
+    const ph = phone.trim() ? toLocalSa(phone) : null
+    if (phone.trim() && !ph) { setErr(L('Mobile number: 10 digits starting with 05.', 'موبائل نمبر: 05 سے شروع ہونے والے 10 ہندسے۔', 'رقم الجوال: 10 أرقام يبدأ بـ05.')); document.getElementById('br-phone')?.focus(); return }
     setSaving(true); setErr('')
     const supabase = createClient()
-    const row = { name, region, city: city || null, district: district || null, phone: phone || null, address: address || null, latitude: lat, longitude: lng }
+    const row = { name, region, city: city || null, district: district || null, phone: ph, address: address || null, latitude: lat, longitude: lng }
     const { error } = editId
       ? await supabase.from('branches').update(row).eq('id', editId)
       : await supabase.from('branches').insert({ supplier_id: user.id, ...row })
     setSaving(false)
     // keep what was typed when the save fails
-    if (error) { setErr(L('Could not save the branch — please try again.', 'شاخ محفوظ نہیں ہو سکی — دوبارہ کوشش کریں۔', 'تعذّر حفظ الفرع، حاول مرة أخرى.')); return }
+    if (error) { setErr(L('Could not save the branch — please try again.', 'شاخ محفوظ نہیں ہو سکی — دوبارہ کوشش کریں۔', 'تعذّر حفظ الفرع. تحقّق من اتصالك وحاول مرة أخرى.')); return }
     toast.success(L('Branch saved', 'شاخ محفوظ ہو گئی', 'حُفظ الفرع'))
     reset(); load()
   }
@@ -95,7 +99,7 @@ export default function SupplierBranchesPage() {
     setErr('')
     const supabase = createClient()
     const { error } = await supabase.from('branches').delete().eq('id', id)
-    if (error) { setErr(L('Could not delete the branch — please try again.', 'شاخ حذف نہیں ہو سکی — دوبارہ کوشش کریں۔', 'تعذّر حذف الفرع، حاول مرة أخرى.')); return }
+    if (error) { setErr(L('Could not delete the branch — please try again.', 'شاخ حذف نہیں ہو سکی — دوبارہ کوشش کریں۔', 'تعذّر حذف الفرع. تحقّق من اتصالك وحاول مرة أخرى.')); return }
     load()
   }
 
@@ -166,7 +170,7 @@ export default function SupplierBranchesPage() {
               </div>
               <div>
                 <label htmlFor="br-phone" className="block text-xs font-bold text-gray-600 mb-1">{L('Branch mobile', 'شاخ کا موبائل', 'جوال الفرع')}</label>
-                <input id="br-phone" type="tel" inputMode="tel" value={phone} onChange={e => setPhone(e.target.value)} className="input-field" placeholder="05XXXXXXXX" dir="ltr" />
+                <input id="br-phone" type="tel" inputMode="tel" value={phone} onChange={e => setPhone(toLatinDigits(e.target.value).replace(/[^0-9+ ]/g, '').slice(0, 16))} className="input-field" placeholder="05XXXXXXXX" dir="ltr" maxLength={16} />
               </div>
               <div className="sm:col-span-2">
                 <label htmlFor="br-address" className="block text-xs font-bold text-gray-600 mb-1">{L('Address (optional)', 'پتہ (اختیاری)', 'العنوان (اختياري)')}</label>

@@ -12,9 +12,10 @@ export function buyerTypeText(locale: string) {
   return {
     question: L('Who are you buying for?', 'آپ کس کے لیے خرید رہے ہیں؟', 'لمن تشتري؟'),
     home: L('My home', 'اپنا گھر', 'لبيتي'),
-    homeSub: L('A simple request in three steps, and ready lists to get your home ready', 'تین قدموں میں آسان درخواست، اور گھر کی تیاری کے لیے تیار فہرستیں', 'طلب بسيط بثلاث خطوات، وقوائم جاهزة لتجهيز البيت'),
+    // one wording everywhere the choice appears (round-4 UX-112)
+    homeSub: L('A simple request with no technical details', 'تکنیکی تفصیلات کے بغیر آسان درخواست', 'طلب بسيط بلا تفاصيل فنية'),
     business: L('Contractor or company', 'ٹھیکیدار یا کمپنی', 'مقاول أو شركة'),
-    businessSub: L('Specifications, a tax invoice and quantity lists', 'تفصیلات، ٹیکس انوائس اور مقداروں کا جدول', 'مواصفات وفاتورة ضريبية وجدول كميات'),
+    businessSub: L('Exact specifications, a tax invoice and tools for large quantities', 'درست تفصیلات، ٹیکس انوائس اور بڑی مقداروں کے لیے ٹولز', 'مواصفات دقيقة وفاتورة ضريبية وأدوات للكميات الكبيرة'),
     changeLater: L('You can change it any time in Settings.', 'آپ اسے کسی بھی وقت ترتیبات میں بدل سکتے ہیں۔', 'يمكنك تغييره في أي وقت من الإعدادات.'),
     buyingHome: L('You are buying for your home', 'آپ اپنے گھر کے لیے خرید رہے ہیں', 'تشتري لبيتك'),
     buyingBusiness: L('You are buying as a contractor or company', 'آپ ٹھیکیدار یا کمپنی کے طور پر خرید رہے ہیں', 'تشتري كمقاول أو شركة'),

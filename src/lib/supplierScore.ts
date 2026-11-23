@@ -39,7 +39,18 @@ export const APPROVAL_LABELS: Record<string, string> = {
   diriyah: 'الدرعية',
   momra: 'الشؤون البلدية',
 }
-export function approvalLabel(key: string): string {
+// English / Urdu names of the approval bodies (round-4 UX-147); Arabic stays the default
+const APPROVAL_LABELS_EN: Record<string, string> = {
+  aramco: 'Aramco', sabic: 'SABIC', sec: 'Saudi Electricity', neom: 'NEOM', roshn: 'ROSHN',
+  redsea: 'Red Sea Global', diriyah: 'Diriyah', momra: 'Ministry of Municipalities',
+}
+const APPROVAL_LABELS_UR: Record<string, string> = {
+  aramco: 'آرامکو', sabic: 'سابک', sec: 'سعودی الیکٹرسٹی', neom: 'نیوم', roshn: 'روشن',
+  redsea: 'ریڈ سی', diriyah: 'درعیہ', momra: 'بلدیاتی امور',
+}
+export function approvalLabel(key: string, locale: string = 'ar'): string {
+  if (locale === 'en') return APPROVAL_LABELS_EN[key] || APPROVAL_LABELS[key] || key
+  if (locale === 'ur') return APPROVAL_LABELS_UR[key] || APPROVAL_LABELS[key] || key
   return APPROVAL_LABELS[key] || key
 }
 

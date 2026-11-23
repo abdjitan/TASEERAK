@@ -177,6 +177,8 @@ export default function DeleteAccountPage() {
               <p className="text-sm text-gray-600">{t.signedOut}</p>
               <Link href="/login?next=/account/delete" className="min-h-[44px] inline-flex items-center px-4 rounded-xl text-sm font-bold text-white" style={{ background: '#0B2438' }}>{t.login}</Link>
             </div>
+          ) : signedIn === null ? (
+            <p className="text-sm text-gray-600" role="status" aria-busy="true">{locale === 'en' ? 'Loading…' : locale === 'ur' ? 'لوڈ ہو رہا ہے…' : 'جارٍ التحميل…'}</p>
           ) : signedIn ? (
             <div className="space-y-3">
               {activeDeals > 0 && (
@@ -202,7 +204,7 @@ export default function DeleteAccountPage() {
           ) : null}
         </div>
 
-        <p className="text-center text-xs text-gray-400 pt-4">© 2026 تسعيرك — Taseerak</p>
+        <p className="text-center text-[12px] text-gray-600 pt-4">© 2026 تسعيرك — Taseerak</p>
       </div>
     </div>
   )

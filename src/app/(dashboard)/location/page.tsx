@@ -59,6 +59,7 @@ export default function LocationPage() {
 
   const [user, setUser] = useState<any>(null)
   const [profile, setProfile] = useState<any>(null)
+  const homeHref = profile?.role === 'supplier' ? '/supplier/dashboard' : profile?.role === 'admin' ? '/admin' : '/contractor'
   const [loading, setLoading] = useState(true)
   // a failed load shows an error with retry, never an empty form that would wipe the saved address (UX-118)
   const [loadFailed, setLoadFailed] = useState(false)
@@ -124,7 +125,12 @@ export default function LocationPage() {
     setSaving(false)
     setMsgOk(!error)
     setMsg(error ? friendlyError(error.message, L('Could not save, please try again.', 'محفوظ نہیں ہو سکا، دوبارہ کوشش کریں۔', 'تعذّر الحفظ، حاول مرة أخرى.'), locale) : T.saved)
-    setTimeout(() => setMsg(''), 6000)
+    if (!error && typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('from') === 'home') {
+      setTimeout(() => { window.location.href = homeHref }, 1200)
+      return
+    }
+    // the success line stays (with its «back home» link) until the next change; an error clears after a while
+    if (error) setTimeout(() => setMsg(''), 6000)
   }
 
   if (loading) return <PageLoader />
@@ -213,7 +219,8 @@ export default function LocationPage() {
           {/* Save */}
           <div className="sticky bottom-[calc(72px+env(safe-area-inset-bottom))] lg:bottom-4">
             {/* an error shows in red, never in the success green (UX-140) */}
-            {msg && <div role={msgOk ? 'status' : 'alert'} className={`text-sm rounded-xl p-3 mb-3 border flex items-center justify-center gap-1.5 ${msgOk ? 'bg-emerald-50 border-emerald-200 text-emerald-800' : 'bg-red-50 border-red-200 text-red-700'}`}>{msgOk && <Check className="w-4 h-4" aria-hidden />}{msg}</div>}
+            {msg && <div role={msgOk ? 'status' : 'alert'} className={`text-sm rounded-xl p-3 mb-3 border flex items-center justify-center gap-1.5 ${msgOk ? 'bg-emerald-50 border-emerald-200 text-emerald-800' : 'bg-red-50 border-red-200 text-red-700'}`}>{msgOk && <Check className="w-4 h-4" aria-hidden />}{msg}
+              {msgOk && <a href={homeHref} className="inline-flex items-center min-h-[44px] px-2 font-bold underline underline-offset-2">{L('Back to the home page', 'ہوم پیج پر واپس', 'العودة إلى الرئيسية')}</a>}</div>}
             <button onClick={handleSave} disabled={saving}
               className="w-full py-4 rounded-xl font-bold text-[#071827] text-base disabled:opacity-50 transition-all hover:shadow-lg shadow-lg"
               style={{ background: '#D4A543' }}>

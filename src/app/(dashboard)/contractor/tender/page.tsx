@@ -13,24 +13,26 @@ import { arItems, dateLocale } from '@/lib/text'
 import { friendlyError } from '@/lib/friendlyError'
 import { askConfirm, notify } from '@/lib/askConfirm'
 import { storedBuyerType } from '@/lib/buyerType'
+import HomeModeNotice from '@/components/tender/HomeModeNotice'
 
 export default function TendersPage() {
   const { locale, dir } = useTranslation()
   const L = makeL(locale)
   const [rows, setRows] = useState<any[] | null>(null)
   const [error, setError] = useState('')
+  const [homeMode, setHomeMode] = useState(false)
 
   useEffect(() => {
-    // a home buyer has no tenders: the simple request page (UX-078)
-    if (storedBuyerType() === 'individual') { window.location.replace('/contractor/rfq/quick'); return }
+    // «لبيتي» mode hides tenders (never deletes them): say so, with the way back, instead of a silent redirect (UX-098)
+    if (storedBuyerType() === 'individual') { setHomeMode(true); return }
     const supabase = createClient()
     supabase.auth.getSession().then(async ({ data }) => {
       if (!data.session) { window.location.href = '/login'; return }
       const { data: bt } = await supabase.from('profiles').select('buyer_type').eq('id', data.session.user.id).maybeSingle()
-      if ((bt as any)?.buyer_type === 'individual') { window.location.replace('/contractor/rfq/quick'); return }
+      if ((bt as any)?.buyer_type === 'individual') { setHomeMode(true); return }
       const { data: t, error: e } = await supabase.from('tenders').select('id, title, status, summary, created_at, project_rfq_id').eq('contractor_id', data.session.user.id).order('created_at', { ascending: false }).limit(100)
       // a missing table = not enabled on the server; anything else = the real error (connection…), with a retry
-      if (e) setError(/relation|does not exist|schema cache/i.test(e.message || '') ? L('Tender pricing is not enabled yet.', 'ٹینڈر قیمت ابھی فعال نہیں۔', 'تسعير المناقصات غير مفعّل بعد.') : friendlyError(e.message, L('Could not load your tenders. Check your connection and try again.', 'آپ کے ٹینڈرز لوڈ نہیں ہو سکے۔ کنکشن چیک کر کے دوبارہ کوشش کریں۔', 'تعذّر تحميل مناقصاتك. تحقّق من الاتصال وحاول مرة أخرى.'), locale))
+      if (e) setError(/relation|does not exist|schema cache/i.test(e.message || '') ? L('Tender pricing is not enabled yet.', 'ٹینڈر کی قیمت ابھی فعال نہیں۔', 'تسعير المناقصات غير مفعّل بعد.') : friendlyError(e.message, L('Could not load your tenders. Check your connection and try again.', 'آپ کے ٹینڈرز لوڈ نہیں ہو سکے۔ کنکشن چیک کر کے دوبارہ کوشش کریں۔', 'تعذّر تحميل مناقصاتك. تحقّق من الاتصال وحاول مرة أخرى.'), locale))
       setRows(t || [])
     })
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
@@ -53,11 +55,12 @@ export default function TendersPage() {
   const statusLabel = (s: string) => (s === 'sent' ? L('Sent for pricing', 'قیمت کے لیے بھیجا', 'أُرسل للتسعير') : s === 'review' ? L('Awaiting your approval', 'آپ کی منظوری کا منتظر', 'بانتظار اعتمادك') : L('Draft', 'مسودہ', 'مسودة'))
 
   return (
-    <AppShell title={L('Tender pricing', 'ٹینڈر قیمت', 'تسعير مناقصة')} nav={getNav('contractor', locale, '/contractor/tender')} dir={dir}>
+    <AppShell title={L('Tender pricing', 'ٹینڈر کی قیمت', 'تسعير مناقصة')} nav={getNav('contractor', locale, '/contractor/tender')} dir={dir}>
+      {homeMode ? <HomeModeNotice locale={locale} what="tender" /> : (
       <div className="max-w-4xl mx-auto space-y-4">
         <div className="flex items-center justify-between gap-3 flex-wrap">
           <div>
-            <h1 className="text-xl sm:text-2xl font-bold text-[#0B2438]">{L('Tender pricing', 'ٹینڈر قیمت', 'تسعير مناقصة')}</h1>
+            <h1 className="text-xl sm:text-2xl font-bold text-[#0B2438]">{L('Tender pricing', 'ٹینڈر کی قیمت', 'تسعير مناقصة')}</h1>
             <p className="text-sm text-gray-600 mt-1">{L('For a full tender: an Excel bill of quantities with its drawings and specifications. Every number is traced to its source and nothing goes to suppliers before you approve it.', 'پورے ٹینڈر کے لیے: Excel میں مقداروں کا جدول، ڈرائنگز اور تفصیلات کے ساتھ۔ ہر عدد اپنے ماخذ سے جڑا ہے اور آپ کی منظوری سے پہلے کچھ سپلائرز کو نہیں جاتا۔', 'للمناقصة الكاملة: جدول كميات بصيغة Excel مع مخططاته ومواصفاته. يُربط كل رقم بمصدره، ولا يُرسل شيء للموردين قبل اعتمادك.')}</p>
           </div>
           <Link href="/contractor/tender/new" className="min-h-11 inline-flex items-center px-5 py-2.5 rounded-xl font-bold text-sm text-[#071827]" style={{ background: 'linear-gradient(135deg,#F5C55B,#D4A543)' }}>
@@ -116,6 +119,7 @@ export default function TendersPage() {
           </div>
         ))}
       </div>
+      )}
     </AppShell>
   )
 }

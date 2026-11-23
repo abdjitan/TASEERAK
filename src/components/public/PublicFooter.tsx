@@ -14,7 +14,7 @@ export default function PublicFooter() {
         <p className="text-[12px] text-gray-600 mb-4 max-w-md mx-auto leading-relaxed">
           {L('The pricing and supply platform for building materials in Saudi Arabia: send one price request and suppliers compete for it.',
             'سعودی عرب میں تعمیراتی سامان کی قیمت اور سپلائی کا پلیٹ فارم: ایک درخواست بھیجیں اور سپلائرز اس پر مقابلہ کریں۔',
-            'منصة التسعير والتوريد لمواد البناء في السعودية: اطلب تسعيرة واحدة ويتنافس عليها الموردون.')}
+            'منصة التسعير والتوريد لمواد البناء في السعودية: أرسل طلب سعر واحداً ويتنافس عليه الموردون.')}
         </p>
         <div className="flex items-center justify-center gap-1 text-[13px] text-gray-700 flex-wrap">
           <Link href="/" className="inline-flex items-center min-h-[44px] px-2 font-semibold text-[#0B2438] hover:underline">{L('Home', 'ہوم', 'الرئيسية')}</Link>

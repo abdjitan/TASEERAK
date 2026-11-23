@@ -43,6 +43,9 @@ function LoginForm() {
   const registerHref = nextParam ? `/register?next=${encodeURIComponent(nextParam)}` : '/register'
   // why the visitor is here when a link sent them (UX-097)
   const nextNote = !nextParam ? ''
+    // a visitor who built a list on the request page and pressed «إرسال» (round-4 UX-056)
+    : /^\/contractor\/rfq\/quick\?(.*&)?guest=1/.test(nextParam)
+      ? L('Create your account with your mobile number to send the request. You will not lose your list.', 'درخواست بھیجنے کے لیے اپنے موبائل نمبر سے اکاؤنٹ بنائیں۔ آپ کی فہرست محفوظ رہے گی۔', 'أنشئ حسابك برقم جوالك لإرسال الطلب، ولن تفقد قائمتك.')
     : /^\/contractor\/(rfq\/quick|project\/new)/.test(nextParam)
       ? L('Create a free account or sign in to send your price request.', 'قیمت کی درخواست بھیجنے کے لیے مفت اکاؤنٹ بنائیں یا سائن اِن کریں۔', 'أنشئ حساباً مجانياً أو سجّل الدخول لإرسال طلب التسعير.')
       : L('Sign in to open the page whose link you received.', 'جس صفحے کا لنک آپ کو ملا ہے اسے کھولنے کے لیے سائن اِن کریں۔', 'سجّل الدخول لفتح الصفحة التي وصلك رابطها.')
@@ -211,20 +214,23 @@ function LoginForm() {
 
       {/* ===== Form panel ===== */}
       <div className="auth-form-side flex-1 flex flex-col" style={{ background: 'var(--bg)' }}>
-        <div className="flex items-center justify-between p-5">
-          <a href="/" className="flex items-center gap-1.5 min-h-[44px] text-sm font-semibold text-ink-2 hover:text-navy transition-colors">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4"><path d="M3 11.5 12 4l9 7.5" /><path d="M5 10v10h5v-6h4v6h5V10" /></svg>
-            {t.home}
+        {/* one public top bar (round-4 UX-176): logo, then the language, then the way home */}
+        <div className="flex items-center justify-between gap-2 p-5">
+          <a href="/" className="lg:invisible flex items-center min-h-[44px] shrink-0" aria-label="تسعيرك — Taseerak">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/taseerak-metallic-logo.webp" alt="تسعيرك — Taseerak" className="h-11 w-auto" />
           </a>
-          <LanguageSwitcher variant="minimal" />
+          <div className="flex items-center gap-1">
+            <LanguageSwitcher variant="minimal" />
+            <a href="/" className="flex items-center gap-1.5 min-h-[44px] px-2 text-sm font-semibold text-ink-2 hover:text-navy transition-colors">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4" aria-hidden><path d="M3 11.5 12 4l9 7.5" /><path d="M5 10v10h5v-6h4v6h5V10" /></svg>
+              {t.home}
+            </a>
+          </div>
         </div>
 
         <div className="flex-1 flex items-center justify-center px-3 sm:px-5 pb-12">
           <div className="auth-form-card w-full max-w-[480px] animate-slide-up">
-            <div className="flex lg:hidden items-center justify-center mb-7">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src="/taseerak-metallic-logo.webp" alt="تسعيرك — Taseerak" className="auth-mobile-lockup" />
-            </div>
 
             {/* every «Start now» button lands here: the phone title says «start», not only «sign in» (UX-134).
                 With phone sign-in off, a new visitor sees «start free» + «create an account», never «welcome back» first (UX-003) */}
@@ -270,6 +276,8 @@ function LoginForm() {
               {/* owner 2026-11-21: a new seller must not end up as a buyer through the phone sign-up.
                   One word for sellers everywhere: «مورد» (UX-134) */}
               <p className="mt-4 text-sm text-center text-ink-2">{L('Supplier or pricing agent?', 'سپلائر یا قیمت ایجنٹ؟', 'مورد أو وسيط تسعير؟')} <a href="/join" className="inline-flex items-center min-h-[44px] font-bold text-orange-dark hover:underline">{L('Sign up as a supplier', 'سپلائر کے طور پر رجسٹر کریں', 'سجّل كمورد')}</a></p>
+              {/* a returning supplier signs in by email (round-4 UX-111) */}
+              <p className="text-sm text-center text-ink-2">{L('Have a supplier account?', 'سپلائر اکاؤنٹ ہے؟', 'لديك حساب مورد؟')} <button type="button" onClick={() => { setMode('email'); setEmailFormOpen(true); setError('') }} className="inline-flex items-center min-h-[44px] font-bold text-orange-dark hover:underline">{L('Sign in with email', 'ای میل سے سائن اِن کریں', 'ادخل بالبريد الإلكتروني')}</button></p>
               </>
             ) : intro ? (
               <div className="space-y-3">

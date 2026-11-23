@@ -21,11 +21,15 @@ export default function PartialExtrasConfirm({ offer, locale, wonCount, onDone }
   const sum = rows.reduce((s: number, r: any) => s + num(r.amount), 0)
   const fmt = (n: number) => n.toLocaleString('en-US', { maximumFractionDigits: 2 })
   const SAR = L('SAR', 'ریال', 'ر.س')
+  // the basis of the amounts, said everywhere the cap appears (round-4 UX-128); none for a seller outside VAT
+  const basis = offer?.vat_status === 'not_registered' ? ''
+    : offer?.vat_included ? ' ' + L('(incl. VAT)', '(VAT سمیت)', '(شاملة الضريبة)')
+    : ' ' + L('(before VAT)', '(VAT کے بغیر)', '(قبل الضريبة)')
 
   async function save() {
     setErr('')
-    if (sum > max) { setErr(L(`The charges can't be higher than your original offer (${fmt(max)} SAR).`, `چارجز آپ کی اصل پیشکش (${fmt(max)} ریال) سے زیادہ نہیں ہو سکتے۔`, `لا يمكن أن تزيد الرسوم على عرضك الأصلي (${fmt(max)} ر.س).`)); return }
-    if (!(await askConfirm(L(`Confirm ${fmt(sum)} SAR in charges for the materials you won? The buyer will be notified.`, `جیتے گئے سامان کے لیے ${fmt(sum)} ریال چارجز کنفرم کریں؟ خریدار کو اطلاع دی جائے گی۔`, `تأكيد رسوم بقيمة ${fmt(sum)} ر.س للمواد التي فزت بها؟ سيُبلَّغ المشتري.`), { okLabel: L('Confirm charges', 'چارجز کنفرم کریں', 'تأكيد الرسوم'), cancelLabel: L('Go back', 'واپس', 'تراجع') }))) return
+    if (sum > max) { setErr(L(`The charges can't be higher than your original offer (${fmt(max)} SAR${basis}).`, `چارجز آپ کی اصل پیشکش (${fmt(max)} ریال${basis}) سے زیادہ نہیں ہو سکتے۔`, `لا يمكن أن تزيد الرسوم على عرضك الأصلي (${fmt(max)} ر.س${basis}).`)); return }
+    if (!(await askConfirm(L(`Confirm ${fmt(sum)} SAR${basis} in charges for the materials you won? The buyer will be notified.`, `جیتے گئے سامان کے لیے ${fmt(sum)} ریال${basis} چارجز کنفرم کریں؟ خریدار کو اطلاع دی جائے گی۔`, `تأكيد رسوم بقيمة ${fmt(sum)} ر.س${basis} للمواد التي فزت بها؟ سيُبلَّغ المشتري.`), { okLabel: L('Confirm charges', 'چارجز کنفرم کریں', 'تأكيد الرسوم'), cancelLabel: L('Go back', 'واپس', 'تراجع') }))) return
     setBusy(true)
     const payload = rows.filter((r: any) => num(r.amount) > 0).map((r: any) => ({ label: r.label.trim() || L('Delivery', 'ڈیلیوری', 'توصيل'), amount: num(r.amount) }))
     const { error } = await createClient().rpc('confirm_partial_extras', { p_offer_id: offer.id, p_extras: payload })
@@ -54,7 +58,7 @@ export default function PartialExtrasConfirm({ offer, locale, wonCount, onDone }
         ))}
       </div>
       <div className="flex flex-wrap items-center justify-between gap-2 mt-3 text-sm">
-        <span className="text-gray-600">{L('Total charges', 'کل چارجز', 'إجمالي الرسوم')}: <b className={sum > max ? 'text-red-600' : 'text-[#0B2438]'}>{fmt(sum)} {SAR}</b> <span className="text-xs text-gray-500">({L('max', 'زیادہ سے زیادہ', 'الحد الأقصى')} {fmt(max)})</span></span>
+        <span className="text-gray-600">{L('Total charges', 'کل چارجز', 'إجمالي الرسوم')}: <b className={sum > max ? 'text-red-600' : 'text-[#0B2438]'}>{fmt(sum)} {SAR}</b> <span className="text-xs text-gray-600">({L('max', 'زیادہ سے زیادہ', 'الحد الأقصى')} {fmt(max)} {SAR}{basis})</span></span>
         <button type="button" onClick={save} disabled={busy} className="min-h-11 px-4 py-2 rounded-xl text-sm font-extrabold disabled:opacity-50" style={{ background: '#D4A543', color: '#071827' }}>
           {busy ? '…' : L('Confirm charges', 'چارجز کنفرم کریں', 'تأكيد الرسوم')}
         </button>

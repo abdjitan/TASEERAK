@@ -55,12 +55,20 @@ export default function SuggestionsPage() {
     load()
   }
 
+  // the vote error shows inside the card that was tapped (round-4 UX-106)
+  const [voteErr, setVoteErr] = useState('')
+  const statusView = (k: string) => {
+    const base = SUGGESTION_STATUS[k] || SUGGESTION_STATUS.new
+    if (k === 'planned') return { ...base, ar: 'مُخطّط له', en: 'Planned', ur: 'منصوبے میں' }
+    if (k === 'declined') return { ...base, tone: '#5B6B7C' }
+    return base
+  }
   async function vote(id: string) {
-    setVoting(id)
+    setVoting(id); setVoteErr('')
     const { data, error } = await createClient().rpc('toggle_suggestion_vote', { p_id: id })
     setVoting('')
     // a failed vote says so instead of doing nothing (UX-142)
-    if (error) { setMsg({ ok: false, text: L('Could not record your vote. Try again.', 'آپ کا ووٹ درج نہیں ہو سکا۔ دوبارہ کوشش کریں۔', 'تعذّر تسجيل صوتك، حاول مرة أخرى.') }); return }
+    if (error) { setVoteErr(id); return }
     setBoard(prev => prev.map(b => b.id === id ? { ...b, votes: Number(data) || 0, my_vote: !b.my_vote } : b))
   }
 
@@ -97,7 +105,7 @@ export default function SuggestionsPage() {
           <div className="space-y-2">
             <h2 className="text-sm font-bold" style={{ color: '#0B2438' }}>{L('Vote on what we build next', 'اگلی سہولت کے لیے ووٹ دیں', 'صوّت على ما نبنيه تالياً')}</h2>
             {board.map(b => {
-              const st = SUGGESTION_STATUS[b.status] || SUGGESTION_STATUS.new
+              const st = statusView(b.status)
               return (
                 <div key={b.id} className="bg-white rounded-2xl p-4 border border-gray-100 shadow-sm flex items-start gap-3">
                   <button type="button" onClick={() => vote(b.id)} disabled={voting === b.id} aria-pressed={!!b.my_vote}
@@ -109,6 +117,7 @@ export default function SuggestionsPage() {
                   <div className="min-w-0 flex-1">
                     <span className="text-[12px] font-bold px-2 py-0.5 rounded-full" style={{ color: st.tone, background: st.tone + '14' }}>{pick(st)}</span>
                     <p className="text-sm text-gray-700 mt-1.5 whitespace-pre-line">{b.body}</p>
+                    {voteErr === b.id && <p role="alert" className="text-[13px] font-semibold text-[#B42318] mt-1.5">{L('Could not record your vote. Try again.', 'آپ کا ووٹ درج نہیں ہو سکا۔ دوبارہ کوشش کریں۔', 'تعذّر تسجيل صوتك، حاول مرة أخرى.')}</p>}
                     {b.admin_note && <p className="text-xs mt-1.5 text-gray-500"><b style={{ color: '#0B2438' }}>{L('Taseerak team:', 'تسعیرک ٹیم:', 'فريق تسعيرك:')}</b> {b.admin_note}</p>}
                   </div>
                 </div>
@@ -121,7 +130,7 @@ export default function SuggestionsPage() {
           <div className="space-y-2">
             <h2 className="text-sm font-bold" style={{ color: '#0B2438' }}>{L('Your previous suggestions', 'آپ کی پچھلی تجاویز', 'اقتراحاتك السابقة')}</h2>
             {list.map(s => {
-              const st = SUGGESTION_STATUS[s.status] || SUGGESTION_STATUS.new
+              const st = statusView(s.status)
               const k = SUGGESTION_KINDS.find(x => x.k === s.kind) || SUGGESTION_KINDS[3]
               return (
                 <div key={s.id} className="bg-white rounded-2xl p-4 border border-gray-100 shadow-sm">

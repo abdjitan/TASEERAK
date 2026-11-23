@@ -156,12 +156,15 @@ export function CatalogBrowser({ locale, onPick, onRemove, onQty, picked = [], i
         : <span className="absolute top-1.5 end-1.5 w-6 h-6 rounded-full grid place-items-center text-[#071827]" style={{ background: '#D4A543' }}><Check className="w-4 h-4" aria-hidden /></span>)}
       {/* a home buyer sets the quantity right here: «− 1 +» (UX-189) */}
       {on && simple && onQty && last && (qn > 0 ? (
-        <div className="flex items-center justify-between gap-1 rounded-lg bg-white border border-[#D4A543]/50">
-          <button type="button" onClick={() => onQty(last.key, String(Math.max(1, qn - 1)))} disabled={qn <= 1}
-            className="w-[44px] h-[44px] grid place-items-center text-[#0B2438] disabled:opacity-30" aria-label={L('Less', 'کم', 'إنقاص')}><Minus className="w-4 h-4" aria-hidden /></button>
-          <span className="text-[13px] font-extrabold text-[#0B2438] text-center leading-tight" aria-live="polite">{qn}{last.unit ? <span className="block text-[12px] font-semibold text-gray-600">{getUnitLabelLong(last.unit, locale)}</span> : null}</span>
-          <button type="button" onClick={() => onQty(last.key, String(qn + 1))}
-            className="w-[44px] h-[44px] grid place-items-center text-[#0B2438]" aria-label={L('More', 'زیادہ', 'زيادة')}><Plus className="w-4 h-4" aria-hidden /></button>
+        // the quantity on its own centred line, the − and + under it (w-9, 44px touch area): fits a 78px tile (round-4 UX-026)
+        <div className="rounded-lg bg-white border border-[#D4A543]/50 px-0.5 pt-1">
+          <span className="block text-[13px] font-extrabold text-[#0B2438] text-center leading-tight" aria-live="polite">{qn}{last.unit ? <span className="block text-[12px] font-semibold text-gray-600 truncate">{getUnitLabelLong(last.unit, locale)}</span> : null}</span>
+          <div className="flex items-center justify-between">
+            <button type="button" onClick={() => onQty(last.key, String(Math.max(1, qn - 1)))} disabled={qn <= 1}
+              className="relative w-9 h-9 grid place-items-center text-[#0B2438] disabled:opacity-30 before:absolute before:-inset-1 before:content-['']" aria-label={L('Less', 'کم', 'إنقاص')}><Minus className="w-4 h-4" aria-hidden /></button>
+            <button type="button" onClick={() => onQty(last.key, String(qn + 1))}
+              className="relative w-9 h-9 grid place-items-center text-[#0B2438] before:absolute before:-inset-1 before:content-['']" aria-label={L('More', 'زیادہ', 'زيادة')}><Plus className="w-4 h-4" aria-hidden /></button>
+          </div>
         </div>
       ) : (
         <span className="text-[12px] font-bold text-[#8F6820] text-center">{L('Set the quantity in your request', 'درخواست میں مقدار لکھیں', 'حدّد الكمية في طلبك')}</span>
@@ -435,7 +438,8 @@ export default function CatalogPicker({ locale, onPick, onClose, picked = [], on
           <CatalogBrowser locale={locale} onPick={onPick} onRemove={onRemove} onQty={onQty} picked={picked} initialQuery={initialQuery} initialSection={initialSection} simple={simple} />
         </div>
         {picked.length > 0 && (
-          <div className="border-t border-gray-100 bg-gray-50">
+          // clear of the iPhone gesture bar (round-4 UX-121)
+          <div className="border-t border-gray-100 bg-gray-50" style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}>
             <button type="button" onClick={() => setShowPicked(v => !v)} aria-expanded={showPicked} className="w-full min-h-[44px] px-4 py-2 text-[13px] font-bold text-navy flex items-center justify-between">
               <span><Glyph e="🧾" /> {L('Your request', 'آپ کی درخواست', 'طلبك')} ({picked.length})</span>{showPicked ? <ChevronDown className="w-4 h-4" aria-hidden /> : <ChevronUp className="w-4 h-4" aria-hidden />}
             </button>

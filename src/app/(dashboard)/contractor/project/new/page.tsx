@@ -20,13 +20,23 @@ import CatalogPicker from '@/components/shared/CatalogPicker'
 import Glyph from '@/components/shared/Glyph'
 import { arCount, arItems, arMaterials, dateLocale } from '@/lib/text'
 import { storedBuyerType } from '@/lib/buyerType'
+import HomeModeNotice from '@/components/tender/HomeModeNotice'
 import CatIcon from '@/components/shared/CatIcon'
 import { toLatinDigits } from '@/lib/phone'
 import { useEnsureVerified } from '@/components/shared/VerifyGate'
 import { askConfirm, notify } from '@/lib/askConfirm'
 
 // «١٢٫٥» / «۱۲» → «12.5» / «12» (Arabic and Urdu keyboards type these digits and decimal marks)
-const toQty = (v: string) => toLatinDigits(v).replace(/٫/g, '.').replace(/[^0-9.]/g, '')
+// «2,500» / «٢٬٥٠٠» → 2500: a comma is a thousands separator and is dropped, «٫» or «.» is the decimal point (UX-002);
+// only the first decimal point is kept, so a typo never turns «1.250.5» into a smaller number silently
+const toQty = (v: string) => { const t = toLatinDigits(v).replace(/٫/g, '.').replace(/[^0-9.]/g, ''); const i = t.indexOf('.'); return i < 0 ? t : t.slice(0, i + 1) + t.slice(i + 1).replace(/\./g, '') }
+
+// a specialty that belongs to its sector, else null (UX-023): a mismatched pair would reach the wrong suppliers or none
+const validSub = (sector: string, sub: any): string | null => (sub && (SUB_CATEGORIES as any)[sector]?.[sub] ? String(sub) : null)
+// a restored or received line whose sector and specialty do not match goes back to «choose its specialty»
+const normalizeLine = (it: any) => (it && it.sub_category && !validSub(it.sector, it.sub_category) ? { ...it, sub_category: null, needs_classification: true, done: false } : it)
+// what a draft keeps of a line: never the file itself (it cannot be stored), only its name to ask for it again (UX-094)
+const draftLine = (it: any) => ({ ...it, specFile: null, specFileName: it.specFile?.name || it.specFileName || undefined })
 
 // تجميع بنود الـ BOQ حسب المجموعة (مثل قوائم التسعير) — يحتفظ بالفهرس الأصلي لكل بند
 function getGroupedItems(items: any[], locale: string) {
@@ -250,6 +260,7 @@ export default function NewProjectPage() {
   const [vatRequired, setVatRequired] = useState(true)
   const [nearbyOnly, setNearbyOnly] = useState(false)
   const submittingRef = useRef(false)
+  const [homeMode, setHomeMode] = useState(false)
   // after a send: the confirmation screen (what was sent, to how many suppliers, what is left)
   const [sentInfo, setSentInfo] = useState<{ id: string; count: number; expires: string; coverage: any; left: any[]; itemsSaved: boolean } | null>(null)
 
@@ -273,8 +284,8 @@ export default function NewProjectPage() {
   }, [reachKey]) // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
-    // a home buyer has no bill of quantities: send him to the simple request page (UX-143)
-    if (storedBuyerType() === 'individual') { window.location.replace('/contractor/rfq/quick'); return }
+    // «لبيتي» mode hides bills of quantities (never deletes them): say so, with the way back, instead of a silent redirect (UX-098)
+    if (storedBuyerType() === 'individual') { setHomeMode(true); return }
     const supabase = createClient()
     supabase.auth.getSession().then(({ data }) => {
       if (!data.session) { window.location.href = '/login'; return }
@@ -286,7 +297,7 @@ export default function NewProjectPage() {
       // the region and city of the profile fill step 3 when the buyer has not chosen them
       supabase.from('profiles').select('region, city, buyer_type').eq('id', data.session.user.id).maybeSingle()
         .then(({ data: p }: any) => {
-          if (p?.buyer_type === 'individual') { window.location.replace('/contractor/rfq/quick'); return }
+          if (p?.buyer_type === 'individual') { setHomeMode(true); return }
           if (!p?.region || !REGIONS.includes(p.region)) return
           setRegion(r => {
             if (r) return r
@@ -300,6 +311,11 @@ export default function NewProjectPage() {
   const DRAFT_KEY = 'tsk_project_draft'
   const [restored, setRestored] = useState(false)
   const [restoredCount, setRestoredCount] = useState(0) // > 0: «استعدنا مسودتك» banner
+  // files attached before the page was closed: a draft cannot keep them, so it keeps their names and asks again (UX-094)
+  const [lostFiles, setLostFiles] = useState<{ boq?: string; specs?: string }>({})
+  const attachRef = useRef<any>(null) // re-attach the BOQ file without reading it again (the items are kept)
+  // how many items the file gave, kept apart from the list (which grows with manual additions): UX-135
+  const [extracted, setExtracted] = useState(0)
   // set when the draft came from «مسار العطاء»: the tender is marked sent and linked to this project
   const [tenderId, setTenderId] = useState<string | null>(null)
   useEffect(() => {
@@ -310,8 +326,10 @@ export default function NewProjectPage() {
         // supplier notes the buyer wrote himself come back (UX-002)
         setTitle(d.title || ''); setRegion(d.region || ''); setCity(d.city || ''); setSupplierNotes(typeof d.supplierNotes === 'string' ? d.supplierNotes : '')
         setDeliveryRequired(d.deliveryRequired !== false); setDeliveryLocation(d.deliveryLocation || '')
-        setItems(d.items); if (d.hours) setHours(d.hours)
+        setItems(d.items.map(normalizeLine)); if (d.hours) setHours(d.hours)
         setRestoredCount(d.items.length)
+        setLostFiles({ boq: typeof d.boqFileName === 'string' && d.boqFileName ? d.boqFileName : undefined, specs: typeof d.specsFileName === 'string' && d.specsFileName ? d.specsFileName : undefined })
+        if (typeof d.extracted === 'number') setExtracted(d.extracted)
         if (typeof d.vatRequired === 'boolean') setVatRequired(d.vatRequired)
         if (Array.isArray(d.targetTiers)) setTargetTiers(d.targetTiers)
         if (typeof d.verifiedOnly === 'boolean') setVerifiedOnly(d.verifiedOnly)
@@ -329,11 +347,12 @@ export default function NewProjectPage() {
       try {
         if (!items.length) { localStorage.removeItem(DRAFT_KEY); return }
         localStorage.setItem(DRAFT_KEY, JSON.stringify({ title, region, city, supplierNotes, deliveryRequired, deliveryLocation, hours, vatRequired, targetTiers, verifiedOnly, tender_id: tenderId,
-          items: items.map((it: any) => ({ ...it, specFile: null })) }))
+          boqFileName: boqFile?.name || lostFiles.boq || null, specsFileName: specsFile?.name || lostFiles.specs || null, extracted,
+          items: items.map(draftLine) }))
       } catch {}
     }, 600)
     return () => clearTimeout(t)
-  }, [restored, title, region, city, supplierNotes, deliveryRequired, deliveryLocation, items, hours, vatRequired, targetTiers, verifiedOnly, tenderId])
+  }, [restored, title, region, city, supplierNotes, deliveryRequired, deliveryLocation, items, hours, vatRequired, targetTiers, verifiedOnly, tenderId, boqFile, specsFile, lostFiles, extracted]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // a file dropped outside the drop zone must not make the browser open it and leave the page
   useEffect(() => {
@@ -346,7 +365,7 @@ export default function NewProjectPage() {
   // «بدء قائمة جديدة»: forget the restored draft (asks first: the edits cannot be recovered)
   async function startOver() {
     if (!(await askConfirm(L(`Start a new list? The saved draft (${items.length} items) and all your edits will be deleted. This cannot be undone.`, `نئی فہرست شروع کریں؟ محفوظ مسودہ (${items.length} آئٹمز) اور آپ کی تمام ترامیم حذف ہو جائیں گی۔ یہ واپس نہیں ہو سکتا۔`, `بدء قائمة جديدة؟ ستُحذف المسودة المحفوظة (${arItems(items.length)}) وكل تعديلاتك عليها، ولا يمكن التراجع.`), { danger: true, okLabel: L('Start a new list', 'نئی فہرست', 'بدء قائمة جديدة'), cancelLabel: L('Keep the draft', 'مسودہ رکھیں', 'إبقاء المسودة') }))) return
-    setItems([]); setBoqFile(null); setTenderId(null); setRestoredCount(0); setEditingIndex(null); setDraft(null)
+    setItems([]); setBoqFile(null); setTenderId(null); setRestoredCount(0); setEditingIndex(null); setDraft(null); setLostFiles({}); setExtracted(0); setSpecsFile(null); setSpecMsg('')
     setTitle(''); setSupplierNotes(''); setDeliveryLocation('')
     try { localStorage.removeItem(DRAFT_KEY) } catch {}
   }
@@ -355,7 +374,7 @@ export default function NewProjectPage() {
   async function cancelTenderList() {
     const back = tenderId
     if (!(await askConfirm(L('Cancel this list? Nothing has been sent. The tender keeps its approved items, and you can move them here again.', 'یہ فہرست منسوخ کریں؟ کچھ نہیں بھیجا گیا۔ ٹینڈر میں منظور آئٹمز باقی رہیں گے اور آپ انہیں دوبارہ یہاں لا سکتے ہیں۔', 'إلغاء هذه القائمة؟ لم يُرسل شيء، وتبقى البنود المعتمدة في المناقصة ويمكنك نقلها إلى هنا مرة أخرى.'), { danger: true, okLabel: L('Cancel the list', 'فہرست منسوخ کریں', 'إلغاء القائمة'), cancelLabel: L('Keep it', 'رکھیں', 'إبقاؤها') }))) return
-    setItems([]); setTenderId(null); setRestoredCount(0); setEditingIndex(null); setDraft(null); setTitle(''); setSupplierNotes('')
+    setItems([]); setTenderId(null); setRestoredCount(0); setEditingIndex(null); setDraft(null); setTitle(''); setSupplierNotes(''); setLostFiles({}); setExtracted(0)
     try { localStorage.removeItem(DRAFT_KEY) } catch {}
     if (back) window.location.href = `/contractor/tender/${back}`
   }
@@ -364,7 +383,7 @@ export default function NewProjectPage() {
   function continueWithLeft() {
     const left = sentInfo?.left || []
     sentRef.current = false
-    setSentInfo(null); setBoqFile(null); setTenderId(null); setRestoredCount(0); setEditingIndex(null); setDraft(null); setSpecsFile(null); setSpecMsg('')
+    setSentInfo(null); setBoqFile(null); setTenderId(null); setRestoredCount(0); setEditingIndex(null); setDraft(null); setSpecsFile(null); setSpecMsg(''); setLostFiles({}); setExtracted(0)
     setItems(left)
     setTimeout(() => { const first = left.find((i: any) => i.needs_classification) || left[0]; if (first) focusItem(first) }, 120)
   }
@@ -373,7 +392,7 @@ export default function NewProjectPage() {
     if (leftN && !(await askConfirm(L(`Start a new list? The ${leftN} items that were not sent will be deleted. This cannot be undone.`, `نئی فہرست شروع کریں؟ نہ بھیجے گئے ${leftN} آئٹمز حذف ہو جائیں گے۔ یہ واپس نہیں ہو سکتا۔`, `بدء قائمة جديدة؟ ستُحذف البنود غير المرسلة (${arItems(leftN)})، ولا يمكن التراجع.`), { danger: true, okLabel: L('Start a new list', 'نئی فہرست', 'بدء قائمة جديدة'), cancelLabel: L('Keep them', 'رکھیں', 'إبقاؤها') }))) return
     sentRef.current = false
     setSentInfo(null); setItems([]); setBoqFile(null); setTenderId(null); setRestoredCount(0); setEditingIndex(null); setDraft(null)
-    setTitle(''); setSupplierNotes(''); setSpecsFile(null); setSpecMsg(''); setAiUsed(false)
+    setTitle(''); setSupplierNotes(''); setSpecsFile(null); setSpecMsg(''); setAiUsed(false); setLostFiles({}); setExtracted(0)
     try { localStorage.removeItem(DRAFT_KEY) } catch {}
   }
 
@@ -385,7 +404,7 @@ export default function NewProjectPage() {
     const keptUr = kept ? ` آپ کے خود شامل کردہ ${kept} مواد باقی رہیں گے۔` : ''
     const keptAr = kept ? ' وتبقى المواد التي أضفتها بنفسك.' : ''
     if (n && !(await askConfirm(L(`The ${n} items extracted from the file and your edits to them will be deleted. This cannot be undone.${keptEn} Remove the file?`, `فائل سے نکالے گئے ${n} آئٹمز اور ان پر آپ کی ترامیم حذف ہو جائیں گی۔ یہ واپس نہیں ہو سکتا۔${keptUr} فائل ہٹائیں؟`, `ستُحذف البنود المستخرجة من الملف (${arItems(n)}) وتعديلاتك عليها، ولا يمكن التراجع.${keptAr} هل تريد إزالة الملف؟`), { danger: true, okLabel: L('Remove', 'ہٹائیں', 'إزالة'), cancelLabel: L('Keep', 'رکھیں', 'إبقاء') }))) return
-    setBoqFile(null); setItems(prev => prev.filter((it: any) => !isFileItem(it))); setAiUsed(false); setParseError(''); setEditingIndex(null); setRestoredCount(0)
+    setBoqFile(null); setItems(prev => prev.filter((it: any) => !isFileItem(it))); setAiUsed(false); setParseError(''); setEditingIndex(null); setRestoredCount(0); setExtracted(0); setLostFiles(l => ({ ...l, boq: undefined }))
     if (fileRef.current) fileRef.current.value = ''
   }
 
@@ -452,6 +471,7 @@ export default function NewProjectPage() {
         })
         // the materials the buyer added himself stay, after the file's items
         setItems(prev => [...fromFile, ...prev.filter((it: any) => !isFileItem(it))])
+        setExtracted(fromFile.length); setLostFiles(l => ({ ...l, boq: undefined }))
         // from here on the list is no longer the tender's: sending it must not mark the tender as sent (UX-024)
         setTenderId(null)
         setStep('items')
@@ -698,6 +718,18 @@ export default function NewProjectPage() {
       await notify(L('The project name was removed from the notes. Tap «Send» again.', 'نوٹس سے پراجیکٹ کا نام ہٹا دیا گیا۔ دوبارہ «بھیجیں» دبائیں۔', 'أُزيل اسم المشروع من الملاحظات. اضغط «إرسال» مرة أخرى.'))
       goToField(notesRef); return
     }
+    // a file attached before the page was reopened is not in the draft: never send without it silently (UX-094)
+    const missingFiles: string[] = [
+      ...(!boqFile && lostFiles.boq ? [lostFiles.boq] : []),
+      ...(!specsFile && lostFiles.specs ? [lostFiles.specs] : []),
+      ...classifiedItems.filter((i: any) => !i.specFile && i.specFileName).map((i: any) => String(i.specFileName)),
+    ]
+    if (missingFiles.length) {
+      const names = missingFiles.slice(0, 4).map(n => `«${n}»`).join(locale === 'ar' ? '، ' : ', ')
+      const go = await askConfirm(L(`These files are not attached (files are not kept in a draft): ${names}. Send the request without them?`, `یہ فائلیں منسلک نہیں (مسودے میں فائلیں محفوظ نہیں ہوتیں): ${names}۔ کیا ان کے بغیر درخواست بھیجیں؟`, `هذه الملفات غير مرفقة (فالمسودة لا تحفظ الملفات): ${names}. هل ترسل الطلب دونها؟`),
+        { okLabel: L('Send without them', 'ان کے بغیر بھیجیں', 'الإرسال دونها'), cancelLabel: L('Attach them first', 'پہلے منسلک کریں', 'إرفاقها أولاً') })
+      if (!go) return
+    }
     if (!(await ensureVerified())) return
     submittingRef.current = true
     setLoading(true)
@@ -761,10 +793,11 @@ export default function NewProjectPage() {
         rfqItems.push({
           sector: item.sector,
           product_name: item.product_name,
-          sub_category: item.sub_category || detectSubCategory(item.product_name, item.sector) || null,
+          // never a specialty of another sector (UX-023)
+          sub_category: validSub(item.sector, item.sub_category) || detectSubCategory(item.product_name, item.sector) || null,
           specification: withBrand([st, (item.specification || '').trim()].filter(Boolean).join(' — '), item.brand),
           ...((item.brand || '').trim() ? { brand: String(item.brand).trim().slice(0, 80) } : {}),
-          ...(item.with_install && isInstallable(item.sector, item.sub_category || detectSubCategory(item.product_name, item.sector)) ? { with_install: true } : {}),
+          ...(item.with_install && isInstallable(item.sector, validSub(item.sector, item.sub_category) || detectSubCategory(item.product_name, item.sector)) ? { with_install: true } : {}),
           quantity: Number(item.quantity),
           unit: item.unit || 'عدد',
           supplier_tiers: null, in_stock: false, max_days: null, specsObj,
@@ -826,7 +859,7 @@ export default function NewProjectPage() {
       const sentIds = new Set(selectedItems.map((i: any) => i.id))
       const left = items.filter((i: any) => i.product_name && !sentIds.has(i.id))
       try {
-        if (left.length) localStorage.setItem(DRAFT_KEY, JSON.stringify({ title, region, city, supplierNotes, deliveryRequired, deliveryLocation, hours, vatRequired, targetTiers, verifiedOnly, tender_id: null, items: left.map((it: any) => ({ ...it, specFile: null })) }))
+        if (left.length) localStorage.setItem(DRAFT_KEY, JSON.stringify({ title, region, city, supplierNotes, deliveryRequired, deliveryLocation, hours, vatRequired, targetTiers, verifiedOnly, tender_id: null, items: left.map(draftLine) }))
         else localStorage.removeItem(DRAFT_KEY)
       } catch {}
       // a clear confirmation moment: «أُرسل طلبك: X مادة إلى N موردين», on this page (UX-072)
@@ -908,11 +941,14 @@ export default function NewProjectPage() {
   }
 
   const hasItems = items.length > 0
+  // the file's own count (manual additions do not change it); an older draft without it counts the file's lines
+  const extractedN = extracted || items.filter(isFileItem).length
 
   return (
     <AppShell title={locale === 'en' ? 'Add a bill of quantities (BOQ)' : locale === 'ur' ? 'مقداروں کا جدول (BOQ) شامل کریں' : 'إضافة جدول الكميات (BOQ)'} nav={getNav('contractor', locale, '/contractor/project/new')} dir={dir}>
       <div className="max-w-5xl mx-auto">
-        {allowed === false && (
+        {homeMode && <HomeModeNotice locale={locale} what="boq" />}
+        {!homeMode && allowed === false && (
           <div className="bg-white rounded-2xl border border-[#D4A543]/40 p-6 sm:p-8 text-center shadow-sm">
             <div className="text-4xl text-[#8F6820] mb-3"><Glyph e="🏗" /></div>
             <h1 className="text-xl font-extrabold text-[#0B2438] mb-2">{L('Bills of quantities are for companies', 'مقداروں کا جدول کمپنیوں کے لیے ہے', 'جدول الكميات متاح لحسابات الشركات')}</h1>
@@ -928,7 +964,7 @@ export default function NewProjectPage() {
           </div>
         )}
         {/* the confirmation moment after a send (UX-072): what was sent, to how many suppliers, what is left */}
-        {allowed !== false && sentInfo && (() => {
+        {!homeMode && allowed !== false && sentInfo && (() => {
           const cov = sentInfo.coverage
           const reached = Number(cov?.reached) || 0
           const uncovered: string[] = Array.isArray(cov?.items) ? cov.items.filter((x: any) => Number(x?.suppliers) === 0).map((x: any) => String(x?.name || '')).filter(Boolean) : []
@@ -976,7 +1012,7 @@ export default function NewProjectPage() {
             </div>
           )
         })()}
-        {allowed !== false && !sentInfo && (<>
+        {!homeMode && allowed !== false && !sentInfo && (<>
         <div className="mb-6">
 
           <h1 className="text-xl sm:text-2xl font-bold" style={{ color: '#0B2438' }}>
@@ -992,7 +1028,7 @@ export default function NewProjectPage() {
               {' · '}<button type="button" onClick={cancelTenderList} className="inline-flex items-center min-h-11 px-1 underline text-red-700">{L('Cancel this list', 'یہ فہرست منسوخ کریں', 'إلغاء هذه القائمة')}</button></p>
           ) : (
             <Link href="/contractor/tender/new" className="mt-2 inline-block text-xs font-bold text-[#8F6820] hover:underline">
-              <Glyph e="📑" /> {L('A full tender in Excel with drawings and specifications? Use «Tender pricing», which checks every number against its source', 'ڈرائنگز اور تفصیلات کے ساتھ Excel میں پورا ٹینڈر؟ «ٹینڈر قیمت» استعمال کریں، جو ہر عدد کو اس کے ماخذ سے ملاتا ہے', 'لديك مناقصة كاملة بصيغة Excel مع مخططات ومواصفات؟ استخدم «تسعير مناقصة» الذي يطابق كل رقم مع مصدره')}
+              <Glyph e="📑" /> {L('A full tender in Excel with drawings and specifications? Use «Tender pricing», which checks every number against its source', 'ڈرائنگز اور تفصیلات کے ساتھ Excel میں پورا ٹینڈر؟ «ٹینڈر کی قیمت» استعمال کریں، جو ہر عدد کو اس کے ماخذ سے ملاتا ہے', 'لديك مناقصة كاملة بصيغة Excel مع مخططات ومواصفات؟ استخدم «تسعير مناقصة» الذي يطابق كل رقم مع مصدره')}
             </Link>
           )}
         </div>
@@ -1000,7 +1036,8 @@ export default function NewProjectPage() {
         {/* a draft was restored: say so, and offer a clean start */}
         {restoredCount > 0 && hasItems && !tenderId && (
           <div className="mb-5 rounded-2xl border border-[#D4A543]/50 bg-[#D4A543]/[.06] p-3 flex flex-wrap items-center justify-between gap-2" role="status">
-            <span className="text-sm font-semibold text-[#0B2438]"><Glyph e="📝" /> {L(`We restored your draft (${items.length} items).`, `ہم نے آپ کا مسودہ بحال کیا (${items.length} آئٹمز)۔`, `استعدنا مسودتك (${arItems(items.length)}).`)}</span>
+            <span className="text-sm font-semibold text-[#0B2438]"><Glyph e="📝" /> {L(`We restored your draft (${items.length} items).`, `ہم نے آپ کا مسودہ بحال کیا (${items.length} آئٹمز)۔`, `استعدنا مسودتك (${arItems(items.length)}).`)}
+              <span className="block text-xs font-normal text-gray-700 mt-0.5">{L('Files are not kept in a draft: attach them again before sending.', 'مسودے میں فائلیں محفوظ نہیں ہوتیں: بھیجنے سے پہلے انہیں دوبارہ منسلک کریں۔', 'الملفات لا تُحفظ في المسودة: أعد إرفاقها قبل الإرسال.')}</span></span>
             <button type="button" onClick={startOver} className="min-h-11 px-4 rounded-xl border border-[#0B2438] text-sm font-bold text-[#0B2438] bg-white">{L('Start a new list', 'نئی فہرست شروع کریں', 'بدء قائمة جديدة')}</button>
           </div>
         )}
@@ -1037,7 +1074,7 @@ export default function NewProjectPage() {
               <div className="text-center">
                 <div className="text-4xl mb-2"><Glyph e="✅" /></div>
                 <div className="font-semibold text-sm break-all" style={{ color: '#0B2438' }}>{boqFile.name}</div>
-                <div className="text-xs text-gray-500 mt-1">{L(`${items.length} items extracted`, `${items.length} آئٹمز نکالے گئے`, `تم استخراج ${arItems(items.length)}`)}</div>
+                <div className="text-xs text-gray-500 mt-1">{L(`${extractedN} items extracted`, `${extractedN} آئٹمز نکالے گئے`, `تم استخراج ${arItems(extractedN)}`)}</div>
                 <div className="mt-2 flex flex-wrap justify-center gap-2">
                   <button type="button" onClick={(e: any) => { e.preventDefault(); e.stopPropagation(); fileRef.current?.click() }}
                     className="min-h-11 px-3 rounded-lg border border-[#0B2438] text-xs font-bold text-[#0B2438] bg-white">
@@ -1062,6 +1099,23 @@ export default function NewProjectPage() {
 
           {parseError && (
             <div className="bg-red-50 border border-red-200 text-red-700 text-sm rounded-xl p-3 mb-4" role="alert"><Glyph e="⚠" /> {parseError}</div>
+          )}
+
+          {/* the BOQ file of a reopened draft: its items are kept, the file itself is not (UX-094) */}
+          {!boqFile && !parsing && lostFiles.boq && hasItems && (
+            <div className="rounded-xl border border-[#D4A543]/50 bg-[#D4A543]/[.06] p-3 mb-4 text-sm text-[#0B2438]" role="status">
+              <p><Glyph e="📎" /> {L(`The file «${lostFiles.boq}» is not attached after reopening. Upload it again to attach it to the request (the items are kept).`, `دوبارہ کھولنے کے بعد فائل «${lostFiles.boq}» منسلک نہیں۔ اسے درخواست کے ساتھ منسلک کرنے کے لیے دوبارہ اپ لوڈ کریں (آئٹمز محفوظ ہیں)۔`, `الملف «${lostFiles.boq}» غير مرفق بعد إعادة الفتح، ارفعه مرة أخرى لإرفاقه بالطلب (البنود محفوظة).`)}</p>
+              <div className="mt-2 flex flex-wrap gap-2">
+                <button type="button" onClick={() => attachRef.current?.click()} className="min-h-11 px-4 rounded-xl text-sm font-bold text-white" style={{ background: '#0B2438' }}>
+                  {L('Attach the file again', 'فائل دوبارہ منسلک کریں', 'إرفاق الملف مرة أخرى')}
+                </button>
+                <button type="button" onClick={() => setLostFiles(l => ({ ...l, boq: undefined }))} className="min-h-11 px-4 rounded-xl text-sm font-bold border border-[#0B2438]/30 text-[#0B2438] bg-white">
+                  {L('Send without the file', 'فائل کے بغیر بھیجیں', 'الإرسال دون الملف')}
+                </button>
+              </div>
+              <input ref={attachRef} type="file" className="hidden" accept=".xlsx,.xls,.csv,.pdf,.jpg,.jpeg,.png,.webp"
+                onChange={(e: any) => { const f = e.target.files?.[0]; e.target.value = ''; if (f) { setBoqFile(f); setLostFiles(l => ({ ...l, boq: undefined })) } }} />
+            </div>
           )}
 
           <div className="flex items-center gap-3 mb-4">
@@ -1093,7 +1147,7 @@ export default function NewProjectPage() {
 
             {/* what the file gave: ready / no quantity / no specialty */}
             <div className="bg-white border border-gray-200 rounded-xl p-3">
-              {boqFile && <div className="text-sm font-bold text-[#0B2438] mb-2">{L(`We read ${items.length} items from your file`, `ہم نے آپ کی فائل سے ${items.length} آئٹمز پڑھے`, `قرأنا ${arItems(items.length)} من ملفك`)}</div>}
+              {boqFile && extractedN > 0 && <div className="text-sm font-bold text-[#0B2438] mb-2">{L(`We read ${extractedN} items from your file`, `ہم نے آپ کی فائل سے ${extractedN} آئٹمز پڑھے`, `قرأنا ${arItems(extractedN)} من ملفك`)}</div>}
               {statusChips}
             </div>
 
@@ -1135,7 +1189,7 @@ export default function NewProjectPage() {
                   </label>
                   <button type="button" onClick={bulkApplyCategory} disabled={!bulkSector || !bulkSub || !bulkTargets.length}
                     className="min-h-11 text-sm font-bold text-white px-4 rounded-xl disabled:opacity-40" style={{ background: '#0B2438' }}>
-                    {L(`Apply to ${bulkTargets.length} items`, `${bulkTargets.length} آئٹمز پر لاگو کریں`, `طبّق على ${arItems(bulkTargets.length)}`)}
+                    {bulkTargets.length ? L(`Apply to ${bulkTargets.length} items`, `${bulkTargets.length} آئٹمز پر لاگو کریں`, `طبّق على ${arItems(bulkTargets.length)}`) : L('Apply', 'لاگو کریں', 'طبّق')}
                   </button>
                 </div>
                 {(!bulkSector || !bulkSub) && <p className="text-xs text-gray-500 mt-1.5">{L('Pick a sector and a specialty to apply them.', 'لاگو کرنے کے لیے سیکٹر اور شعبہ منتخب کریں۔', 'اختر القطاع والتخصص لتطبيقهما.')}</p>}
@@ -1266,21 +1320,27 @@ export default function NewProjectPage() {
                               <div className="flex items-center gap-2 bg-[#0B2438]/5 rounded-lg p-2 border border-[#0B2438]/20">
                                 <span className="text-base"><Glyph e="📎" /></span>
                                 <span className="text-xs font-semibold flex-1 truncate" style={{ color: '#0B2438' }}>{item.specFile.name}</span>
-                                <button type="button" onClick={() => updateItem(item.id, 'specFile', null)}
+                                <button type="button" onClick={() => setItems(prev => prev.map((it: any) => it.id === item.id ? { ...it, specFile: null, specFileName: undefined } : it))}
                                   className="min-h-11 px-2 text-xs font-bold text-red-600 hover:underline">
                                   {L('Remove', 'ہٹائیں', 'إزالة')}
                                 </button>
                               </div>
-                            ) : (
+                            ) : (<>
+                              {item.specFileName && (
+                                <p className="text-xs font-semibold text-[#0B2438] bg-[#D4A543]/[.08] border border-[#D4A543]/40 rounded-lg p-2 mb-1" role="status">
+                                  <Glyph e="📎" /> {L(`The file «${item.specFileName}» is not attached after reopening. Upload it again to attach it to the request.`, `دوبارہ کھولنے کے بعد فائل «${item.specFileName}» منسلک نہیں۔ اسے درخواست کے ساتھ منسلک کرنے کے لیے دوبارہ اپ لوڈ کریں۔`, `الملف «${item.specFileName}» غير مرفق بعد إعادة الفتح، ارفعه مرة أخرى لإرفاقه بالطلب.`)}
+                                  {' '}<button type="button" onClick={() => updateItem(item.id, 'specFileName', undefined)} className="min-h-11 px-1 underline text-[#8F6820]">{L('Send without it', 'اس کے بغیر بھیجیں', 'الإرسال دونه')}</button>
+                                </p>
+                              )}
                               <label className="flex items-center gap-2 min-h-11 border-2 border-dashed border-gray-200 rounded-lg p-2 cursor-pointer hover:border-[#D4A543]/50 transition-all">
                                 <input type="file" className="hidden" aria-labelledby={`boq-specfile-${item.id}`} accept=".pdf,.jpg,.jpeg,.png,.dwg,.xlsx,.doc,.docx"
-                                  onChange={(e: any) => { updateItem(item.id, 'specFile', e.target.files?.[0] ?? null); e.target.value = '' }} />
+                                  onChange={(e: any) => { const f = e.target.files?.[0] ?? null; setItems(prev => prev.map((it: any) => it.id === item.id ? { ...it, specFile: f, specFileName: f ? undefined : it.specFileName } : it)); e.target.value = '' }} />
                                 <span className="text-base"><Glyph e="📄" /></span>
                                 <span className="text-xs text-gray-600">
                                   {L('Upload drawing/spec (PDF, DWG, Image...)', 'ڈرائنگ یا اسپیسیفکیشن اپ لوڈ کریں (PDF، DWG، تصویر...)', 'ارفع رسمة أو مواصفة (PDF، DWG، صورة...)')}
                                 </span>
                               </label>
-                            )}
+                            </>)}
                           </div>
                           <div className="sm:col-span-2 flex gap-2">
                             <button type="button" onClick={() => finishEdit(item)}
@@ -1321,6 +1381,11 @@ export default function NewProjectPage() {
                                 </button>
                               )}
                               {item.specFile && <span className="text-xs text-[#0B2438] font-semibold"><Glyph e="📎" /> {L('File attached', 'فائل منسلک', 'مرفق ملف')}</span>}
+                              {!item.specFile && item.specFileName && (
+                                <button type="button" onClick={() => setEditingIndex(i)} className="min-h-11 badge text-xs bg-[#D4A543]/15 text-[#8F6820] font-bold hover:bg-[#D4A543]/25">
+                                  <Glyph e="📎" /> {L('File not attached: upload it again', 'فائل منسلک نہیں: دوبارہ اپ لوڈ کریں', 'الملف غير مرفق: ارفعه مرة أخرى')}
+                                </button>
+                              )}
                               {isInstallable(item.sector, item.sub_category || detectSubCategory(item.product_name, item.sector)) && (
                                 <label className={`inline-flex items-center gap-1.5 min-h-11 text-xs font-bold px-2 py-1 rounded-lg border cursor-pointer select-none ${item.with_install ? 'border-[#0B2438] text-[#0B2438] bg-[#0B2438]/5' : 'border-gray-200 text-gray-600'}`}>
                                   <input type="checkbox" checked={!!item.with_install} onChange={(e: any) => updateItem(item.id, 'with_install', e.target.checked)} className="w-4 h-4 accent-[#0B2438]" />
@@ -1328,9 +1393,13 @@ export default function NewProjectPage() {
                                 </label>
                               )}
                               {item.needs_review && !item.done && (
-                                <span className="badge text-xs bg-[#D4A543]/15 text-[#8F6820] font-bold" title={boqFlagText(item.flags, L).join(' · ')}>
-                                  <Glyph e="⚠" /> {L('Needs review', 'جائزہ ضروری', 'يحتاج مراجعة')}{boqFlagText(item.flags, L).length ? ': ' + boqFlagText(item.flags, L)[0] : ''}
+                                <span className="badge text-xs bg-[#D4A543]/15 text-[#8F6820] font-bold">
+                                  <Glyph e="⚠" /> {L('Needs review', 'جائزہ ضروری', 'يحتاج مراجعة')}
                                 </span>
+                              )}
+                              {/* every reason, visible (a title tooltip never shows on a phone): UX-135 */}
+                              {item.needs_review && !item.done && boqFlagText(item.flags, L).length > 0 && (
+                                <span className="basis-full text-xs text-[#8F6820]">{L('Check: ', 'جانچیں: ', 'تحقّق من: ')}{boqFlagText(item.flags, L).join(locale === 'ar' ? '، ' : ', ')}</span>
                               )}
                             </div>
                             {Array.isArray(item.specConflicts) && item.specConflicts.length > 0 && (
@@ -1362,7 +1431,7 @@ export default function NewProjectPage() {
             </div>
 
             {/* مستند مواصفات المشروع (اختياري، مطوي) — يقرأه الذكاء ويطابق رموز البنود (DRS-701...) لاستخراج التفاصيل */}
-            <details className="rounded-xl border border-[#0B2438]/15 bg-white p-4" open={!!specsFile || !!specMsg}>
+            <details className="rounded-xl border border-[#0B2438]/15 bg-white p-4" open={!!specsFile || !!specMsg || !!lostFiles.specs}>
               <summary className="cursor-pointer min-h-11 flex items-center gap-2 font-bold text-sm" style={{ color: '#0B2438' }}>
                 <Glyph e="📑" /> {L('Match a project specification document (optional)', 'پراجیکٹ کی تفصیلات کی دستاویز ملائیں (اختیاری)', 'مطابقة مستند مواصفات المشروع (اختياري)')}
               </summary>
@@ -1372,6 +1441,12 @@ export default function NewProjectPage() {
                   'ارفع مستند المواصفات: يُقرأ مع جدول الكميات، وتُربط رموز البنود (مثل DRS-701) وتُملأ تفاصيل كل بند كاملة.')}
               </p>
               <p className="text-xs font-semibold text-[#8F6820] -mt-1 mb-3"><Glyph e="👁" /> {L('Suppliers can view this file, so remove your company name and contact details from it.', 'سپلائرز یہ فائل دیکھ سکتے ہیں، اس لیے اس سے اپنی کمپنی کا نام اور رابطے کی تفصیل ہٹا دیں۔', 'يطّلع الموردون على هذا الملف، فاحذف منه اسم شركتك وبيانات تواصلك.')}</p>
+              {!specsFile && lostFiles.specs && (
+                <p className="text-xs font-semibold text-[#0B2438] bg-[#D4A543]/[.08] border border-[#D4A543]/40 rounded-lg p-2 mb-2" role="status">
+                  <Glyph e="📎" /> {L(`The file «${lostFiles.specs}» is not attached after reopening. Upload it again to attach it to the request.`, `دوبارہ کھولنے کے بعد فائل «${lostFiles.specs}» منسلک نہیں۔ اسے درخواست کے ساتھ منسلک کرنے کے لیے دوبارہ اپ لوڈ کریں۔`, `الملف «${lostFiles.specs}» غير مرفق بعد إعادة الفتح، ارفعه مرة أخرى لإرفاقه بالطلب.`)}
+                  {' '}<button type="button" onClick={() => setLostFiles(l => ({ ...l, specs: undefined }))} className="min-h-11 px-1 underline text-[#8F6820]">{L('Send without it', 'اس کے بغیر بھیجیں', 'الإرسال دونه')}</button>
+                </p>
+              )}
               <div className="flex flex-wrap items-center gap-2">
                 {specsFile ? (
                   <div className="flex items-center gap-2 bg-white rounded-lg px-3 py-2 border border-gray-200">
@@ -1382,7 +1457,7 @@ export default function NewProjectPage() {
                 ) : (
                   <label className="flex items-center gap-2 min-h-11 border-2 border-dashed border-gray-200 rounded-lg px-3 py-2 cursor-pointer hover:border-[#0B2438]/40 transition-all">
                     <input ref={specsRef} type="file" className="hidden" accept=".pdf,.xlsx,.xls,.csv,.txt,.png,.jpg,.jpeg"
-                      onChange={(e: any) => { const f = e.target.files?.[0]; e.target.value = ''; if (f) { setSpecsFile(f); setSpecMsg('') } }} />
+                      onChange={(e: any) => { const f = e.target.files?.[0]; e.target.value = ''; if (f) { setSpecsFile(f); setSpecMsg(''); setLostFiles(l => ({ ...l, specs: undefined })) } }} />
                     <span className="text-base"><Glyph e="📤" /></span>
                     <span className="text-xs text-gray-600">{L('Upload spec (PDF, Excel, image...)', 'اسپیسیفکیشن اپ لوڈ کریں (PDF، Excel، تصویر...)', 'ارفع المواصفات (PDF، Excel، صورة...)')}</span>
                   </label>
@@ -1593,7 +1668,8 @@ export default function NewProjectPage() {
                   <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>
                   {L('Sending to suppliers...', 'سپلائرز کو بھیجا جا رہا ہے...', 'جارٍ الإرسال للموردين...')}
                 </span>
-              ) : L(`Send ${sendCount} materials to suppliers →`, `${sendCount} مواد سپلائرز کو بھیجیں ←`, `إرسال ${arMaterials(sendCount)} للموردين المختصين ←`)}
+              ) : sendCount ? L(`Send ${sendCount} materials to suppliers →`, `${sendCount} مواد سپلائرز کو بھیجیں ←`, `إرسال ${arMaterials(sendCount)} للموردين المختصين ←`)
+                : L('Choose the items\' specialty first', 'پہلے آئٹمز کا شعبہ منتخب کریں', 'اختر تخصص البنود أولاً')}
             </button>
           </div>
         )}

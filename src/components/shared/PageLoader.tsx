@@ -20,9 +20,14 @@ function roleFromPath(p: string): string | null {
   return null
 }
 
-function Skeleton() {
+// the role hint read once per page load: shared pages (messages, settings…) no longer flash an empty
+// frame before the menu appears on every navigation (round-4 UX-146)
+let hintCache: string | null | undefined
+
+function Skeleton({ label }: { label: string }) {
   return (
     <div className="max-w-5xl mx-auto space-y-4 animate-pulse" aria-busy="true" aria-live="polite">
+      <span className="sr-only" role="status">{label}</span>
       <div className="h-24 rounded-2xl bg-white border border-gray-100" />
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         {[0, 1, 2, 3].map(i => <div key={i} className="h-20 rounded-2xl bg-white border border-gray-100" />)}
@@ -41,10 +46,15 @@ function Skeleton() {
 export default function PageLoader() {
   const { dir, locale } = useTranslation()
   const path = usePathname() || ''
-  const [hint, setHint] = useState<string | null>(null)
-  useEffect(() => { try { setHint(localStorage.getItem(ROLE_HINT_KEY)) } catch {} }, [])
+  const [hint, setHint] = useState<string | null>(hintCache ?? null)
+  useEffect(() => {
+    if (hintCache !== undefined) return
+    try { hintCache = localStorage.getItem(ROLE_HINT_KEY) } catch { hintCache = null }
+    setHint(hintCache)
+  }, [])
+  const label = locale === 'en' ? 'Loading…' : locale === 'ur' ? 'لوڈ ہو رہا ہے…' : 'جارٍ التحميل…'
   const role = path.startsWith('/onboarding') || path.startsWith('/welcome') || path.startsWith('/verify') || path.startsWith('/banned') ? null : (roleFromPath(path) || hint)
 
-  if (!role) return <div className="min-h-screen bg-slate-50 p-4 md:p-8" dir={dir}><Skeleton /></div>
-  return <AppShell nav={getNav(role, locale, path)} dir={dir}><Skeleton /></AppShell>
+  if (!role) return <div className="min-h-screen bg-slate-50 p-4 md:p-8" dir={dir}><Skeleton label={label} /></div>
+  return <AppShell nav={getNav(role, locale, path)} dir={dir}><Skeleton label={label} /></AppShell>
 }

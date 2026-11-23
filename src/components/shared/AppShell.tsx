@@ -34,7 +34,13 @@ const unreadCache = { uid: '', n: 0, at: 0 }
 const lastSeenTouch = { at: 0 }
 // Shell state read from this device (folded sidebar, seller kind, buyer type), kept for the whole visit
 // so a page change does not make the sidebar jump or the menu items flash (UX-098). ready = read once.
-const shellCache: { ready: boolean; collapsed: boolean; kind: string | null; buyerType: string | null; typeSynced?: boolean } = { ready: false, collapsed: false, kind: null, buyerType: null }
+const shellCache: { ready: boolean; collapsed: boolean; kind: string | null; buyerType: string | null; typeSynced?: boolean; card?: ShellCard | null } = { ready: false, collapsed: false, kind: null, buyerType: null }
+// The user card (name, meta line, verified) is remembered across pages: most pages do not pass it,
+// and the card used to vanish on them (round-4 UX-146). Kept per device for the next visit too.
+type ShellCard = { company: string; meta?: string; verified?: boolean }
+const CARD_KEY = 'tsk_shell_card'
+/** Forget the remembered user card (on sign-out, so the next account on this device never sees it). */
+export function clearShellCard() { shellCache.card = null; try { localStorage.removeItem(CARD_KEY) } catch {} }
 
 // mobile: رتبة العنصر في شريط التنقّل السفلي (١–٤) — العناصر بلا رتبة تبقى في «المزيد»
 // only: 'company' = hidden for an independent seller; 'business' = hidden for a home buyer («لبيتي»).
@@ -60,6 +66,16 @@ export default function AppShell({
   hideAssistant?: boolean
 }) {
   const { locale } = useTranslation()
+  const [card, setCard] = useState<ShellCard | null>(company ? { company, meta: companyMeta, verified: companyVerified } : shellCache.card || null)
+  useEffect(() => {
+    if (company) {
+      const c: ShellCard = { company, meta: companyMeta, verified: companyVerified }
+      shellCache.card = c; setCard(c)
+      try { localStorage.setItem(CARD_KEY, JSON.stringify(c)) } catch {}
+    } else if (!shellCache.card) {
+      try { const c = JSON.parse(localStorage.getItem(CARD_KEY) || 'null'); if (c && typeof c.company === 'string') { shellCache.card = c; setCard(c) } } catch {}
+    }
+  }, [company, companyMeta, companyVerified])
   // An independent seller has no branches or team: company-only items leave the menu.
   const [kind, setKind] = useState<string | null>(shellCache.kind)
   // The buyer type is read after mount (not during render), so the server and first client render
@@ -112,6 +128,7 @@ export default function AppShell({
   }
   async function defaultSignOut() {
     clearAllLocalDrafts()
+    clearShellCard()
     try { await createClient().auth.signOut() } catch {}
     window.location.href = '/login'
   }
@@ -274,7 +291,7 @@ export default function AppShell({
   const mainPush = collapsed ? '' : dir === 'rtl' ? 'lg:mr-[244px]' : 'lg:ml-[244px]'
   // --side-w (master-brand.css): the width the sidebar takes on desktop, so a fixed bar (the request
   // send bar) can start beside it instead of under it (UX-074). 0 on phones and when folded.
-  const initial = (company || 'ت').trim().charAt(0)
+  const initial = (card?.company || 'ت').trim().charAt(0)
 
   return (
     <div className={`ts-dashboard min-h-screen ${collapsed ? 'is-nav-collapsed' : ''}`} dir={dir}>
@@ -337,16 +354,16 @@ export default function AppShell({
         </div>
 
         {/* User card */}
-        {company && (
+        {card?.company && (
           <div className="px-3 pb-4">
             <div className="ts-company-card flex items-center gap-3 rounded-2xl p-3 bg-white/[0.06] border border-white/10">
               <span className="w-10 h-10 rounded-xl grid place-items-center font-bold shrink-0 shadow" style={{ background: '#D4A543', color: '#071827' }}>{initial}</span>
               <div className="min-w-0">
-                <div className="font-bold text-sm truncate">{company}</div>
-                {(companyMeta || companyVerified) && (
+                <div className="font-bold text-sm truncate">{card.company}</div>
+                {(card.meta || card.verified) && (
                   <div className="text-[12px] text-[#AEB9C6] truncate flex items-center gap-1">
-                    {companyMeta}
-                    {companyVerified && <span className="inline-flex items-center gap-0.5 text-[#F5C55B]"><ShieldCheck className="w-3.5 h-3.5" aria-hidden />{L('Verified', 'تصدیق شدہ', 'موثّق')}</span>}
+                    {card.meta}
+                    {card.verified && <span className="inline-flex items-center gap-0.5 text-[#F5C55B]"><ShieldCheck className="w-3.5 h-3.5" aria-hidden />{L('Verified', 'تصدیق شدہ', 'موثّق')}</span>}
                   </div>
                 )}
               </div>

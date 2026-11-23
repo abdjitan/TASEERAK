@@ -23,7 +23,7 @@ export const TIER_INFO: Record<SupplierTier, T3 & { icon: string; hint: T3 }> = 
   },
   independent: {
     icon: 'user', ar: 'وسطاء تسعير', en: 'Pricing agents', ur: 'قیمت ایجنٹ',
-    hint: { ar: 'أفراد يجلبون أسعار المحلات؛ الفاتورة الضريبية من المحل باسم المشتري', en: 'Individuals who bring shop prices; the tax invoice comes from the shop in the buyer’s name', ur: 'افراد جو دکانوں کی قیمتیں لاتے ہیں؛ ٹیکس انوائس دکان سے خریدار کے نام' },
+    hint: { ar: 'أفراد يجلبون أسعار المحلات؛ وتصدر فاتورة المحل باسم المشتري', en: 'Individuals who bring shop prices; the shop’s invoice is issued in the buyer’s name', ur: 'افراد جو دکانوں کی قیمتیں لاتے ہیں؛ دکان کی انوائس خریدار کے نام جاری ہوتی ہے' },
   },
 }
 
@@ -77,11 +77,11 @@ export function sellerKindOf(providerType?: string | null): SellerKind {
 export const SELLER_KINDS: Record<SellerKind, T3 & { icon: string; sub: T3 }> = {
   independent: {
     icon: 'user', ar: 'وسيط تسعير', en: 'Pricing agent', ur: 'قیمت ایجنٹ',
-    sub: { ar: 'ليس لديك محل: تجلب أسعار المواد من المحلات للمشترين، وتتم الصفقة بفاتورة ضريبية من المحل باسم المشتري', en: 'You bring shop prices to buyers; the deal uses a certified tax invoice from the shop in the buyer’s name', ur: 'آپ دکانوں کی قیمتیں خریداروں تک لاتے ہیں؛ سودا دکان کی خریدار کے نام ٹیکس انوائس سے' },
+    sub: { ar: 'ليس لديك محل: تجلب أسعار المواد من المحلات للمشترين، وتتم الصفقة بفاتورة المحل باسم المشتري', en: 'No shop of your own: you bring shop prices to buyers, and the deal is done with the shop’s invoice in the buyer’s name', ur: 'آپ کی اپنی دکان نہیں: آپ دکانوں کی قیمتیں خریداروں تک لاتے ہیں، اور سودا دکان کی خریدار کے نام انوائس سے ہوتا ہے' },
   },
   company: {
     icon: 'building', ar: 'شركة أو محل (بسجل تجاري)', en: 'Company or shop (with a commercial registration)', ur: 'کمپنی یا دکان (تجارتی رجسٹریشن کے ساتھ)',
-    sub: { ar: 'لديك سجل تجاري: مصنع، أو وكيل وموزّع، أو شركة تجارية، أو محل مواد بناء', en: 'You have a commercial registration: factory, agent/distributor, trading company or building-materials shop', ur: 'فیکٹری، ڈسٹری بیوٹر، تجارتی کمپنی یا دکان' },
+    sub: { ar: 'لديك سجل تجاري: مصنع، أو وكيل وموزّع، أو شركة تجارية، أو محل مواد بناء', en: 'You have a commercial registration: factory, agent/distributor, trading company or building-materials shop', ur: 'آپ کے پاس تجارتی رجسٹریشن ہے: فیکٹری، ایجنٹ / ڈسٹری بیوٹر، تجارتی کمپنی یا تعمیراتی سامان کی دکان' },
   },
 }
 export const COMPANY_ACTIVITIES: { k: string; icon: string; ar: string; en: string; ur: string }[] = [

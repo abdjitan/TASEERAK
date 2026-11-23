@@ -12,7 +12,7 @@
   --ts-shadow-panel: 0 16px 44px rgba(5, 11, 18, .12);
   --ts-focus-ring: 0 0 0 3px rgba(212, 165, 67, .28);
   --ts-font-ar: "IBM Plex Sans Arabic", "Tajawal", "Cairo", "Segoe UI", Tahoma, sans-serif;
-  --ts-font-en: "Inter", "Segoe UI", Arial, sans-serif;
+  --ts-font-en: "Inter", "IBM Plex Sans Arabic", "Segoe UI", Arial, sans-serif;
 }
 
 body { font-family: var(--ts-font-ar); }
@@ -34,7 +34,6 @@ a { text-decoration: none; }
 .input-field:focus { border-color: var(--ts-gold-500); box-shadow: var(--ts-focus-ring); }
 .btn-orange, .btn-primary { color: var(--ts-navy-950); font-weight: 800; }
 .btn-orange:hover, .btn-primary:hover { color: var(--ts-navy-950); }
-.bg-orange.text-[#071827], .bg-orange-dark.text-[#071827], [class*="bg-[#D4A543]"].text-[#071827] { color: #050B12 !important; }
 .text-orange { color: #8F6820; }
 .auth-brand-panel .text-orange, .ts-dashboard aside .text-orange { color: #F5C55B !important; }
 .card { border-radius: 18px; border-color: #D9E0E8; box-shadow: 0 6px 22px rgba(7,24,39,.045); }
@@ -216,44 +215,12 @@ a { text-decoration: none; }
 .ts-dashboard-main {
   background-image: radial-gradient(ellipse at 50% 0%, rgba(255,255,255,.42), transparent 56%);
 }
-.ts-dashboard-greeting {
-  position: relative;
-  isolation: isolate;
-  overflow: hidden;
-  padding: 23px 27px 22px;
-  border: 1px solid rgba(245,197,91,.26);
-  border-radius: 22px;
-  background: linear-gradient(112deg, #071827 0%, #0B2438 60%, #15384D 100%);
-  box-shadow: 0 18px 38px rgba(7,24,39,.14), inset 0 1px rgba(255,255,255,.08);
-}
-.ts-dashboard-greeting::before {
-  content: "";
-  position: absolute;
-  z-index: -1;
-  inset-block: -75%;
-  inset-inline-end: -4%;
-  width: min(46%, 440px);
-  border-radius: 50%;
-  background: radial-gradient(ellipse, rgba(212,165,67,.2), rgba(212,165,67,.045) 42%, transparent 70%);
-  filter: blur(2px);
-}
-.ts-dashboard-greeting::after {
-  content: "";
-  position: absolute;
-  z-index: -1;
-  inset-inline-start: 0;
-  inset-block: 22px;
-  width: 3px;
-  border-radius: 0 4px 4px 0;
-  background: linear-gradient(180deg, #F5C55B, rgba(212,165,67,.1));
-  box-shadow: 0 0 18px rgba(245,197,91,.34);
-}
-.ts-dashboard-greeting h1 { color: #FFF !important; font-size: clamp(20px, 2.4vw, 28px); }
-.ts-dashboard-greeting p { color: rgba(232,237,242,.76) !important; }
 .ts-dashboard main > .max-w-7xl,
 .ts-dashboard main > .max-w-6xl,
 .ts-dashboard main > .max-w-5xl { max-width: 100%; }
-.ts-dashboard main .bg-white { border-color: #D7DEE5; }
+/* Card border is a default only (round-4 UX-102): zero specificity, so any border-[…] / border-red / border-green
+   class and hover:border-… on the element win. */
+:where(.ts-dashboard main .bg-white) { border-color: #D9E0E4; }
 .ts-dashboard main .bg-white.rounded-xl,
 .ts-dashboard main .bg-white.rounded-2xl,
 .ts-dashboard main .bg-white.rounded-3xl {
@@ -279,17 +246,17 @@ a { text-decoration: none; }
   opacity: .72;
 }
 .ts-dashboard main button.bg-white.rounded-2xl > * { position: relative; z-index: 1; }
-.ts-dashboard main .bg-gray-50 { background-color: #F5F6F7; }
-.ts-dashboard main .bg-gray-100 { background-color: #E9EDF0; }
 .ts-dashboard main h1, .ts-dashboard main h2, .ts-dashboard main h3 { letter-spacing: -.012em; }
-.ts-dashboard main input:not([type="checkbox"]):not([type="radio"]),
-.ts-dashboard main select, .ts-dashboard main textarea {
+/* Field defaults (round-4 UX-019): low specificity, so a Tailwind border class on a field (gold for a missing value,
+   red for an error) wins. Errors are marked with aria-invalid="true" (rule below). */
+:where(.ts-dashboard main) input:where(:not([type="checkbox"]):not([type="radio"])),
+:where(.ts-dashboard main) select, :where(.ts-dashboard main) textarea {
   border-color: #CBD4DE;
   border-radius: 10px;
   color: #10243B;
   background-color: rgba(255,255,255,.96);
 }
-.ts-dashboard main input:not([type="checkbox"]):not([type="radio"]):focus, .ts-dashboard main select:focus, .ts-dashboard main textarea:focus {
+:where(.ts-dashboard main) input:where(:not([type="checkbox"]):not([type="radio"])):focus, :where(.ts-dashboard main) select:focus, :where(.ts-dashboard main) textarea:focus {
   outline: none;
   border-color: var(--ts-navy-850);
   box-shadow: var(--ts-focus-ring);
@@ -297,7 +264,7 @@ a { text-decoration: none; }
 .ts-dashboard main input[type="checkbox"], .ts-dashboard main input[type="radio"] { accent-color: var(--ts-gold-500); }
 input[type="checkbox"]:focus-visible, input[type="radio"]:focus-visible { outline: 2px solid var(--ts-navy-850) !important; outline-offset: 2px; box-shadow: 0 0 0 5px rgba(212,165,67,.45) !important; }
 .ts-dashboard main thead { background: #F5F7FA; }
-.ts-dashboard .text-gray-400 { color: #5B6B7C !important; }
+:where(.ts-dashboard) .text-gray-400 { color: #5B6B7C; }
 .public-page .text-gray-400, .register-screen .text-gray-400 { color: #667085 !important; }
 .ts-dashboard th { color: #526277; font-weight: 700; }
 .ts-dashboard table { border-color: #D9E0E8; }
@@ -328,7 +295,6 @@ input[type="checkbox"]:focus-visible, input[type="radio"]:focus-visible { outlin
 @media (max-width: 640px) {
   .ts-dashboard-topbar > div { padding-block: 10px; }
   .ts-dashboard-topbar h1, .ts-dashboard-topbar .ts-topbar-title { font-size: 15px; }
-  .ts-dashboard-greeting { padding: 20px 19px; border-radius: 18px; }
   .ts-dashboard main .bg-white.rounded-2xl { border-radius: 17px; }
 }
 
@@ -430,31 +396,32 @@ input[type="checkbox"]:focus-visible, input[type="radio"]:focus-visible { outlin
 .ts-dashboard main .bg-white.rounded-xl,
 .ts-dashboard main .bg-white.rounded-2xl,
 .ts-dashboard main .bg-white.rounded-3xl {
-  border-color: #D3DADF !important;
   box-shadow: 0 13px 34px rgba(7,24,39,.085), inset 0 2px rgba(212,165,67,.28), inset 0 1px rgba(255,255,255,.92);
 }
 .ts-dashboard main .bg-white.rounded-xl:hover,
 .ts-dashboard main .bg-white.rounded-2xl:hover {
   box-shadow: 0 17px 38px rgba(7,24,39,.12), inset 0 2px rgba(212,165,67,.52), inset 0 1px rgba(255,255,255,.95);
 }
-.ts-dashboard main .bg-gray-50 { background-color: #F0F2F2 !important; }
-.ts-dashboard main .bg-gray-100 { background-color: #E4E9EC !important; }
-.ts-dashboard main .text-gray-400 { color: #5B6B7C !important; }
-.ts-dashboard main .text-gray-500 { color: #526579 !important; }
-.ts-dashboard main .border-gray-100,
-.ts-dashboard main .border-gray-200 { border-color: #D9E0E4 !important; }
+:where(.ts-dashboard main) .bg-gray-50 { background-color: #F0F2F2; }
+:where(.ts-dashboard main) .bg-gray-100 { background-color: #E4E9EC; }
+:where(.ts-dashboard main) .text-gray-500 { color: #526579; }
+:where(.ts-dashboard main) .border-gray-100,
+:where(.ts-dashboard main) .border-gray-200 { border-color: #D9E0E4; }
 .ts-dashboard main .badge-blue { color: #124B69; background: #DCEFF6; }
 .ts-dashboard main .badge-green { color: #075E49; background: #D8F1E8; }
-.ts-dashboard main input:not([type="checkbox"]):not([type="radio"]),
-.ts-dashboard main select,
-.ts-dashboard main textarea {
+:where(.ts-dashboard main) input:where(:not([type="checkbox"]):not([type="radio"])),
+:where(.ts-dashboard main) select,
+:where(.ts-dashboard main) textarea {
   box-shadow: inset 0 1px 2px rgba(7,24,39,.045), 0 1px rgba(255,255,255,.88);
 }
-.ts-dashboard main input:not([type="checkbox"]):not([type="radio"]):focus,
-.ts-dashboard main select:focus,
-.ts-dashboard main textarea:focus {
-  box-shadow: 0 0 0 4px rgba(212,165,67,.16), 0 6px 18px rgba(7,24,39,.08) !important;
+:where(.ts-dashboard main) input:where(:not([type="checkbox"]):not([type="radio"])):focus,
+:where(.ts-dashboard main) select:focus,
+:where(.ts-dashboard main) textarea:focus {
+  box-shadow: 0 0 0 4px rgba(212,165,67,.16), 0 6px 18px rgba(7,24,39,.08);
 }
+/* One error state for every form (round-4 UX-019): set aria-invalid="true" on the field that is wrong or missing. */
+:is(input, select, textarea)[aria-invalid="true"] { border-color: #B42318 !important; background-color: #FEF2F2 !important; }
+:is(input, select, textarea)[aria-invalid="true"]:focus { border-color: #B42318 !important; box-shadow: 0 0 0 4px rgba(180,35,24,.16) !important; }
 .ts-dashboard-sidebar { border-inline-start: 1px solid rgba(245,197,91,.28); }
 .ts-dashboard-brand img { filter: drop-shadow(0 8px 20px rgba(245,197,91,.18)); }
 .ts-sidebar-link.is-active { box-shadow: inset 3px 0 #F5C55B, 0 8px 20px rgba(0,0,0,.16) !important; }
@@ -470,114 +437,8 @@ input[type="checkbox"]:focus-visible, input[type="radio"]:focus-visible { outlin
 .ts-mobile-nav-link.is-active { color: #F5C55B !important; }
 .ts-mobile-nav-link.is-active::after { background: linear-gradient(90deg, #F5C55B, #D4A543); }
 
-/* The buyer home opens with a vivid, recognizable construction-market scene. */
-.ts-dashboard .ts-marketplace-hero {
-  min-height: 300px;
-  align-content: center;
-  border-color: rgba(245,197,91,.48);
-  background: #071827 url('/hero/taseerak-market-city.webp') center 57% / cover no-repeat;
-  box-shadow: 0 24px 52px rgba(7,24,39,.24), inset 0 1px rgba(255,255,255,.14);
-}
-.ts-dashboard .ts-marketplace-hero::before {
-  opacity: 1;
-  background:
-    linear-gradient(90deg, rgba(5,11,18,.84) 0%, rgba(7,24,39,.7) 45%, rgba(7,24,39,.52) 100%),
-    linear-gradient(0deg, rgba(5,11,18,.7), transparent 63%);
-  mask-image: none;
-}
-.ts-dashboard .ts-marketplace-hero > * { position: relative; z-index: 1; }
-.ts-dashboard .ts-marketplace-hero::after {
-  content: "";
-  position: absolute;
-  z-index: 0;
-  inset: -40% auto -40% -35%;
-  width: 28%;
-  transform: rotate(18deg);
-  pointer-events: none;
-  background: linear-gradient(90deg, transparent, rgba(255,232,177,.13), transparent);
-  animation: ts-city-glint 12s ease-in-out infinite;
-}
-@keyframes ts-city-glint {
-  0%, 54% { inset-inline-start: -35%; opacity: 0; }
-  60% { opacity: .85; }
-  76%, 100% { inset-inline-start: 120%; opacity: 0; }
-}
-.ts-marketplace-eyebrow { color: #FFD977; }
-.ts-marketplace-eyebrow::before { background: #FFD977; box-shadow: 0 0 0 5px rgba(255,217,119,.2), 0 0 20px rgba(255,217,119,.55); }
-.ts-dashboard .ts-marketplace-intro h1 { color: #fff !important; text-shadow: 0 4px 24px rgba(0,0,0,.4); }
-.ts-dashboard .ts-marketplace-intro p { color: rgba(255,255,255,.86); }
-.ts-marketplace-search {
-  border-color: rgba(255,255,255,.7);
-  box-shadow: 0 16px 38px rgba(0,0,0,.24), inset 0 1px rgba(255,255,255,.95);
-}
-.ts-marketplace-search button { background: linear-gradient(110deg, #F5C55B, #D4A543); }
-.ts-marketplace-request-link {
-  color: #091725 !important;
-  background: linear-gradient(110deg, #F5C55B, #D4A543);
-  box-shadow: 0 9px 24px rgba(0,0,0,.25), inset 0 1px rgba(255,255,255,.42);
-}
-.ts-marketplace-request-link:hover { color: #091725 !important; background: #FFD977; }
-.ts-marketplace-project-link { color: #fff; text-shadow: 0 1px 8px rgba(0,0,0,.35); }
-.ts-marketplace-project-link:hover { color: #FFD977; }
-.ts-section-heading h2 { color: #0B2438; }
-.ts-section-heading p { color: #5F7180; }
-.ts-category-card {
-  border-color: #D1D9DE;
-  isolation: isolate;
-  overflow: hidden;
-  min-height: 122px;
-  border-color: rgba(255,255,255,.42);
-  color: #fff;
-  background: #102E45;
-  box-shadow: 0 10px 24px rgba(7,24,39,.17), inset 0 1px rgba(255,255,255,.28);
-  transition: transform .2s ease, border-color .2s ease, box-shadow .2s ease, filter .2s ease;
-}
-.ts-category-card::before,
-.ts-category-card::after { content: ""; position: absolute; inset: 0; pointer-events: none; }
-.ts-category-card::before {
-  z-index: -2;
-  background-image: url('/images/taseerak-category-backgrounds.webp');
-  background-repeat: no-repeat;
-  background-size: 300% auto;
-  transition: filter .2s ease;
-}
-.ts-category-card::after {
-  z-index: -1;
-  background: linear-gradient(270deg, rgba(5,15,24,.84) 0%, rgba(5,15,24,.5) 50%, rgba(5,15,24,.12) 100%),
-    linear-gradient(0deg, rgba(5,15,24,.54), transparent 76%);
-}
-.ts-category-card:nth-child(1)::before { background-position: 0% 14%; }
-.ts-category-card:nth-child(2)::before { background-position: 50% 14%; }
-.ts-category-card:nth-child(3)::before { background-position: 100% 14%; }
-.ts-category-card:nth-child(4)::before { background-position: 0% 86%; }
-.ts-category-card:nth-child(5)::before { background-position: 50% 86%; }
-.ts-category-card:nth-child(6)::before { background-position: 100% 86%; }
-.ts-category-card > * { position: relative; z-index: 1; }
-.ts-category-card:nth-child(1) { --ts-category-accent: #D49A20; --ts-category-wash: #FFF4D4; }
-.ts-category-card:nth-child(2) { --ts-category-accent: #3982B8; --ts-category-wash: #E1F2FC; }
-.ts-category-card:nth-child(3) { --ts-category-accent: #C86C59; --ts-category-wash: #FCEAE4; }
-.ts-category-card:nth-child(4) { --ts-category-accent: #168E91; --ts-category-wash: #DDF5F1; }
-.ts-category-card:nth-child(5) { --ts-category-accent: #9D7425; --ts-category-wash: #FBF3E1; }
-.ts-category-card:nth-child(6) { --ts-category-accent: #37835D; --ts-category-wash: #E1F2E6; }
-.ts-category-icon {
-  width: 46px;
-  height: 46px;
-  color: #fff;
-  border-color: rgba(255,255,255,.46);
-  background: rgba(255,255,255,.17);
-  box-shadow: inset 0 1px rgba(255,255,255,.3), 0 5px 16px rgba(0,0,0,.16);
-  backdrop-filter: blur(8px);
-}
-.ts-category-label { color: #fff; font-size: 13px; text-shadow: 0 2px 7px rgba(0,0,0,.52); }
-.ts-category-arrow { color: var(--ts-category-accent, #8F6820); }
-.ts-category-card:hover { border-color: var(--ts-category-accent, #D4A543); }
-.ts-category-card:hover::before { filter: brightness(1.12) saturate(1.08); }
-
 @media (max-width: 640px) {
   .ts-dashboard-topbar { background-position: center; }
-  .ts-dashboard .ts-marketplace-hero { min-height: 0; background-position: 55% center; }
-  .ts-dashboard .ts-marketplace-hero::before { background: linear-gradient(90deg, rgba(5,11,18,.88), rgba(7,24,39,.66)); }
-  .ts-dashboard .ts-marketplace-search { background: #fff; }
   .ts-mobile-nav-link { font-size: 12px; }
 }
 
@@ -626,246 +487,17 @@ input[type="checkbox"]:focus-visible, input[type="radio"]:focus-visible { outlin
 .ts-dashboard-topbar :is(.ts-notif-panel, [role="dialog"]) a:not(.btn-orange):not([class*="bg-"]) { color: #0B2438; }
 .ts-dashboard-topbar :is(.ts-notif-panel, [role="dialog"]) p { color: #526579 !important; }
 .ts-dashboard-main { padding-inline: clamp(18px, 2.6vw, 42px); }
-.ts-dashboard .ts-dashboard-greeting {
-  color: #10243B;
-  border: 1px solid #E8E0CF;
-  background: linear-gradient(112deg, #FFF 0%, #FBF8F0 68%, #F6F1E6 100%);
-  box-shadow: 0 12px 30px rgba(7,24,39,.055), inset 0 1px rgba(255,255,255,.9);
-}
-.ts-dashboard .ts-dashboard-greeting::before {
-  inset-block: -62%;
-  inset-inline-end: -1%;
-  background: radial-gradient(ellipse, rgba(212,165,67,.16), rgba(212,165,67,.045) 45%, transparent 72%);
-}
-.ts-dashboard .ts-dashboard-greeting::after {
-  inset-block: 20px;
-  width: 3px;
-  background: linear-gradient(180deg, #D4A543, rgba(212,165,67,.12));
-  box-shadow: none;
-}
-.ts-dashboard .ts-dashboard-greeting h1 { color: #10243B !important; }
-.ts-dashboard .ts-dashboard-greeting p { color: #5C6B78 !important; }
-
-.ts-marketplace-hero {
-  position: relative;
-  isolation: isolate;
-  overflow: hidden;
-  display: grid;
-  gap: 20px;
-  padding: clamp(22px, 3vw, 34px);
-  border: 1px solid #E6DFD0;
-  border-radius: 24px;
-  background: linear-gradient(118deg, #FFF 0%, #FBF8F1 70%, #F4EFE2 100%);
-  box-shadow: 0 16px 38px rgba(7,24,39,.065), inset 0 1px rgba(255,255,255,.9);
-}
-.ts-marketplace-hero::before {
-  content: "";
-  position: absolute;
-  z-index: -1;
-  inset: 0;
-  pointer-events: none;
-  opacity: .42;
-  background:
-    radial-gradient(ellipse at 11% 100%, rgba(15,110,86,.09), transparent 33%),
-    repeating-linear-gradient(0deg, transparent 0 30px, rgba(11,36,56,.018) 31px, transparent 32px 62px);
-  mask-image: linear-gradient(90deg, #000, transparent 76%);
-}
-.ts-marketplace-intro { max-width: 850px; }
-.ts-marketplace-eyebrow {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 9px;
-  color: #8A6728;
-  font-size: 11px;
-  font-weight: 800;
-  letter-spacing: .045em;
-}
-.ts-marketplace-eyebrow::before {
-  content: "";
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  background: #D4A543;
-  box-shadow: 0 0 0 4px rgba(212,165,67,.13);
-}
-.ts-marketplace-intro h1 {
-  margin: 0;
-  color: #10243B;
-  font-size: clamp(24px, 3vw, 34px);
-  font-weight: 850;
-  line-height: 1.35;
-  letter-spacing: -.025em;
-}
-.ts-marketplace-intro p {
-  margin: 5px 0 0;
-  color: #5C6B78;
-  font-size: 14px;
-  line-height: 1.8;
-}
-.ts-marketplace-search {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  min-height: 64px;
-  padding: 7px 8px 7px 18px;
-  border: 1px solid #E1E4E5;
-  border-radius: 16px;
-  background: rgba(255,255,255,.96);
-  box-shadow: 0 8px 24px rgba(7,24,39,.055), inset 0 1px rgba(255,255,255,.9);
-  transition: border-color .18s ease, box-shadow .18s ease;
-}
-.ts-marketplace-search:focus-within {
-  border-color: rgba(212,165,67,.75);
-  box-shadow: 0 0 0 4px rgba(212,165,67,.13), 0 12px 28px rgba(7,24,39,.07);
-}
-.ts-marketplace-search-icon {
-  flex: none;
-  color: #8A6728;
-  font-size: 32px;
-  line-height: 1;
-}
-.ts-marketplace-search input {
-  flex: 1;
-  min-width: 0;
-  min-height: 46px;
-  border: 0 !important;
-  outline: 0 !important;
-  background: transparent !important;
-  box-shadow: none !important;
-  color: #10243B;
-  font-size: 14px;
-}
-.ts-marketplace-search input::placeholder { color: #8793A0; }
-.ts-marketplace-search button {
-  flex: none;
-  min-height: 48px;
-  padding: 0 22px;
-  border: 0;
-  border-radius: 12px;
-  background: #D4A543;
-  color: #071827;
-  font-size: 13px;
-  font-weight: 850;
-  transition: transform .16s ease, background .16s ease, box-shadow .16s ease;
-}
-.ts-marketplace-search button:hover {
-  transform: translateY(-1px);
-  background: #E2B752;
-  box-shadow: 0 8px 18px rgba(157,116,37,.2);
-}
-.ts-marketplace-hero-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 17px; }
-.ts-marketplace-request-link {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 43px;
-  padding: 0 17px;
-  border-radius: 12px;
-  background: #0B2438;
-  color: #fff !important;
-  font-size: 13px;
-  font-weight: 800;
-  transition: background .16s ease, transform .16s ease;
-}
-.ts-marketplace-request-link:hover { background: #143954; transform: translateY(-1px); }
-.ts-marketplace-project-link, .ts-section-link {
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
-  color: #516172;
-  font-size: 12px;
-  font-weight: 750;
-  transition: color .16s ease;
-}
-.ts-marketplace-project-link:hover, .ts-section-link:hover { color: #8A6728; }
-
-.ts-section-heading {
-  display: flex;
-  align-items: end;
-  justify-content: space-between;
-  gap: 16px;
-  margin: 0 2px 14px;
-}
-.ts-section-heading h2 { margin: 0; color: #10243B; font-size: 17px; font-weight: 850; }
-.ts-section-heading p { margin: 3px 0 0; color: #75818D; font-size: 12px; }
-.ts-section-link { color: #8A6728; white-space: nowrap; }
-.ts-marketplace-categories { display: grid; grid-template-columns: repeat(6, minmax(0,1fr)); gap: 12px; }
-.ts-category-card {
-  position: relative;
-  display: flex;
-  min-width: 0;
-  min-height: 112px;
-  flex-direction: column;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 10px;
-  padding: 15px;
-  border: 1px solid #E1E4E4;
-  border-radius: 17px;
-  background: rgba(255,255,255,.94);
-  color: #10243B;
-  box-shadow: 0 4px 14px rgba(7,24,39,.028);
-  transition: transform .18s ease, border-color .18s ease, box-shadow .18s ease, background .18s ease;
-}
-.ts-category-card:hover {
-  transform: translateY(-3px);
-  border-color: rgba(212,165,67,.7);
-  background: #FFFDF8;
-  box-shadow: 0 14px 28px rgba(7,24,39,.09);
-}
-.ts-category-card:focus-visible { outline: 3px solid rgba(212,165,67,.38); outline-offset: 2px; }
-.ts-category-icon {
-  display: grid;
-  place-items: center;
-  width: 42px;
-  height: 42px;
-  border: 1px solid #EEE6D6;
-  border-radius: 14px;
-  background: #F8F4EA;
-  font-size: 21px;
-}
-.ts-category-label { color: #24384A; font-size: 12px; font-weight: 800; line-height: 1.5; }
-.ts-category-arrow { position: absolute; inset-inline-end: 13px; top: 16px; color: #9A7B3B; font-size: 13px; opacity: 0; transition: opacity .16s ease; }
-.ts-category-card:hover .ts-category-arrow, .ts-category-card:focus-visible .ts-category-arrow { opacity: 1; }
 
 .ts-dashboard main .bg-white.rounded-2xl,
 .ts-dashboard main .bg-white.rounded-xl {
-  border-color: #E0E4E4;
   box-shadow: 0 8px 24px rgba(7,24,39,.042), 0 1px 2px rgba(7,24,39,.025);
 }
 .ts-dashboard main table tbody tr { transition: background-color .15s ease; }
 .ts-dashboard main table tbody tr:hover { background-color: rgba(212,165,67,.065); }
 .ts-dashboard main input::placeholder, .ts-dashboard main textarea::placeholder { color: #8894A0; }
 .ts-dashboard main label:not([class*="text-"]) { color: #34485B; font-weight: 700; }
-.ts-dashboard-main .text-gray-400 { color: #5B6B7C !important; }
 .ts-dashboard .ts-sidebar-link { border-radius: 13px; }
 .ts-dashboard .ts-sidebar-link.is-active { box-shadow: inset 0 1px rgba(255,255,255,.08), 0 7px 18px rgba(0,0,0,.12) !important; }
-
-@media (max-width: 1100px) {
-  .ts-marketplace-categories { grid-template-columns: repeat(3, minmax(0,1fr)); }
-}
-@media (max-width: 640px) {
-  .ts-marketplace-hero { gap: 16px; padding: 20px 16px; border-radius: 19px; }
-  /* phone sizes: key text at least 12px, inputs 16px (no iOS zoom), targets 44px (UX-154/155/157) */
-  .ts-marketplace-eyebrow { font-size: 12px; }
-  .ts-marketplace-intro h1 { font-size: 23px; }
-  .ts-marketplace-intro p { font-size: 13px; }
-  .ts-marketplace-search { min-height: 56px; gap: 8px; padding-inline-start: 12px; border-radius: 13px; }
-  .ts-marketplace-search-icon { font-size: 27px; }
-  .ts-marketplace-search input { font-size: 16px; }
-  .ts-marketplace-search button { min-height: 44px; padding-inline: 13px; font-size: 13px; }
-  .ts-marketplace-hero-actions { gap: 11px; }
-  .ts-marketplace-request-link { min-height: 44px; padding-inline: 13px; font-size: 13px; }
-  .ts-marketplace-project-link { font-size: 12px; min-height: 44px; display: inline-flex; align-items: center; }
-  .ts-section-heading { align-items: flex-start; }
-  .ts-section-heading h2 { font-size: 15px; }
-  .ts-section-heading p { font-size: 12px; }
-  .ts-marketplace-categories { grid-template-columns: repeat(2, minmax(0,1fr)); gap: 9px; }
-  .ts-category-card { min-height: 101px; padding: 12px; border-radius: 15px; }
-  .ts-category-icon { width: 38px; height: 38px; font-size: 19px; }
-  .ts-category-label { font-size: 12px; }
-}
 
 /* Buyer home hero (approved marketplace-home design): city photo under a controlled navy overlay */
 .market-hero {

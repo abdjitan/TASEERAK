@@ -21,7 +21,7 @@ const CATS: { key: string; img: string; ar: string; en: string; ur: string; sub:
   { key: 'plumbing', img: 'plumbing', ar: 'الحمّام والسباكة', en: 'Bathroom & plumbing', ur: 'باتھ روم اور پلمبنگ', sub: { ar: 'أدوات وإكسسوارات', en: 'Fixtures & fittings', ur: 'سامان اور فٹنگز' } },
   { key: 'hvac_fire', img: 'hvac_fire', ar: 'التكييف والحريق', en: 'AC & firefighting', ur: 'اے سی اور فائر', sub: { ar: 'مكيفات ورشاشات', en: 'AC units, sprinklers', ur: 'اے سی، اسپرنکلر' } },
   { key: 'furniture', img: 'furniture', ar: 'الأثاث والديكور', en: 'Furniture & decor', ur: 'فرنیچر', sub: { ar: 'للبيت والمكتب', en: 'Home & office', ur: 'گھر اور دفتر' } },
-  { key: 'tools', img: 'tools', ar: 'العدد والمعدات', en: 'Tools & equipment', ur: 'اوزار اور سامان', sub: { ar: 'للمنزل والموقع', en: 'Home & site', ur: 'گھر اور سائٹ' } },
+  { key: 'tools', img: 'tools', ar: 'العدد والمعدات', en: 'Tools & equipment', ur: 'اوزار اور سامان', sub: { ar: 'عدد يدوية وكهربائية', en: 'Hand and power tools', ur: 'ہاتھ اور بجلی کے اوزار' } }, // not «الموقع» (a place), round-4 UX-114
   { key: 'machinery', img: 'machinery', ar: 'الآليات الثقيلة', en: 'Heavy machinery', ur: 'بھاری مشینری', sub: { ar: 'تأجير وشراء', en: 'Rent or buy', ur: 'کرایہ یا خرید' } },
   { key: 'outdoor', img: 'outdoor', ar: 'الحدائق والخارجيات', en: 'Garden & outdoor', ur: 'باغ اور بیرونی', sub: { ar: 'عشب وري وإنترلوك', en: 'Turf, irrigation, interlock', ur: 'گھاس، آبپاشی' } },
 ]
@@ -59,14 +59,18 @@ export default function MarketHero({ locale, homeBuyer = false, greeting }: { lo
     const t = term.trim()
     router.push(t ? `/contractor/rfq/quick?q=${encodeURIComponent(t.slice(0, 80))}` : '/contractor/rfq/quick')
   }
+  // «اطلبه كما تريده» is the last option of the list, reachable with the arrows (round-4 UX-116)
+  const requestLine = () => router.push(`/contractor/rfq/quick?line=${encodeURIComponent(q.trim().slice(0, 80))}`)
   const go = (e?: React.FormEvent) => {
     e?.preventDefault()
+    if (open && active === hits.length && q.trim()) { requestLine(); return }
     open_(open && active >= 0 && hits[active] ? hits[active].name : q)
   }
   const onKey = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (!hits.length) return
-    if (e.key === 'ArrowDown') { e.preventDefault(); setOpen(true); setActive(a => (a + 1) % hits.length) }
-    else if (e.key === 'ArrowUp') { e.preventDefault(); setActive(a => (a <= 0 ? hits.length - 1 : a - 1)) }
+    const total = hits.length + (q.trim() ? 1 : 0)
+    if (!total) return
+    if (e.key === 'ArrowDown') { e.preventDefault(); setOpen(true); setActive(a => (a + 1) % total) }
+    else if (e.key === 'ArrowUp') { e.preventDefault(); setActive(a => (a <= 0 ? total - 1 : a - 1)) }
     else if (e.key === 'Escape') { setOpen(false); setActive(-1) }
   }
   // the list also opens with no match, so «لم تجد طلبك؟» is always there (owner 2026-10-24, as in the app)
@@ -121,14 +125,15 @@ export default function MarketHero({ locale, homeBuyer = false, greeting }: { lo
                 <span className="truncate">{label(h.name)}</span>
               </li>
             ))}
-            <li>
-              <button type="button" onMouseDown={e => e.preventDefault()}
-                onClick={() => router.push(`/contractor/rfq/quick?line=${encodeURIComponent(q.trim().slice(0, 80))}`)}
-                className="flex w-full items-center gap-3 px-4 py-3 text-start text-[14px] font-bold border-t border-gray-100 bg-[#D4A543]/10 text-[#0B2438] hover:bg-[#D4A543]/20">
+            <li id={`hero-suggest-${hits.length}`} role="option" aria-selected={active === hits.length}
+              onMouseDown={e => e.preventDefault()} onClick={requestLine} onMouseEnter={() => setActive(hits.length)}
+              className="cursor-pointer">
+              <div
+                className={`flex w-full min-h-[44px] items-center gap-3 px-4 py-3 text-start text-[14px] font-bold border-t border-gray-100 text-[#0B2438] ${active === hits.length ? 'bg-[#D4A543]/25' : 'bg-[#D4A543]/10 hover:bg-[#D4A543]/20'}`}>
                 <Plus className="w-4 h-4 shrink-0 text-[#8F6820]" aria-hidden />
                 <span className="min-w-0"><span className="block">{L('Didn’t find what you are looking for? Request it as you want it', 'جو تلاش کر رہے ہیں نہیں ملا؟ جیسا چاہیں منگوائیں', 'لم تجد ما تبحث عنه؟ اطلبه كما تريده')}</span>
                   <span className="block text-[12px] font-semibold text-[#48596E] truncate">{L(`Request «${q.trim()}», you can add a photo`, `«${q.trim()}» منگوائیں، تصویر بھی لگا سکتے ہیں`, `اطلب «${q.trim()}»، ويمكنك إضافة صورة`)}</span></span>
-              </button>
+              </div>
             </li>
           </ul>
         )}

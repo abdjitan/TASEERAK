@@ -334,7 +334,7 @@ ul { list-style: none; }
 .boq-demo { background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.12); border-radius: var(--r-xl); padding: 22px; backdrop-filter: blur(10px); box-shadow: var(--sh-lg); }
 .demo-bar { display: flex; align-items: center; gap: 8px; margin-bottom: 16px; }
 .demo-bar .d { width: 11px; height: 11px; border-radius: 50%; }
-.demo-bar .d:nth-child(1){ background:#ff5f57;} .demo-bar .d:nth-child(2){ background:#febc2e;} .demo-bar .d:nth-child(3){ background:#28c840;}
+.demo-bar .d:nth-child(1){ background:#D4A543;} .demo-bar .d:nth-child(2){ background:rgba(255,255,255,.35);} .demo-bar .d:nth-child(3){ background:rgba(255,255,255,.2);}
 .demo-bar .fn { margin-inline-start: 8px; font-size: 12.5px; color: rgba(255,255,255,.6); font-weight: 700; display: flex; align-items: center; gap: 7px; }
 .demo-bar .fn svg { width: 15px; height: 15px; color: var(--mech); }
 .demo-row {
@@ -491,7 +491,9 @@ ul { list-style: none; }
     display: flex; flex-direction: column; position: absolute; top: 100%; inset-inline: 12px;
     background: #fff; border-radius: var(--r-md); padding: 14px; box-shadow: var(--sh-lg); gap: 4px; margin-top: 8px;
   }
-  .mobile-open .nav-links a { color: var(--navy) !important; width: 100%; }
+  .mobile-open .nav-links a { width: 100%; }
+  /* navy links only on the white menu (top of page); the scrolled menu is navy with white links (round-4 UX-020) */
+  .nav:not(.scrolled).mobile-open .nav-links a { color: var(--navy) !important; }
 }
 @media (max-width: 560px) {
   .section { padding: 70px 0; }

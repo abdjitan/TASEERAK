@@ -1,7 +1,7 @@
 'use client'
 // «وسيط تسعير» (owner 2026-11-16, migrations 213/214): an independent seller names the shop he
-// buys from. The buyer sees the area before the deal and the shop name after it (248; never the phone). The shop's tax
-// invoice); the seller and admins see everything.
+// buys from. The buyer sees the area before the deal and the shop name after it (248; never the phone). The shop
+// issues its invoice in the buyer's name; the seller and admins see everything.
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { sarLabel } from '@/lib/vat'
@@ -30,7 +30,7 @@ export function SourceShopFields({ value, onChange, locale }: { value: SourceVal
         <li>{L('The invoice is issued by the shop in the buyer’s name.', 'انوائس دکان سے خریدار کے نام جاری ہوتی ہے۔', 'تصدر الفاتورة من المحل باسم المشتري.')}</li>
         {/* UX-135: the shop rule said plainly */}
         <li>{L('The shop must have a commercial registration, and its invoice carries the same price as your offer.', 'دکان کی تجارتی رجسٹریشن ہونا ضروری ہے، اور اس کی انوائس میں وہی قیمت ہو جو آپ کی آفر میں ہے۔', 'يجب أن يكون للمحل سجل تجاري، وأن تحمل فاتورته السعر نفسه الذي في عرضك.')}</li>
-        <li>{L('Attach the invoice when you deliver.', 'ڈیلیوری پر انوائس منسلک کریں۔', 'أرفق الفاتورة عند التسليم.')}</li>
+        <li>{L('Upload the invoice in the invoice step first, then confirm the delivery.', 'پہلے انوائس کے مرحلے میں انوائس اپ لوڈ کریں، پھر ڈیلیوری کی تصدیق کریں۔', 'ارفع الفاتورة في خطوة الفاتورة أولاً، ثم أكّد التسليم.')}</li>
       </ul>
       {/* UX-090: the current limit and the progress towards the next one */}
       {cap && (
@@ -43,9 +43,9 @@ export function SourceShopFields({ value, onChange, locale }: { value: SourceVal
               const cur = sarLabel(locale)
               const next = c <= 15000 ? `50,000 ${cur}` : L('no limit', 'کوئی حد نہیں', 'بلا حد')
               return L(
-                `Your current limit is ${c.toLocaleString('en-US')} ${cur} per deal. You have completed ${Math.min(d, target)} of ${target} successful deals; after ${target} it becomes ${next}.`,
-                `فی سودا آپ کی موجودہ حد ${c.toLocaleString('en-US')} ${cur} ہے۔ آپ نے ${target} میں سے ${Math.min(d, target)} کامیاب سودے مکمل کیے؛ ${target} کے بعد یہ ${next} ہو جائے گی۔`,
-                `حدّك الحالي ${c.toLocaleString('en-US')} ${cur} للصفقة. أكملتَ ${Math.min(d, target)} من ${target} صفقات ناجحة، وبعدها يصبح حدّك ${next}.`)
+                `Your current limit is ${c.toLocaleString('en-US')} ${cur} per deal. You have completed ${Math.min(d, target)} of ${target} successful deals; after ${target} it becomes ${next}. A successful deal: the buyer confirmed receipt and no problem was reported.`,
+                `فی سودا آپ کی موجودہ حد ${c.toLocaleString('en-US')} ${cur} ہے۔ آپ نے ${target} میں سے ${Math.min(d, target)} کامیاب سودے مکمل کیے؛ ${target} کے بعد یہ ${next} ہو جائے گی۔ کامیاب سودا: خریدار نے وصولی کی تصدیق کی اور کوئی شکایت نہیں ہوئی۔`,
+                `حدّك الحالي ${c.toLocaleString('en-US')} ${cur} للصفقة. أكملتَ ${Math.min(d, target)} من ${target} صفقات ناجحة، وبعدها يصبح حدّك ${next}. الصفقة الناجحة: أكّد المشتري استلامها ولم يُفتح عليها بلاغ.`)
             })()}
         </p>
       )}
@@ -83,7 +83,7 @@ export function SourceShopCard({ offerId, editable, locale }: { offerId: string;
     setBusy(true); setErr('')
     const { error } = await createClient().rpc('set_offer_source', { p_offer_id: offerId, p_shop_name: v.name.trim(), p_shop_city: v.city.trim() || null, p_shop_area: v.area.trim() || null, p_shop_phone: v.phone.trim() || null })
     setBusy(false)
-    if (error) { console.error('set_offer_source', error); setErr(L('Could not save the shop — please try again.', 'دکان محفوظ نہیں ہو سکی — دوبارہ کوشش کریں۔', 'تعذّر حفظ المحل، حاول مرة أخرى.')); return }
+    if (error) { console.error('set_offer_source', error); setErr(L('Could not save the shop. Check your connection and try again.', 'دکان محفوظ نہیں ہو سکی۔ کنکشن چیک کر کے دوبارہ کوشش کریں۔', 'تعذّر حفظ المحل. تحقّق من اتصالك وحاول مرة أخرى.')); return }
     setEdit(false); load()
   }
   const missing = !data
@@ -118,6 +118,7 @@ export function SourceShopCard({ offerId, editable, locale }: { offerId: string;
 export function SourceShopBadge({ offerId, locale, compact }: { offerId: string; locale: Loc; compact?: boolean }) {
   const L = tr(locale)
   const [d, setD] = useState<any>(null)
+  const [why, setWhy] = useState(false)
   useEffect(() => {
     let on = true
     createClient().rpc('get_offer_source', { p_offer_id: offerId }).then(({ data }: any) => { if (on) setD(data || null) })
@@ -135,9 +136,16 @@ export function SourceShopBadge({ offerId, locale, compact }: { offerId: string;
       </div>
     )
   }
-  return (
+  if (d.viewer === 'seller') return (
     <div className={`${compact ? 'text-[12px]' : 'text-xs'} mt-1 text-gray-500`}>
       {where ? <>{L('Source shop:', 'ماخذ دکان:', 'المحل المصدر:')} {where}</> : L('Pricing agent', 'قیمت ایجنٹ', 'وسيط تسعير')}
+    </div>
+  )
+  return (
+    <div className={`${compact ? 'text-[12px]' : 'text-xs'} mt-1 text-gray-600`}>
+      <span>{where ? L(`Buys for you from a shop in ${where}`, `آپ کے لیے ${where} کی ایک دکان سے خریدتا ہے`, `يشتري لك من محل في ${where}`) : L('Buys for you from a shop', 'آپ کے لیے ایک دکان سے خریدتا ہے', 'يشتري لك من محل')}</span>
+      {' '}<button type="button" onClick={() => setWhy(v => !v)} aria-expanded={why} className="inline-flex items-center min-h-[44px] font-bold text-[#8F6820] underline underline-offset-2">{L('What does this mean?', 'اس کا کیا مطلب ہے؟', 'ما معنى هذا؟')}</button>
+      {why && <p className="mt-0.5 rounded-lg bg-[#0B2438]/5 border border-[#0B2438]/15 px-2 py-1.5 text-[#0B2438] leading-relaxed">{L('This seller is a pricing agent: they buy the goods for you from a shop with a commercial registration. The shop issues its invoice in your name at the same price, and you see the shop name after choosing the offer.', 'یہ بیچنے والا قیمت ایجنٹ ہے: وہ آپ کے لیے تجارتی رجسٹریشن والی دکان سے سامان خریدتا ہے۔ دکان اسی قیمت پر آپ کے نام انوائس جاری کرتی ہے، اور آفر چننے کے بعد آپ دکان کا نام دیکھتے ہیں۔', 'هذا البائع وسيط تسعير: يشتري لك البضاعة من محل له سجل تجاري، وتصدر فاتورة المحل باسمك بالسعر نفسه، ويظهر لك اسم المحل بعد اختيار العرض.')}</p>}
     </div>
   )
 }

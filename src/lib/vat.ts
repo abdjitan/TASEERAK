@@ -9,12 +9,14 @@ export const withVat = (total: number, vatIncluded: boolean) =>
 
 // Comparable (what the buyer pays) total for a whole offer. A seller without a VAT number adds no
 // VAT: their price is final, whatever vat_included says.
+// Round-4 UX-126: the same rule as the VAT tag (showsVatBreakdown), so a reserved 'supplier_invoice'
+// status never adds VAT while its tag says none is added.
 export const offerComparable = (o: any) =>
-  o?.vat_status === 'not_registered' ? Number(o?.total_price) || 0 : withVat(Number(o?.total_price) || 0, !!o?.vat_included)
+  !showsVatBreakdown(o) ? Number(o?.total_price) || 0 : withVat(Number(o?.total_price) || 0, !!o?.vat_included)
 
 // Comparable total for one line-item entry of a given offer (same rule).
 export const lineComparable = (entryTotal: any, offer: any) =>
-  offer?.vat_status === 'not_registered' ? Number(entryTotal) || 0 : withVat(Number(entryTotal) || 0, !!offer?.vat_included)
+  !showsVatBreakdown(offer) ? Number(entryTotal) || 0 : withVat(Number(entryTotal) || 0, !!offer?.vat_included)
 
 // The seller's VAT situation on an offer (migration 158). NULL = sent before the column = registered.
 //   registered       → normal: net + 15% VAT
@@ -38,7 +40,7 @@ export const isIndependentOffer = (o: any) =>
   o?.supplier?.supplier_tier === 'independent' || INDEPENDENT_TYPES.includes(o?.supplier?.provider_type)
 
 export function vatTag(o: any, locale: string): string {
-  if (!showsVatBreakdown(o) && isIndependentOffer(o)) return locale === 'en' ? 'Final price; the invoice comes from the source shop' : locale === 'ur' ? 'حتمی قیمت؛ انوائس ماخذ دکان سے' : 'سعر نهائي، والفاتورة من المحل المصدر'
+  if (!showsVatBreakdown(o) && isIndependentOffer(o)) return locale === 'en' ? 'Final price; the shop’s invoice in your name' : locale === 'ur' ? 'حتمی قیمت؛ دکان کی انوائس آپ کے نام' : 'سعر نهائي، وفاتورة المحل باسمك'
   if (!showsVatBreakdown(o)) return locale === 'en' ? 'Final price, no VAT added' : locale === 'ur' ? 'حتمی قیمت، اس پر VAT شامل نہیں کیا جاتا' : 'سعر نهائي، لا تُضاف إليه ضريبة القيمة المضافة'
   return locale === 'en' ? 'incl. 15% VAT' : locale === 'ur' ? '15% VAT سمیت' : 'يشمل ضريبة القيمة المضافة 15%'
 }
@@ -68,15 +70,17 @@ export function sellerInvoiceLabel(o: any, locale: string, who: 'buyer' | 'suppl
   if (isIndependentOffer(o)) return who === 'buyer'
     ? (locale === 'en' ? 'The source shop invoice in your name' : locale === 'ur' ? 'آپ کے نام ماخذ دکان کی انوائس' : 'فاتورة المحل المصدر باسمك')
     : (locale === 'en' ? 'The source shop invoice in the buyer’s name' : locale === 'ur' ? 'خریدار کے نام ماخذ دکان کی انوائس' : 'فاتورة المحل المصدر باسم المشتري')
-  if (showsVatBreakdown(o)) return locale === 'en' ? 'The seller’s tax invoice' : locale === 'ur' ? 'بیچنے والے کی ٹیکس انوائس' : 'الفاتورة الضريبية من البائع'
-  return locale === 'en' ? 'The seller’s invoice' : locale === 'ur' ? 'بیچنے والے کی انوائس' : 'فاتورة البائع'
+  // one name for the document everywhere: «فاتورة المورد» (round-4 UX-151)
+  if (showsVatBreakdown(o)) return locale === 'en' ? 'The supplier’s tax invoice' : locale === 'ur' ? 'سپلائر کی ٹیکس انوائس' : 'فاتورة المورد الضريبية'
+  return locale === 'en' ? 'The supplier’s invoice' : locale === 'ur' ? 'سپلائر کی انوائس' : 'فاتورة المورد'
 }
 
 // What the seller is asked to do before confirming delivery (UX-025 / UX-127).
+// Round-4 UX-181: the upload button is in the invoice step (above delivery), never «below».
 export function invoiceGateText(o: any, locale: string): string {
-  if (isIndependentOffer(o)) return locale === 'en' ? 'Upload the source shop’s invoice in the buyer’s name below first, then confirm delivery.' : locale === 'ur' ? 'پہلے نیچے خریدار کے نام ماخذ دکان کی انوائس اپ لوڈ کریں، پھر ڈیلیوری کی تصدیق کریں۔' : 'ارفع فاتورة المحل المصدر باسم المشتري أدناه أولاً، ثم أكّد التسليم.'
-  if (showsVatBreakdown(o)) return locale === 'en' ? 'Upload your tax invoice below first, then confirm delivery.' : locale === 'ur' ? 'پہلے نیچے اپنی ٹیکس انوائس اپ لوڈ کریں، پھر ڈیلیوری کی تصدیق کریں۔' : 'ارفع فاتورتك الضريبية أدناه أولاً، ثم أكّد التسليم.'
-  return locale === 'en' ? 'Upload your sales invoice below first, then confirm delivery.' : locale === 'ur' ? 'پہلے نیچے اپنی سیلز انوائس اپ لوڈ کریں، پھر ڈیلیوری کی تصدیق کریں۔' : 'ارفع فاتورة البيع أدناه أولاً، ثم أكّد التسليم.'
+  if (isIndependentOffer(o)) return locale === 'en' ? 'Next step: ask the source shop for an invoice in the buyer’s name at your offer’s price, upload it in the invoice step, then confirm delivery.' : locale === 'ur' ? 'اگلا قدم: ماخذ دکان سے خریدار کے نام اور اپنی آفر کی قیمت پر انوائس لیں، اسے انوائس کے مرحلے میں اپ لوڈ کریں، پھر ڈیلیوری کی تصدیق کریں۔' : 'الخطوة التالية: اطلب من المحل المصدر فاتورة باسم المشتري وبسعر عرضك، ثم ارفعها في خطوة الفاتورة وأكّد التسليم.'
+  if (showsVatBreakdown(o)) return locale === 'en' ? 'Upload your tax invoice in the invoice step first, then confirm delivery.' : locale === 'ur' ? 'پہلے انوائس کے مرحلے میں اپنی ٹیکس انوائس اپ لوڈ کریں، پھر ڈیلیوری کی تصدیق کریں۔' : 'ارفع فاتورتك الضريبية في خطوة الفاتورة أولاً، ثم أكّد التسليم.'
+  return locale === 'en' ? 'Upload your sales invoice in the invoice step first, then confirm delivery.' : locale === 'ur' ? 'پہلے انوائس کے مرحلے میں اپنی سیلز انوائس اپ لوڈ کریں، پھر ڈیلیوری کی تصدیق کریں۔' : 'ارفع فاتورة البيع في خطوة الفاتورة أولاً، ثم أكّد التسليم.'
 }
 
 // The currency name, one per language everywhere (UX-140): «ر.س» / «SAR» / «ریال».

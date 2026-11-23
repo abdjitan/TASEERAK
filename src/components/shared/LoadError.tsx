@@ -1,6 +1,7 @@
 'use client'
 
 import { useTranslation } from '@/i18n'
+import Button from '@/components/shared/Button'
 
 // A failed load must not look like an empty list: say so, and offer a retry.
 export default function LoadError({ onRetry, message, className = '' }: { onRetry?: () => void; message?: string; className?: string }) {
@@ -15,9 +16,10 @@ export default function LoadError({ onRetry, message, className = '' }: { onRetr
         {message || L('We could not load this page. Check your connection and try again.', 'یہ صفحہ لوڈ نہیں ہو سکا۔ اپنا کنکشن چیک کریں اور دوبارہ کوشش کریں۔', 'تعذّر تحميل البيانات. تحقّق من اتصالك ثم أعد المحاولة.')}
       </p>
       {onRetry && (
-        <button type="button" onClick={onRetry} className="mt-4 px-5 py-2 rounded-xl text-sm font-bold text-white" style={{ background: '#0B2438' }}>
+        // the shared button: navy secondary, 44px tall (round-4 UX-103)
+        <Button variant="secondary" onClick={onRetry} className="mt-4 text-sm">
           {L('Try again', 'دوبارہ کوشش کریں', 'إعادة المحاولة')}
-        </button>
+        </Button>
       )}
     </div>
   )

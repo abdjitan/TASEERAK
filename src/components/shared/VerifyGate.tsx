@@ -12,6 +12,8 @@ import { useTranslation } from '@/i18n'
 import PhoneVerify from '@/components/shared/PhoneVerify'
 import EmailVerify from '@/components/shared/EmailVerify'
 import { notify } from '@/lib/askConfirm'
+import { isAccountVerified } from '@/components/shared/verifyRule'
+import { useFocusTrap } from '@/components/shared/useFocusTrap'
 
 type Ensure = () => Promise<boolean>
 const Ctx = createContext<Ensure>(async () => true)
@@ -26,6 +28,9 @@ export default function VerifyGateProvider({ children }: { children: React.React
   const [p, setP] = useState<any>(null)
   const [email, setEmail] = useState('')
   const resolver = useRef<((ok: boolean) => void) | null>(null)
+  const dialogRef = useRef<HTMLDivElement>(null)
+  // focus moves into the sheet, Tab stays inside, and returns to the button that opened it (round-4 UX-116)
+  useFocusTrap(dialogRef, open && !!p)
 
   async function fetchState(): Promise<{ ok: boolean; prof: any; mail: string }> {
     const supabase = createClient()
@@ -36,7 +41,7 @@ export default function VerifyGateProvider({ children }: { children: React.React
       supabase.rpc('phone_verify_required'),
     ])
     // buyers need only the mobile; their email is optional and encouraged by a banner (owner 2026-11-19, migration 234)
-    const ok = !prof || prof.role === 'admin' || req !== true || (!!prof.phone_verified_at && (prof.role === 'contractor' || !!prof.email_verified_at))
+    const ok = isAccountVerified(prof, req) // one shared rule (round-4 UX-067)
     return { ok, prof, mail: user.email || '' }
   }
 
@@ -82,7 +87,7 @@ export default function VerifyGateProvider({ children }: { children: React.React
       {open && p && (
         <div className="fixed inset-0 z-[70] flex items-end sm:items-center justify-center bg-[#071827]/60 p-0 sm:p-4">
           {/* a tap on the backdrop no longer closes the sheet (it cancelled the action silently, UX-102) */}
-          <div dir={dir} role="dialog" aria-modal="true" aria-labelledby="vg-title"
+          <div ref={dialogRef} dir={dir} role="dialog" aria-modal="true" aria-labelledby="vg-title"
             className="w-full sm:max-w-lg max-h-[92vh] overflow-y-auto bg-white rounded-t-3xl sm:rounded-3xl p-5 space-y-4 shadow-2xl">
             <div className="flex items-start justify-between gap-3">
               <div>

@@ -11,6 +11,7 @@ import { useTranslation } from '@/i18n'
 import LanguageSwitcher from '@/components/shared/LanguageSwitcher'
 import SellerIcon from '@/components/shared/SellerIcon'
 import { Check } from 'lucide-react'
+import PublicFooter from '@/components/public/PublicFooter'
 
 export const INVITE_CODE_KEY = 'tsk_invite_code'
 
@@ -18,6 +19,7 @@ export default function JoinSupplier() {
   const { locale, dir } = useTranslation()
   const L = (en: string, ur: string, ar: string) => (locale === 'en' ? en : locale === 'ur' ? ur : ar)
   const [href, setHref] = useState('/register?role=supplier&only=1&email=1')
+  const [carry, setCarry] = useState('') // ?ref= and ?i= passed on to the kind links
 
   useEffect(() => {
     const qs = new URLSearchParams(window.location.search)
@@ -26,6 +28,10 @@ export default function JoinSupplier() {
     try { localStorage.setItem(INVITE_CODE_KEY, code) } catch {}
     const ref = qs.get('ref')
     if (ref) setHref('/register?role=supplier&only=1&email=1&ref=' + encodeURIComponent(ref))
+    const keep = new URLSearchParams()
+    if (ref) keep.set('ref', ref)
+    if (raw && code !== 'direct') keep.set('i', code)
+    setCarry(keep.toString() ? '?' + keep.toString() : '')
     createClient().rpc('log_invite_open', { p_code: code }).then(() => {}, () => {})
   }, [])
 
@@ -74,12 +80,12 @@ export default function JoinSupplier() {
           <div className="bg-white rounded-2xl p-4 border border-line">
             <div className="font-bold text-navy text-sm flex items-center gap-1.5"><SellerIcon name="building" /> {L('Company or shop', 'کمپنی یا دکان', 'شركة أو محل')}</div>
             <p className="text-[13px] text-ink-2 mt-1 leading-relaxed">{L('Your commercial registration (the unified number, 10 digits starting with 7). You can add your sales team later.', 'آپ کی تجارتی رجسٹریشن (متحدہ نمبر، 7 سے شروع 10 ہندسے)۔ سیلز ٹیم بعد میں شامل کر سکتے ہیں۔', 'سجلك التجاري (الرقم الوطني الموحد: 10 أرقام يبدأ بـ7)، ويمكنك إضافة فريق المبيعات لاحقاً.')}</p>
-            <Link href={`/join/company`} className="mt-1 inline-flex items-center min-h-[44px] text-[13px] font-bold text-[#8F6820] hover:underline">{L('Sign up as a company or shop', 'کمپنی یا دکان کے طور پر رجسٹر کریں', 'سجّل كشركة أو محل')}</Link>
+            <Link href={`/join/company${carry}`} className="mt-1 inline-flex items-center min-h-[44px] text-[13px] font-bold text-[#8F6820] hover:underline">{L('Sign up as a company or shop', 'کمپنی یا دکان کے طور پر رجسٹر کریں', 'سجّل كشركة أو محل')}</Link>
           </div>
           <div className="bg-white rounded-2xl p-4 border border-line">
             <div className="font-bold text-navy text-sm flex items-center gap-1.5"><SellerIcon name="user" /> {L('Pricing agent', 'قیمت ایجنٹ', 'وسيط تسعير')}</div>
             <p className="text-[13px] text-ink-2 mt-1 leading-relaxed">{L('No registration needed. The deal is done with the source shop’s invoice in the buyer’s name, up to 15,000 SAR per deal at first.', 'رجسٹریشن کی ضرورت نہیں۔ سودا خریدار کے نام ماخذ دکان کی انوائس سے ہوتا ہے، شروع میں فی سودا 15,000 ریال تک۔', 'لا تحتاج سجلاً تجارياً. تتم الصفقة بفاتورة المحل المصدر باسم المشتري، وحدّك في البداية 15,000 ر.س للصفقة.')}</p>
-            <Link href={`/join/seller`} className="mt-1 inline-flex items-center min-h-[44px] text-[13px] font-bold text-[#8F6820] hover:underline">{L('Sign up as a pricing agent', 'قیمت ایجنٹ کے طور پر رجسٹر کریں', 'سجّل كوسيط تسعير')}</Link>
+            <Link href={`/join/seller${carry}`} className="mt-1 inline-flex items-center min-h-[44px] text-[13px] font-bold text-[#8F6820] hover:underline">{L('Sign up as a pricing agent', 'قیمت ایجنٹ کے طور پر رجسٹر کریں', 'سجّل كوسيط تسعير')}</Link>
           </div>
         </div>
 
@@ -104,7 +110,17 @@ export default function JoinSupplier() {
           <div className="mt-2 font-bold text-navy">{L('Cement 50 kg: 200 bags, Rebar 12 mm: 3 tons', 'سیمنٹ 50 کلو: 200 بوری، سریا 12 ملی میٹر: 3 ٹن', 'أسمنت 50 كغ: 200 كيس، حديد تسليح 12 ملم: 3 أطنان')}</div>
           <div className="text-[13px] text-ink-2 mt-1">{L('Riyadh · delivery required · pricing closes in 2 days', 'ریاض · ڈیلیوری ضروری · قیمت کی مہلت 2 دن', 'الرياض · التوصيل مطلوب · تنتهي مهلة التسعير بعد يومين')}</div>
         </div>
+
+        {/* round-4 UX-138: a closing call to action */}
+        <div className="mt-8 rounded-2xl p-6 text-center text-white" style={{ background: 'linear-gradient(135deg,#071827,#102E45)' }}>
+          <h2 className="text-xl font-extrabold">{L('Ready to start?', 'شروع کرنے کے لیے تیار ہیں؟', 'جاهز للبدء؟')}</h2>
+          <Link href={href} className="mt-4 flex items-center justify-center w-full sm:max-w-sm sm:mx-auto min-h-[52px] rounded-xl font-extrabold text-[#071827] text-base" style={{ background: 'linear-gradient(135deg,#F5C55B,#D4A543)' }}>
+            {L('Create a free supplier account', 'مفت سپلائر اکاؤنٹ بنائیں', 'أنشئ حساب مورد مجاناً')}
+          </Link>
+          <p className="text-sm text-white/80 mt-3">{L('Already have an account?', 'پہلے سے اکاؤنٹ ہے؟', 'لديك حساب؟')} <Link href="/login?m=email" className="inline-flex items-center min-h-[44px] font-extrabold text-[#F5C55B] hover:underline">{L('Sign in', 'سائن اِن', 'تسجيل الدخول')}</Link></p>
+        </div>
       </main>
+      <PublicFooter />
     </div>
   )
 }

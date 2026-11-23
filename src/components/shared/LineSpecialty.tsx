@@ -13,7 +13,7 @@ export type SpecialtyChoice = { sector: string; sub: string | null; section?: st
 /** a choice that routes somewhere: a specialty, or at least a main section */
 export const choiceDone = (v?: SpecialtyChoice) => !!v && (!!v.sub || !!v.section)
 
-export default function LineSpecialty({ name, sector, value, onChange, locale, simple = false }: {
+export default function LineSpecialty({ name, sector, value, onChange, locale, simple = false, fromPhoto = false }: {
   name: string
   sector: string
   /** undefined = not chosen yet (our guess is shown); sub null = «لا أعرف» */
@@ -22,6 +22,8 @@ export default function LineSpecialty({ name, sector, value, onChange, locale, s
   locale: string
   /** a home buyer: no heavy machinery section */
   simple?: boolean
+  /** the name came from a photo: «we suggest», not «not found» (round-4 UX-119) */
+  fromPhoto?: boolean
 }) {
   const L = (en: string, ur: string, ar: string) => (locale === 'en' ? en : locale === 'ur' ? ur : ar)
   const pick = (o: { ar: string; en: string; ur: string }) => (locale === 'en' ? o.en : locale === 'ur' ? o.ur : o.ar)
@@ -45,7 +47,7 @@ export default function LineSpecialty({ name, sector, value, onChange, locale, s
     return (
       <div className={`rounded-xl border p-3 flex items-center justify-between gap-3 flex-wrap ${chosen ? 'border-[#0F6E56]/30 bg-[#0F6E56]/[.05]' : 'border-[#D4A543]/60 bg-[#D4A543]/[.07]'}`}>
         <div className="min-w-0 text-sm">
-          <span className="text-gray-600">{chosen ? L('Specialty: ', 'شعبہ: ', 'التخصص: ') : L('Not found in the materials guide. Is it from: ', 'مواد کی فہرست میں نہیں ملا۔ کیا یہ اس میں سے ہے: ', 'لم نجدها في دليل المواد. هل هي من: ')}</span>
+          <span className="text-gray-600">{chosen ? L('Specialty: ', 'شعبہ: ', 'التخصص: ') : fromPhoto ? L('Which section is this material in? We suggest: ', 'یہ سامان کس شعبے میں ہے؟ ہماری تجویز: ', 'في أي قسم تقع هذه المادة؟ نقترح: ') : L('Not found in the materials guide. Is it from: ', 'مواد کی فہرست میں نہیں ملا۔ کیا یہ اس میں سے ہے: ', 'لم نجدها في دليل المواد. هل هي من: ')}</span>
           <b className="text-[#0B2438]">{curLabel || (chosen ? L(`${sectionName(value?.section)} (all its suppliers)`, `${sectionName(value?.section)} (سب سپلائرز)`, `${sectionName(value?.section)} (كل موردي القسم)`) : '')}</b>
           {!chosen && curLabel && <span className="text-gray-600">{L('?', '؟', '؟')}</span>}
         </div>

@@ -54,7 +54,7 @@ export default function FixSignupEmail({ email, password, locale, captchaToken, 
       {open && (
         <div className="mt-2 space-y-2">
           <div className="text-[12px] text-gray-600">{L('Your account was saved with:', 'آپ کا اکاؤنٹ اس ای میل سے محفوظ ہے:', 'حُفظ حسابك بالبريد:')} <b dir="ltr">{email}</b></div>
-          <input type="email" dir="ltr" value={newEmail} onChange={e => setNewEmail(e.target.value)} className="input-field text-sm" placeholder="name@gmail.com" autoComplete="email" />
+          <input type="email" dir="ltr" value={newEmail} onChange={e => setNewEmail(e.target.value)} className="input-field text-sm" placeholder="name@gmail.com" autoComplete="email" aria-label={L('The correct email', 'درست ای میل', 'البريد الصحيح')} />
           <button type="button" onClick={fix} disabled={busy} className="w-full min-h-11 rounded-xl text-sm font-extrabold disabled:opacity-50" style={{ background: '#D4A543', color: '#071827' }}>
             {busy ? '…' : L('Correct and send the link', 'درست کریں اور لنک بھیجیں', 'صحّح وأرسل الرابط')}
           </button>

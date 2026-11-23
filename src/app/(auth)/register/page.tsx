@@ -59,14 +59,14 @@ type FormData = z.infer<typeof schema>
 const TR = {
   ar: {
     title: 'أنشئ حسابك', sub: 'دقيقة واحدة وتبدأ',
-    supTitle: 'سجّل كمورد', supSub: 'بيانات نشاطك الأساسية الآن، والموقع والأقسام والتوثيق بعد الدخول',
+    supTitle: 'سجّل كمورد', supSub: 'أدخل بيانات نشاطك الأساسية الآن، وأكمل الموقع والأقسام والتوثيق بعد الدخول.',
     toSupplier: 'صاحب محل أو مورد مواد؟', toSupplierCta: 'سجّل كمورد',
-    toBuyer: 'تحتاج أسعاراً لمشروعك؟', toBuyerCta: 'سجّل لطلب الأسعار',
+    toBuyer: 'تحتاج أسعار مواد البناء؟', toBuyerCta: 'سجّل لطلب الأسعار',
     supplier: 'أقدّم أسعار المواد', supplierDesc: 'شركة أو محل أو مصنع أو وسيط تسعير',
     contractor: 'أبحث عن أسعار', contractorDesc: 'اطلب أسعار المواد من الموردين وقارن العروض',
     accountType: 'نوع الحساب', fullName: 'الاسم الكامل', pickTitle: 'كيف ستستخدم تسعيرك؟', pickSub: 'اختر نوع حسابك للمتابعة', change: 'تغيير',
     company: 'اسم المحل أو النشاط التجاري', companyHint: 'يظهر للمشترين على عروضك',
-    brandH: 'ابدأ مجاناً خلال دقيقة.', brandP: 'حساب واحد تطلب به الأسعار أو تقدّمها، وتتابع كل شيء من الطلب إلى أمر الشراء.',
+    brandH: 'ابدأ مجاناً خلال دقيقة.', brandP: 'حساب واحد تطلب به الأسعار أو تقدّمها، وتتابع طلبك حتى التسليم.',
     l1: 'أرسل قائمة موادك مرة واحدة، وتصلك عروض عدة موردين', l2: 'قارن واختر الأرخص لكل مادة', l3: 'مجاني خلال الإطلاق، بلا عمولة',
     corpQ: 'شركة لديها فريق مشتريات؟', corpA: 'نجهّز لك حساباً للشركة يضم موظفيك — تواصل معنا',
     copyright: '© 2026 تسعيرك · منصة التسعير والتوريد لمواد البناء',
@@ -78,7 +78,7 @@ const TR = {
     agreeErr: 'يجب الموافقة على الشروط وسياسة الخصوصية',
     captchaErr: 'يرجى إكمال خطوة التحقق (لستُ روبوتاً) ثم إعادة المحاولة.',
     verifyTitle: 'فعّل بريدك الإلكتروني', verifyBody: 'أرسلنا رابط تأكيد إلى بريدك الإلكتروني. افتحه لتفعيل حسابك، ثم سجّل الدخول.',
-    verifyNext: 'بعد الدخول ستكمل بياناتك (الموقع، القطاعات، والتوثيق) بخطوات سهلة.',
+    verifyNext: 'بعد الدخول ستكمل بياناتك (الموقع، وما تبيعه، والتوثيق) بخطوات سهلة.', verifyNextBuyer: 'بعد الدخول نسألك عن عنوان التوصيل فقط.',
     junk: 'لم تجد الرسالة؟ افحص مجلد البريد غير الهام (Junk أو Spam).',
     supBrandH: 'تصلك طلبات المواد التي تبيعها.', supBrandP: 'سعّر طلبات المشترين في منطقتك من جوالك، وتابع صفقاتك من العرض إلى التسليم.',
     sl1: 'طلبات مطابقة لتخصصك ومنطقتك فقط', sl2: 'تسعير سريع لكل مادة مع عرض واحد', sl3: 'مجاني خلال الإطلاق، بلا عمولة ولا اشتراك',
@@ -86,14 +86,14 @@ const TR = {
   },
   en: {
     title: 'Create your account', sub: 'One minute and you are in',
-    supTitle: 'Register as a supplier', supSub: 'Your basic business details now; location, categories and verification after signing in',
+    supTitle: 'Register as a supplier', supSub: 'Enter your basic business details now, and complete your location, sections and verification after signing in.',
     toSupplier: 'Own a shop or supply materials?', toSupplierCta: 'Register as a supplier',
-    toBuyer: 'Need prices for your project?', toBuyerCta: 'Sign up to request prices',
+    toBuyer: 'Need building-material prices?', toBuyerCta: 'Sign up to request prices',
     supplier: 'I provide prices', supplierDesc: 'Company, shop, factory or independent seller',
     contractor: 'I need prices', contractorDesc: 'Request material prices from suppliers and compare quotes',
     accountType: 'Account type', fullName: 'Full name', pickTitle: 'How will you use Taseerak?', pickSub: 'Choose your account type to continue', change: 'Change',
     company: 'Shop or business name', companyHint: 'Shown to buyers on your offers',
-    brandH: 'Start free in a minute.', brandP: 'One account to request prices or to quote them, and follow everything from request to purchase order.',
+    brandH: 'Start free in a minute.', brandP: 'One account to request prices or to quote them, and follow your request until delivery.',
     l1: 'Send your list once and get quotes from several suppliers', l2: 'Compare and pick the cheapest for each item', l3: 'Free during launch, no commission',
     corpQ: 'A company with a procurement team?', corpA: 'We set up a company account for your staff — contact us',
     copyright: '© 2026 Taseerak · Procurement platform for construction materials',
@@ -105,7 +105,7 @@ const TR = {
     agreeErr: 'You must agree to the Terms & Privacy Policy',
     captchaErr: 'Please complete the “I am human” check and try again.',
     verifyTitle: 'Verify your email', verifyBody: 'We sent a confirmation link to your email. Open it to activate your account, then sign in.',
-    verifyNext: 'After signing in you will complete your details (location, sectors, verification) in easy steps.',
+    verifyNext: 'After signing in you will complete your details (location, what you sell, verification) in easy steps.', verifyNextBuyer: 'After signing in we only ask for your delivery address.',
     junk: 'No email? Check your Junk or Spam folder.',
     supBrandH: 'Requests for the materials you sell reach you.', supBrandP: 'Price buyers’ requests in your region from your phone and follow your deals from offer to delivery.',
     sl1: 'Only requests that match your specialty and region', sl2: 'Quick pricing, one offer for all materials', sl3: 'Free during launch, no commission and no subscription',
@@ -113,14 +113,14 @@ const TR = {
   },
   ur: {
     title: 'اپنا اکاؤنٹ بنائیں', sub: 'ایک منٹ اور آپ اندر ہیں',
-    supTitle: 'سپلائر کے طور پر رجسٹر کریں', supSub: 'ابھی کاروبار کی بنیادی تفصیلات؛ مقام، شعبے اور تصدیق سائن اِن کے بعد',
+    supTitle: 'سپلائر کے طور پر رجسٹر کریں', supSub: 'ابھی اپنے کاروبار کی بنیادی تفصیلات درج کریں، اور سائن اِن کے بعد مقام، سیکشن اور تصدیق مکمل کریں۔',
     toSupplier: 'دکان ہے یا سامان سپلائی کرتے ہیں؟', toSupplierCta: 'سپلائر کے طور پر رجسٹر کریں',
-    toBuyer: 'اپنے پروجیکٹ کے لیے قیمتیں چاہییں؟', toBuyerCta: 'قیمتیں منگوانے کے لیے رجسٹر کریں',
+    toBuyer: 'تعمیراتی سامان کی قیمتیں چاہییں؟', toBuyerCta: 'قیمتیں منگوانے کے لیے رجسٹر کریں',
     supplier: 'میں قیمتیں دیتا ہوں', supplierDesc: 'کمپنی، دکان، فیکٹری یا آزاد فروخت کنندہ',
     contractor: 'مجھے قیمتیں چاہییں', contractorDesc: 'قیمتیں منگوائیں اور موازنہ کریں',
     accountType: 'اکاؤنٹ کی قسم', fullName: 'پورا نام', pickTitle: 'آپ تسعیرک کیسے استعمال کریں گے؟', pickSub: 'جاری رکھنے کے لیے اکاؤنٹ کی قسم منتخب کریں', change: 'تبدیل کریں',
     company: 'دکان یا کاروبار کا نام', companyHint: 'خریدار آپ کی آفر پر یہی نام دیکھیں گے',
-    brandH: 'ایک منٹ میں مفت شروع کریں۔', brandP: 'ایک اکاؤنٹ سے قیمتیں منگوائیں یا دیں، اور درخواست سے پرچیز آرڈر تک سب کچھ دیکھیں۔',
+    brandH: 'ایک منٹ میں مفت شروع کریں۔', brandP: 'ایک اکاؤنٹ سے قیمتیں منگوائیں یا دیں، اور ڈیلیوری تک اپنی درخواست دیکھیں۔',
     l1: 'اپنی فہرست ایک بار بھیجیں، کئی سپلائرز کی آفرز پائیں', l2: 'موازنہ کریں اور ہر چیز کی سستی قیمت چنیں', l3: 'لانچ کے دوران مفت، کوئی کمیشن نہیں',
     corpQ: 'خریداری ٹیم والی کمپنی؟', corpA: 'ہم آپ کے عملے کے لیے کمپنی اکاؤنٹ بناتے ہیں — رابطہ کریں',
     copyright: '© 2026 تسعیرک · تعمیراتی سامان کی قیمتوں کا پلیٹ فارم',
@@ -132,10 +132,10 @@ const TR = {
     agreeErr: 'شرائط اور پرائیویسی پالیسی سے اتفاق ضروری ہے',
     captchaErr: 'براہ کرم تصدیق مکمل کریں (میں روبوٹ نہیں ہوں) اور دوبارہ کوشش کریں۔',
     verifyTitle: 'اپنا ای میل تصدیق کریں', verifyBody: 'ہم نے آپ کے ای میل پر تصدیقی لنک بھیجا ہے۔ اسے کھول کر اکاؤنٹ فعال کریں، پھر سائن ان کریں۔',
-    verifyNext: 'سائن اِن کے بعد آپ اپنی تفصیلات (مقام، شعبے، تصدیق) آسان مراحل میں مکمل کریں گے۔',
+    verifyNext: 'سائن اِن کے بعد آپ اپنی تفصیلات (مقام، آپ کیا بیچتے ہیں، تصدیق) آسان مراحل میں مکمل کریں گے۔', verifyNextBuyer: 'سائن اِن کے بعد ہم صرف آپ کا ڈیلیوری پتہ پوچھیں گے۔',
     junk: 'ای میل نہیں ملی؟ Junk یا Spam فولڈر دیکھیں۔',
     supBrandH: 'جو سامان آپ بیچتے ہیں اس کی درخواستیں آپ تک پہنچتی ہیں۔', supBrandP: 'اپنے علاقے کے خریداروں کی درخواستوں کی قیمت فون سے دیں اور سودے آفر سے ڈیلیوری تک دیکھیں۔',
-    sl1: 'صرف آپ کی مہارت اور علاقے کی درخواستیں', sl2: 'تمام مال کے لیے ایک آفر، تیز قیمت', sl3: 'لانچ کے دوران مفت، نہ کمیشن نہ سبسکرپشن',
+    sl1: 'صرف آپ کے تخصص اور علاقے کی درخواستیں', sl2: 'تمام مال کے لیے ایک آفر، تیز قیمت', sl3: 'لانچ کے دوران مفت، نہ کمیشن نہ سبسکرپشن',
     goSignIn: 'سائن ان پر جائیں', home: 'مرکزی صفحہ',
   },
 }
@@ -249,7 +249,7 @@ export default function RegisterPage() {
     }
     setCrErr('')
     const focusCr = () => setTimeout(() => document.getElementById('reg-cr')?.focus(), 30)
-    if (asksBusiness && !cr.trim()) { setCrErr(locale === 'en' ? 'A company or shop needs its commercial registration number. No registration? Choose «Pricing agent».' : locale === 'ur' ? 'کمپنی یا دکان کے لیے تجارتی رجسٹریشن نمبر ضروری ہے۔ رجسٹریشن نہیں؟ «قیمت ایجنٹ» منتخب کریں۔' : 'الشركة أو المحل تحتاج رقم السجل التجاري. ليس لديك سجل؟ اختر «وسيط تسعير».'); focusCr(); return }
+    if (asksBusiness && !cr.trim()) { setCrErr(locale === 'en' ? 'A company or shop needs its commercial registration number. No registration? Choose «Pricing agent».' : locale === 'ur' ? 'کمپنی یا دکان کے لیے تجارتی رجسٹریشن نمبر ضروری ہے۔ رجسٹریشن نہیں؟ «قیمت ایجنٹ» منتخب کریں۔' : 'تحتاج الشركة أو المحل إلى رقم السجل التجاري. ليس لديك سجل؟ اختر «وسيط تسعير».'); focusCr(); return }
     if (asksBusiness && cr && !isUnifiedCr(normalizeCrInput(cr))) { setCrErr(crFormatText(locale)); focusCr(); return }
     // owner 2026-11-23: one CR = one account. A CR held by another account blocks sign-up; the real owner
     // contacts support, who opens an ownership claim (cr_claims) after checking.
@@ -313,7 +313,7 @@ export default function RegisterPage() {
           <h1 className="text-xl font-bold text-navy mb-2">{t.verifyTitle}</h1>
           <p className="text-sm text-gray-500 mb-2">{t.verifyBody}</p>
           {sentTo && <p className="text-sm font-bold text-navy mb-2" dir="ltr">{sentTo.email}</p>}
-          <p className="text-[13px] text-gray-600 mb-2">{teamToken ? (locale === 'en' ? 'After confirming, sign in and you will come back to the invitation to join.' : locale === 'ur' ? 'تصدیق کے بعد سائن اِن کریں، آپ شامل ہونے کے لیے دعوت پر واپس آئیں گے۔' : 'بعد التأكيد سجّل الدخول، وستعود إلى الدعوة لإتمام الانضمام.') : t.verifyNext}</p>
+          <p className="text-[13px] text-gray-600 mb-2">{teamToken ? (locale === 'en' ? 'After confirming, sign in and you will come back to the invitation to join.' : locale === 'ur' ? 'تصدیق کے بعد سائن اِن کریں، آپ شامل ہونے کے لیے دعوت پر واپس آئیں گے۔' : 'بعد التأكيد سجّل الدخول، وستعود إلى الدعوة لإتمام الانضمام.') : selectedType === 'contractor' ? t.verifyNextBuyer : t.verifyNext}</p>
           <p className="text-[13px] text-gray-600 mb-6">{t.junk}</p>
           <Link href={selectedType === 'supplier' ? '/login?m=email' : '/login'} className="flex items-center justify-center w-full min-h-[44px] py-3 rounded-xl font-extrabold text-[#071827] text-sm" style={{ background: 'linear-gradient(135deg,#F5C55B,#D4A543)' }}>{t.goSignIn}</Link>
           {sentTo && <FixSignupEmail email={sentTo.email} password={sentTo.password} locale={locale} onFixed={(e) => setSentTo(s => s ? { ...s, email: e } : s)} />}
@@ -354,7 +354,7 @@ export default function RegisterPage() {
             {t.home}
           </a>
           <div className="flex items-center gap-4">
-            <Link href={selectedType === 'supplier' ? '/login?m=email' : '/login'} className="inline-flex items-center min-h-[44px] text-sm font-bold text-orange-dark hover:underline">{t.haveAccount} {t.login}</Link>
+            <Link href={selectedType === 'supplier' ? '/login?m=email' : '/login'} className="hidden sm:inline-flex items-center min-h-[44px] text-sm font-bold text-orange-dark hover:underline">{t.haveAccount} {t.login}</Link>
             <LanguageSwitcher variant="minimal" />
           </div>
         </div>
@@ -393,7 +393,7 @@ export default function RegisterPage() {
             {selectedType === 'supplier' && !sellerKind && !teamToken && (
             <div>
                 <p className="text-base font-extrabold text-navy mb-1">{locale === 'en' ? 'First: what kind of seller are you?' : locale === 'ur' ? 'پہلے: آپ کس قسم کے بیچنے والے ہیں؟' : 'أولاً: ما نوع حسابك؟'}</p>
-                <p className="text-xs text-gray-500 mb-3">{locale === 'en' ? 'A company or shop needs a commercial registration.' : locale === 'ur' ? 'کمپنی یا دکان کو تجارتی رجسٹریشن چاہیے۔' : 'الشركة أو المحل تحتاج سجلاً تجارياً.'}</p>
+                <p className="text-xs text-gray-500 mb-3">{locale === 'en' ? 'A company or shop needs a commercial registration.' : locale === 'ur' ? 'کمپنی یا دکان کو تجارتی رجسٹریشن چاہیے۔' : 'تحتاج الشركة أو المحل إلى سجل تجاري.'}</p>
                 <div className="grid sm:grid-cols-2 gap-3">
                   {(['company', 'independent'] as const).map(k => {
                     const on = sellerKind === k
@@ -438,15 +438,24 @@ export default function RegisterPage() {
               </a>
             )}
             {selectedType === 'supplier' && sellerKind === 'company' && !teamToken && <div>
-              <label htmlFor="reg-company" className="block text-xs font-semibold text-gray-600 mb-1">{t.company} * <span className="text-gray-500 font-normal">— {t.companyHint}</span></label>
-              <input id="reg-company" {...register('company_name_ar')} autoComplete="organization" className="input-field" placeholder={locale === 'en' ? 'Al-Sakhr Building Materials' : locale === 'ur' ? 'الصخر بلڈنگ میٹریلز' : 'مؤسسة الصخر لمواد البناء'} />
+              <label htmlFor="reg-company" className="block text-xs font-semibold text-gray-600 mb-1">{t.company} *</label>
+              <input id="reg-company" {...register('company_name_ar')} autoComplete="organization" className="input-field" aria-describedby="reg-company-hint" placeholder={locale === 'en' ? 'Al-Sakhr Building Materials' : locale === 'ur' ? 'الصخر بلڈنگ میٹریلز' : 'مؤسسة الصخر لمواد البناء'} />
+              <p id="reg-company-hint" className="text-[12px] text-gray-500 mt-1">{t.companyHint}</p>
               {errors.company_name_ar && <p className="text-red-600 text-[13px] mt-1">{vmsg(errors.company_name_ar.message, locale)}</p>}
-              <label htmlFor="reg-cr" className="block text-xs font-semibold text-gray-600 mb-1 mt-3">{locale === 'en' ? 'Commercial registration no.' : locale === 'ur' ? 'تجارتی رجسٹریشن نمبر' : 'رقم السجل التجاري'} <span className="text-red-500">*</span> <span className="text-gray-500 font-normal">— {locale === 'en' ? 'unified number, 10 digits starting with 7' : locale === 'ur' ? 'متحدہ نمبر، 7 سے شروع 10 ہندسے' : 'الرقم الوطني الموحد: 10 أرقام يبدأ بـ 7'}</span></label>
+              <label htmlFor="reg-cr" className="block text-xs font-semibold text-gray-600 mb-1 mt-3">{locale === 'en' ? 'Commercial registration no.' : locale === 'ur' ? 'تجارتی رجسٹریشن نمبر' : 'رقم السجل التجاري'} <span className="text-red-500">*</span></label>
               <input id="reg-cr" value={cr} inputMode="numeric" dir="ltr" maxLength={10} className="input-field" placeholder="7XXXXXXXXX"
                 aria-invalid={crTaken || !!crErr} aria-describedby={crTaken ? 'reg-cr-taken' : crErr ? 'reg-cr-err' : undefined}
                 onChange={(e) => { setCr(normalizeCrInput(e.target.value).slice(0, 10)); if (crTaken) setCrTaken(false); setCrErr(''); setCrCheckFailed(false) }} onBlur={(e) => { checkCr(e.target.value) }} />
+              <p className="text-[12px] text-gray-500 mt-1">{locale === 'en' ? 'The unified national number: 10 digits starting with 7.' : locale === 'ur' ? 'متحدہ قومی نمبر: 7 سے شروع ہونے والے 10 ہندسے۔' : 'الرقم الوطني الموحد: 10 أرقام يبدأ بـ7.'}</p>
               {crErr && <p id="reg-cr-err" role="alert" className="text-red-600 text-[13px] mt-1">{crErr}</p>}
-              {crCheckFailed && !crErr && !crTaken && <p role="status" className="text-[#8F6820] text-[13px] mt-1">{crCheckFailedText}</p>}
+              {/* round-4 UX-090: the check could not run (rate limit / offline): sign-up still waits, and support is one tap away */}
+              {crCheckFailed && !crErr && !crTaken && (
+                <div role="status" className="text-[13px] mt-1 rounded-lg border border-[#D4A543]/50 bg-[#D4A543]/10 p-2.5 text-[#071827]">
+                  <p>{crCheckFailedText}</p>
+                  <a href={`mailto:${OPERATOR.email}?subject=${encodeURIComponent(locale === 'en' ? 'Commercial registration check at sign-up' : locale === 'ur' ? 'رجسٹریشن کے وقت تجارتی رجسٹریشن کی تصدیق' : 'التحقق من السجل التجاري عند التسجيل')}&body=${encodeURIComponent((locale === 'en' ? 'Commercial registration: ' : locale === 'ur' ? 'تجارتی رجسٹریشن: ' : 'رقم السجل التجاري: ') + normalizeCrInput(cr))}`}
+                    className="mt-1 inline-flex items-center min-h-[44px] font-bold underline text-[#8F6820]">{locale === 'en' ? 'Email support about the registration' : locale === 'ur' ? 'رجسٹریشن کے بارے میں سپورٹ کو ای میل کریں' : 'راسل الدعم بشأن السجل'}</a>
+                </div>
+              )}
               {/* UX-040: one text everywhere; the visitor e-mails support with the CR (the address is shown to copy) */}
               {crTaken && (
                 <div id="reg-cr-taken" role="alert" className="text-[#071827] text-[13px] bg-[#D4A543]/10 border border-[#D4A543]/50 rounded-lg p-2.5 mt-1">

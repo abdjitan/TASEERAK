@@ -60,7 +60,7 @@ export default function JoinTeamPage() {
     }
     const j: any = data || {}
     if (j.ok || j.error === 'invalid_invite' || j.error === 'already_member') { try { localStorage.removeItem(TEAM_INVITE_KEY) } catch {} }
-    if (j.ok) { window.location.href = '/supplier/dashboard'; return }
+    if (j.ok) { window.location.href = '/supplier/dashboard?joined=1'; return }
     setBusy(false)
     setAlreadyMember(j.error === 'already_member') // UX-137: a member already: offer the way to the dashboard
     setError(({
@@ -99,7 +99,7 @@ export default function JoinTeamPage() {
           ) : !invite?.ok || !invite?.valid ? (
             <>
               <div className="text-4xl mb-2 text-gray-500"><Glyph e="⏳" /></div>
-              <h1 className="text-lg font-extrabold text-navy">{L('Invitation not valid', 'دعوت درست نہیں', 'الدعوة غير صالحة')}</h1>
+              <h1 className="text-lg font-extrabold text-navy">{L('The invitation is not valid', 'دعوت درست نہیں ہے', 'الدعوة غير صالحة')}</h1>
               <p className="text-sm text-gray-600 mt-1">{L('It may have been used or expired. Ask the company for a new link.', 'شاید یہ استعمال ہو چکی یا ختم ہو گئی۔ کمپنی سے نیا لنک مانگیں۔', 'ربما استُخدمت أو انتهت صلاحيتها. اطلب من الشركة رابطاً جديداً.')}</p>
               <Link href="/" className="inline-flex items-center justify-center mt-5 min-h-[44px] px-5 rounded-xl font-bold text-white text-sm" style={{ background: '#0B2438' }}>{L('Back to the home page', 'مرکزی صفحے پر واپس', 'العودة إلى الصفحة الرئيسية')}</Link>
             </>
@@ -112,6 +112,7 @@ export default function JoinTeamPage() {
               <p className="text-sm text-gray-600 mt-2 leading-relaxed">
                 {L('You will price requests in the company name from your own account. You do not need a commercial registration.', 'آپ اپنے اکاؤنٹ سے کمپنی کے نام پر قیمتیں دیں گے۔ تجارتی رجسٹریشن کی ضرورت نہیں۔', 'ستسعّر الطلبات باسم الشركة من حسابك الخاص، ولا تحتاج سجلاً تجارياً.')}
               </p>
+              <p className="text-[13px] text-gray-600 mt-2 leading-relaxed">{L('After a buyer chooses the company offer, the account owner manages the deal and the conversations with buyers.', 'خریدار کے کمپنی کی آفر چننے کے بعد، اکاؤنٹ کا مالک سودا اور خریداروں سے بات چیت سنبھالتا ہے۔', 'بعد اختيار المشتري لعرض الشركة، يدير صاحب الحساب الصفقة والمحادثات مع المشترين.')}</p>
               {/* UX-146: the invited person knows the role before joining */}
               <p className="mt-3 inline-block text-[13px] font-semibold text-navy rounded-xl bg-[#0B2438]/5 px-3 py-2">{L('Your role: ', 'آپ کا کردار: ', 'دورك: ')}{invite.role === 'admin' ? L('Admin (prices requests and invites members)', 'ایڈمن (قیمتیں دیتا ہے اور اراکین بلاتا ہے)', 'مشرف (يسعّر الطلبات ويدعو أعضاء)') : L('Sales (prices requests)', 'سیلز (درخواستوں کی قیمت دیتا ہے)', 'مبيعات (يسعّر الطلبات)')}</p>
               {error && <div className="mt-4 bg-red-50 border border-red-200 text-red-700 text-sm rounded-xl p-3" role="alert">{error}

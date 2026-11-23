@@ -8,6 +8,8 @@ import { getRegionLabel } from '@/types'
 import { OPERATOR } from '@/lib/legal'
 import Glyph from '@/components/shared/Glyph'
 import SuppliersDirectory from './SuppliersDirectory'
+import { FEATURES } from '@/lib/features'
+import { arCount } from '@/lib/text'
 
 export default function SuppliersPublic({ ranked, listings }: { ranked: any[]; listings: any[] }) {
   const { locale, dir } = useTranslation()
@@ -18,16 +20,18 @@ export default function SuppliersPublic({ ranked, listings }: { ranked: any[]; l
   return (
     <main className="max-w-4xl mx-auto px-4 py-8" dir={dir}>
       <div className="text-center mb-8">
-        <h1 className="text-2xl sm:text-3xl font-extrabold mb-2" style={{ color: '#0B2438' }}><span className="text-[#8F6820]"><Glyph e="🏆" /></span> {L('Supplier leaderboard', 'سپلائرز کی درجہ بندی', 'لوحة شرف الموردين')}</h1>
+        <h1 className="text-2xl sm:text-3xl font-extrabold mb-2" style={{ color: '#0B2438' }}>{FEATURES.gamification
+          ? <><span className="text-[#8F6820]"><Glyph e="🏆" /></span> {L('Supplier leaderboard', 'سپلائرز کی درجہ بندی', 'لوحة شرف الموردين')}</>
+          : <><span className="text-[#8F6820]"><Glyph e="🏪" /></span> {L('Supplier directory', 'سپلائر ڈائریکٹری', 'دليل الموردين')}</>}</h1>
         <p className="text-sm text-gray-600 max-w-xl mx-auto leading-relaxed">
-          {L('Building-materials suppliers on Taseerak, ranked by verification, rating and requests won. Each supplier gets a reliability score out of 100.',
+          {!FEATURES.gamification ? L('Building-materials suppliers on Taseerak, with their verification status, rating and activity.', 'تسعیرک پر تعمیراتی سامان کے سپلائرز، ان کی تصدیق کی حالت، ریٹنگ اور سرگرمی کے ساتھ۔', 'موردو مواد البناء على منصة تسعيرك، مع حالة توثيقهم وتقييمهم ونشاطهم.') : L('Building-materials suppliers on Taseerak, ranked by verification, rating and requests won. Each supplier gets a reliability score out of 100.',
             'تسعیرک پر تعمیراتی سامان کے سپلائرز، تصدیق، ریٹنگ اور جیتی گئی درخواستوں کے لحاظ سے۔ ہر سپلائر کو 100 میں سے اعتماد کا اسکور ملتا ہے۔',
             'موردون لمواد البناء على منصة تسعيرك، مرتّبون حسب التوثيق والتقييم والطلبات التي فازوا بها. لكل مورد «درجة موثوقية» من 100.')}
         </p>
         {ranked.length > 0 && (
           <div className="flex items-center justify-center gap-4 mt-4 text-[13px] text-gray-600">
-            <span><Glyph e="👥" /> {L(`${ranked.length} suppliers on the platform`, `پلیٹ فارم پر ${ranked.length} سپلائرز`, `${ranked.length} مورد على المنصة`)}</span>
-            {verifiedCount > 0 && <span><Glyph e="✅" /> {L(`${verifiedCount} verified`, `${verifiedCount} تصدیق شدہ`, `${verifiedCount} موثّق`)}</span>}
+            <span><Glyph e="👥" /> {L(ranked.length === 1 ? '1 supplier on the platform' : `${ranked.length} suppliers on the platform`, `پلیٹ فارم پر ${ranked.length} سپلائرز`, `${arCount(ranked.length, 'مورد واحد', 'موردان', 'موردين', 'مورداً')} على المنصة`)}</span>
+            {verifiedCount > 0 && <span><Glyph e="✅" /> {L(`${verifiedCount} verified`, `${verifiedCount} تصدیق شدہ`, arCount(verifiedCount, 'موثّق واحد', 'موثّقان', 'موثّقين', 'موثّقاً'))}</span>}
           </div>
         )}
       </div>
@@ -38,7 +42,7 @@ export default function SuppliersPublic({ ranked, listings }: { ranked: any[]; l
           <p className="font-bold text-gray-800 mb-1">{L('Coming soon', 'جلد آ رہا ہے', 'قريباً')}</p>
           <p className="text-sm text-gray-600">{L('The top-rated suppliers will appear here once deals start on the platform. You can already send a price request.', 'پلیٹ فارم پر سودے شروع ہوتے ہی یہاں سب سے زیادہ ریٹنگ والے سپلائرز نظر آئیں گے۔ آپ ابھی قیمت کی درخواست بھیج سکتے ہیں۔', 'سيظهر هنا الموردون الأعلى تقييماً بمجرد بدء الصفقات على المنصة. ويمكنك الآن إرسال طلب تسعير.')}</p>
           <div className="mt-5 flex flex-wrap items-center justify-center gap-2">
-            <Link href="/contractor/rfq/quick" className="btn-orange text-sm">{L('Request a price', 'قیمت معلوم کریں', 'اطلب تسعيرة')}</Link>
+            <Link href="/contractor/rfq/quick" className="btn-orange text-sm">{L('Request a price', 'قیمت معلوم کریں', 'اطلب سعراً')}</Link>
             <Link href="/join" className="btn-ghost text-sm">{L('Sign up as a supplier', 'سپلائر کے طور پر رجسٹر کریں', 'سجّل كمورد')}</Link>
           </div>
         </div>
@@ -77,9 +81,9 @@ export default function SuppliersPublic({ ranked, listings }: { ranked: any[]; l
         </>
       )}
 
-      <p className="text-center text-[12px] text-gray-600 mt-8 leading-relaxed">
+      {FEATURES.gamification && <p className="text-center text-[12px] text-gray-600 mt-8 leading-relaxed">
         {L('The score comes from: verification through Wathq, rating, the share of offers won, and activity. It updates automatically.', 'اسکور ان سے بنتا ہے: واثق کے ذریعے تصدیق، ریٹنگ، جیتی گئی آفرز کا تناسب اور سرگرمی۔ یہ خود بخود اپڈیٹ ہوتا ہے۔', 'تُحسب الدرجة من: التوثيق عبر واثق، والتقييم، ونسبة العروض الفائزة، والنشاط. وتتحدّث تلقائياً.')}
-      </p>
+      </p>}
     </main>
   )
 }

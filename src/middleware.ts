@@ -14,6 +14,7 @@
 
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
+import { isSellerVerified } from '@/components/shared/verifyRule'
 
 // ─── Route lists ─────────────────────────────────────────────────────────────
 
@@ -36,6 +37,11 @@ const PROTECTED = [
   '/verify',
   '/banned',
 ]
+
+/** Open to visitors inside a protected prefix: the request page builds a list as a guest and asks for an
+ *  account only at «إرسال» (round-4 UX-056). Exact paths only. */
+// Kept closed for now: the dashboard shell does not render for a visitor yet (needs a guest shell first).
+const GUEST_OK: string[] = []
 
 /** Only users with role = 'admin' can access these */
 const ADMIN_ONLY = ['/admin']
@@ -166,10 +172,11 @@ export async function middleware(request: NextRequest) {
     const { data: p } = await supabase.from('profiles').select('role, phone_verified_at, email_verified_at, banned_until').eq('id', uid).single()
     if (p && p.role !== 'admin' && p.banned_until && new Date(p.banned_until).getTime() > Date.now()) return 'banned'
     // buyers browse freely and verify in place when they act (VerifyGate, owner 2026-11-18)
-    let ok = !p || p.role === 'admin' || p.role === 'contractor' || (!!p.phone_verified_at && !!p.email_verified_at)
+    // one rule with the verify sheet and the support page (round-4 UX-067, src/components/shared/verifyRule.ts)
+    let ok = !p || p.role === 'admin' || p.role === 'contractor' || isSellerVerified(p, true)
     if (!ok) {
       const { data: req } = await supabase.rpc('phone_verify_required')
-      if (req !== true) ok = true
+      ok = isSellerVerified(p, req)
     }
     if (ok && p && ROLE_SECRET) verifyCookie = `${uid}:${await signRole(`ver:${uid}`)}`
     return ok ? 'ok' : 'verify'
@@ -215,7 +222,7 @@ export async function middleware(request: NextRequest) {
   }
 
   // ── Rule 2: Not logged in → can't access protected pages ─────────────────
-  if (!user && PROTECTED.some(matches)) {
+  if (!user && PROTECTED.some(matches) && !GUEST_OK.includes(pathname)) {
     const loginUrl = new URL('/login', request.url)
     // Remember where they were going so we can redirect back after login
     loginUrl.searchParams.set('next', fullPath)

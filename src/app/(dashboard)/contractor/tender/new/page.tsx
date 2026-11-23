@@ -29,6 +29,7 @@ import { MAX_ORIGINAL_BYTES, MAX_BOQ_BYTES, extractPdfInBrowser } from '@/lib/te
 import type { TenderItem, BoqReadStats, ExtractedPdf, DrawingSummary, SpecIndex } from '@/lib/tender/types'
 import { makeL, kindLabel, fmtSize } from '@/components/tender/labels'
 import { storedBuyerType } from '@/lib/buyerType'
+import HomeModeNotice from '@/components/tender/HomeModeNotice'
 
 type PdfKind = 'spec' | 'drawing'
 type PdfJob = {
@@ -54,6 +55,7 @@ export default function NewTenderPage() {
   const L = makeL(locale)
   const [user, setUser] = useState<any>(null)
   const [allowed, setAllowed] = useState<boolean | null>(null)
+  const [homeMode, setHomeMode] = useState(false)
   const [title, setTitle] = useState('')
   const [boq, setBoq] = useState<BoqState | null>(null)
   const [jobs, setJobs] = useState<PdfJob[]>([])
@@ -68,14 +70,14 @@ export default function NewTenderPage() {
   const leavingRef = useRef(false) // set just before opening the review, so the leave warning stays quiet
 
   useEffect(() => {
-    // a home buyer has no tenders: the simple request page (UX-078)
-    if (storedBuyerType() === 'individual') { window.location.replace('/contractor/rfq/quick'); return }
+    // «لبيتي» mode hides tenders: say so, with the way back, instead of a silent redirect (UX-098)
+    if (storedBuyerType() === 'individual') { setHomeMode(true); return }
     const supabase = createClient()
     supabase.auth.getSession().then(({ data }) => {
       if (!data.session) { window.location.href = '/login'; return }
       setUser(data.session.user)
       supabase.from('profiles').select('buyer_type').eq('id', data.session.user.id).maybeSingle()
-        .then(({ data: bt }: any) => { if (bt?.buyer_type === 'individual') window.location.replace('/contractor/rfq/quick') })
+        .then(({ data: bt }: any) => { if (bt?.buyer_type === 'individual') setHomeMode(true) })
       // open to everyone during the trial: decided before the profile read, so a failed read never shows a gate
       if (PROJECTS_OPEN_TO_ALL) { setAllowed(true); return }
       supabase.from('profiles').select('role, verification_status, cr_verified_at, subscription_plan, subscription_expires_at').eq('id', data.session.user.id).single()
@@ -90,7 +92,7 @@ export default function NewTenderPage() {
     setBoqError(''); setBoqNotExcel(false)
     if (!/\.(xlsx|xls|csv)$/i.test(file.name)) {
       setBoqNotExcel(true)
-      setBoqError(L('Tender pricing reads a bill of quantities in Excel (xlsx, xls) or CSV.', 'ٹینڈر قیمت Excel (xlsx, xls) یا CSV میں مقداروں کا جدول پڑھتی ہے۔', 'يقرأ تسعير المناقصة جدول الكميات بصيغة Excel (xlsx أو xls) أو CSV.'))
+      setBoqError(L('Tender pricing reads a bill of quantities in Excel (xlsx, xls) or CSV.', 'ٹینڈر کی قیمت Excel (xlsx, xls) یا CSV میں مقداروں کا جدول پڑھتی ہے۔', 'يقرأ تسعير المناقصة جدول الكميات بصيغة Excel (xlsx أو xls) أو CSV.'))
       return
     }
     if (file.size > MAX_BOQ_BYTES) { setBoqError(L('The BOQ file is larger than 15 MB.', 'BOQ فائل 15 MB سے بڑی ہے۔', 'ملف جدول الكميات أكبر من 15 ميجابايت.')); return }
@@ -166,15 +168,19 @@ export default function NewTenderPage() {
       if (tErr || !tender) throw new Error(tErr?.message || 'tender')
       createdId = tender.id
       const base = `${user.id}/${tender.id}`
+      const originalsLost: string[] = [] // originals that could not be uploaded (only their read text is kept)
 
       // BOQ original (always ≤ 15 MB here)
       setSaveMsg(L('Saving the BOQ…', 'BOQ محفوظ کی جا رہی ہے…', 'جارٍ حفظ جدول الكميات…'))
       const boqPath = `${base}/boq-${safeName(boq.file.name)}`
-      const up = await bucket.upload(boqPath, boq.file, { upsert: true, contentType: boq.file.type || undefined })
+      // the original is retried once; if it still fails the tender keeps the items read here, and says so (UX-136)
+      let up = await bucket.upload(boqPath, boq.file, { upsert: true, contentType: boq.file.type || undefined })
+      if (up.error) up = await bucket.upload(boqPath, boq.file, { upsert: true, contentType: boq.file.type || undefined })
+      if (up.error) originalsLost.push(boq.file.name)
       await supabase.from('tender_files').insert({
         tender_id: tender.id, kind: 'boq', name: boq.file.name.slice(0, 255), size: boq.file.size, pages: boq.stats?.sheets_read.length || null,
         storage_path: up.error ? null : boqPath, extracted_path: null,
-        summary: { stats: boq.stats, sections: boq.sections, items: boq.items.length },
+        summary: { stats: boq.stats, sections: boq.sections, items: boq.items.length, ...(up.error ? { original_failed: true } : {}) },
       })
 
       // PDFs
@@ -189,8 +195,10 @@ export default function NewTenderPage() {
         let storagePath: string | null = null
         if (j.file.size <= MAX_ORIGINAL_BYTES) {
           const p = `${base}/${fid}-${safeName(j.file.name)}`
-          const o = await bucket.upload(p, j.file, { upsert: true, contentType: 'application/pdf' })
+          let o = await bucket.upload(p, j.file, { upsert: true, contentType: 'application/pdf' })
+          if (o.error) o = await bucket.upload(p, j.file, { upsert: true, contentType: 'application/pdf' })
           if (!o.error) storagePath = p
+          else originalsLost.push(j.file.name)
         }
         let summary: any
         if (j.kind === 'drawing') {
@@ -203,10 +211,10 @@ export default function NewTenderPage() {
             if (!t.error) d.thumb_path = tp
           }
           drawings.push(...ds)
-          summary = { drawings: ds, empty_pages: j.data!.emptyPages }
+          summary = { drawings: ds, empty_pages: j.data!.emptyPages, ...(j.file.size <= MAX_ORIGINAL_BYTES && !storagePath ? { original_failed: true } : {}) }
         } else {
           specs.push({ index: j.index!, pages: j.data!.pages })
-          summary = { sections: j.index?.sections.filter(s => s.level === 0).length || 0, headings: j.index?.sections.length || 0, empty_pages: j.data!.emptyPages }
+          summary = { sections: j.index?.sections.filter(s => s.level === 0).length || 0, headings: j.index?.sections.length || 0, empty_pages: j.data!.emptyPages, ...(j.file.size <= MAX_ORIGINAL_BYTES && !storagePath ? { original_failed: true } : {}) }
         }
         const { error: fErr } = await supabase.from('tender_files').insert({
           tender_id: tender.id, kind: j.kind, name: j.file.name.slice(0, 255), size: j.file.size, pages: j.data!.numPages,
@@ -237,7 +245,8 @@ export default function NewTenderPage() {
       for (const f of res.flags) bySev[f.severity] = (bySev[f.severity] || 0) + 1
       await supabase.from('tenders').update({ status: 'review', summary: { items: rows.length, by_kind: boq.stats?.by_kind || {}, flags: bySev, drawings: drawings.length, specs: specs.length } }).eq('id', tender.id)
       leavingRef.current = true
-      window.location.href = `/contractor/tender/${tender.id}`
+      // a lost original is never silent: the review page says it again next to the file name
+      window.location.href = `/contractor/tender/${tender.id}${originalsLost.length ? '?originals=failed' : ''}`
     } catch (e: any) {
       const m = String(e?.message || '')
       // clean up the half-saved tender (its rows, files and the tender itself); the files read here stay on the page to retry
@@ -251,7 +260,7 @@ export default function NewTenderPage() {
         } catch { /* best effort */ }
       }
       setError(m.includes('tenders_daily_limit') ? L('Daily limit of new tenders reached. Try again tomorrow.', 'نئے ٹینڈرز کی روزانہ حد پوری ہو گئی۔ کل دوبارہ کوشش کریں۔', 'وصلت إلى الحد اليومي للمناقصات الجديدة، فحاول غداً.')
-        : m.includes('Bucket not found') || m.includes('relation') ? L('Tender pricing is not enabled yet on the server.', 'ٹینڈر قیمت سرور پر ابھی فعال نہیں۔', 'تسعير المناقصات غير مفعّل على الخادم بعد.')
+        : m.includes('Bucket not found') || m.includes('relation') ? L('Tender pricing is not enabled yet on the server.', 'ٹینڈر کی قیمت سرور پر ابھی فعال نہیں۔', 'تسعير المناقصات غير مفعّل على الخادم بعد.')
         : L('Could not save the tender. Your files are still here: check your connection and try again.', 'ٹینڈر محفوظ نہیں ہو سکا۔ آپ کی فائلیں یہیں ہیں: کنکشن چیک کر کے دوبارہ کوشش کریں۔', 'تعذّر حفظ المناقصة. ملفاتك ما زالت هنا: تحقّق من الاتصال وحاول مرة أخرى.'))
       setSaving(false); setSaveMsg('')
     }
@@ -260,7 +269,7 @@ export default function NewTenderPage() {
   // an unreadable workbook or one without items is never a dead end (UX-077)
   const otherFormatHelp = (
     <div className="mt-2 rounded-xl border border-[#D4A543]/40 bg-[#D4A543]/[.06] p-3 text-[13px] text-[#0B2438] leading-relaxed">
-      {L('Tender pricing reads tables that have a «Unit» column and a «Quantity» column. If your table has another layout, try «Add a bill of quantities»: it reads Excel, PDF and photos.', 'ٹینڈر قیمت وہ جدول پڑھتی ہے جن میں «یونٹ» اور «مقدار» کے کالم ہوں۔ اگر آپ کا جدول کسی اور ترتیب میں ہے تو «مقداروں کا جدول شامل کریں» آزمائیں: یہ Excel، PDF اور تصاویر پڑھتا ہے۔', 'يقرأ تسعير المناقصات الجداول التي تحتوي عمودَي «الوحدة» و«الكمية». إن كان جدولك بتنسيق آخر، فجرّب «إضافة جدول الكميات»، فهي تقرأ ملفات Excel وPDF والصور.')}
+      {L('Tender pricing reads tables that have a «Unit» column and a «Quantity» column. If your table has another layout, try «Add a bill of quantities»: it reads Excel, PDF and photos.', 'ٹینڈر کی قیمت وہ جدول پڑھتی ہے جن میں «یونٹ» اور «مقدار» کے کالم ہوں۔ اگر آپ کا جدول کسی اور ترتیب میں ہے تو «مقداروں کا جدول شامل کریں» آزمائیں: یہ Excel، PDF اور تصاویر پڑھتا ہے۔', 'يقرأ تسعير المناقصات الجداول التي تحتوي عمودَي «الوحدة» و«الكمية». إن كان جدولك بتنسيق آخر، فجرّب «إضافة جدول الكميات»، فهي تقرأ ملفات Excel وPDF والصور.')}
       <Link href="/contractor/project/new" className="mt-1 flex items-center min-h-11 font-bold text-[#8F6820] underline">{L('Open «Add a bill of quantities» →', '«مقداروں کا جدول شامل کریں» کھولیں ←', 'افتح «إضافة جدول الكميات» ←')}</Link>
     </div>
   )
@@ -268,7 +277,8 @@ export default function NewTenderPage() {
   const boqCodes = boq ? new Set(boq.items.flatMap(i => i.codes)).size : 0
 
   return (
-    <AppShell title={L('Tender pricing', 'ٹینڈر قیمت', 'تسعير مناقصة')} nav={getNav('contractor', locale, '/contractor/tender')} dir={dir}>
+    <AppShell title={L('Tender pricing', 'ٹینڈر کی قیمت', 'تسعير مناقصة')} nav={getNav('contractor', locale, '/contractor/tender')} dir={dir}>
+      {homeMode ? <HomeModeNotice locale={locale} what="tender" /> : (
       <div className="max-w-4xl mx-auto space-y-5">
         <div>
           <Link href="/contractor/tender" className="inline-flex items-center min-h-11 text-xs font-bold text-[#8F6820] hover:underline">{L('All tenders', 'تمام ٹینڈرز', 'كل المناقصات')}</Link>
@@ -381,13 +391,28 @@ export default function NewTenderPage() {
                       </p>
                       {j.kind === 'spec' && j.index && <p>{L(`${j.index.sections.filter(s => s.level === 0).length} sections, ${j.index.sections.length} headings found.`, `${j.index.sections.filter(s => s.level === 0).length} حصے اور ${j.index.sections.length} سرخیاں ملیں۔`, `الأقسام: ${j.index.sections.filter(s => s.level === 0).length}، والعناوين: ${arHeadings(j.index.sections.length)}.`)}</p>}
                       {j.kind === 'spec' && j.index?.codes && <p className="text-[#0F6E56] font-semibold">{L(`Code coordination matrix: ${Object.keys(j.index.codes).length} codes linked to their sections.`, `کوڈ میٹرکس: ${Object.keys(j.index.codes).length} کوڈ اپنے سیکشن سے منسلک۔`, `جدول تنسيق الرموز: رُبط ${arCodes(Object.keys(j.index.codes).length)} بأقسام المواصفات.`)}</p>}
-                      {j.kind === 'drawing' && (j.drawings || []).map(d => (
+                      {/* one line for all the sheets, the per-sheet details folded (UX-136) */}
+                      {j.kind === 'drawing' && (j.drawings || []).length > 0 && (() => {
+                        const ds = j.drawings || []
+                        const rooms = ds.reduce((s, d) => s + d.rooms.length, 0)
+                        const tags = ds.reduce((s, d) => s + d.tags.reduce((a, t) => a + t.count, 0), 0)
+                        return (
+                      <details>
+                        <summary className="cursor-pointer min-h-11 flex items-center font-semibold text-[#0B2438]">
+                          {L(`${ds.length} sheets: ${rooms} rooms, ${tags} tags. Show the sheets`, `${ds.length} شیٹس: ${rooms} کمرے، ${tags} ٹیگز۔ شیٹس دکھائیں`, `${arSheets(ds.length)}: الغرف ${rooms}، والوسوم ${tags}. عرض اللوحات`)}
+                        </summary>
+                        <div className="mt-1 space-y-1">
+                      {ds.map(d => (
                         <p key={d.page}>
                           <b>{d.sheet_no || L(`Page ${d.page}`, `صفحہ ${d.page}`, `الصفحة ${d.page}`)}</b>{d.title ? ` — ${d.title}` : ''}
                           {' · '}{L(`${d.rooms.length} rooms, ${d.tags.reduce((s, t) => s + t.count, 0)} tags (${d.tags.length} codes), ${Object.keys(d.legend).length} legend entries`, `${d.rooms.length} کمرے، ${d.tags.reduce((s, t) => s + t.count, 0)} ٹیگز (${d.tags.length} کوڈز)، لیجنڈ کے ${Object.keys(d.legend).length} اندراجات`
 , `الغرف: ${d.rooms.length}، الوسوم: ${d.tags.reduce((s, t) => s + t.count, 0)} (${arCodes(d.tags.length)})، بنود المفتاح: ${Object.keys(d.legend).length}`)}
                         </p>
                       ))}
+                        </div>
+                      </details>
+                        )
+                      })()}
                       {j.file.size > MAX_ORIGINAL_BYTES && <p className="text-[#8F6820] font-semibold">{L('Only the extracted text is saved because the file is large; keep the original with you.', 'فائل بڑی ہے، صرف متن محفوظ ہوگا؛ اصل اپنے پاس رکھیں۔', 'حُفظ النص المستخرج فقط لأن الملف كبير؛ احتفظ بالأصل لديك.')}</p>}
                     </div>
                   )}
@@ -420,6 +445,7 @@ export default function NewTenderPage() {
           </div>
         </>)}
       </div>
+      )}
     </AppShell>
   )
 }

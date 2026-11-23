@@ -6,7 +6,7 @@ import { useTranslation } from '@/i18n'
 import LanguageSwitcher from '@/components/shared/LanguageSwitcher'
 import Glyph from '@/components/shared/Glyph'
 import { passwordProblems, passRuleList, passwordAuthError, PASS_RULES_SUMMARY } from '@/lib/passwordPolicy'
-import { Check, Circle } from 'lucide-react'
+import { Check, Circle, Eye, EyeOff } from 'lucide-react'
 
 const txt = {
   ar: {
@@ -55,6 +55,7 @@ export default function ResetPasswordPage() {
   const t = txt[locale] || txt.ar
   const [password, setPassword] = useState('')
   const [confirm, setConfirm] = useState('')
+  const [showPw, setShowPw] = useState(false) // the eye button, as on the sign-up page (round-4 UX-148)
   const [loading, setLoading] = useState(false)
   const [done, setDone] = useState(false)
   const [error, setError] = useState('')
@@ -150,7 +151,14 @@ export default function ResetPasswordPage() {
                 <div className="space-y-4 mb-5">
                   <div>
                     <label htmlFor="rp-pass" className="block text-xs font-bold text-gray-500 mb-1.5">{t.pass}</label>
-                    <input id="rp-pass" type="password" autoComplete="new-password" value={password} onChange={e => setPassword(e.target.value)} className="input-field" placeholder="••••••••" required disabled={loading} />
+                    <div className="relative">
+                    <input id="rp-pass" type={showPw ? 'text' : 'password'} autoComplete="new-password" value={password} onChange={e => setPassword(e.target.value)} className="input-field pe-12" placeholder="••••••••" required disabled={loading} />
+                    <button type="button" onClick={() => setShowPw(s => !s)} aria-pressed={showPw}
+                      aria-label={showPw ? (locale === 'en' ? 'Hide password' : locale === 'ur' ? 'پاسورڈ چھپائیں' : 'إخفاء كلمة المرور') : (locale === 'en' ? 'Show password' : locale === 'ur' ? 'پاسورڈ دکھائیں' : 'إظهار كلمة المرور')}
+                      className="absolute inset-y-0 end-0 my-auto h-11 w-11 grid place-items-center rounded-lg text-ink-3 hover:text-orange-dark">
+                      {showPw ? <EyeOff className="w-5 h-5" aria-hidden /> : <Eye className="w-5 h-5" aria-hidden />}
+                    </button>
+                    </div>
                     <ul className="mt-2 space-y-1 text-[13px]">
                       {passRuleList(password, locale).map(r => (
                         <li key={r.rule} className={`flex items-center gap-1.5 ${r.ok ? 'text-emerald-700' : 'text-gray-600'}`}>{r.ok ? <Check className="w-3.5 h-3.5" aria-hidden /> : <Circle className="w-3 h-3" aria-hidden />} {r.text}</li>
@@ -159,7 +167,14 @@ export default function ResetPasswordPage() {
                   </div>
                   <div>
                     <label htmlFor="rp-confirm" className="block text-xs font-bold text-gray-500 mb-1.5">{t.confirm}</label>
-                    <input id="rp-confirm" type="password" autoComplete="new-password" value={confirm} onChange={e => setConfirm(e.target.value)} className="input-field" placeholder="••••••••" required disabled={loading} />
+                    <div className="relative">
+                    <input id="rp-confirm" type={showPw ? 'text' : 'password'} autoComplete="new-password" value={confirm} onChange={e => setConfirm(e.target.value)} className="input-field pe-12" placeholder="••••••••" required disabled={loading} />
+                    <button type="button" onClick={() => setShowPw(s => !s)} aria-pressed={showPw}
+                      aria-label={showPw ? (locale === 'en' ? 'Hide password' : locale === 'ur' ? 'پاسورڈ چھپائیں' : 'إخفاء كلمة المرور') : (locale === 'en' ? 'Show password' : locale === 'ur' ? 'پاسورڈ دکھائیں' : 'إظهار كلمة المرور')}
+                      className="absolute inset-y-0 end-0 my-auto h-11 w-11 grid place-items-center rounded-lg text-ink-3 hover:text-orange-dark">
+                      {showPw ? <EyeOff className="w-5 h-5" aria-hidden /> : <Eye className="w-5 h-5" aria-hidden />}
+                    </button>
+                    </div>
                   </div>
                 </div>
                 <button type="submit" disabled={loading}

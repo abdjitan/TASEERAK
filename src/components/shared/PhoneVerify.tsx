@@ -13,7 +13,9 @@ const RESEND_AFTER = 60
 
 type Step = 'enter' | 'code' | 'checking' | 'done'
 
-export default function PhoneVerify({ initialPhone, locale, verified, waVerified, onDone, handoff, autoOpen }: {
+export default function PhoneVerify({ initialPhone, locale, verified, waVerified, onDone, handoff, autoOpen, onProviderDown }: {
+  /** the SMS provider failed (not a wrong number): the verify page explains the way forward (round-4 UX-089) */
+  onProviderDown?: () => void
   handoff?: string // the mobile app's single-use link (/api/phone/start): no site session on that page
   /** open the form at once (the verify gate / phone-verify page), no extra tap (UX-184) */
   autoOpen?: boolean
@@ -38,7 +40,8 @@ export default function PhoneVerify({ initialPhone, locale, verified, waVerified
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
   // a provider-side failure (quota, billing, config): not the user's fault, offer support (UX-117)
-  const [providerDown, setProviderDown] = useState(false)
+  const [providerDown, setProviderDownState] = useState(false)
+  const setProviderDown = (v: boolean) => { setProviderDownState(v); if (v) onProviderDown?.() }
   const [wa, setWa] = useState<'unknown' | 'yes' | 'no'>(waVerified ? 'yes' : 'unknown')
   const confirmRef = useRef<any>(null)
   const verifierRef = useRef<any>(null)
@@ -196,7 +199,11 @@ export default function PhoneVerify({ initialPhone, locale, verified, waVerified
         </p>
       )}
       {error && (providerDown
-        ? <p className="text-[12px] font-semibold rounded-lg p-2 bg-amber-50 border border-amber-200 text-amber-900" role="alert">{error} <a href="/support" className="inline-flex items-center min-h-[44px] font-bold underline">{L('Contact support', 'سپورٹ سے رابطہ', 'تواصل مع الدعم')}</a></p>
+        ? <p className="text-[12px] font-semibold rounded-lg p-2 bg-amber-50 border border-amber-200 text-amber-900" role="alert">{error}{' '}
+            {/* inside the app's browser /support would ask to sign in on the site: point back to the app (round-4 UX-090) */}
+            {handoff
+              ? L('Go back to the app and open Settings, then Support.', 'ایپ میں واپس جائیں اور ترتیبات، پھر سپورٹ کھولیں۔', 'ارجع إلى التطبيق وافتح الإعدادات ثم الدعم.')
+              : <a href="/support" className="inline-flex items-center min-h-[44px] font-bold underline">{L('Contact support', 'سپورٹ سے رابطہ', 'تواصل مع الدعم')}</a>}</p>
         : <p className="text-[12px] font-semibold text-red-700" role="alert">{error}</p>)}
       {verified && step !== 'checking' && step !== 'done' && (
         <button type="button" onClick={() => { setOpen(false); setStep('enter'); setCode(''); setError(''); setPhone(initialPhone || '') }}

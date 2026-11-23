@@ -56,13 +56,13 @@ export default function BannedPage() {
       </div>
     )
   } else {
-    const until = new Date(ban.until).toLocaleString(locale === 'en' ? 'en-GB' : locale === 'ur' ? 'ur-PK-u-nu-latn' : 'ar-SA-u-ca-gregory-nu-latn')
+    const until = new Date(ban.until).toLocaleString(locale === 'en' ? 'en-GB' : locale === 'ur' ? 'ur-PK-u-nu-latn' : 'ar-SA-u-ca-gregory-nu-latn', { timeZone: 'Asia/Riyadh', weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', hour: 'numeric', minute: '2-digit' })
     body = (
       <div className="rounded-2xl border border-red-200 bg-red-50 p-6">
         <h1 className="text-xl font-bold text-red-800">{L('Your account is suspended', 'آپ کا اکاؤنٹ معطل ہے', 'حسابك موقوف')}</h1>
         <p className="text-sm text-red-900 mt-2">
           {ban.permanent
-            ? L('The suspension is permanent until the administration reviews it.', 'معطلی مستقل ہے جب تک انتظامیہ اس کا جائزہ نہ لے۔', 'الإيقاف دائم إلى أن تراجعه الإدارة.')
+            ? L('The suspension has no end date until the administration reviews it.', 'معطلی کی کوئی آخری تاریخ نہیں، جب تک انتظامیہ اس کا جائزہ نہ لے۔', 'الإيقاف مفتوح المدة إلى أن تراجعه الإدارة.')
             : L(`The suspension ends on ${until}.`, `معطلی ${until} کو ختم ہوگی۔`, `ينتهي الإيقاف في ${until}.`)}
         </p>
         {/* what a suspension means (UX-117) */}

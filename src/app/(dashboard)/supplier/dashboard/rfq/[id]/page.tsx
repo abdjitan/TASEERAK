@@ -145,6 +145,12 @@ export default function SupplierRFQPage() {
   const [savingPrices, setSavingPrices] = useState(false)
   // UX-044: a team member forwarded the missing detail to the account owner
   const [askedOwner, setAskedOwner] = useState<Record<number, boolean>>({})
+  // round-4 UX-082: a pricing agent's per-deal cap (my_agent_deal_cap), loaded on open
+  const [agentCap, setAgentCap] = useState<{ cap: number; deals: number } | null>(null)
+  // round-4 UX-087: the buyer's rating of me on this deal (null = loading, false = none yet)
+  const [buyerReview, setBuyerReview] = useState<{ rating: number; comment: string } | false | null>(null)
+  // round-4 UX-063: what a line held before «لا أوفّرها», restored by «تراجع»
+  const [skipBackup, setSkipBackup] = useState<Record<number, any>>({})
   async function submitReduction() {
     setActionError('')
     const np = Number(newPrice)
@@ -250,7 +256,15 @@ export default function SupplierRFQPage() {
       { okLabel: L('Withdraw and edit', 'واپس لیں اور ترمیم کریں', 'اسحب العرض وعدّله'), cancelLabel: L('Keep the offer as it is', 'آفر ویسی ہی رکھیں', 'أبقِ العرض كما هو') },
     ))) return
     const key = `tsk_offer_draft_${actingId || user?.id}_${id}`
-    try { localStorage.setItem(key, JSON.stringify(draftFromOffer(existingOffer))); localStorage.removeItem(`tsk_offer_sent_${actingId || user?.id}_${id}`) } catch {}
+    // round-4: a pricing agent never loses the source shop on edit: read it now if it was not loaded yet
+    let srcNow: any = srcBackup
+    if (isIndependent && !srcNow) {
+      try {
+        const { data: s } = await createClient().rpc('get_offer_source', { p_offer_id: existingOffer.id })
+        if (s) srcNow = { name: (s as any).name || '', city: (s as any).city || '', area: (s as any).area || '', phone: (s as any).phone || '' }
+      } catch {}
+    }
+    try { localStorage.setItem(key, JSON.stringify({ ...draftFromOffer(existingOffer), src: srcNow })); localStorage.removeItem(`tsk_offer_sent_${actingId || user?.id}_${id}`) } catch {}
     setCancelling(true)
     const supabase = createClient()
     const { error } = await supabase.rpc('cancel_my_offer', { p_offer_id: existingOffer.id })
@@ -290,12 +304,15 @@ export default function SupplierRFQPage() {
       // the request itself (precise delivery location stripped server-side for non-awarded
       // suppliers, H1; null if this supplier may not see it) and the buyer identity (revealed by the
       // server only after acceptance).
-      const [{ data: canQuote }, { data: actRaw }, { data: rfqData }, { data: cInfo }] = await Promise.all([
+      // round-4 UX-013: the CR gate is read in this first round, so the form never shows and then disappears
+      const [{ data: canQuote }, { data: actRaw }, { data: rfqData }, { data: cInfo }, gateRes] = await Promise.all([
         supabase.rpc('can_submit_quote'),
         supabase.rpc('acting_uid'),
         supabase.rpc('get_rfq_for_viewer', { p_rfq_id: id }),
         supabase.rpc('get_rfq_contractor', { p_rfq_id: id }),
+        Promise.resolve(supabase.rpc('my_pricing_gate')).then((r: any) => r, () => ({ data: null })),
       ])
+      setCrRequired((gateRes as any)?.data?.cr_required === true)
       setVerified(canQuote === true)
       if (canQuote !== true) {
         const aid: string = (actRaw as any) || session.user.id
@@ -305,7 +322,6 @@ export default function SupplierRFQPage() {
         ]).then(([{ data: pr }, { count }]: any) => setGate({ region: !!(pr?.region || '').trim(), sectors: (count || 0) > 0, contact: !!(session.user.email_confirmed_at || session.user.phone_confirmed_at) }), () => {})
       }
       setNextRfq(findNextRfq())
-      supabase.rpc('my_pricing_gate').then(({ data }: any) => setCrRequired(data?.cr_required === true), () => {})
       const actId: string = (actRaw as any) || session.user.id
       setActingId(actId)
       if (!rfqData) { setRfq(null); setLoading(false); return }
@@ -335,6 +351,11 @@ export default function SupplierRFQPage() {
       const indep = sellerKindOf(me?.provider_type) === 'independent'
       setIsIndependent(indep)
       setMyTier(me?.supplier_tier || null)
+      // round-4 UX-082: a pricing agent's per-deal cap is known from the start (live warning, not only at send)
+      if (indep) Promise.resolve(supabase.rpc('my_agent_deal_cap')).then(({ data: capRow }: any) => {
+        const cap = capRow?.cap
+        if (cap != null && Number(cap) > 0) setAgentCap({ cap: Number(cap), deals: Number(capRow?.deals) || 0 })
+      }, () => {})
       // An independent seller without a VAT number is not VAT-registered: no VAT question, the price
       // they type is the final price the buyer pays (persona review: «لا تُضاف 15% فوق سعري»).
       // no VAT number: kept on the offer (vat_status) so platform documents show no VAT amount for it
@@ -426,6 +447,9 @@ export default function SupplierRFQPage() {
         if (offerData.status === 'accepted') {
           const { data: rev } = await supabase.from('reviews').select('id').eq('reviewer_id', offerData.supplier_id).eq('offer_id', offerData.id).limit(1)
           if (rev && rev.length) setCDone(true)
+          // round-4 UX-087: the rating the buyer gave me on this deal (reviews are readable by signed-in users)
+          Promise.resolve(supabase.from('reviews').select('rating, comment').eq('offer_id', offerData.id).eq('reviewed_id', offerData.supplier_id).maybeSingle())
+            .then(({ data: br }: any) => setBuyerReview(br && Number(br.rating) > 0 ? { rating: Number(br.rating), comment: br.comment || '' } : false), () => setBuyerReview(false))
         }
       }
 
@@ -622,6 +646,8 @@ export default function SupplierRFQPage() {
     if (typeof d.vatIncluded === 'boolean') setVatIncluded(d.vatIncluded)
     if (d.src && typeof d.src.name === 'string') setSrc({ name: d.src.name || '', city: d.src.city || '', area: d.src.area || '', phone: d.src.phone || '' })
     if (typeof d.allDays === 'string') { setAllDays(d.allDays); if (d.allDays && !['1', '2', '3', '7'].includes(d.allDays)) setAllDaysOther(true) }
+    // round-4 UX-064: one delivery-time control (the chips); a restored time that matches no chip goes into «أخرى»
+    if (d.single && typeof d.deliveryDays === 'string' && d.deliveryDays && !['1', '2', '3', '7'].includes(d.deliveryDays)) { setAllDays(d.deliveryDays); setAllDaysOther(true) }
     if (d.hadFiles) setReattach(true)
   }
   const draftJson = JSON.stringify({
@@ -640,7 +666,7 @@ export default function SupplierRFQPage() {
   }, [draftJson, draftKey, loading, existingOffer, success])
 
   // UX-006: while the phone send bar is on screen, the assistant bubble must not cover it (AiAssistant reads this flag)
-  const sendBarOn = !loading && !!rfq && !existingOffer && rfq?.status === 'open' && !expired && verified && !success && !dismissed
+  const sendBarOn = !loading && !!rfq && !existingOffer && rfq?.status === 'open' && !expired && verified && !crRequired && !success && !dismissed
   useEffect(() => {
     if (typeof document === 'undefined') return
     if (sendBarOn) document.body.dataset.actionbar = '1'
@@ -733,17 +759,19 @@ export default function SupplierRFQPage() {
           const target = Number(cap) <= 15000 ? 3 : 10
           const pricedLines = isMultiItem ? myItems.filter((_: any, k: number) => parseFloat(itemForms[k]?.line_total) > 0).length : 1
           if (pricedLines <= 1) {
+            // round-4 UX-082: a one-material request cannot be split: lower the price or skip the request
+            const oneOnly = !isMultiItem || myItems.length <= 1
             setError(L(
-              `Your current limit is ${cs} SAR per deal, and this offer is ${gs} SAR. You have completed ${Math.min(deals, target)} of ${target} successful deals. Lower the price, or price only part of the materials.`,
-              `فی سودا آپ کی موجودہ حد ${cs} ریال ہے، اور یہ آفر ${gs} ریال کی ہے۔ آپ نے ${target} میں سے ${Math.min(deals, target)} کامیاب سودے مکمل کیے۔ قیمت کم کریں، یا صرف کچھ اشیاء کی قیمت دیں۔`,
-              `حدّك الحالي ${cs} ر.س للصفقة، وقيمة هذا العرض ${gs} ر.س. أكملتَ ${Math.min(deals, target)} من ${target} صفقات ناجحة. خفّض السعر أو سعّر جزءاً من المواد.`))
+              `Your current limit is ${cs} SAR per deal, and this offer is ${gs} SAR. You have completed ${Math.min(deals, target)} of ${target} successful deals (a successful deal: the buyer confirmed receipt and no problem was reported). ${oneOnly ? 'Lower the price to your limit or less, or skip this request until your limit rises.' : 'Lower the price, or price other materials whose total is within your limit.'}`,
+              `فی سودا آپ کی موجودہ حد ${cs} ریال ہے، اور یہ آفر ${gs} ریال کی ہے۔ آپ نے ${target} میں سے ${Math.min(deals, target)} کامیاب سودے مکمل کیے (کامیاب سودا: خریدار نے وصولی کی تصدیق کی اور کوئی شکایت نہیں ہوئی)۔ ${oneOnly ? 'قیمت اپنی حد تک یا اس سے کم کریں، یا حد بڑھنے تک یہ درخواست چھوڑ دیں۔' : 'قیمت کم کریں، یا دوسری اشیاء کی قیمت دیں جن کا مجموعہ آپ کی حد میں ہو۔'}`,
+              `حدّك الحالي ${cs} ر.س للصفقة، وقيمة هذا العرض ${gs} ر.س. أكملتَ ${Math.min(deals, target)} من ${target} صفقات ناجحة (الصفقة الناجحة: أكّد المشتري استلامها ولم يُفتح عليها بلاغ). ${oneOnly ? 'خفّض السعر إلى حدّك أو أقل، أو تجاوز هذا الطلب حتى يرتفع حدّك.' : 'خفّض السعر، أو سعّر مواد أخرى لا يتجاوز مجموعها حدّك.'}`))
             return
           }
           const go = (await askConfirm(L(
             `Your offer total (${gs} SAR) is above your current limit per deal (${cs} SAR). The buyer will only be able to choose from you materials worth up to your limit. Send anyway?`,
             `آپ کی آفر کی کل رقم (${gs} ریال) فی سودا آپ کی موجودہ حد (${cs} ریال) سے زیادہ ہے۔ خریدار آپ سے صرف آپ کی حد تک کی اشیاء چن سکے گا۔ پھر بھی بھیجیں؟`,
             `إجمالي عرضك (${gs} ر.س) أكبر من حدّك الحالي للصفقة (${cs} ر.س). لن يستطيع المشتري أن يختار منك إلا مواد لا يتجاوز مجموعها حدّك. هل ترسل العرض؟`),
-            { okLabel: L('Send the offer', 'آفر بھیجیں', 'أرسل العرض'), cancelLabel: L('Lower the price', 'قیمت کم کریں', 'أخفّض السعر') }))
+            { okLabel: L('Send the offer', 'آفر بھیجیں', 'أرسل العرض'), cancelLabel: L('Lower the price', 'قیمت کم کریں', 'خفّض السعر') }))
           if (!go) return
         }
       } catch { /* the database still enforces the cap at award */ }
@@ -946,7 +974,7 @@ export default function SupplierRFQPage() {
       location: 'الموقع', contractor: 'المشتري', spec: 'المواصفات', notes: 'ملاحظات',
       delivery: 'التوصيل', vat: 'فاتورة ضريبية', required: 'مطلوب', notRequired: 'غير مطلوب',
       submitOffer: 'سعّر هذا الطلب', totalPrice: 'السعر الإجمالي (ر.س)', unitPrice: 'سعر الوحدة (ر.س)',
-      verifyFirst: 'أكمل ملفك لتقديم العروض', verifyFirstSub: 'حدّد موقعك وتخصصاتك وأكّد بريدك الإلكتروني، ثم عُد لتسعير هذا الطلب. التوثيق اختياري، ويمنح عروضك شارة «موثّق».', verifyFirstCta: 'أكمل ملفك ←',
+      verifyFirst: 'أكمل ملفك لتقديم العروض', verifyFirstSub: 'حدّد موقعك وتخصصاتك وأكّد بريدك الإلكتروني أو جوالك، ثم عُد لتسعير هذا الطلب.', verifyFirstCta: 'أكمل ملفك ←',
       deliveryDays: 'مدة التوصيل (أيام)', attributes: 'خصائص المنتج المعروض',
       attrHint: 'أضف خصائص مثل: العلامة التجارية، بلد المنشأ، الضمان...',
       attrKey: 'الخاصية', attrValue: 'القيمة', addAttr: '+ إضافة خاصية',
@@ -968,7 +996,7 @@ export default function SupplierRFQPage() {
       location: 'Location', contractor: 'Buyer', spec: 'Specification', notes: 'Notes',
       delivery: 'Delivery', vat: 'Tax Invoice', required: 'Required', notRequired: 'Not Required',
       submitOffer: 'Price this request', totalPrice: 'Total Price (SAR)', unitPrice: 'Unit Price (SAR)',
-      verifyFirst: 'Complete your profile to submit offers', verifyFirstSub: 'Set your location and specialties and confirm your email, then come back to price this request. Verification is optional and adds a «Verified» badge to your offers.', verifyFirstCta: 'Complete your profile →',
+      verifyFirst: 'Complete your profile to submit offers', verifyFirstSub: 'Set your location and specialties and confirm your email or mobile, then come back to price this request.', verifyFirstCta: 'Complete your profile →',
       deliveryDays: 'Delivery Time (days)', attributes: 'Product Attributes',
       attrHint: 'Add attributes like: Brand, Country of origin, Warranty...',
       attrKey: 'Attribute', attrValue: 'Value', addAttr: '+ Add Attribute',
@@ -990,7 +1018,7 @@ export default function SupplierRFQPage() {
       location: 'مقام', contractor: 'خریدار', spec: 'تفصیلات', notes: 'نوٹس',
       delivery: 'ڈیلیوری', vat: 'ٹیکس انوائس', required: 'ضروری', notRequired: 'غیر ضروری',
       submitOffer: 'قیمت پیش کریں', totalPrice: 'کل قیمت (SAR)', unitPrice: 'فی یونٹ قیمت (SAR)',
-      verifyFirst: 'پیشکش دینے کے لیے پروفائل مکمل کریں', verifyFirstSub: 'اپنا مقام اور مہارتیں منتخب کریں اور ای میل کی تصدیق کریں، پھر واپس آ کر قیمت دیں۔ تصدیق اختیاری ہے۔', verifyFirstCta: 'پروفائل مکمل کریں ←',
+      verifyFirst: 'پیشکش دینے کے لیے پروفائل مکمل کریں', verifyFirstSub: 'اپنا مقام اور تخصصات منتخب کریں اور ای میل یا موبائل کی تصدیق کریں، پھر واپس آ کر قیمت دیں۔', verifyFirstCta: 'پروفائل مکمل کریں ←',
       deliveryDays: 'ڈیلیوری وقت (دن)', attributes: 'پروڈکٹ کی خصوصیات',
       attrHint: 'خصوصیات شامل کریں: برانڈ، ملک، وارنٹی...',
       attrKey: 'خصوصیت', attrValue: 'تفصیل', addAttr: '+ خصوصیت شامل کریں',
@@ -1030,7 +1058,7 @@ export default function SupplierRFQPage() {
       <div className="max-w-md mx-auto bg-white rounded-2xl p-8 shadow-sm border border-gray-100 text-center">
         <div className="text-4xl mb-3 text-gray-500"><Glyph e="🔒" /></div>
         <h2 className="text-lg font-bold mb-1" style={{ color: '#0B2438' }}>{L('This request is no longer available to you', 'یہ درخواست اب آپ کے لیے دستیاب نہیں', 'هذا الطلب لم يعد متاحاً لك')}</h2>
-        <p className="text-sm text-gray-500 mb-5 leading-relaxed">{L('The request may have been closed or its deadline passed, or it is outside your specialties or regions.', 'شاید درخواست بند ہو گئی یا اس کی مہلت ختم ہو گئی، یا یہ آپ کی مہارت یا علاقوں سے باہر ہے۔', 'ربما أُغلق الطلب أو انتهت مهلته، أو أنه خارج تخصصاتك أو مناطق تغطيتك.')}</p>
+        <p className="text-sm text-gray-500 mb-5 leading-relaxed">{L('The request may have been closed or its deadline passed, or it is outside your specialties or regions.', 'شاید درخواست بند ہو گئی یا اس کی مہلت ختم ہو گئی، یا یہ آپ کے تخصص یا علاقوں سے باہر ہے۔', 'ربما أُغلق الطلب أو انتهت مهلته، أو أنه خارج تخصصاتك أو مناطق تغطيتك.')}</p>
         <Link href="/supplier/dashboard" className="inline-flex items-center justify-center min-h-[44px] px-5 rounded-xl font-bold text-[#071827]" style={{ background: 'linear-gradient(135deg,#F5C55B,#D4A543)' }}>{L('Back to requests', 'درخواستوں پر واپس', 'العودة إلى الطلبات')}</Link>
       </div>
     </AppShell>
@@ -1088,7 +1116,8 @@ export default function SupplierRFQPage() {
 
   // pricing is open: no offer yet, request open and within its deadline, and allowed to quote
   const isMember = !!actingId && !!user && actingId !== user.id // a company team member
-  const pricingOpen = !existingOffer && rfq?.status === 'open' && !expired && verified
+  // round-4 UX-013: never while a commercial registration is required (the CR card is the only next step)
+  const pricingOpen = !existingOffer && rfq?.status === 'open' && !expired && verified && !crRequired
   const pricedCount = (myItems || []).filter((_: any, i: number) => parseFloat(itemForms[i]?.line_total) > 0).length
   // why the send button is disabled (shown under it and on the phone bar). UX-032: each reason names
   // the field it points to, so tapping it scrolls there and highlights it.
@@ -1199,7 +1228,7 @@ export default function SupplierRFQPage() {
           <div className="flex items-start justify-between gap-2">
             {/* عنوان عام — لا نُظهر للمورد الاسم الذي اختاره المشتري للطلب */}
             <div>
-              <div className="text-xs font-bold text-[#8F6820] font-mono" dir="auto">{rfqRefLine(rfq, locale)}</div>
+              <div className="text-xs font-bold text-[#8F6820] tabular-nums" dir="auto">{rfqRefLine(rfq, locale)}</div>
               <h2 className="text-lg font-bold" style={{ color: '#0B2438' }}>
                 {rfqDesc({ ...rfq, title: null }, locale, rfqIsMulti ? (myItems.length || undefined) : 1)}
               </h2>
@@ -1236,8 +1265,8 @@ export default function SupplierRFQPage() {
           {!pricingOpen && (<>
           {rfqIsMulti && myItems.length > 0 && (
             <div className="my-4">
-              <h3 className="font-bold text-sm mb-2 text-[#0B2438]"><Glyph e="🧾" /> {L('Materials in your specialty', 'آپ کی مہارت کا مال', 'المواد ضمن تخصصك')} ({myItems.length})</h3>
-              <p className="text-[12px] text-gray-500 mb-2">{L('You only see the materials you can supply — price them and send your offer.', 'آپ کو صرف وہ مال دکھایا جاتا ہے جو آپ سپلائی کر سکتے ہیں — قیمت لگائیں اور آفر بھیجیں۔', 'تظهر لك فقط المواد التي تستطيع توريدها — سعّرها وأرسل عرضك.')}</p>
+              <h3 className="font-bold text-sm mb-2 text-[#0B2438]"><Glyph e="🧾" /> {L('Materials in your specialty', 'آپ کے تخصص کا مال', 'المواد ضمن تخصصك')} ({myItems.length})</h3>
+              <p className="text-[12px] text-gray-500 mb-2">{L('You only see the materials in your specialty.', 'آپ کو صرف آپ کے تخصص کا مال دکھایا جاتا ہے۔', 'تظهر لك فقط المواد ضمن تخصصك.')}</p>
               <div className="overflow-x-auto rounded-xl border border-gray-100">
                 <table className="w-full text-sm">
                   <thead><tr className="text-[13px] text-gray-500 bg-[#f4f6f9] border-b border-gray-100">
@@ -1285,7 +1314,7 @@ export default function SupplierRFQPage() {
           {actionError && (
             <div role="alert" className="flex items-start justify-between gap-2 bg-red-50 border border-red-200 text-red-700 text-sm font-semibold rounded-xl p-3">
               <span><Glyph e="⚠" /> {actionError}</span>
-              <button type="button" onClick={() => setActionError('')} className="w-8 h-8 grid place-items-center shrink-0 text-red-500" aria-label={L('Close', 'بند کریں', 'إغلاق')}><X className="w-4 h-4" aria-hidden /></button>
+              <button type="button" onClick={() => setActionError('')} className="w-11 h-11 -m-2 grid place-items-center shrink-0 text-red-500" aria-label={L('Close', 'بند کریں', 'إغلاق')}><X className="w-4 h-4" aria-hidden /></button>
             </div>
           )}
           {actionNotice && (
@@ -1295,7 +1324,7 @@ export default function SupplierRFQPage() {
                   {declinedConv && <> <button type="button" onClick={() => openConversation(cannotReduceMsg())} className="min-h-[44px] font-bold underline text-[#0B2438]">{L('Message the buyer (optional)', 'خریدار کو پیغام بھیجیں (اختیاری)', 'راسل المشتري (اختياري)')}</button></>}
                 </span>
               </span>
-              <button type="button" onClick={() => { setActionNotice(''); setDeclinedConv(false) }} className="w-8 h-8 grid place-items-center shrink-0 text-emerald-700" aria-label={L('Close', 'بند کریں', 'إغلاق')}><X className="w-4 h-4" aria-hidden /></button>
+              <button type="button" onClick={() => { setActionNotice(''); setDeclinedConv(false) }} className="w-11 h-11 -m-2 grid place-items-center shrink-0 text-emerald-700" aria-label={L('Close', 'بند کریں', 'إغلاق')}><X className="w-4 h-4" aria-hidden /></button>
             </div>
           )}
           {(() => {
@@ -1378,16 +1407,26 @@ export default function SupplierRFQPage() {
               </div>
             )}
             {/* UX-191: the winning moment, with the next step */}
+            {/* round-4 UX-081: an open report from the buyer comes first, before the usual next steps */}
+            {st === 'accepted' && existingOffer.dispute_status === 'open' && existingOffer.dispute_by !== existingOffer.supplier_id && (
+              <div role="alert" className="mt-3 text-start rounded-xl border border-red-300 bg-red-50 p-3">
+                <p className="text-sm font-bold text-red-800 leading-relaxed">{L('The buyer reported a problem with this deal: ', 'خریدار نے اس سودے میں ایک مسئلہ رپورٹ کیا: ', 'أبلغ المشتري عن مشكلة في هذه الصفقة: ')}<span dir="auto">{existingOffer.dispute_reason}</span></p>
+                <a href="#deal-dispute" className="mt-1 inline-flex items-center gap-1 min-h-[44px] text-[13px] font-bold text-red-800 underline underline-offset-2">{isMember ? L('See the report', 'رپورٹ دیکھیں', 'اطّلع على البلاغ') : L('See the report and reply', 'رپورٹ دیکھیں اور جواب دیں', 'اطّلع على البلاغ وردّ عليه')} <span aria-hidden="true">{FWD}</span></a>
+              </div>
+            )}
             {st === 'accepted' && (
               isMember ? (
-                <p className="text-[13px] font-semibold text-gray-600 mt-2">{L('This deal is managed by the account owner.', 'یہ سودا اکاؤنٹ کے مالک کے پاس ہے۔', 'إدارة هذه الصفقة لدى صاحب الحساب.')}</p>
+                // round-4 UX-079: one observer note for a team member (no owner-only instructions)
+                <p className="text-[13px] font-semibold text-gray-600 mt-2 leading-relaxed">{L('The account owner manages this deal (invoice, delivery, payment and rating); you can follow its stages here.', 'یہ سودا اکاؤنٹ کا مالک سنبھالتا ہے (انوائس، ڈیلیوری، ادائیگی اور ریٹنگ)؛ آپ اس کے مراحل یہاں دیکھ سکتے ہیں۔', 'يدير صاحب الحساب هذه الصفقة (الفاتورة والتسليم والدفع والتقييم)، ويمكنك متابعة مراحلها هنا.')}</p>
               ) : (
                 <div className="mt-3">
                   <p className="text-[13px] font-semibold text-gray-700 mb-2">{existingOffer.supplier_delivered_at
                     ? L('Delivery confirmed. Follow the receipt and payment in the deal.', 'ڈیلیوری کی تصدیق ہو گئی۔ وصولی اور ادائیگی سودے میں دیکھیں۔', 'تمّ تأكيد التسليم. تابِع الاستلام والدفع في الصفقة.')
                     : (existingOffer.invoice_url || existingOffer.supplier_invoice_url)
                       ? L('You uploaded the invoice — confirm the delivery once you deliver the goods.', 'آپ نے انوائس اپ لوڈ کر دی — مال پہنچانے پر ڈیلیوری کی تصدیق کریں۔', 'رفعتَ الفاتورة — أكّد التسليم عند إيصال البضاعة.')
-                      : L('Next step: upload the invoice, then confirm the delivery.', 'اگلا قدم: انوائس اپ لوڈ کریں، پھر ڈیلیوری کی تصدیق کریں۔', 'الخطوة التالية: ارفع الفاتورة، ثم أكّد التسليم.')}</p>
+                      : isIndependent
+                        ? L('Next step: ask the source shop for an invoice in the buyer\'s name at your offer price, then upload it in the invoice step and confirm the delivery.', 'اگلا قدم: ماخذ دکان سے خریدار کے نام اور آپ کی آفر کی قیمت پر انوائس لیں، پھر اسے انوائس کے مرحلے میں اپ لوڈ کریں اور ڈیلیوری کی تصدیق کریں۔', 'الخطوة التالية: اطلب من المحل المصدر فاتورة باسم المشتري وبسعر عرضك، ثم ارفعها في خطوة الفاتورة وأكّد التسليم.')
+                        : L('Next step: upload your invoice in the invoice step first, then confirm the delivery.', 'اگلا قدم: پہلے انوائس کے مرحلے میں اپنی انوائس اپ لوڈ کریں، پھر ڈیلیوری کی تصدیق کریں۔', 'الخطوة التالية: ارفع فاتورتك في خطوة الفاتورة أولاً، ثم أكّد التسليم.')}</p>
                   <a href="#deal" className="inline-flex items-center justify-center gap-1 min-h-[44px] px-6 rounded-xl font-extrabold text-[#071827]" style={{ background: 'linear-gradient(135deg,#F5C55B,#D4A543)' }}>
                     {L('Open the deal', 'سودا کھولیں', 'افتح الصفقة')} <span aria-hidden="true">{FWD}</span>
                   </a>
@@ -1451,7 +1490,10 @@ export default function SupplierRFQPage() {
                     {/* UX-169: ready answers the seller can edit before sending */}
                     <div className="flex flex-wrap gap-2 mb-2" role="group" aria-label={L('Ready replies', 'تیار جوابات', 'ردود جاهزة')}>
                       {[
-                        L('Available in our stock now.', 'ہمارے اسٹاک میں ابھی دستیاب ہے۔', 'متوفر لدينا حالياً.'),
+                        // round-4 UX-062: a pricing agent has no stock of his own
+                        isIndependent
+                          ? L('Available at the source shop now.', 'ماخذ دکان پر ابھی دستیاب ہے۔', 'متوفر لدى المحل المصدر حالياً.')
+                          : L('Available in our stock now.', 'ہمارے اسٹاک میں ابھی دستیاب ہے۔', 'متوفر لدينا حالياً.'),
                         L('We can supply an alternative with the same specifications.', 'ہم انہی تفصیلات کا متبادل فراہم کر سکتے ہیں۔', 'نوفّر بديلاً بالمواصفات نفسها.'),
                       ].map((q) => (
                         <button key={q} type="button" onClick={() => { setInfoReply((v) => (v.trim() ? v.trim() + ' ' + q : q)); setActionError('') }} className={chip(false)}>{q}</button>
@@ -1505,7 +1547,10 @@ export default function SupplierRFQPage() {
                       {won === false && <span className="text-[12px] font-bold px-2 py-0.5 rounded-full bg-gray-100 text-gray-600">{L('Not chosen', 'منتخب نہیں', 'لم تُختر')}</span>}
                       {it.install_offered === true && <span className="text-[12px] font-bold px-2 py-0.5 rounded-full bg-[#0B2438]/5 text-[#0B2438] whitespace-nowrap"><Glyph e="🔧" /> {L(`incl. installation ${installTotalOf(it).toLocaleString('en-US')}`, `تنصیب سمیت ${installTotalOf(it).toLocaleString('en-US')}`, `يشمل التركيب ${installTotalOf(it).toLocaleString('en-US')}`)}</span>}
                       {it.install_offered === false && <span className="text-[12px] font-bold px-2 py-0.5 rounded-full bg-gray-100 text-gray-600 whitespace-nowrap">{L('without installation', 'تنصیب کے بغیر', 'بدون تركيب')}</span>}
-                      <span className={`font-bold text-sm whitespace-nowrap ${won === false ? 'line-through' : ''}`} style={{ color: '#0B2438' }}>{(Number(it.total) || 0).toLocaleString('en-US')} {SAR}</span>
+                      <span className={`font-bold text-sm whitespace-nowrap ${won === false ? 'line-through' : ''}`} style={{ color: '#0B2438' }}>{(Number(it.total) || 0).toLocaleString('en-US')} {SAR}
+                        {/* round-4 UX-142: the VAT basis of each line */}
+                        <span className="ms-1 text-[12px] font-semibold text-gray-500">{notReg ? L('(final)', '(حتمی)', '(نهائي)') : net ? L('(before VAT)', '(ٹیکس سے پہلے)', '(قبل الضريبة)') : L('(incl. VAT)', '(ٹیکس سمیت)', '(شامل الضريبة)')}</span>
+                      </span>
                     </span>
                   </div>
                   )
@@ -1540,6 +1585,21 @@ export default function SupplierRFQPage() {
               </div>
             )}
 
+            {/* round-4 UX-087: the rating the buyer gave this seller on the deal */}
+            {st === 'accepted' && buyerReview !== null && (
+              <div className="mt-4 text-start rounded-xl border border-gray-200 bg-white p-3 text-sm">
+                {buyerReview ? (<>
+                  <p className="font-bold text-[#0B2438]">
+                    {L('The buyer\'s rating of you: ', 'خریدار کی آپ کو ریٹنگ: ', 'تقييم المشتري لك: ')}
+                    <span className="text-[#D4A543]" aria-label={`${buyerReview.rating}/5`}>{'★'.repeat(buyerReview.rating)}<span className="text-gray-300">{'★'.repeat(5 - buyerReview.rating)}</span></span>
+                    <span className="ms-1 text-gray-600 font-semibold">({buyerReview.rating}/5)</span>
+                  </p>
+                  {buyerReview.comment && <p className="mt-1 text-gray-700 leading-relaxed whitespace-pre-line" dir="auto">{buyerReview.comment}</p>}
+                </>) : (
+                  <p className="text-gray-600">{L('The buyer has not rated you yet.', 'خریدار نے ابھی آپ کی ریٹنگ نہیں دی۔', 'لم يقيّمك المشتري بعد.')}</p>
+                )}
+              </div>
+            )}
             {/* تقييم المورّد للمشتري (متبادل) — بعد قبول الصفقة */}
             {st === 'accepted' && !isMember && (
               <div className="mt-4 border-t border-emerald-200 pt-4 text-start">
@@ -1634,33 +1694,60 @@ export default function SupplierRFQPage() {
             )}
             {nextOpen}
           </div>
-        ) : crRequired ? (
+        ) : (crRequired && verified) ? (
           <div className="bg-white rounded-2xl p-6 shadow-sm border border-[#D4A543]/50 text-center">
             <div className="text-4xl mb-2"><Glyph e="🛡" /></div>
-            <h3 className="font-bold" style={{ color: '#0B2438' }}>{L('Add your commercial registration to start pricing', 'قیمت لگانا شروع کرنے کے لیے اپنا تجارتی رجسٹریشن شامل کریں', 'أضف سجلك التجاري لتبدأ التسعير')}</h3>
-            <p className="text-sm text-gray-600 mt-1 leading-relaxed">{L('This request matches what you sell. Enter your unified national number (10 digits starting with 7) and you can price right away; the team reviews it afterwards.', 'یہ درخواست آپ کے سامان سے ملتی ہے۔ اپنا متحدہ قومی نمبر (7 سے شروع، 10 ہندسے) درج کریں اور فوراً قیمت لگا سکیں گے؛ ٹیم بعد میں جائزہ لے گی۔', 'هذا الطلب يناسب ما تبيعه. أدخل الرقم الوطني الموحد لمنشأتك (10 أرقام يبدأ بـ7)، وتستطيع التسعير فوراً، ويراجعه الفريق لاحقاً.')}</p>
-            <Link href="/settings" className="inline-flex items-center justify-center mt-4 min-h-[44px] px-5 rounded-xl font-bold text-[#071827] text-sm" style={{ background: 'linear-gradient(135deg,#F5C55B,#D4A543)' }}>{L('Add my CR', 'سی آر شامل کریں', 'أضف سجلي التجاري')}</Link>
+            {isMember ? (<>
+              {/* round-4 UX-081: a team member cannot add the company CR: say who can, no button */}
+              <h3 className="font-bold" style={{ color: '#0B2438' }}>{L('Your company has not added its commercial registration yet', 'آپ کی کمپنی نے ابھی اپنا تجارتی رجسٹریشن شامل نہیں کیا', 'لم تُضف شركتك سجلها التجاري بعد')}</h3>
+              <p className="text-sm text-gray-600 mt-1 leading-relaxed">{L('Ask the account owner to add it from Settings → Documents. You can price as soon as it is added.', 'اکاؤنٹ کے مالک سے کہیں کہ اسے ترتیبات ← دستاویزات سے شامل کرے۔ شامل ہوتے ہی آپ قیمت لگا سکیں گے۔', 'اطلب من مالك الحساب إضافته من الإعدادات ← المستندات، وتستطيع التسعير فور إضافته.')}</p>
+            </>) : (<>
+              <h3 className="font-bold" style={{ color: '#0B2438' }}>{L('Add your commercial registration to start pricing', 'قیمت لگانا شروع کرنے کے لیے اپنا تجارتی رجسٹریشن شامل کریں', 'أضف سجلك التجاري لتبدأ التسعير')}</h3>
+              <p className="text-sm text-gray-600 mt-1 leading-relaxed">{L('This request matches what you sell. Enter your unified national number (10 digits starting with 7) and you can price right away; the team reviews it afterwards.', 'یہ درخواست آپ کے سامان سے ملتی ہے۔ اپنا متحدہ قومی نمبر (7 سے شروع، 10 ہندسے) درج کریں اور فوراً قیمت لگا سکیں گے؛ ٹیم بعد میں جائزہ لے گی۔', 'هذا الطلب يناسب ما تبيعه. أدخل الرقم الوطني الموحد لمنشأتك (10 أرقام يبدأ بـ7)، وتستطيع التسعير فوراً، ويراجعه الفريق لاحقاً.')}</p>
+              <Link href="/settings?tab=docs" className="inline-flex items-center justify-center mt-4 min-h-[44px] px-5 rounded-xl font-bold text-[#071827] text-sm" style={{ background: 'linear-gradient(135deg,#F5C55B,#D4A543)' }}>{L('Add my CR', 'سی آر شامل کریں', 'أضف سجلي التجاري')}</Link>
+            </>)}
           </div>
         ) : !verified ? (
-          // UX-114: a checklist of what is missing, each with its button
+          // UX-114: a checklist of what is missing, each with its button.
+          // round-4: the commercial registration is a REQUIRED step for a company or shop (never «optional»);
+          // a team member sees the company steps as «ask the account owner», with no owner-only buttons.
           <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-200">
             <div className="text-center">
               <div className="text-4xl mb-2"><Glyph e="🛡" /></div>
               <h3 className="font-bold" style={{ color: '#0B2438' }}>{T.verifyFirst}</h3>
-              <p className="text-sm text-gray-600 mt-1 leading-relaxed">{L('Finish these steps, then come back to price this request. Business verification is optional and adds a «Verified» badge to your offers.', 'یہ مراحل مکمل کریں، پھر اس درخواست کی قیمت دینے واپس آئیں۔ کاروبار کی تصدیق اختیاری ہے۔', 'أكمل هذه الخطوات ثم عُد لتسعير هذا الطلب. توثيق المنشأة اختياري، ويمنح عروضك شارة «موثّق».')}</p>
+              <p className="text-sm text-gray-600 mt-1 leading-relaxed">
+                {crRequired
+                  ? L('Finish these steps, then come back to price this request. The commercial registration is required for companies and shops.', 'یہ مراحل مکمل کریں، پھر اس درخواست کی قیمت دینے واپس آئیں۔ کمپنیوں اور دکانوں کے لیے تجارتی رجسٹریشن ضروری ہے۔', 'أكمل هذه الخطوات ثم عُد لتسعير هذا الطلب. السجل التجاري مطلوب للشركات والمحلات.')
+                  : isIndependent
+                    ? L('Finish these steps, then come back to price this request. Verifying your identity later is optional and adds a «Verified» badge to your offers.', 'یہ مراحل مکمل کریں، پھر اس درخواست کی قیمت دینے واپس آئیں۔ بعد میں شناخت کی تصدیق اختیاری ہے اور آپ کی آفرز پر «تصدیق شدہ» نشان لگاتی ہے۔', 'أكمل هذه الخطوات ثم عُد لتسعير هذا الطلب. توثيق هويتك لاحقاً اختياري، ويمنح عروضك شارة «موثّق».')
+                    : L('Finish these steps, then come back to price this request.', 'یہ مراحل مکمل کریں، پھر اس درخواست کی قیمت دینے واپس آئیں۔', 'أكمل هذه الخطوات ثم عُد لتسعير هذا الطلب.')}
+              </p>
             </div>
             <ul className="mt-4 space-y-2">
               {([
-                ['region', gate?.region, L('Set your region', 'اپنا علاقہ منتخب کریں', 'حدّد منطقتك'), '/onboarding'],
-                ['sectors', gate?.sectors, L('Choose your specialties', 'اپنی مہارتیں منتخب کریں', 'اختر تخصصاتك'), '/supplier/specialties'],
-                ['contact', gate?.contact, L('Confirm your email or verify your mobile', 'ای میل کی تصدیق کریں یا موبائل نمبر تصدیق کریں', 'أكّد بريدك أو وثّق جوالك'), '/settings'],
-              ] as const).map(([k, ok, label, href]) => (
-                <li key={k} className={`flex items-center justify-between gap-2 rounded-xl border px-3 py-2 ${ok ? 'border-emerald-200 bg-emerald-50' : 'border-gray-200'}`}>
-                  <span className="flex items-center gap-2 text-sm font-semibold text-[#0B2438]">
-                    {ok ? <Check className="w-4 h-4 text-emerald-600" aria-hidden /> : <span className="w-4 h-4 rounded-full border-2 border-gray-300 inline-block" aria-hidden />}
-                    {label}
-                  </span>
-                  {!ok && <Link href={href} className="inline-flex items-center min-h-[44px] px-4 rounded-xl font-bold text-[#071827] text-sm" style={{ background: 'linear-gradient(135deg,#F5C55B,#D4A543)' }}>{L('Do it', 'کریں', 'ابدأ')}</Link>}
+                ['region', gate?.region, L('Set your region', 'اپنا علاقہ منتخب کریں', 'حدّد منطقتك'), '/onboarding', true],
+                ['sectors', gate?.sectors, L('Choose your specialties', 'اپنی تخصصات منتخب کریں', 'اختر تخصصاتك'), '/supplier/specialties', true],
+                ...(crRequired ? [['cr', false, L('Add the commercial registration (required)', 'تجارتی رجسٹریشن شامل کریں (ضروری)', 'أضف السجل التجاري (مطلوب)'), '/settings?tab=docs', true] as const] : []),
+                ['contact', gate?.contact, L('Confirm your email or verify your mobile', 'ای میل کی تصدیق کریں یا موبائل نمبر تصدیق کریں', 'أكّد بريدك أو وثّق جوالك'), '/settings', false],
+              ] as const).map(([k, ok, label, href, ownerOnly]) => (
+                <li key={k} className={`rounded-xl border px-3 py-2 ${ok ? 'border-emerald-200 bg-emerald-50' : 'border-gray-200'}`}>
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="flex items-center gap-2 text-sm font-semibold text-[#0B2438]">
+                      {ok ? <Check className="w-4 h-4 text-emerald-600" aria-hidden /> : <span className="w-4 h-4 rounded-full border-2 border-gray-300 inline-block" aria-hidden />}
+                      {label}
+                    </span>
+                    {!ok && !(ownerOnly && isMember) && <Link href={href} className="inline-flex items-center min-h-[44px] px-4 rounded-xl font-bold text-[#071827] text-sm shrink-0" style={{ background: 'linear-gradient(135deg,#F5C55B,#D4A543)' }}>{L('Start', 'شروع کریں', 'ابدأ')}</Link>}
+                  </div>
+                  {!ok && ownerOnly && isMember && (
+                    <p className="text-[12px] text-gray-600 mt-1">{L('The account owner does this step for the company.', 'یہ مرحلہ کمپنی کے لیے اکاؤنٹ کا مالک کرتا ہے۔', 'يُكمل صاحب الحساب هذه الخطوة للشركة.')}</p>
+                  )}
+                  {/* round-4: a path forward when the text message does not arrive (the SMS provider may be down) */}
+                  {!ok && k === 'contact' && (
+                    <p className="text-[12px] text-gray-600 mt-1 leading-relaxed">
+                      {L('No code by text message? Confirm your email instead; either one is enough. Still stuck? ', 'ٹیکسٹ میسج سے کوڈ نہیں آیا؟ اس کے بجائے ای میل کی تصدیق کریں؛ دونوں میں سے ایک کافی ہے۔ پھر بھی مسئلہ ہے؟ ', 'لم يصلك رمز الرسالة النصية؟ أكّد بريدك الإلكتروني بدلاً منه، فأحدهما يكفي. ما زلت متوقفاً؟ ')}
+                      <Link href="/support" className="inline-flex items-center min-h-[44px] font-bold text-[#8F6820] underline underline-offset-2">{L('Contact support', 'سپورٹ سے رابطہ کریں', 'تواصل مع الدعم')}</Link>
+                    </p>
+                  )}
                 </li>
               ))}
             </ul>
@@ -1678,7 +1765,7 @@ export default function SupplierRFQPage() {
             {draftRestored && (
               <div className="flex items-start justify-between gap-2 bg-[#0B2438]/5 border border-[#0B2438]/15 text-[#0B2438] text-[13px] font-semibold rounded-xl px-3 py-2 mb-4" aria-live="polite">
                 <span><Glyph e="📝" /> {L('Your draft was restored.', 'آپ کا مسودہ بحال کر دیا گیا۔', 'استُعيدت مسودتك.')}{reattach && <> {L('Attach the files again; they could not be restored.', 'فائلیں دوبارہ منسلک کریں؛ وہ بحال نہیں ہو سکیں۔', 'أعد إرفاق الملفات، فقد تعذّرت استعادتها.')}</>}</span>
-                <button type="button" onClick={() => { setDraftRestored(false); setReattach(false) }} className="w-8 h-8 grid place-items-center shrink-0 text-gray-500 hover:text-gray-700" aria-label={L('Close', 'بند کریں', 'إغلاق')}><X className="w-4 h-4" aria-hidden /></button>
+                <button type="button" onClick={() => { setDraftRestored(false); setReattach(false) }} className="w-11 h-11 -m-2 grid place-items-center shrink-0 text-gray-500 hover:text-gray-700" aria-label={L('Close', 'بند کریں', 'إغلاق')}><X className="w-4 h-4" aria-hidden /></button>
               </div>
             )}
             {/* UX-043: the buyer edited the request after my offer, which cleared it: say so, and refill matching lines */}
@@ -1710,8 +1797,8 @@ export default function SupplierRFQPage() {
               {isMultiItem && myItems.length === 0 ? (
                 <div className="text-center py-6">
                   <div className="text-4xl mb-2 text-gray-500"><Glyph e="📭" /></div>
-                  <p className="font-bold text-sm" style={{ color: '#0B2438' }}>{L('No materials match your specialties', 'اس درخواست میں آپ کی مہارت کا کوئی مال نہیں', 'لا توجد مواد ضمن تخصصك في هذا الطلب')}</p>
-                  <p className="text-[13px] text-gray-600 mt-1">{L('The materials of this request are outside your specialties; you do not need to price it.', 'اس درخواست کا مال آپ کی مہارتوں سے باہر ہے؛ آپ کو قیمت دینے کی ضرورت نہیں۔', 'مواد هذا الطلب خارج تخصصاتك، ولا يلزمك تسعيرها.')}</p>
+                  <p className="font-bold text-sm" style={{ color: '#0B2438' }}>{L('No materials match your specialties', 'اس درخواست میں آپ کے تخصص کا کوئی مال نہیں', 'لا توجد مواد ضمن تخصصك في هذا الطلب')}</p>
+                  <p className="text-[13px] text-gray-600 mt-1">{L('The materials of this request are outside your specialties; you do not need to price it.', 'اس درخواست کا مال آپ کے تخصصوں سے باہر ہے؛ آپ کو قیمت دینے کی ضرورت نہیں۔', 'مواد هذا الطلب خارج تخصصاتك، ولا يلزمك تسعيرها.')}</p>
                   {nextOpen}
                 </div>
               ) : isMultiItem ? (
@@ -1722,13 +1809,17 @@ export default function SupplierRFQPage() {
                     </h4>
                     <span className="text-[13px] font-bold text-gray-600">{pricedCount}/{myItems.length}</span>
                   </div>
+                  {/* round-4 UX-142: one instruction (the VAT basis is said once, in the block below) */}
                   <p className="text-[13px] text-gray-600 mb-3">
-                    {noVat
-                      ? L('Enter the price per unit of each material — the total is calculated. You do not have to price them all; open «Details» for another unit, delivery time, warranty or a catalog.', 'ہر مال کی فی یونٹ قیمت درج کریں، کل رقم خود بنے گی۔ سب کی قیمت دینا ضروری نہیں؛ دوسرے یونٹ، ڈیلیوری، وارنٹی یا کیٹلاگ کے لیے «تفصیلات» کھولیں۔', 'أدخل سعر الوحدة لكل مادة ويُحسب الإجمالي تلقائياً، ولست ملزماً بتسعير الكل. افتح «التفاصيل» لوحدة أخرى أو مدة التوصيل أو الضمان أو الكتالوج.')
-                      : vatIncluded
-                        ? L('Enter the price per unit of each material, including VAT — the total is calculated. You do not have to price them all; open «Details» for another unit, delivery time, warranty or a catalog.', 'ہر مال کی فی یونٹ قیمت ٹیکس سمیت درج کریں، کل رقم خود بنے گی۔ سب کی قیمت دینا ضروری نہیں؛ دوسرے یونٹ، ڈیلیوری، وارنٹی یا کیٹلاگ کے لیے «تفصیلات» کھولیں۔', 'أدخل سعر الوحدة لكل مادة شاملاً ضريبة القيمة المضافة 15% ويُحسب الإجمالي تلقائياً، ولست ملزماً بتسعير الكل. افتح «التفاصيل» لوحدة أخرى أو مدة التوصيل أو الضمان أو الكتالوج.')
-                        : L('Enter the price per unit of each material before VAT (15% is added for the buyer) — the total is calculated. You do not have to price them all; open «Details» for another unit, delivery time, warranty or a catalog.', 'ہر مال کی فی یونٹ قیمت ٹیکس سے پہلے درج کریں (خریدار کے لیے 15% شامل ہوگا)، کل رقم خود بنے گی۔ سب کی قیمت دینا ضروری نہیں؛ دوسرے یونٹ، ڈیلیوری، وارنٹی یا کیٹلاگ کے لیے «تفصیلات» کھولیں۔', 'أدخل سعر الوحدة لكل مادة قبل الضريبة (وتُضاف 15% للمشتري) ويُحسب الإجمالي تلقائياً، ولست ملزماً بتسعير الكل. افتح «التفاصيل» لوحدة أخرى أو مدة التوصيل أو الضمان أو الكتالوج.')}
+                    {L('Enter the unit price of each material you can supply; the total is calculated for you, and you do not have to price them all.', 'جو مال آپ دے سکتے ہیں اس کی فی یونٹ قیمت درج کریں؛ کل رقم خود بنے گی، اور سب کی قیمت دینا ضروری نہیں۔', 'أدخل سعر الوحدة لكل مادة تستطيع توفيرها، ويُحسب الإجمالي تلقائياً، ولست ملزماً بتسعير الكل.')}
                   </p>
+                  {/* round-4 UX-142: saved prices are offered at the top of the list, not after every card */}
+                  {prevCount > 0 && (
+                    <div className="mb-3 flex flex-wrap items-center justify-between gap-2 rounded-xl border border-[#D4A543]/50 bg-[#D4A543]/5 px-3 py-2">
+                      <span className="text-[13px] font-semibold text-[#0B2438]">{L(`You have saved prices for ${prevCount} material${prevCount === 1 ? '' : 's'}; fill them in one tap.`, `آپ کے پاس ${prevCount} اشیاء کی محفوظ قیمتیں ہیں؛ ایک ٹچ میں بھریں۔`, `لديك أسعار محفوظة لـ${arCount(prevCount, 'مادة واحدة', 'مادتين', 'مواد', 'مادة')}، املأها بنقرة واحدة.`)}</span>
+                      <button type="button" onClick={takeAllPrev} className="min-h-[44px] px-4 rounded-xl text-sm font-bold text-white" style={{ background: '#0B2438' }}>{L('Fill them', 'بھریں', 'املأها')}</button>
+                    </div>
+                  )}
                   {vatBlock}
                   <div className="space-y-3">
                     {myItems.map((it: any, i: any) => {
@@ -1825,7 +1916,13 @@ export default function SupplierRFQPage() {
                           {skipped.has(i) ? (
                             <div className="mt-3 flex items-center justify-between gap-2 rounded-xl bg-gray-50 border border-dashed border-gray-300 px-3 py-2.5">
                               <span className="text-xs font-bold text-gray-500">{L("You don't carry this item — it won't be in your offer", 'یہ آئٹم آپ کے پاس نہیں — پیشکش میں شامل نہیں', 'لا توفّر هذه المادة — لن تدخل في عرضك')}</span>
-                              <button type="button" onClick={() => setSkipped(prev => { const n = new Set(prev); n.delete(i); return n })} className="min-h-[44px] px-2 text-[13px] font-bold text-[#8F6820] hover:underline">{L('Undo', 'واپس', 'تراجع')}</button>
+                              <button type="button" onClick={() => {
+                                // round-4 UX-063: «تراجع» brings back what the line held (price, install, details)
+                                const bk = skipBackup[i]
+                                if (bk) setItemForms(prev => { const next = prev.map((f: any, idx: any) => idx === i ? { ...f, ...bk } : f); recomputeGoods(next); return next })
+                                setSkipBackup(prev => { const n = { ...prev }; delete n[i]; return n })
+                                setSkipped(prev => { const n = new Set(prev); n.delete(i); return n })
+                              }} className="min-h-[44px] px-2 text-[13px] font-bold text-[#8F6820] hover:underline">{L('Undo', 'واپس', 'تراجع')}</button>
                             </div>
                           ) : (<>
                           <div className="mt-3 flex flex-wrap items-center gap-2">
@@ -1846,7 +1943,11 @@ export default function SupplierRFQPage() {
                               className={`inline-flex items-center gap-1 min-h-[44px] text-[13px] font-bold px-3 rounded-xl border transition-all ${more || detailCount ? 'border-[#D4A543]/50 text-[#8F6820] bg-[#D4A543]/5' : 'border-gray-200 text-gray-600 hover:border-[#D4A543]/50'}`}>
                               {more ? <ChevronUp className="w-4 h-4" aria-hidden /> : <ChevronDown className="w-4 h-4" aria-hidden />} {L('Details', 'تفصیلات', 'التفاصيل')}{detailCount ? <span className="ms-1 inline-grid place-items-center min-w-[1.25rem] h-5 px-1 rounded-full bg-[#D4A543]/25 text-[12px] text-[#071827]">{detailCount}</span> : null}
                             </button>
-                            <button type="button" onClick={() => { setItemUnit(i, ''); setItemTotal(i, ''); setOpenItem(null); setSkipped(prev => new Set(prev).add(i)) }}
+                            <button type="button" onClick={() => {
+                              const f = itemForms[i] || {}
+                              setSkipBackup(prev => ({ ...prev, [i]: { unit_price: f.unit_price || '', line_total: f.line_total || '', install_total: f.install_total, no_install: f.no_install, fromPrev: f.fromPrev, priceUnit: f.priceUnit } }))
+                              setItemUnit(i, ''); setItemTotal(i, ''); setOpenItem(null); setSkipped(prev => new Set(prev).add(i))
+                            }}
                               className="min-h-[44px] text-[13px] font-bold px-3 rounded-xl border border-gray-200 text-gray-600 hover:border-gray-400">
                               {L("Don't carry", 'دستیاب نہیں', 'لا أوفّرها')}
                             </button>
@@ -1870,6 +1971,10 @@ export default function SupplierRFQPage() {
                               {L('Total', 'کل', 'الإجمالي')}: <b className="text-[#0B2438]">{line.toLocaleString('en-US')} {SAR}</b> <span className="text-gray-500">({qty.toLocaleString('en-US')} × {(+form.unit_price || 0).toLocaleString('en-US')})</span>
                               {form.fromPrev && <span className="text-gray-500"> · {L('your previous price', 'آپ کی پچھلی قیمت', 'سعرك السابق')}</span>}
                             </p>
+                          )}
+                          {/* round-4 UX-082: one material alone above the pricing agent's per-deal cap */}
+                          {isIndependent && agentCap && line > 0 && (line + installPart(form, it)) * (!noVat && vatIncluded === false ? 1.15 : 1) > agentCap.cap && (
+                            <p role="alert" className="text-[12px] font-semibold text-red-700 mt-1">{L('This material alone is above your per-deal limit, so the buyer will not be able to choose it.', 'یہ مال اکیلا ہی آپ کی فی سودا حد سے زیادہ ہے، اس لیے خریدار اسے منتخب نہیں کر سکے گا۔', 'هذه المادة وحدها أكبر من حدّك للصفقة، فلن يستطيع المشتري اختيارها.')}</p>
                           )}
                           {!(line > 0) && Number(form.suggest) > 0 && sameUnit(form, i) && (
                             <button type="button" onClick={() => takePrevPrice(i, Number(form.suggest))}
@@ -1895,7 +2000,7 @@ export default function SupplierRFQPage() {
                             const avg = `(${mk.avg.toLocaleString('en-US', { maximumFractionDigits: 2 })} ${SAR} ${L('before VAT', 'ٹیکس سے پہلے', 'قبل الضريبة')})`
                             if (Math.abs(d) < 3) return <p className="text-[12px] mt-1 text-gray-500">{L('In line with the market average before VAT', 'ٹیکس سے پہلے مارکیٹ اوسط کے مطابق', 'سعرك قريب من متوسط السوق قبل الضريبة')} {avg}</p>
                             return (
-                              <p className={`text-[12px] mt-1 font-semibold ${d > 0 ? 'text-amber-700' : 'text-emerald-700'}`}>
+                              <p className={`text-[12px] mt-1 font-semibold ${d > 0 ? 'text-[#8F6820]' : 'text-[#0B2438]'}`}>
                                 {d > 0 ? L(`Your price is ${d}% above the market average before VAT`, `آپ کی قیمت ٹیکس سے پہلے مارکیٹ اوسط سے ${d}% زیادہ ہے`, `سعرك أعلى من متوسط السوق قبل الضريبة بـ ${d}%`) : L(`Your price is ${-d}% below the market average before VAT`, `آپ کی قیمت ٹیکس سے پہلے مارکیٹ اوسط سے ${-d}% کم ہے`, `سعرك أقل من متوسط السوق قبل الضريبة بـ ${-d}%`)}
                                 <span className="text-gray-500 font-normal"> {avg}</span>
                               </p>
@@ -1938,11 +2043,19 @@ export default function SupplierRFQPage() {
                               <div className="sm:col-span-2 grid grid-cols-5 gap-2">
                                 <div className="col-span-2">
                                   <label htmlFor={`unit-${i}`} className="block text-[12px] font-bold text-gray-600 mb-1">{L('Your unit', 'آپ کا یونٹ', 'وحدتك')}</label>
-                                  <input id={`unit-${i}`} type="text" value={form.priceUnit ?? it.unit} onChange={(e: any) => setItemPriceUnit(i, e.target.value)}
-                                    className="input-field text-sm" placeholder={it.unit} list={`units-${i}`} />
-                                  <datalist id={`units-${i}`}>
-                                    {[it.unit, 'طن', 'سيخ', 'م³', 'م²', 'متر طولي', 'كيس', 'قطعة', 'لتر', 'لفة', 'صندوق'].filter((u, k, a) => u && a.indexOf(u) === k).map((u: any) => <option key={u} value={u} />)}
-                                  </datalist>
+                                  {/* round-4 UX-142: a list of units in the reader's language (the stored value stays the Arabic key) */}
+                                  {(() => {
+                                    const opts = [it.unit, 'طن', 'سيخ', 'م³', 'م²', 'متر طولي', 'كيس', 'قطعة', 'لتر', 'لفة', 'صندوق'].filter((u, k, a) => u && a.indexOf(u) === k) as string[]
+                                    const cur = form.priceUnit ?? it.unit ?? ''
+                                    const custom = form.unitOther || (cur && !opts.includes(cur))
+                                    return (<>
+                                      <select id={`unit-${i}`} value={custom ? '__other' : cur} onChange={(e: any) => { if (e.target.value === '__other') { setItemField(i, 'unitOther', true) } else { setItemField(i, 'unitOther', false); setItemPriceUnit(i, e.target.value) } }} className="input-field text-sm">
+                                        {opts.map(u => <option key={u} value={u}>{getUnitLabel(u, locale) || u}</option>)}
+                                        <option value="__other">{L('Other…', 'دیگر…', 'أخرى…')}</option>
+                                      </select>
+                                      {custom && <input type="text" value={opts.includes(cur) ? '' : cur} onChange={(e: any) => setItemPriceUnit(i, e.target.value)} aria-label={L('Your unit', 'آپ کا یونٹ', 'وحدتك')} className="input-field text-sm mt-1.5" placeholder={L('Type the unit', 'یونٹ لکھیں', 'اكتب الوحدة')} />}
+                                    </>)
+                                  })()}
                                 </div>
                                 <div className="col-span-3">
                                   {sameUnit(form, i) ? (<>
@@ -1987,7 +2100,7 @@ export default function SupplierRFQPage() {
                                 </select>
                                 {!WARRANTY_OPTIONS.some(o => o.v === (form.warranty || '')) && (
                                   <input value={(form.warranty || '').trimStart()} onChange={(e: any) => setItemField(i, 'warranty', e.target.value || ' ')}
-                                    className="input-field text-sm mt-1.5" maxLength={80} placeholder={L('e.g. 18 months on the motor', 'مثال: موٹر پر 18 مہینے', 'مثال: 18 شهراً على المحرك')} />
+                                    aria-label={L('Warranty details', 'وارنٹی کی تفصیل', 'تفاصيل الضمان')} className="input-field text-sm mt-1.5" maxLength={80} placeholder={L('e.g. 18 months on the motor', 'مثال: موٹر پر 18 مہینے', 'مثال: 18 شهراً على المحرك')} />
                                 )}
                               </div>
                               <div className="sm:col-span-2">
@@ -1995,7 +2108,7 @@ export default function SupplierRFQPage() {
                                   <div className="flex items-center gap-3 bg-[#0B2438]/5 rounded-xl p-2.5 border border-[#0B2438]/20">
                                     <span className="text-xl"><Glyph e="📄" /></span>
                                     <span className="text-xs font-semibold flex-1 truncate" style={{ color: '#0B2438' }}>{form.file.name}</span>
-                                    <button type="button" onClick={() => setItemFile(i, null)} className="text-xs text-red-500 hover:underline">{L('Remove', 'ہٹائیں', 'إزالة')}</button>
+                                    <button type="button" onClick={() => setItemFile(i, null)} className="min-h-[44px] px-2 text-xs font-bold text-[#B42318] hover:underline">{L('Remove', 'ہٹائیں', 'إزالة')}</button>
                                   </div>
                                 ) : (
                                   <label className="flex items-center gap-3 border-2 border-dashed border-gray-200 rounded-xl p-2.5 cursor-pointer hover:border-[#D4A543]/50 transition-all">
@@ -2044,11 +2157,7 @@ export default function SupplierRFQPage() {
                       </div>
                     )
                   })()}
-                  <div>
-                    <label htmlFor="single-days" className="block text-xs font-bold text-gray-500 mb-1.5">{T.deliveryDays}{maxDaysAsked > 0 && <span className="text-red-500"> *</span>}</label>
-                    <input id="single-days" type="text" inputMode="decimal" value={deliveryDays} onChange={(e: any) => setDeliveryDays(latinNum(e.target.value))}
-                      className="input-field" placeholder="3" min="0" />
-                  </div>
+                  {/* round-4 UX-064: the delivery time is set once, with the chips in «عرضك» (no second field here) */}
                 </>
               )}
               {/* خصائص المنتج — للطلب أحادي المادة فقط (متعدد المواد: الخصائص لكل مادة بداخل بطاقتها) */}
@@ -2093,7 +2202,7 @@ export default function SupplierRFQPage() {
                     <span className="text-2xl"><Glyph e="📄" /></span>
                     <span className="text-sm font-semibold flex-1 truncate" style={{ color: '#0B2438' }}>{attachFile.name}</span>
                     <button type="button" onClick={() => setAttachFile(null)}
-                      className="text-xs text-red-500 hover:underline">{T.removeAttach}</button>
+                      className="min-h-[44px] px-2 text-xs font-bold text-[#B42318] hover:underline">{T.removeAttach}</button>
                   </div>
                 ) : (
                   <label className="flex items-center gap-3 border-2 border-dashed border-gray-200 rounded-xl p-4 cursor-pointer hover:border-[#D4A543]/50 transition-all">
@@ -2117,8 +2226,9 @@ export default function SupplierRFQPage() {
         </div>{/* main */}
 
         {/* SIDE (sticky on desktop): request details, then the offer summary and the send button */}
-        <aside className="min-w-0 space-y-5 lg:sticky lg:top-20 lg:max-h-[calc(100vh-6rem)] lg:overflow-y-auto">
-          <div className="bg-white rounded-2xl p-4 sm:p-5 shadow-sm border border-gray-100">
+        <aside className="min-w-0 flex flex-col gap-5 lg:sticky lg:top-20 lg:max-h-[calc(100vh-6rem)] lg:overflow-y-auto">
+          {/* round-4 UX-142: while pricing, the required choices («عرضك») come first and the request details after */}
+          <div className={`bg-white rounded-2xl p-4 sm:p-5 shadow-sm border border-gray-100 ${pricingOpen ? 'order-2' : ''}`}>
           <div className="grid grid-cols-2 gap-2.5 text-sm">
             <div className="bg-[#f4f6f9] rounded-lg p-3"><span className="text-gray-500 text-[12px] font-semibold"><Glyph e="🏗" /> {T.sector}</span><br/><strong>{(rfqIsMulti ? [...new Set(myItems.map((it: any) => sectionOf(it)).filter(Boolean))] : [sectionOf(rfq)].filter(Boolean)).join(' + ') || '—'}</strong></div>
             {(!Array.isArray(rfq.items) || rfq.items.length <= 1) && <div className="bg-[#f4f6f9] rounded-lg p-3"><span className="text-gray-500 text-[12px] font-semibold"><Glyph e="📦" /> {T.qty}</span><br/><strong>{rfq.quantity} {getUnitLabel(rfq.unit, locale)}</strong></div>}
@@ -2215,7 +2325,7 @@ export default function SupplierRFQPage() {
                     const on = allDaysOther ? false : (isMultiItem ? allDays : (deliveryDays || allDays)) === v
                     return <button key={v} type="button" role="radio" aria-checked={on} onClick={() => { setAllDaysOther(false); setAllDays(v); if (!isMultiItem) setDeliveryDays(v) }} className={chip(on)}>{on && <Check className="w-4 h-4" aria-hidden />}{label}</button>
                   })}
-                  <button type="button" role="radio" aria-checked={allDaysOther} onClick={() => setAllDaysOther(true)} className={chip(allDaysOther)}>{allDaysOther && <Check className="w-4 h-4" aria-hidden />}{L('Other', 'دیگر', 'أخرى')}</button>
+                  <button type="button" role="radio" aria-checked={allDaysOther} onClick={() => { setAllDaysOther(true); if (!isMultiItem && ['1', '2', '3', '7'].includes(deliveryDays || allDays)) { setAllDays(''); setDeliveryDays('') } }} className={chip(allDaysOther)}>{allDaysOther && <Check className="w-4 h-4" aria-hidden />}{L('Other', 'دیگر', 'أخرى')}</button>
                   {allDaysOther && (
                     <input type="text" inputMode="numeric" autoFocus value={isMultiItem ? allDays : (deliveryDays || allDays)} onChange={(e: any) => { const v = latinNum(e.target.value).replace(/\D/g, ''); setAllDays(v); if (!isMultiItem) setDeliveryDays(v) }}
                       className="input-field text-base sm:text-sm w-28" placeholder={L('Days', 'دن', 'عدد الأيام')} aria-label={L('Delivery time in days', 'ڈیلیوری کا وقت (دن)', 'مدة التوصيل بالأيام')} />
@@ -2228,12 +2338,6 @@ export default function SupplierRFQPage() {
                 )}
                 {isMultiItem && <p className="text-[12px] text-gray-500 mt-1">{L('A different time for one material can be set in its «Details».', 'کسی ایک مال کا الگ وقت اس کی «تفصیلات» میں دیں۔', 'يمكنك تحديد مدة مختلفة لمادة معيّنة من «التفاصيل» في بطاقتها.')}</p>}
               </div>
-              {/* UX-113: take every remembered price in one tap */}
-              {prevCount > 0 && (
-                <button type="button" onClick={takeAllPrev} className="w-full min-h-[44px] rounded-xl text-sm font-bold text-white" style={{ background: '#0B2438' }}>
-                  {L(`Use your previous prices (${prevCount} material${prevCount === 1 ? '' : 's'})`, `اپنی پچھلی قیمتیں استعمال کریں (${prevCount} اشیاء)`, `استخدم أسعارك السابقة (${arCount(prevCount, 'مادة واحدة', 'مادتان', 'مواد', 'مادة')})`)}
-                </button>
-              )}
               {/* UX-112: availability is an explicit, required choice */}
               <div id="availability" className="border-t border-gray-100 pt-4">
                 <div className="text-sm font-bold mb-2" style={{ color: '#0B2438' }}>{L('Availability of the materials', 'مال کی دستیابی', 'توفّر المواد')} <span className="text-red-500">*</span></div>
@@ -2296,6 +2400,13 @@ export default function SupplierRFQPage() {
                   </div>
                 ) : null
               })()}
+              {/* round-4 UX-082: the pricing agent's cap, shown while typing (not only at send) */}
+              {isIndependent && agentCap && offerTotals().gross > agentCap.cap && (
+                <div role="alert" className="rounded-xl border border-red-300 bg-red-50 px-3 py-2 text-[13px] text-red-800">
+                  <p className="font-bold">{L(`Above your current per-deal limit (${agentCap.cap.toLocaleString('en-US')} SAR).`, `آپ کی موجودہ فی سودا حد (${agentCap.cap.toLocaleString('en-US')} ریال) سے زیادہ۔`, `أكبر من حدّك الحالي للصفقة (${agentCap.cap.toLocaleString('en-US')} ر.س).`)}</p>
+                  <p className="mt-0.5 leading-relaxed">{L('The limit rises with successful deals (the buyer confirmed receipt and no problem was reported).', 'حد کامیاب سودوں کے ساتھ بڑھتی ہے (خریدار نے وصولی کی تصدیق کی اور کوئی شکایت نہیں ہوئی)۔', 'يرتفع الحد مع الصفقات الناجحة (أكّد المشتري استلامها ولم يُفتح عليها بلاغ).')}</p>
+                </div>
+              )}
               {/* everything optional folds away (persona review: about 30 controls on one phone screen) */}
               <div className="border-t border-gray-100 pt-3">
                 <button type="button" onClick={() => setShowMore(!showMore)} aria-expanded={showMore}
@@ -2430,7 +2541,7 @@ export default function SupplierRFQPage() {
                 L('I do not have these materials', 'یہ مال میرے پاس دستیاب نہیں', 'المواد غير متوفرة لدي'),
                 L('The location is outside my delivery area', 'مقام میرے ڈیلیوری علاقے سے باہر ہے', 'الموقع بعيد عن نطاق توصيلي'),
                 L('The quantity is small', 'مقدار کم ہے', 'الكمية صغيرة'),
-                L('Outside my specialty', 'میری مہارت سے باہر', 'خارج تخصصي'),
+                L('Outside my specialty', 'میرے تخصص سے باہر', 'خارج تخصصي'),
                 L('The deadline is short', 'مہلت کم ہے', 'المهلة قصيرة'),
               ].map((r) => (
                 <button key={r} type="button" aria-pressed={dismissReason === r} onClick={() => setDismissReason(dismissReason === r ? '' : r)} className={chip(dismissReason === r)}>{dismissReason === r && <Check className="w-4 h-4" aria-hidden />}{r}</button>

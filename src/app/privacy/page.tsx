@@ -6,6 +6,7 @@ import Logo from '@/components/shared/Logo'
 import LanguageSwitcher from '@/components/shared/LanguageSwitcher'
 import HomeOrAccountLink from '@/components/public/HomeOrAccountLink'
 import Glyph from '@/components/shared/Glyph'
+import LinkEmails from '@/components/shared/LinkEmails'
 import { OPERATOR } from '@/lib/legal'
 
 const OPERATOR_EMAIL: string = OPERATOR.email
@@ -96,14 +97,14 @@ export default function PrivacyPage() {
         <h1 className="text-2xl font-bold mb-1" style={{ color: '#0B2438' }}>{t.title}</h1>
         <p className="text-[12px] text-gray-600 mb-5">{t.updated}</p>
 
-        <p className="text-sm text-gray-700 leading-relaxed mb-4">{t.intro}</p>
-        <div className="bg-white border border-gray-200 rounded-xl p-3 text-xs text-gray-600 mb-6"><Glyph e="✉" /> {t.note}</div>
+        <p className="text-sm text-gray-700 leading-relaxed mb-4"><LinkEmails text={t.intro} /></p>
+        <div className="bg-white border border-gray-200 rounded-xl p-3 text-xs text-gray-600 mb-6"><Glyph e="✉" /> <LinkEmails text={t.note} /></div>
 
         <div className="space-y-5">
           {t.sections.map(([h, body]: string[], i: number) => (
             <section key={i}>
               <h2 className="text-base font-bold mb-1.5" style={{ color: '#0B2438' }}>{h}</h2>
-              <p className="text-sm text-gray-600 leading-relaxed">{body}</p>
+              <p className="text-sm text-gray-600 leading-relaxed"><LinkEmails text={body} /></p>
             </section>
           ))}
         </div>

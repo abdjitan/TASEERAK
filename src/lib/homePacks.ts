@@ -14,8 +14,10 @@ import { cleanArName } from '@/lib/displayName'
 //   Without calc, an item ordered in م²/جالون/لفة gets the room calculator.
 // cover: square metres one unit covers in ONE coat (paint ≈ 30 m²/gallon/coat, primer ≈ 30, wallpaper ≈ 5);
 // coats: how many coats (paint 2, primer 1). The web and the app use the same numbers (calcQuantity).
+// derive (round-4 UX-185): the quantity follows other rows of the pack (sum ÷ per, rounded up) until the buyer edits it,
+//   e.g. tile adhesive = one bag per 4 m² of the wall and floor tiles.
 export type PackCalc = 'room' | 'area' | 'none'
-export type PackItem = { name: string; sector: Sector; qty: number | null; unit?: string; hint?: { ar: string; en: string; ur: string }; calc?: PackCalc; cover?: number; coats?: number }
+export type PackItem = { name: string; sector: Sector; qty: number | null; unit?: string; hint?: { ar: string; en: string; ur: string }; calc?: PackCalc; cover?: number; coats?: number; derive?: { from: string[]; per: number } }
 export type HomePack = {
   id: string
   img: string // /images/sections/<img>.webp (sheet header background)
@@ -46,7 +48,7 @@ export const HOME_PACKS: HomePack[] = [
       { name: 'سيفون مغسلة', sector: 'mechanical', qty: 1 },
       { name: 'بلاط سيراميك جدار', sector: 'architectural', qty: null, unit: 'م²', hint: AREA, calc: 'room' },
       { name: 'بلاط سيراميك', sector: 'architectural', qty: null, unit: 'م²', hint: AREA, calc: 'room' }, // the floor tiles (UX-132)
-      { name: 'غراء بلاط أسمنتي عادي C1 (Standard Tile Adhesive)', sector: 'architectural', qty: null, unit: 'كيس', hint: { ar: 'كيس لكل 4 أمتار مربعة تقريباً', en: 'About one bag per 4 square metres', ur: 'تقریباً ہر 4 مربع میٹر کے لیے ایک بوری' } },
+      { name: 'غراء بلاط أسمنتي عادي C1 (Standard Tile Adhesive)', sector: 'architectural', qty: null, unit: 'كيس', derive: { from: ['بلاط سيراميك جدار', 'بلاط سيراميك'], per: 4 }, hint: { ar: 'كيس لكل 4 أمتار مربعة من البلاط. حسبناها من مساحة البلاط، ويمكنك تعديلها', en: 'One bag per 4 square metres of tiles. We worked it out from the tile area; you can change it', ur: 'ہر 4 مربع میٹر ٹائل کے لیے ایک بوری۔ ہم نے ٹائل کے رقبے سے حساب کیا ہے، آپ بدل سکتے ہیں' } },
       { name: 'عزل مائي سائل تحت البلاط للحمامات (Under-tile Liquid Membrane)', sector: 'architectural', qty: null, unit: 'م²', hint: AREA },
       { name: 'سيليكون صحي مضاد للفطريات (حمامات ومطابخ)', sector: 'civil', qty: 2 },
     ],
@@ -169,6 +171,15 @@ const HOME_NAMES: Record<string, string> = {
   // round-3 UX-132: MSA names, the common word in brackets
   'فيش كهرباء': 'مقبس كهربائي (فيش)',
   'رولة دهان': 'أسطوانة دهان (رولة)',
+  // round-4 UX-114: which tiles are for the walls and which for the floor
+  'بلاط سيراميك جدار': 'بلاط جدران (سيراميك)',
+  'بلاط سيراميك': 'بلاط أرضية (سيراميك)',
+}
+
+/** A derived row's quantity from the rows it follows (round-4 UX-185); '' when they are still empty. */
+export function deriveQty(rule: { from: string[]; per: number }, rows: { name: string; quantity: string; on?: boolean }[]): string {
+  const sum = rows.filter(r => r.on !== false && rule.from.includes(r.name)).reduce((t, r) => t + (parseFloat(r.quantity) || 0), 0)
+  return sum > 0 ? String(Math.max(1, Math.ceil(sum / rule.per))) : ''
 }
 
 /** One quantity rule for the web and the app (UX-061): area in m² → order quantity for the item's unit.

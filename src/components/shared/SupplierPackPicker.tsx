@@ -61,7 +61,7 @@ export default function SupplierPackPicker({
   return (
     <div>
     <input type="search" value={q} onChange={(e: any) => setQ(e.target.value)} className="input-field mb-2.5"
-      placeholder={T('Search for your kind of shop', 'اپنی دکان کی قسم تلاش کریں', 'ابحث عن نوع محلك')} aria-label={T('Search for your kind of shop', 'اپنی دکان کی قسم تلاش کریں', 'ابحث عن نوع محلك')} />
+      placeholder={T('Search for a kind of materials', 'مال کی قسم تلاش کریں', 'ابحث عن نوع المواد')} aria-label={T('Search for a kind of materials', 'مال کی قسم تلاش کریں', 'ابحث عن نوع المواد')} />
     {nq && visible.length === 0 && <p className="text-[13px] text-gray-600 mb-2">{T('No kind matches. Try another word, or pick the materials in detail below.', 'کوئی قسم نہیں ملی۔ کوئی اور لفظ آزمائیں یا نیچے تفصیل سے مال منتخب کریں۔', 'لا يوجد نوع مطابق. جرّب كلمة أخرى، أو اختر المواد بالتفصيل في الأسفل.')}</p>}
     <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
       {visible.map(p => {

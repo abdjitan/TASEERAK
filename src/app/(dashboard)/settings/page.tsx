@@ -8,14 +8,14 @@ import { rememberBuyerType } from '@/lib/buyerType'
 import { useTranslation } from '@/i18n'
 import Logo from '@/components/shared/Logo'
 import LanguageSwitcher from '@/components/shared/LanguageSwitcher'
-import AppShell from '@/components/shared/AppShell'
+import AppShell, { clearShellCard } from '@/components/shared/AppShell'
 import { getNav } from '@/lib/nav'
 import DistrictField from '@/components/shared/DistrictField'
 import EnablePush from '@/components/shared/EnablePush'
 import SellerKindPicker from '@/components/shared/SellerKindPicker'
 import { REGIONS, CITIES_BY_REGION, getRegionLabel } from '@/types'
 import Link from 'next/link'
-import { Check, Circle, LogOut, LifeBuoy } from 'lucide-react'
+import { Check, Circle, LogOut, LifeBuoy, Eye, EyeOff } from 'lucide-react'
 import { CONTRACTOR_FEATURES } from '@/lib/features'
 import { clearAllLocalDrafts } from '@/lib/localDraft'
 import Glyph from '@/components/shared/Glyph'
@@ -27,6 +27,8 @@ import { friendlyError } from '@/lib/friendlyError'
 import { passwordProblems, passRuleList, passwordAuthError, PASS_RULES_SUMMARY } from '@/lib/passwordPolicy'
 import { compressImage, DOC_MAX_SIDE } from '@/lib/compressImage'
 import { askConfirm } from '@/lib/askConfirm'
+import { readPageCache, writePageCache } from '@/lib/pageCache'
+import { buyerTypeText } from '@/components/auth/BuyerTypeCards'
 
 const txt = {
   ar: {
@@ -35,7 +37,7 @@ const txt = {
     companyAr: 'اسم الشركة', companyEn: 'اسم الشركة (إنجليزي)',
     phone: 'رقم الجوال (واتساب)', region: 'المنطقة', city: 'المدينة',
     selectRegion: 'اختر المنطقة', saveProfile: 'حفظ التغييرات',
-    saving: 'جارٍ الحفظ...', saved: '✓ تم الحفظ بنجاح', error: 'حدث خطأ، حاول مرة أخرى',
+    saving: 'جارٍ الحفظ...', saved: '✓ تم الحفظ بنجاح', error: 'تعذّر الحفظ. تحقّق من اتصالك وحاول مرة أخرى.',
     currentPass: 'كلمة المرور الحالية', newPass: 'كلمة المرور الجديدة',
     confirmPass: 'تأكيد كلمة المرور الجديدة', changePass: 'تغيير كلمة المرور',
     passMatch: 'كلمات المرور غير متطابقة', passMin: 'كلمة المرور يجب أن تكون 8 أحرف على الأقل',
@@ -58,7 +60,7 @@ const txt = {
     companyAr: 'Company Name', companyEn: 'Company Name (English)',
     phone: 'Phone (WhatsApp)', region: 'Region', city: 'City',
     selectRegion: 'Select region', saveProfile: 'Save Changes',
-    saving: 'Saving...', saved: '✓ Saved successfully', error: 'An error occurred, try again',
+    saving: 'Saving...', saved: '✓ Saved successfully', error: 'Could not save. Check your connection and try again.',
     currentPass: 'Current Password', newPass: 'New Password',
     confirmPass: 'Confirm New Password', changePass: 'Change Password',
     passMatch: 'Passwords do not match', passMin: 'Password must be at least 8 characters',
@@ -81,7 +83,7 @@ const txt = {
     companyAr: 'کمپنی کا نام', companyEn: 'کمپنی کا نام (انگریزی)',
     phone: 'فون (واٹس ایپ)', region: 'علاقہ', city: 'شہر',
     selectRegion: 'علاقہ منتخب کریں', saveProfile: 'تبدیلیاں محفوظ کریں',
-    saving: 'محفوظ ہو رہا ہے...', saved: '✓ کامیابی سے محفوظ', error: 'خرابی ہوئی، دوبارہ کوشش کریں',
+    saving: 'محفوظ ہو رہا ہے...', saved: '✓ کامیابی سے محفوظ', error: 'محفوظ نہیں ہو سکا۔ اپنا کنکشن چیک کریں اور دوبارہ کوشش کریں۔',
     currentPass: 'موجودہ پاسورڈ', newPass: 'نیا پاسورڈ',
     confirmPass: 'نئے پاسورڈ کی تصدیق', changePass: 'پاسورڈ تبدیل کریں',
     passMatch: 'پاسورڈ مماثل نہیں', passMin: 'پاسورڈ کم از کم 8 حروف کا ہونا چاہیے',
@@ -132,6 +134,7 @@ export default function SettingsPage() {
   const cv = CRV[locale] || CRV.ar
 
   const [user, setUser] = useState<any>(null)
+  const [showPw, setShowPw] = useState(false)
   const [profile, setProfile] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   const [tab, setTab] = useState('profile')
@@ -491,6 +494,7 @@ export default function SettingsPage() {
     if (draft && !(await askConfirm(L('Log out? The unsent request saved on this device will be deleted with its photos.', 'لاگ آؤٹ کریں؟ اس ڈیوائس پر محفوظ نہ بھیجی گئی درخواست اپنی تصاویر سمیت حذف ہو جائے گی۔', 'تسجيل الخروج؟ سيُحذف الطلب غير المرسل المحفوظ على هذا الجهاز مع صوره.'), { danger: true, okLabel: L('Log out', 'لاگ آؤٹ', 'تسجيل الخروج') }))) return
     const supabase = createClient()
     clearAllLocalDrafts()
+    clearShellCard()
     await supabase.auth.signOut()
     window.location.href = '/login'
   }
@@ -513,7 +517,7 @@ export default function SettingsPage() {
   const nameLocked = isSupplier && (profile?.verification_status === 'verified' || profile?.cr_verification_source === 'wathq')
   const placeholderEmail = isPlaceholderEmail(user?.email)
   // a phone sign-up has no password: it signs in with a code (UX-040)
-  const phoneAccount = placeholderEmail
+  const phoneAccount = placeholderEmail || user?.user_metadata?.signup_method === 'phone'
   // documents are for selling businesses only (company / shop), not buyers or independents (UX-043)
   const teamMember = isSupplier && !!teamOf
   const showDocs = isSupplier && !independent && !teamMember
@@ -542,15 +546,30 @@ export default function SettingsPage() {
   const supportLabel = L('Support', 'سپورٹ', 'الدعم')
   const deleteLabel = L('Delete my account', 'میرا اکاؤنٹ حذف کریں', 'حذف حسابي')
   const signOutLabel = L('Log out', 'لاگ آؤٹ', 'تسجيل الخروج')
+  // the eye button on the password fields (round-4 UX-148), as on the sign-up page
+  const PwEye = () => (
+    <button type="button" onClick={() => setShowPw(s => !s)} aria-pressed={showPw}
+      aria-label={showPw ? L('Hide password', 'پاسورڈ چھپائیں', 'إخفاء كلمة المرور') : L('Show password', 'پاسورڈ دکھائیں', 'إظهار كلمة المرور')}
+      className="absolute inset-y-0 end-0 my-auto h-11 w-11 grid place-items-center rounded-lg text-gray-500 hover:text-[#8F6820]">
+      {showPw ? <EyeOff className="w-5 h-5" aria-hidden /> : <Eye className="w-5 h-5" aria-hidden />}
+    </button>
+  )
+  const legalLinks = (cls: string) => (<>
+    <Link href="/terms" className={cls}><Glyph e="📄" /><span>{L('Terms and conditions', 'شرائط و ضوابط', 'الشروط والأحكام')}</span></Link>
+    <Link href="/privacy" className={cls}><Glyph e="🔒" /><span>{L('Privacy policy', 'رازداری کی پالیسی', 'سياسة الخصوصية')}</span></Link>
+  </>)
 
+  const agentHint = isSupplier && independent && profile?.verification_status !== 'verified' && profile?.verification_status !== 'rejected'
+    ? <p className="text-[12px] text-gray-600 mt-1">{L('Your deal cap rises with every successful deal.', 'ہر کامیاب ڈیل کے ساتھ آپ کی ڈیل کی حد بڑھتی ہے۔', 'يرتفع حدّ صفقاتك مع كل صفقة ناجحة.')}</p>
+    : null
   // status pill under the avatar: a buyer sees the phone state, a seller the review state
   const statusPill = isSupplier
     ? <span className={`inline-flex items-center gap-1 mt-2 text-xs px-2 py-0.5 rounded-full font-semibold ${
         profile?.verification_status === 'verified' ? 'bg-emerald-100 text-emerald-800' :
-        profile?.verification_status === 'rejected' ? 'bg-red-100 text-red-700' : 'bg-amber-100 text-amber-800'
+        profile?.verification_status === 'rejected' ? 'bg-red-100 text-red-700' : independent ? 'bg-[#0B2438] text-white' : 'bg-amber-100 text-amber-800'
       }`}>
         {profile?.verification_status === 'verified' ? t.verified : profile?.verification_status === 'rejected' ? t.rejected
-          : independent ? L('Pricing agent', 'قیمت ایجنٹ', 'وسيط تسعير')
+          : independent ? <span title={L('Your deal cap rises with every successful deal', 'ہر کامیاب ڈیل کے ساتھ آپ کی ڈیل کی حد بڑھتی ہے', 'يرتفع حدّ صفقاتك مع كل صفقة ناجحة')}>{L('Pricing agent', 'قیمت ایجنٹ', 'وسيط تسعير')}</span>
           : !profile?.cr_url ? L('Upload your commercial registration', 'اپنا تجارتی رجسٹریشن اپلوڈ کریں', 'ارفع السجل التجاري') : t.pending}
       </span>
     : profile?.phone_verified_at
@@ -586,7 +605,7 @@ export default function SettingsPage() {
           <div className="min-w-0">
             <div className="font-bold text-sm truncate text-[#0B2438]">{companyAr || '—'}</div>
             <div className="text-[12px] text-gray-600 truncate" dir="ltr">{placeholderEmail ? (profile?.phone || '') : user?.email}</div>
-            {statusPill}
+            {statusPill}{agentHint}
           </div>
         </div>
 
@@ -603,7 +622,7 @@ export default function SettingsPage() {
                 <div className="font-bold text-sm break-words" style={{ color: '#0B2438' }}>{companyAr}</div>
                 {/* the phone for a phone sign-up, never the internal placeholder address (UX-045) */}
                 <div className="text-xs text-gray-600 mt-0.5 break-all" dir="ltr">{placeholderEmail ? (profile?.phone || '') : user?.email}</div>
-                {statusPill}
+                {statusPill}{agentHint}
               </div>
 
               <div role="tablist" aria-orientation="vertical" aria-label={t.title}>
@@ -622,10 +641,9 @@ export default function SettingsPage() {
               <Link href="/support" className="w-full min-h-[44px] flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-gray-700 hover:bg-gray-50">
                 <LifeBuoy className="w-[1em] h-[1em]" aria-hidden /><span>{supportLabel}</span>
               </Link>
+              {legalLinks('w-full min-h-[44px] flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-gray-700 hover:bg-gray-50')}
               <div className="mt-2 pt-2 border-t border-gray-100">
-                <button type="button" onClick={handleSignOut} className="w-full min-h-[44px] flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-gray-700 hover:bg-gray-50">
-                  <LogOut className="w-[1em] h-[1em]" aria-hidden /><span>{signOutLabel}</span>
-                </button>
+                {/* sign-out lives in the app frame on desktop (sidebar and top bar): no third copy here (round-4 UX-146) */}
                 <a href="/account/delete" className="w-full min-h-[44px] flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-red-700 hover:bg-red-50">
                   <span><Glyph e="🗑" /></span>
                   <span>{deleteLabel}</span>
@@ -651,7 +669,7 @@ export default function SettingsPage() {
                   <div className="mb-6 rounded-xl border border-gray-200 p-4">
                     <div id="buyer-type-label" className="text-sm font-bold text-[#0B2438] mb-2">{L('Who are you buying for?', 'آپ کس کے لیے خرید رہے ہیں؟', 'لمن تشتري؟')}</div>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2" role="radiogroup" aria-labelledby="buyer-type-label" aria-busy={btSaving}>
-                      {([['individual', L('My home', 'اپنا گھر', 'لبيتي'), L('Simple request and home screen', 'آسان درخواست اور ہوم اسکرین', 'طلب وصفحة رئيسية أبسط')], ['business', L('Contractor or company', 'ٹھیکیدار یا کمپنی', 'مقاول أو شركة'), L('All options', 'تمام اختیارات', 'كل الخيارات')]] as const).map(([v, label, sub]) => {
+                      {([['individual', L('My home', 'اپنا گھر', 'لبيتي'), buyerTypeText(locale).homeSub], ['business', L('Contractor or company', 'ٹھیکیدار یا کمپنی', 'مقاول أو شركة'), buyerTypeText(locale).businessSub]] as const).map(([v, label, sub]) => {
                         const on = profile?.buyer_type === v
                         return (
                           <button key={v} type="button" role="radio" aria-checked={on}
@@ -659,10 +677,30 @@ export default function SettingsPage() {
                             onClick={async () => {
                               if (on || btSaving) return
                               const prev = profile?.buyer_type
+                              // work in progress is hidden (not deleted) in home mode: say so first (round-4 UX-098)
+                              if (v === 'individual') {
+                                let busy = false
+                                try { const d = JSON.parse(localStorage.getItem('tsk_project_draft') || 'null'); busy = Array.isArray(d?.items) && d.items.length > 0 } catch {}
+                                if (!busy) {
+                                  try {
+                                    const { count } = await createClient().from('tenders').select('id', { count: 'exact', head: true }).eq('contractor_id', profile.id).in('status', ['draft', 'review'])
+                                    busy = (count || 0) > 0
+                                  } catch {}
+                                }
+                                if (busy && !(await askConfirm(L(
+                                  'You have quantity lists or tenders in progress. In «My home» mode they are hidden from the menu and the home page, not deleted, and you can bring them back by returning to «Contractor or company». Switch?',
+                                  'آپ کے پاس زیرِ کار مقداروں کی فہرستیں یا ٹینڈر ہیں۔ «اپنا گھر» موڈ میں یہ مینو اور ہوم پیج سے چھپ جائیں گے، حذف نہیں ہوں گے، اور «ٹھیکیدار یا کمپنی» پر واپس جا کر آپ انہیں دوبارہ دیکھ سکتے ہیں۔ کیا آپ تبدیل کرنا چاہتے ہیں؟',
+                                  'لديك جداول كميات أو مناقصات قيد العمل. ستُخفى من القائمة والصفحة الرئيسية في وضع «لبيتي»، ولن تُحذف، ويمكنك إعادتها بالعودة إلى «مقاول أو شركة». هل تريد التبديل؟'),
+                                  { okLabel: L('Switch', 'تبدیل کریں', 'بدّل') }))) return
+                              }
                               setBtSaving(true); setBtMsg(null)
                               setProfile((p: any) => ({ ...p, buyer_type: v })); rememberBuyerType(v); window.dispatchEvent(new Event('tsk:buyer-type'))
                               const { error } = await createClient().from('profiles').update({ buyer_type: v }).eq('id', profile.id)
                               if (error) { setProfile((p: any) => ({ ...p, buyer_type: prev })); rememberBuyerType(prev); window.dispatchEvent(new Event('tsk:buyer-type')) }
+                              else {
+                                // the home page shows its cached snapshot first: keep it on the new type (round-4 UX-055)
+                                try { const snap = readPageCache<any>('home_' + profile.id); if (snap?.p) writePageCache('home_' + profile.id, { ...snap, p: { ...snap.p, buyer_type: v } }) } catch {}
+                              }
                               setBtSaving(false)
                               setBtMsg(error
                                 ? { ok: false, text: L('Could not save. Try again.', 'محفوظ نہیں ہو سکا۔ دوبارہ کوشش کریں۔', 'تعذّر الحفظ، حاول مرة أخرى.') }
@@ -721,7 +759,10 @@ export default function SettingsPage() {
                   <div id="email" className="scroll-mt-32">
                     <div className="block text-xs font-bold text-gray-600 mb-1.5">{isBuyer ? L('Email (optional)', 'ای میل (اختیاری)', 'البريد الإلكتروني (اختياري)') : L('Email', 'ای میل', 'البريد الإلكتروني')}</div>
                     <EmailVerify currentEmail={user?.email} verified={!!profile?.email_verified_at} locale={locale} optional={isBuyer}
-                      onDone={() => setProfile({ ...profile, email_verified_at: new Date().toISOString() })} />
+                      onDone={async () => {
+                        setProfile({ ...profile, email_verified_at: new Date().toISOString() })
+                        try { const { data } = await createClient().auth.refreshSession(); if (data?.user) setUser(data.user) } catch {}
+                      }} />
                   </div>
                   {/* the mobile is read-only here: it changes only with an SMS code (UX-046) */}
                   <div id="phone" className="scroll-mt-32">
@@ -956,6 +997,16 @@ export default function SettingsPage() {
                   // a phone sign-up has no password to change (UX-040)
                   <div className="max-w-md rounded-xl border border-gray-200 bg-gray-50 p-4 text-sm text-gray-800 leading-relaxed">
                     <Glyph e="🔑" /> {L('You sign in with a code sent to your mobile, so you do not need a password.', 'آپ اپنے موبائل پر آنے والے کوڈ سے سائن اِن کرتے ہیں، اس لیے پاسورڈ کی ضرورت نہیں۔', 'تدخل إلى حسابك برمز يصلك على جوالك، فلا تحتاج إلى كلمة مرور.')}
+                    {/* the way in when the SMS does not arrive (round-4 UX-054) */}
+                    {!placeholderEmail && profile?.email_verified_at ? (
+                      <p className="mt-2">{L('If the text message does not arrive, you can sign in with a code sent to your email.', 'اگر ٹیکسٹ میسج نہ پہنچے تو آپ اپنی ای میل پر آنے والے کوڈ سے سائن اِن کر سکتے ہیں۔', 'إذا لم تصلك الرسالة النصية يمكنك الدخول برمز يصل إلى بريدك الإلكتروني.')}</p>
+                    ) : (<>
+                      <p className="mt-2">{L('If the text message does not arrive, you can sign in with a code sent to your email once you add it.', 'اگر ٹیکسٹ میسج نہ پہنچے تو ای میل شامل کرنے کے بعد آپ اس پر آنے والے کوڈ سے سائن اِن کر سکتے ہیں۔', 'إذا لم تصلك الرسالة النصية يمكنك الدخول برمز يصل إلى بريدك الإلكتروني بعد إضافته.')}</p>
+                      <button type="button" onClick={() => { setTab('profile'); setTimeout(() => document.getElementById('email')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50) }}
+                        className="mt-3 inline-flex items-center min-h-[44px] px-4 rounded-xl text-sm font-bold text-[#071827]" style={{ background: '#D4A543' }}>
+                        {L('Add your email', 'اپنی ای میل شامل کریں', 'أضف بريدك الإلكتروني')}
+                      </button>
+                    </>)}
                   </div>
                 ) : (
                   <form onSubmit={changePassword} className="space-y-5 max-w-md">
@@ -965,8 +1016,11 @@ export default function SettingsPage() {
 
                     <div>
                       <label htmlFor="set-curpass" className="block text-xs font-bold text-gray-600 mb-1.5">{t.currentPass}</label>
-                      <input id="set-curpass" type="password" value={curPass} onChange={e => setCurPass(e.target.value)} autoComplete="current-password"
-                        className="input-field" placeholder="••••••••" required />
+                      <div className="relative">
+                        <input id="set-curpass" type={showPw ? 'text' : 'password'} value={curPass} onChange={e => setCurPass(e.target.value)} autoComplete="current-password"
+                          className="input-field pe-12" placeholder="••••••••" required />
+                        <PwEye />
+                        </div>
                       <Link href="/forgot-password" className="inline-flex items-center min-h-[44px] text-[13px] font-bold text-[#8F6820] hover:underline">
                         {L('Forgot your current password? Get a reset link by email', 'موجودہ پاسورڈ بھول گئے؟ ای میل پر ری سیٹ لنک حاصل کریں', 'نسيت كلمة المرور الحالية؟ أرسل رابطاً إلى بريدك')}
                       </Link>
@@ -974,8 +1028,11 @@ export default function SettingsPage() {
 
                     <div>
                       <label htmlFor="set-newpass" className="block text-xs font-bold text-gray-600 mb-1.5">{t.newPass}</label>
-                      <input id="set-newpass" type="password" value={newPass} onChange={e => setNewPass(e.target.value)} autoComplete="new-password"
-                        className="input-field" placeholder="••••••••" required minLength={8} aria-describedby="set-passrules" />
+                      <div className="relative">
+                        <input id="set-newpass" type={showPw ? 'text' : 'password'} value={newPass} onChange={e => setNewPass(e.target.value)} autoComplete="new-password"
+                          className="input-field pe-12" placeholder="••••••••" required minLength={8} aria-describedby="set-passrules" />
+                        <PwEye />
+                        </div>
                       <ul id="set-passrules" className="mt-2 space-y-1 text-[13px]">
                         {passRuleList(newPass, locale).map(r => (
                           <li key={r.rule} className={`flex items-center gap-1.5 ${r.ok ? 'text-emerald-700' : 'text-gray-600'}`}>
@@ -987,8 +1044,11 @@ export default function SettingsPage() {
 
                     <div>
                       <label htmlFor="set-confpass" className="block text-xs font-bold text-gray-600 mb-1.5">{t.confirmPass}</label>
-                      <input id="set-confpass" type="password" value={confirmPass} onChange={e => setConfirmPass(e.target.value)} autoComplete="new-password"
-                        className="input-field" placeholder="••••••••" required />
+                      <div className="relative">
+                        <input id="set-confpass" type={showPw ? 'text' : 'password'} value={confirmPass} onChange={e => setConfirmPass(e.target.value)} autoComplete="new-password"
+                          className="input-field pe-12" placeholder="••••••••" required />
+                        <PwEye />
+                        </div>
                     </div>
 
                     {passMsg && <Msg m={passMsg} />}
@@ -1186,6 +1246,7 @@ export default function SettingsPage() {
               <Link href="/support" className="w-full min-h-[48px] flex items-center gap-3 px-4 rounded-xl text-sm font-semibold text-[#0B2438] hover:bg-gray-50">
                 <LifeBuoy className="w-4 h-4" aria-hidden />{supportLabel}
               </Link>
+              {legalLinks('w-full min-h-[48px] flex items-center gap-3 px-4 rounded-xl text-sm font-semibold text-[#0B2438] hover:bg-gray-50')}
               <button type="button" onClick={handleSignOut} className="w-full min-h-[48px] flex items-center gap-3 px-4 rounded-xl text-sm font-semibold text-[#0B2438] hover:bg-gray-50">
                 <LogOut className="w-4 h-4" aria-hidden />{signOutLabel}
               </button>

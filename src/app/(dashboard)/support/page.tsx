@@ -18,6 +18,7 @@ import { askConfirm } from '@/lib/askConfirm'
 import { friendlyError } from '@/lib/friendlyError'
 import { storedBuyerType } from '@/lib/buyerType'
 import GateHeader from '../verify/GateHeader'
+import { isSellerVerified } from '@/components/shared/verifyRule'
 
 const SUPPORT_WHATSAPP = '12135614366'
 
@@ -72,7 +73,8 @@ function Support() {
 
   const role = me?.role || 'contractor'
   const banned = !!me?.banned_until && new Date(me.banned_until).getTime() > Date.now() && role !== 'admin'
-  const sellerUnverified = role === 'supplier' && ((phoneRequired && !me?.phone_verified_at) || !me?.email_verified_at)
+  // the same rule as the middleware and the verify sheet: nothing is required while the switch is off (round-4 UX-067)
+  const sellerUnverified = role === 'supplier' && !isSellerVerified(me, phoneRequired)
   const atGate = !userId || banned || sellerUnverified
   // «Do you sell building materials?» is for a business buyer only, under the message box (UX-139)
   const homeBuyer = (me?.buyer_type || buyerType) === 'individual'

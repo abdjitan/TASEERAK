@@ -37,7 +37,7 @@ module.exports = {
       },
       borderRadius: {
         // an ordered scale (UX-183): md was 16px, so a rounded-md checkbox looked like a radio
-        sm: '6px', md: '8px', xl: '12px', '2xl': '16px',
+        sm: '6px', md: '8px', lg: '10px', xl: '12px', '2xl': '16px', // lg sat at the default 8px = md (round-4 UX-150)
         lg2: '22px', xl2: '30px', pill: '100px',
       },
       boxShadow: {

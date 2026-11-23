@@ -154,6 +154,8 @@ export default function ProjectResultsPage() {
           </div>
         )}
 
+        {/* a project with no items shows only the card above: no zero stats, no «no items match the filter» (UX-137) */}
+        {items.length > 0 && (<>
         {/* Stats */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-5 stagger">
           {[
@@ -204,7 +206,7 @@ export default function ProjectResultsPage() {
             <div className="flex gap-2">
               <select value={sectorFilter} onChange={(e: any) => setSectorFilter(e.target.value)}
                 className="input-field text-sm flex-shrink-0 w-auto min-h-11" aria-label={L('Sector', 'سیکٹر', 'القطاع')}>
-                <option value="all">{L('All Sectors', 'تمام شعبے', 'كل القطاعات')}</option>
+                <option value="all">{L('All Sectors', 'تمام سیکٹرز', 'كل القطاعات')}</option>
                 {Object.keys(SECTOR_LABELS).map((s: any) => <option key={s} value={s}>{sectorName(s, locale)}</option>)}
               </select>
               <input value={search} onChange={(e: any) => setSearch(e.target.value)}
@@ -226,7 +228,9 @@ export default function ProjectResultsPage() {
               // sector filter
               if (sectorFilter !== 'all' && item.sector !== sectorFilter) return false
               // search
-              if (search && !item.product_name?.toLowerCase().includes(search.toLowerCase())) return false
+              // the stored (Arabic) name and the name shown in the page's language (UX-137)
+              const q = search.trim().toLowerCase()
+              if (q && !`${item.product_name || ''} ${getProductLabel(item.product_name || '', locale)}`.toLowerCase().includes(q)) return false
               return true
             })
             if (filtered.length === 0) return (
@@ -377,8 +381,7 @@ export default function ProjectResultsPage() {
                                 {offer.extra_charges && offer.extra_charges.length > 0 && (
                                   <div className="text-xs text-[#8F6820]"
                                     title={offer.extra_charges.map((e: any) => `${e.label}: ${Number(e.amount).toLocaleString('en-US')} ${SAR}`).join('  •  ')}>
-                                    {L('incl. ', 'شامل ', 'شامل ')}
-                                    {offer.extra_charges.reduce((s: any, e: any) => s + (Number(e.amount) || 0), 0).toLocaleString('en-US')} {L('extras', 'اضافی', 'إضافات')} <Glyph e="ℹ" />
+                                    {(() => { const x = offer.extra_charges.reduce((s: any, e: any) => s + (Number(e.amount) || 0), 0).toLocaleString('en-US'); return L(`Includes extras worth ${x} ${SAR}`, `${x} ${SAR} کے اضافی اخراجات شامل ہیں`, `يشمل إضافات بقيمة ${x} ${SAR}`) })()} <Glyph e="ℹ" />
                                   </div>
                                 )}
                               </div>
@@ -418,6 +421,7 @@ export default function ProjectResultsPage() {
             })
           })()}
         </div>
+        </>)}
 
         {/* Summary if all accepted */}
         {acceptedItems > 0 && (

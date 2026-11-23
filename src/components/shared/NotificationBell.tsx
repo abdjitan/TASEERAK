@@ -9,6 +9,8 @@ import AutoTr from '@/components/shared/AutoTr'
 import { useRouter } from 'next/navigation'
 import { useNotifications } from '@/hooks/useNotifications'
 import Glyph from '@/components/shared/Glyph'
+import { notifText } from '@/lib/notifText'
+import { useFocusTrap } from '@/components/shared/useFocusTrap'
 
 /** The event the notifications page fires after it marks everything read, so the bell clears (UX-056). */
 export const NOTIFS_READ_EVENT = 'tsk:notifs-read'
@@ -64,6 +66,16 @@ export function notifGlyph(type: any, data?: any, title?: any): string {
   return '🔔'
 }
 
+/**
+ * A notice's title or body in the reader's language (round-4 UX-021): the template from
+ * notifText when there is one, else the stored Arabic text (machine-translated for en/ur readers).
+ */
+export function NotifField({ n, field, locale }: { n: any; field: 'title' | 'body'; locale: string }) {
+  const t = notifText(n, locale)[field]
+  if (t) return <span dir="auto">{t}</span>
+  return <AutoTr text={noEmoji(n?.[field])} locale={locale} noToggle />
+}
+
 /** Only same-site paths are followed from a stored notification. */
 export function safeNotifUrl(url: any): string | null {
   return typeof url === 'string' && url.startsWith('/') && !url.startsWith('//') && !url.includes('\\') ? url : null
@@ -79,6 +91,8 @@ export default function NotificationBell({ userId }: { userId?: string }) {
   const panelRef = useRef<HTMLDivElement>(null)
   const btnRef = useRef<HTMLButtonElement>(null)
   const router = useRouter()
+  // keyboard users land inside the panel (it lives in a portal at the end of <body>) and Tab stays there (UX-116)
+  useFocusTrap(panelRef, open && !!pos)
   // in the reader's language (review 2026-10-28: the bell was Arabic only); notification texts are
   // written in Arabic by the database and shown translated for English/Urdu readers
   const { locale, dir } = useTranslation()
@@ -119,7 +133,7 @@ export default function NotificationBell({ userId }: { userId?: string }) {
       if (ref.current?.contains(e.target) || panelRef.current?.contains(e.target)) return
       setOpen(false)
     }
-    function onKey(e: KeyboardEvent) { if (e.key === 'Escape' && open) { setOpen(false); btnRef.current?.focus() } }
+    function onKey(e: KeyboardEvent) { if (e.key === 'Escape' && open) setOpen(false) }
     document.addEventListener('mousedown', onClick)
     document.addEventListener('keydown', onKey)
     return () => { document.removeEventListener('mousedown', onClick); document.removeEventListener('keydown', onKey) }
@@ -159,8 +173,8 @@ export default function NotificationBell({ userId }: { userId?: string }) {
                 <Glyph e={notifGlyph(n.type, n.data, n.title)} />
               </span>
               <div className="min-w-0 flex-1">
-                <div className={`text-sm line-clamp-2 ${n.is_read ? 'font-semibold' : 'font-bold'}`} style={{ color: '#0B2438' }}><AutoTr text={noEmoji(n.title)} locale={locale} noToggle /></div>
-                {n.body && <div className="text-xs mt-0.5 line-clamp-2" style={{ color: '#526579' }}><AutoTr text={noEmoji(n.body)} locale={locale} noToggle /></div>}
+                <div className={`text-sm line-clamp-2 ${n.is_read ? 'font-semibold' : 'font-bold'}`} style={{ color: '#0B2438' }}><NotifField n={n} field="title" locale={locale} /></div>
+                {n.body && <div className="text-xs mt-0.5 line-clamp-2" style={{ color: '#526579' }}><NotifField n={n} field="body" locale={locale} /></div>}
                 <div className="text-xs mt-1" style={{ color: '#526579' }}>{timeAgo(n.created_at, locale)}</div>
               </div>
               {!n.is_read && <span className="w-2.5 h-2.5 rounded-full mt-1.5 shrink-0" style={{ background: '#D4A543' }} role="img" aria-label={L('Unread', 'نئی', 'غير مقروء')} />}

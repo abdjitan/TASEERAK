@@ -12,7 +12,7 @@ import { useTranslation } from '@/i18n'
 import AppShell from '@/components/shared/AppShell'
 import Glyph from '@/components/shared/Glyph'
 import { getNav } from '@/lib/nav'
-import { SECTOR_LABELS, SUB_CATEGORIES, SECTOR_PRODUCTS, UNIT_OPTIONS, getSubCategoryLabel, getUnitLabel, getProductLabel, type Sector } from '@/types'
+import { SECTOR_LABELS, SUB_CATEGORIES, SECTOR_PRODUCTS, UNIT_OPTIONS, getSubCategoryLabel, getUnitLabel, getProductLabel, detectSubCategory, type Sector } from '@/types'
 import { toLatinDigits } from '@/lib/phone'
 import { arItems } from '@/lib/text'
 import { runChecks, specCheck, isFlagFree, SEVERITY_ORDER } from '@/lib/tender/checks'
@@ -27,6 +27,12 @@ import { askConfirm } from '@/lib/askConfirm'
 import PageLoader from '@/components/shared/PageLoader'
 import { storedBuyerType } from '@/lib/buyerType'
 import { arCount, arMaterials } from '@/lib/text'
+import HomeModeNotice from '@/components/tender/HomeModeNotice'
+
+// a sector + specialty pair suppliers can be routed by (UX-023): the specialty must belong to the sector
+const validPair = (sector: string | null | undefined, sub: string | null | undefined) => !!sector && !!sub && !!(SUB_CATEGORIES as any)[sector]?.[sub]
+// the specialty of a material in a sector: its own when it belongs there, else the best keyword match, else none
+const subFor = (name: string, sector: string, current?: string | null) => (validPair(sector, current) ? String(current) : (name ? detectSubCategory(name, sector as Sector) || '' : ''))
 
 const PROJECT_DRAFT_KEY = 'tsk_project_draft' // the project page's draft (restored on open)
 const PAGE = 150
@@ -36,9 +42,9 @@ const SECTOR_L: Record<string, [string, string]> = {
   mechanical: ['Mechanical', 'مکینیکل'], equipment: ['Machinery and equipment', 'مشینری اور آلات'], supply_store: ['Supply store', 'سپلائی اسٹور'],
 }
 const sectorName = (s: string, locale: string) => (locale === 'ar' ? (SECTOR_LABELS as any)[s] || s : (SECTOR_L[s]?.[locale === 'ur' ? 1 : 0] || s))
-// «١٢٫٥» / «12,500» → 12.5 / 12500; '' → null; NaN → undefined (refused)
+// «١٢٫٥» / «12,500» / «١٢٬٥٠٠» → 12.5 / 12500 / 12500 (a comma is always a thousands separator: UX-002); '' → null; NaN → undefined (refused)
 function parseQty(v: string): number | null | undefined {
-  const t = toLatinDigits(String(v || '')).replace(/٫/g, '.').replace(/[,،\s]/g, '').trim()
+  const t = toLatinDigits(String(v || '')).replace(/٫/g, '.').replace(/[,،٬\s]/g, '').trim()
   if (!t) return null
   if (!/^\d*\.?\d+$/.test(t)) return undefined
   return Number(t)
@@ -55,6 +61,10 @@ export default function TenderReviewPage() {
   const [rows, setRows] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [loadError, setLoadError] = useState('')
+  const [homeMode, setHomeMode] = useState(false)
+  // the save step could not upload an original file (only its read items/text are kept): UX-136
+  const [originalsFailed, setOriginalsFailed] = useState(false)
+  useEffect(() => { try { setOriginalsFailed(new URLSearchParams(window.location.search).get('originals') === 'failed') } catch {} }, [])
   const [specs, setSpecs] = useState<{ index: SpecIndex; pages: PdfPageText[] }[]>([])
   const [specLoading, setSpecLoading] = useState(false)
   const [thumbs, setThumbs] = useState<Record<string, string>>({})
@@ -73,14 +83,14 @@ export default function TenderReviewPage() {
   // ── load ─────────────────────────────────────────────────────────────────────────────────
   useEffect(() => {
     if (!id) return
-    // a home buyer has no tenders: the simple request page (UX-078)
-    if (storedBuyerType() === 'individual') { window.location.replace('/contractor/rfq/quick'); return }
+    // «لبيتي» mode hides tenders (never deletes them): say so, with the way back, instead of a silent redirect (UX-098)
+    if (storedBuyerType() === 'individual') { setHomeMode(true); setLoading(false); return }
     const supabase = createClient()
     supabase.auth.getSession().then(async ({ data }) => {
       if (!data.session) { window.location.href = '/login'; return }
       setUser(data.session.user)
       const { data: bt } = await supabase.from('profiles').select('buyer_type').eq('id', data.session.user.id).maybeSingle()
-      if ((bt as any)?.buyer_type === 'individual') { window.location.replace('/contractor/rfq/quick'); return }
+      if ((bt as any)?.buyer_type === 'individual') { setHomeMode(true); setLoading(false); return }
       const { data: t, error: tErr } = await supabase.from('tenders').select('*').eq('id', id).single()
       if (tErr || !t) {
         // «not found» only when the row is really missing (PGRST116); otherwise the real problem
@@ -153,6 +163,8 @@ export default function TenderReviewPage() {
   for (const f of [...fast.flags, ...specRes.flags]) sevCount[f.severity] = (sevCount[f.severity] || 0) + 1
   const approvedMaterials = rows.filter(r => r.approved && r.kind === 'material')
   const flaggedMaterials = rows.filter(r => r.kind === 'material' && !isFlagFree(byItem[r.item_key])).length
+  // step 1 is done when every flagged material was looked at and approved (approving it = reviewed it): UX-095
+  const flaggedPending = rows.filter(r => r.kind === 'material' && !r.approved && !isFlagFree(byItem[r.item_key])).length
   const sheets = useMemo(() => Array.from(new Set(rows.map(r => r.sheet))).filter(Boolean), [rows])
 
   const filtered = useMemo(() => {
@@ -174,7 +186,9 @@ export default function TenderReviewPage() {
   const sel = rows.find(r => r.id === selId) || null
   useEffect(() => {
     if (!sel) { setEdit(null); return }
-    setEdit({ product_name: sel.product_name || '', unit: sel.unit || '', qty: sel.qty == null ? '' : String(sel.qty), kind: sel.kind, specification: sel.specification || '', sector: sel.sector || 'civil', sub_category: sel.sub_category || '' })
+    // a stored specialty that does not belong to the item's sector is cleared, never shown as chosen (UX-023)
+    const sector0 = sel.sector || 'civil'
+    setEdit({ product_name: sel.product_name || '', unit: sel.unit || '', qty: sel.qty == null ? '' : String(sel.qty), kind: sel.kind, specification: sel.specification || '', sector: sector0, sub_category: validPair(sector0, sel.sub_category) ? sel.sub_category : '' })
     setNameLocked(true); setMsg('')
   }, [selId]) // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -186,6 +200,7 @@ export default function TenderReviewPage() {
     // Arabic digits are read as numbers; an unreadable or zero quantity is refused instead of saved as 0
     if (qty === undefined || qty === 0) { setMsg(L('Enter a quantity greater than zero (or leave it empty).', 'صفر سے زیادہ مقدار لکھیں (یا خالی چھوڑیں)۔', 'أدخل كمية أكبر من صفر (أو اتركها فارغة).')); return }
     // an approved item goes to suppliers: it needs a quantity (a lump sum counts as one) (UX-073)
+    if (approve && !validPair(edit.sector, edit.sub_category)) { setMsg(L('Choose a specialty of this sector first: it routes the item to the right suppliers.', 'پہلے اس سیکٹر کا شعبہ منتخب کریں: یہی آئٹم کو صحیح سپلائرز تک پہنچاتا ہے۔', 'اختر تخصصاً من هذا القطاع أولاً، فهو ما يوصل البند إلى الموردين المختصين.')); return }
     if (approve && qty == null && !sel.lump_sum) { setMsg(L('Enter the quantity first: an item without a quantity cannot be priced.', 'پہلے مقدار لکھیں: بغیر مقدار آئٹم کی قیمت نہیں لگائی جا سکتی۔', 'أدخل الكمية أولاً، فلا يُسعَّر بند بلا كمية.')); return }
     setBusy(true); setMsg('')
     const supabase = createClient()
@@ -238,22 +253,42 @@ export default function TenderReviewPage() {
 
   async function sendApproved() {
     if (!approvedMaterials.length) return
-    const unrouted = approvedMaterials.filter(r => !r.sub_category).length
-    // this opens the sending page (nothing is sent yet); it replaces another unsent list kept there
-    let other = 0
-    try { const d = JSON.parse(localStorage.getItem(PROJECT_DRAFT_KEY) || 'null'); if (d && Array.isArray(d.items) && d.items.length && d.tender_id !== tender.id) other = d.items.length } catch {}
-    if (!(await askConfirm(L(`Move ${approvedMaterials.length} approved material items to the sending page? You review the delivery details there and send.${unrouted ? ` (${unrouted} have no specialty yet: choose it there.)` : ''}\n\nWorks, provisional sums and unapproved items are not moved.${other ? `\n\nThis replaces another unsent list on that page (${other} items).` : ''}`,
-      `${approvedMaterials.length} منظور مواد آئٹمز بھیجنے کے صفحے پر لے جائیں؟ وہاں ڈیلیوری کی تفصیل دیکھ کر بھیجیں۔${unrouted ? ` (${unrouted} کا شعبہ ابھی منتخب نہیں: وہاں منتخب کریں۔)` : ''}\n\nکام، عارضی رقمیں اور غیر منظور آئٹمز منتقل نہیں ہوتے۔${other ? `\n\nیہ اس صفحے پر موجود ایک اور نہ بھیجی گئی فہرست (${other} آئٹمز) کی جگہ لے گا۔` : ''}`,
-      `نقل ${arItems(approvedMaterials.length)} معتمدة من المواد إلى صفحة الإرسال؟ تراجع هناك بيانات التوصيل ثم ترسل.${unrouted ? ` (${arItems(unrouted)} بلا تخصص بعد: اختره هناك.)` : ''}\n\nلا تُنقل الأعمال ولا المبالغ الاحتياطية ولا البنود غير المعتمدة.${other ? `\n\nسيحلّ هذا محل قائمة أخرى غير مرسلة في تلك الصفحة (${arItems(other)}).` : ''}`), { okLabel: L('Continue', 'جاری رکھیں', 'متابعة') }))) return
+    // a line whose specialty does not belong to its sector goes as «choose its specialty», never mismatched (UX-023)
+    const toLine = (r: any, i: number) => {
+      const it: any = draftItemFromRow(r, i)
+      if (!validPair(it.sector, it.sub_category)) { it.sub_category = null; it.needs_classification = true; it.done = false }
+      return it
+    }
+    const unrouted = approvedMaterials.filter(r => !validPair(r.sector, r.sub_category)).length
+    // this opens the sending page (nothing is sent yet). The list already there from THIS tender is merged, never
+    // replaced: its settings and lines (with the buyer's edits) stay, and only newly approved items are added (UX-093).
+    // Another unsent list is replaced, after saying so.
+    let prev: any = null
+    try { prev = JSON.parse(localStorage.getItem(PROJECT_DRAFT_KEY) || 'null') } catch {}
+    const prevItems: any[] = prev && Array.isArray(prev.items) ? prev.items : []
+    const sameTender = !!prev && prev.tender_id === tender.id && prevItems.length > 0
+    const other = !sameTender && prevItems.length ? prevItems.length : 0
+    const have = new Set(sameTender ? prevItems.map((it: any) => it.tender_item_id).filter(Boolean) : [])
+    const fresh = approvedMaterials.filter(r => !have.has(r.id))
+    if (sameTender && !fresh.length) { window.location.href = '/contractor/project/new'; return }
+    const moveN = sameTender ? fresh.length : approvedMaterials.length
+    const mergeEn = sameTender ? `\n\nThe list already on that page (${prevItems.length} items) keeps your edits; only the new items are added.` : ''
+    const mergeUr = sameTender ? `\n\nاس صفحے پر موجود فہرست (${prevItems.length} آئٹمز) میں آپ کی ترامیم باقی رہیں گی؛ صرف نئے آئٹمز شامل ہوں گے۔` : ''
+    const mergeAr = sameTender ? `\n\nتبقى القائمة الموجودة في تلك الصفحة (${arItems(prevItems.length)}) بتعديلاتك، وتُضاف إليها البنود الجديدة فقط.` : ''
+    if (!(await askConfirm(L(`Move ${moveN} approved material items to the sending page? You review the delivery details there and send.${unrouted ? ` (${unrouted} have no specialty yet: choose it there.)` : ''}\n\nWorks, provisional sums and unapproved items are not moved.${mergeEn}${other ? `\n\nThis replaces another unsent list on that page (${other} items).` : ''}`,
+      `${moveN} منظور مواد آئٹمز بھیجنے کے صفحے پر لے جائیں؟ وہاں ڈیلیوری کی تفصیل دیکھ کر بھیجیں۔${unrouted ? ` (${unrouted} کا شعبہ ابھی منتخب نہیں: وہاں منتخب کریں۔)` : ''}\n\nکام، عارضی رقمیں اور غیر منظور آئٹمز منتقل نہیں ہوتے۔${mergeUr}${other ? `\n\nیہ اس صفحے پر موجود ایک اور نہ بھیجی گئی فہرست (${other} آئٹمز) کی جگہ لے گا۔` : ''}`,
+      `نقل ${arItems(moveN)} معتمدة من المواد إلى صفحة الإرسال؟ تراجع هناك بيانات التوصيل ثم ترسل.${unrouted ? ` (${arItems(unrouted)} بلا تخصص بعد: اختره هناك.)` : ''}\n\nلا تُنقل الأعمال ولا المبالغ الاحتياطية ولا البنود غير المعتمدة.${mergeAr}${other ? `\n\nسيحلّ هذا محل قائمة أخرى غير مرسلة في تلك الصفحة (${arItems(other)}).` : ''}`), { okLabel: L('Continue', 'جاری رکھیں', 'متابعة'), ...(other ? { danger: true } : {}) }))) return
     // the tender name is the company's private label: it goes to the project name only (seen by the buyer),
     // never into notes suppliers read (UX-002). The sending page has one visible «ملاحظات للموردين» field.
-    const draft = {
-      title: tender.title,
-      supplierNotes: '',
-      deliveryRequired: true, deliveryLocation: '',
-      items: approvedMaterials.map((r, i) => draftItemFromRow(r, i)),
-      tender_id: tender.id,
-    }
+    const draft = sameTender
+      ? { ...prev, items: [...prevItems, ...fresh.map((r, i) => ({ ...toLine(r, prevItems.length + i), id: `tender-${Date.now()}-${i}` }))], tender_id: tender.id }
+      : {
+        title: tender.title,
+        supplierNotes: '',
+        deliveryRequired: true, deliveryLocation: '',
+        items: approvedMaterials.map((r, i) => toLine(r, i)),
+        tender_id: tender.id,
+      }
     try { localStorage.setItem(PROJECT_DRAFT_KEY, JSON.stringify(draft)) } catch {
       setMsg(L('Could not prepare the request in this browser (its storage is full or blocked).', 'اس براؤزر میں درخواست تیار نہیں ہو سکی (اس کی اسٹوریج بھری ہوئی یا بند ہے)۔', 'تعذّر تجهيز الطلب في هذا المتصفح (مساحة التخزين ممتلئة أو محظورة).')); return
     }
@@ -265,6 +300,26 @@ export default function TenderReviewPage() {
   const selLinks = sel ? fast.codeLinks.filter(l => (sel.codes || []).includes(l.code)) : []
   const selSpec = useMemo(() => (selItem && specs.length ? specHitsFor(selItem, specs).slice(0, 3) : []), [selItem, specs])
   const selArea = sel ? fast.areaChecks.filter(a => a.boq_items.includes(sel.item_key)) : []
+  // «الكمية (كانت 120)» instead of raw field names (UX-095): the field's label and the BOQ's own value
+  const editedText = (k: string, before: any, row: any) => {
+    const label: Record<string, string> = {
+      product_name: L('material', 'مواد', 'المادة'), unit: L('unit', 'یونٹ', 'الوحدة'), qty: L('quantity', 'مقدار', 'الكمية'),
+      kind: L('kind', 'قسم', 'النوع'), specification: L('specification', 'تفصیل', 'المواصفة'), sector: L('sector', 'سیکٹر', 'القطاع'),
+      sub_category: L('specialty', 'شعبہ', 'التخصص'),
+    }
+    const empty = L('empty', 'خالی', 'فارغ')
+    const v = before == null || before === '' ? empty
+      : k === 'qty' ? fmtNum(Number(before))
+      : k === 'unit' ? getUnitLabel(String(before), locale)
+      : k === 'kind' ? kindLabel(before, L)
+      : k === 'sector' ? sectorName(String(before), locale)
+      : k === 'sub_category' ? (getSubCategoryLabel(((row.edited && row.edited.sector) || row.sector) as Sector, String(before), locale) || String(before))
+      : k === 'product_name' ? getProductLabel(String(before), locale)
+      : String(before).length > 40 ? `${String(before).slice(0, 40)}…` : String(before)
+    const was = ['kind', 'sector', 'sub_category'].includes(k) ? 'كان' : 'كانت' // Arabic gender of the field name
+    return L(`${label[k] || k} (was ${v})`, `${label[k] || k} (پہلے ${v})`, `${label[k] || k} (${was} ${v})`)
+  }
+  const pg = (n: number | null | undefined) => L(`p. ${n ?? ""}`, `صفحہ ${n ?? ""}`, `ص ${n ?? ""}`)
   const pct = (n: number | null) => (n == null ? '—' : `${n > 0 ? '+' : ''}${n}%`)
   const roomsOf = (a: AreaCheckRow) => a.rooms.map(r => `${r.code || ''} ${r.name} ${fmtNum(r.area)}${r.low ? '?' : ''}`.trim()).join(' · ')
   const areaNote = (a: AreaCheckRow) => a.status === 'partial'
@@ -285,9 +340,10 @@ export default function TenderReviewPage() {
   // only a material with a specialty can be approved (works are not sent; the specialty routes the item)
   // and a quantity: an item without one cannot be priced (UX-073); a lump sum counts as one
   const editHasQty = !!edit && (Number(parseQty(edit.qty) || 0) > 0 || (!!sel?.lump_sum && !String(edit.qty || '').trim()))
-  const canApprove = !!edit && edit.kind === 'material' && !!edit.sub_category && editHasQty
+  // the specialty must belong to the sector, or the item would reach the wrong suppliers (or none): UX-023
+  const canApprove = !!edit && edit.kind === 'material' && validPair(edit.sector, edit.sub_category) && editHasQty
   // the materials «اعتماد المواد بلا تنبيهات» would approve in the current view (its count is on the button)
-  const bulkIds = filtered.filter(r => r.kind === 'material' && !r.approved && isFlagFree(byItem[r.item_key]) && r.sub_category && (Number(r.qty) > 0 || r.lump_sum)).map(r => r.id)
+  const bulkIds = filtered.filter(r => r.kind === 'material' && !r.approved && isFlagFree(byItem[r.item_key]) && validPair(r.sector, r.sub_category) && (Number(r.qty) > 0 || r.lump_sum)).map(r => r.id)
   const allApproved = (kindCount.material || 0) > 0 && approvedMaterials.length === (kindCount.material || 0)
   // a summary card is a filter: a tap shows those items in the table (UX-136)
   const card = (label: string, value: number | string, tone = 'text-[#0B2438]', filter?: { kind: string; flag: string }) => {
@@ -312,6 +368,7 @@ export default function TenderReviewPage() {
   return (
     <AppShell title={L('Tender review', 'ٹینڈر جائزہ', 'مراجعة المناقصة')} nav={getNav('contractor', locale, '/contractor/tender')} dir={dir}>
       <div className="max-w-7xl mx-auto space-y-4">
+        {homeMode && <HomeModeNotice locale={locale} what="tender" />}
         {/* an error always has a way out (UX-142) */}
         {!loading && loadError && (
           <div className="max-w-xl mx-auto bg-white rounded-2xl border border-gray-100 p-8 text-center">
@@ -329,7 +386,10 @@ export default function TenderReviewPage() {
             <div>
               <Link href="/contractor/tender" className="text-xs font-bold text-[#8F6820] hover:underline">{L('All tenders', 'تمام ٹینڈرز', 'كل المناقصات')}</Link>
               <h1 className="text-xl sm:text-2xl font-bold text-[#0B2438]">{tender.title}</h1>
-              <p className="text-xs text-gray-500 mt-0.5">{files.map(f => `${f.kind === 'boq' ? L('BOQ', 'BOQ', 'جدول الكميات') : f.kind === 'spec' ? L('Spec', 'تفصیل', 'مواصفات') : L('Drawing', 'ڈرائنگ', 'مخطط')}: ${f.name}${f.storage_path ? '' : f.kind !== 'boq' ? L(' (text only)', ' (صرف متن)', ' (النص فقط)') : ''}`).join(' · ')}</p>
+              <p className="text-xs text-gray-500 mt-0.5">{files.map(f => `${f.kind === 'boq' ? L('BOQ', 'BOQ', 'جدول الكميات') : f.kind === 'spec' ? L('Spec', 'تفصیل', 'مواصفات') : L('Drawing', 'ڈرائنگ', 'مخطط')}: ${f.name}${f.storage_path ? '' : f.kind === 'boq' ? L(' (the read items only; the original was not saved)', ' (صرف پڑھے گئے آئٹمز؛ اصل فائل محفوظ نہیں ہوئی)', ' (البنود المقروءة فقط، ولم تُحفظ النسخة الأصلية)') : f.summary?.original_failed ? L(' (the read text only; the original was not saved)', ' (صرف پڑھا گیا متن؛ اصل فائل محفوظ نہیں ہوئی)', ' (النص المقروء فقط، ولم تُحفظ النسخة الأصلية)') : L(' (text only)', ' (صرف متن)', ' (النص فقط)')}`).join(' · ')}</p>
+              {(originalsFailed || files.some(f => !f.storage_path && (f.kind === 'boq' || f.summary?.original_failed))) && (
+                <p className="mt-1 text-xs font-semibold text-[#8F6820]" role="status"><Glyph e="⚠" /> {L('An original file could not be uploaded: only what was read from it is kept. Keep the original with you.', 'ایک اصل فائل اپ لوڈ نہیں ہو سکی: صرف اس سے پڑھا گیا مواد محفوظ ہے۔ اصل فائل اپنے پاس رکھیں۔', 'تعذّر رفع ملف أصلي، فحُفظ ما قُرئ منه فقط. احتفظ بالنسخة الأصلية لديك.')}</p>
+              )}
             </div>
             <div className="flex gap-2 flex-wrap">
               {sent && tender.project_rfq_id && <span className="min-h-11 inline-flex items-center px-3 py-2 rounded-xl text-xs font-bold bg-[#0F6E56]/10 text-[#0F6E56]">{L('Sent for pricing', 'بھیج دیا گیا', 'أُرسلت للتسعير')}</span>}
@@ -340,7 +400,9 @@ export default function TenderReviewPage() {
               )}
               {!sent && (<>
               <button type="button" disabled={busy || !bulkIds.length} onClick={bulkApprove} className="min-h-11 px-4 py-2.5 rounded-xl text-sm font-bold border border-[#0B2438] text-[#0B2438] disabled:opacity-40">
-                {L(`Approve ${bulkIds.length} items without flags in this view`, `اس منظر میں بغیر انتباہ ${bulkIds.length} آئٹمز منظور کریں`, `اعتماد ${arItems(bulkIds.length)} بلا تنبيهات في هذا العرض`)}
+                {bulkIds.length
+                  ? L(`Approve ${bulkIds.length} items without flags in this view`, `اس منظر میں بغیر انتباہ ${bulkIds.length} آئٹمز منظور کریں`, `اعتماد ${arItems(bulkIds.length)} بلا تنبيهات في هذا العرض`)
+                  : L('Approve the materials without flags in this view', 'اس منظر میں بغیر انتباہ مواد منظور کریں', 'اعتماد المواد بلا تنبيهات في هذا العرض')}
               </button>
               <button type="button" disabled={busy || !approvedMaterials.length} onClick={sendApproved} aria-describedby={!approvedMaterials.length ? 'tender-send-why' : undefined} className="min-h-11 px-4 py-2.5 rounded-xl text-sm font-bold text-[#071827] disabled:opacity-40" style={{ background: 'linear-gradient(135deg,#F5C55B,#D4A543)' }}>
                 {L(`Continue to the sending page (${approvedMaterials.length}) →`, `بھیجنے کے صفحے پر جائیں (${approvedMaterials.length}) ←`, `متابعة إلى صفحة الإرسال (${approvedMaterials.length}) ←`)}
@@ -377,7 +439,7 @@ export default function TenderReviewPage() {
           {!sent && (
             <ol className="grid grid-cols-1 sm:grid-cols-3 gap-2">
               {[
-                { n: 1, t: L('Review the flags', 'انتباہات دیکھیں', 'راجع التنبيهات'), d: flaggedMaterials ? L(`${flaggedMaterials} materials have flags`, `${flaggedMaterials} مواد پر انتباہ`, `مواد عليها تنبيهات: ${flaggedMaterials}`) : L('No material has flags', 'کسی مواد پر انتباہ نہیں', 'لا توجد مواد عليها تنبيهات'), done: flaggedMaterials === 0 },
+                { n: 1, t: L('Review the flags', 'انتباہات دیکھیں', 'راجع التنبيهات'), d: flaggedPending ? L(`Materials with flags not approved yet: ${flaggedPending}`, `انتباہ والے مواد جو ابھی منظور نہیں ہوئے: ${flaggedPending}`, `مواد عليها تنبيهات لم تُعتمد بعد: ${flaggedPending}`) : flaggedMaterials ? L('You reviewed all the flags', 'آپ نے تمام انتباہات دیکھ لیے', 'راجعتَ كل التنبيهات') : L('No material has flags', 'کسی مواد پر انتباہ نہیں', 'لا توجد مواد عليها تنبيهات'), done: flaggedPending === 0 },
                 { n: 2, t: L(`Approve the materials (${approvedMaterials.length}/${kindCount.material || 0})`, `مواد منظور کریں (${approvedMaterials.length}/${kindCount.material || 0})`, `اعتمد المواد (${approvedMaterials.length}/${kindCount.material || 0})`), d: L('Open an item, check it and approve it, or approve the ones without flags at once.', 'آئٹم کھولیں، جانچیں اور منظور کریں، یا بغیر انتباہ والے سب ایک ساتھ منظور کریں۔', 'افتح البند وراجعه واعتمده، أو اعتمد المواد بلا تنبيهات دفعة واحدة.'), done: !!approvedMaterials.length && approvedMaterials.length === (kindCount.material || 0) },
                 { n: 3, t: L('Send them for pricing', 'قیمت کے لیے بھیجیں', 'أرسلها للتسعير'), d: L('«Continue to the sending page» opens the request with the approved materials.', '«بھیجنے کے صفحے پر جائیں» منظور مواد کے ساتھ درخواست کھولتا ہے۔', '«متابعة إلى صفحة الإرسال» تفتح الطلب بالمواد المعتمدة.'), done: false },
               ].map(s => (
@@ -410,7 +472,7 @@ export default function TenderReviewPage() {
                 {tenderFlags.map((f, i) => (
                   <li key={i} className={`text-xs rounded-lg border p-2 ${SEVERITY_TONE[f.severity]}`}>
                     <b>{severityLabel(f.severity, L)}:</b> <span dir="auto">{locale === 'ar' ? f.ar : f.en}</span>
-                    <span className="block text-xs opacity-80 mt-0.5" dir="auto">{f.sources.map(s => `${s.sheet || s.file}${s.page ? ` p${s.page}` : ''}`).join(' · ')}</span>
+                    <span className="block text-xs opacity-80 mt-0.5" dir="auto">{f.sources.map(s => `${s.sheet || s.file}${s.page ? ` ${pg(s.page)}` : ''}`).join(' · ')}</span>
                   </li>
                 ))}
               </ul>
@@ -456,8 +518,8 @@ export default function TenderReviewPage() {
 
           {/* filters */}
           <div className="bg-white rounded-2xl border border-gray-200 p-3 grid grid-cols-1 sm:grid-cols-4 gap-2">
-            <select value={fSheet} aria-label={L('Trade (sheet)', 'شعبہ (شیٹ)', 'الأعمال (الورقة)')} onChange={(e: any) => { setFSheet(e.target.value); setLimit(PAGE) }} className="input-field text-sm">
-              <option value="">{L('All trades (sheets)', 'تمام شعبے (شیٹس)', 'كل الأعمال (الأوراق)')}</option>
+            <select value={fSheet} aria-label={L('Trade (sheet)', 'کام (شیٹ)', 'الأعمال (الورقة)')} onChange={(e: any) => { setFSheet(e.target.value); setLimit(PAGE) }} className="input-field text-sm">
+              <option value="">{L('All trades (sheets)', 'تمام کام (شیٹس)', 'كل الأعمال (الأوراق)')}</option>
               {sheets.map(s => <option key={s} value={s}>{s}</option>)}
             </select>
             <select value={fKind} aria-label={L('Kind', 'قسم', 'النوع')} onChange={(e: any) => { setFKind(e.target.value); setLimit(PAGE) }} className="input-field text-sm">
@@ -560,8 +622,8 @@ export default function TenderReviewPage() {
                       {sel.lead_in && <div className="text-gray-600">{sel.lead_in}</div>}
                       <div className="font-semibold">{sel.ref ? `${sel.ref.split(' ').pop()} | ` : ''}{sel.item_text}</div>
                       <div>{L('Unit', 'یونٹ', 'الوحدة')}: {sel.unit_raw || '—'} · {L('Qty', 'مقدار', 'الكمية')}: {fmtNum(sel.edited && 'qty' in sel.edited ? sel.edited.qty : sel.qty)}{sel.rate != null ? ` · ${L('Rate', 'ریٹ', 'السعر')}: ${fmtNum(sel.rate)}` : ''}{sel.amount != null ? ` · ${L('Amount', 'رقم', 'الإجمالي')}: ${fmtNum(sel.amount)}` : ''}</div>
-                      {sel.etimad_code && <div className="text-gray-500">Etimad: {sel.etimad_label ? `${sel.etimad_label} - ` : ''}{sel.etimad_code}</div>}
-                      {sel.edited && Object.keys(sel.edited).length > 0 && <div className="text-[#8F6820]" dir={dir}>{L('Changed by you: ', 'آپ نے بدلا: ', 'عدّلتَ: ')}{Object.keys(sel.edited).join('، ')}</div>}
+                      {sel.etimad_code && <div className="text-gray-500">{L('Etimad platform code: ', 'اعتماد پلیٹ فارم کوڈ: ', 'رمز منصة اعتماد: ')}{sel.etimad_label ? `${sel.etimad_label} - ` : ''}{sel.etimad_code}</div>}
+                      {sel.edited && Object.keys(sel.edited).length > 0 && <div className="text-[#8F6820]" dir={dir}>{L('Changed by you: ', 'آپ نے بدلا: ', 'عدّلتَ: ')}{Object.keys(sel.edited).map(k => editedText(k, sel.edited[k], sel)).join(locale === 'ar' ? '، ' : ', ')}</div>}
                     </div>
                   </section>
 
@@ -571,9 +633,9 @@ export default function TenderReviewPage() {
                       <h3 className="text-xs font-bold text-[#0B2438] mb-1"><Glyph e="📑" /> {L('Specification', 'تفصیلات', 'المواصفات')}</h3>
                       {selSpec.length === 0 && <p className="text-xs text-gray-500">{L('No section found.', 'کوئی حصہ نہیں ملا۔', 'لم يُعثر على قسم.')}</p>}
                       {selSpec.map((h, i) => (
-                        <div key={i} className="rounded-xl bg-gray-50 p-2.5 text-xs mb-1.5" dir="ltr">
-                          <div className="font-semibold text-[#0B2438]">{h.section.id} {h.section.title} <span className="text-gray-500 font-normal">· {h.file} p{h.quotes[0]?.page || h.section.page_from}</span></div>
-                          {h.quotes.map((q, k) => <div key={k} className="text-gray-700 mt-1">«{q.text}» <span className="text-gray-400">p{q.page}</span></div>)}
+                        <div key={i} className="rounded-xl bg-gray-50 p-2.5 text-xs mb-1.5" dir="auto">
+                          <div className="font-semibold text-[#0B2438]">{h.section.id} {h.section.title} <span className="text-gray-500 font-normal">· <bdi>{h.file}</bdi> {pg(h.quotes[0]?.page || h.section.page_from)}</span></div>
+                          {h.quotes.map((q, k) => <div key={k} className="text-gray-700 mt-1" dir="auto">«{q.text}» <span className="text-gray-500">{pg(q.page)}</span></div>)}
                         </div>
                       ))}
                     </section>
@@ -644,14 +706,15 @@ export default function TenderReviewPage() {
                     {candidates.length > 0 && !sent && !(nameLocked && catalogSet.has(edit.product_name)) && (
                       <div className="flex flex-wrap gap-1">
                         {candidates.filter(c => c.name !== edit.product_name).map(c => (
-                          <button key={c.sector + c.name} type="button" onClick={() => { setEdit((d: any) => ({ ...d, product_name: c.name, sector: c.sector })); setNameLocked(true) }} className="min-h-11 text-xs px-2 py-1 rounded-lg border border-[#D4A543]/50 bg-[#D4A543]/5 text-[#8F6820]">{getProductLabel(c.name, locale)}</button>
+                          <button key={c.sector + c.name} type="button" onClick={() => { setEdit((d: any) => ({ ...d, product_name: c.name, sector: c.sector, sub_category: c.sector === d.sector && validPair(c.sector, d.sub_category) ? d.sub_category : subFor(c.name, c.sector) })); setNameLocked(true) }} className="min-h-11 text-xs px-2 py-1 rounded-lg border border-[#D4A543]/50 bg-[#D4A543]/5 text-[#8F6820]">{getProductLabel(c.name, locale)}</button>
                         ))}
                       </div>
                     )}
                     <div className="grid grid-cols-2 gap-2">
                       <label className="block">
                         <span className="block text-xs font-semibold text-gray-600 mb-0.5">{L('Quantity', 'مقدار', 'الكمية')}</span>
-                        <input inputMode="decimal" value={edit.qty} disabled={sent} onChange={(e: any) => setEdit((d: any) => ({ ...d, qty: e.target.value }))} className="input-field text-sm" dir="ltr" />
+                        <input inputMode="decimal" value={edit.qty} disabled={sent} onChange={(e: any) => setEdit((d: any) => ({ ...d, qty: e.target.value }))}
+                          aria-invalid={String(edit.qty || '').trim() !== '' && (parseQty(edit.qty) === undefined || parseQty(edit.qty) === 0)} className="input-field text-sm" dir="ltr" />
                       </label>
                       <label className="block">
                         <span className="block text-xs font-semibold text-gray-600 mb-0.5">{L('Unit', 'یونٹ', 'الوحدة')}</span>
@@ -661,13 +724,13 @@ export default function TenderReviewPage() {
                         </select>
                       </label>
                       <label className="block">
-                        <span className="block text-xs font-semibold text-gray-600 mb-0.5">{L('Sector', 'شعبہ', 'القطاع')}</span>
-                        <select value={edit.sector} disabled={sent} onChange={(e: any) => setEdit((d: any) => ({ ...d, sector: e.target.value, sub_category: '' }))} className="input-field text-sm">
+                        <span className="block text-xs font-semibold text-gray-600 mb-0.5">{L('Sector', 'سیکٹر', 'القطاع')}</span>
+                        <select value={edit.sector} disabled={sent} onChange={(e: any) => { const sc = e.target.value; setEdit((d: any) => ({ ...d, sector: sc, sub_category: subFor(d.product_name, sc) })) }} className="input-field text-sm">
                           {(Object.keys(SECTOR_LABELS) as Sector[]).map(s => <option key={s} value={s}>{sectorName(s, locale)}</option>)}
                         </select>
                       </label>
                       <label className="block">
-                        <span className="block text-xs font-semibold text-gray-600 mb-0.5">{L('Specialty', 'مہارت', 'التخصص')}</span>
+                        <span className="block text-xs font-semibold text-gray-600 mb-0.5">{L('Specialty', 'شعبہ', 'التخصص')}</span>
                         <select value={edit.sub_category} disabled={sent} onChange={(e: any) => setEdit((d: any) => ({ ...d, sub_category: e.target.value }))} className={`input-field text-sm ${!edit.sub_category ? 'border-[#D4A543] bg-[#D4A543]/5' : ''}`}>
                           <option value="">{L('Choose', 'منتخب کریں', 'اختر')}</option>
                           {Object.keys((SUB_CATEGORIES as any)[edit.sector] || {}).map(k => <option key={k} value={k}>{getSubCategoryLabel(edit.sector as Sector, k, locale)}</option>)}
@@ -706,7 +769,7 @@ export default function TenderReviewPage() {
                       <p id="tender-approve-why" className="text-xs font-semibold text-[#8F6820]">
                         {edit.kind !== 'material'
                           ? L('Works are not sent to suppliers. To send this item, change its kind to «Material».', 'کام سپلائرز کو نہیں بھیجے جاتے۔ یہ آئٹم بھیجنے کے لیے اس کی قسم «مواد» کریں۔', 'الأعمال لا تُرسل إلى الموردين؛ لإرسال هذا البند غيّر نوعه إلى «مادة».')
-                          : !edit.sub_category
+                          : !validPair(edit.sector, edit.sub_category)
                             ? L('Choose the specialty first: it routes the item to the right suppliers.', 'پہلے شعبہ منتخب کریں: یہی آئٹم کو صحیح سپلائرز تک پہنچاتا ہے۔', 'اختر التخصص أولاً، فهو ما يوصل البند إلى الموردين المختصين.')
                             : L('Enter the quantity first: an item without a quantity cannot be priced.', 'پہلے مقدار لکھیں: بغیر مقدار آئٹم کی قیمت نہیں لگائی جا سکتی۔', 'أدخل الكمية أولاً، فلا يُسعَّر بند بلا كمية.')}
                       </p>

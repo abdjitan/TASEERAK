@@ -28,7 +28,13 @@ export default function SupplierTeamPage() {
   const [lastLink, setLastLink] = useState('')
   const [copied, setCopied] = useState('')
   const [loadFailed, setLoadFailed] = useState(false) // UX-126: a failed load is said, never swallowed
-  const failText = L('Something went wrong — please try again.', 'خرابی ہوئی — دوبارہ کوشش کریں۔', 'حدث خطأ، حاول مرة أخرى.')
+  // round-4 UX-151: each error names the action that failed
+  const revokeFail = L('Could not revoke the link. Check your connection and try again.', 'لنک منسوخ نہیں ہو سکا۔ کنکشن چیک کر کے دوبارہ کوشش کریں۔', 'تعذّر إبطال الرابط. تحقّق من اتصالك وحاول مرة أخرى.')
+  const removeFail = (self: boolean) => self
+    ? L('Could not leave the team. Check your connection and try again.', 'ٹیم نہیں چھوڑی جا سکی۔ کنکشن چیک کر کے دوبارہ کوشش کریں۔', 'تعذّرت مغادرة الفريق. تحقّق من اتصالك وحاول مرة أخرى.')
+    : L('Could not remove the member. Check your connection and try again.', 'رکن کو ہٹایا نہیں جا سکا۔ کنکشن چیک کر کے دوبارہ کوشش کریں۔', 'تعذّرت إزالة العضو. تحقّق من اتصالك وحاول مرة أخرى.')
+  // round-4 UX-140: copying can fail silently inside in-app browsers: say so
+  const [copyFail, setCopyFail] = useState('')
 
   async function load() {
     const supabase = createClient()
@@ -64,7 +70,7 @@ export default function SupplierTeamPage() {
     if (!(await askConfirm(L('Revoke this link? Whoever has it will no longer be able to join.', 'یہ لنک منسوخ کریں؟ جس کے پاس ہے وہ شامل نہیں ہو سکے گا۔', 'إبطال هذا الرابط؟ لن يستطيع من لديه الانضمام به.'), { danger: true, okLabel: L('Revoke the link', 'لنک منسوخ کریں', 'إبطال الرابط'), cancelLabel: L('Go back', 'واپس', 'تراجع') }))) return
     setBusy(id); setMsg('')
     const { error } = await createClient().rpc('revoke_company_invite', { p_id: id })
-    if (error) setMsg(failText)
+    if (error) setMsg(revokeFail)
     await load(); setBusy('')
   }
 
@@ -75,13 +81,19 @@ export default function SupplierTeamPage() {
     if (!(await askConfirm(q, { danger: true, okLabel: self ? L('Yes, leave', 'ہاں، چھوڑیں', 'نعم، غادر') : L('Yes, remove', 'ہاں، ہٹائیں', 'نعم، أزِل'), cancelLabel: L('Go back', 'واپس', 'تراجع') }))) return
     setBusy(userId); setMsg('')
     const { data, error } = await createClient().rpc('remove_company_member', { p_user: userId })
-    if (error || !(data as any)?.ok) setMsg(failText)
+    if (error || !(data as any)?.ok) setMsg(removeFail(self))
     else if (self) { window.location.href = '/welcome'; return }
     await load(); setBusy('')
   }
 
   async function copy(text: string) {
-    try { await navigator.clipboard.writeText(text); setCopied(text); setTimeout(() => setCopied(''), 2000) } catch {}
+    setCopyFail('')
+    try {
+      if (!navigator.clipboard?.writeText) throw new Error('no clipboard')
+      await navigator.clipboard.writeText(text); setCopied(text); setTimeout(() => setCopied(''), 2000)
+    } catch {
+      setCopyFail(text)
+    }
   }
   const waShare = (link: string) => `https://wa.me/?text=${encodeURIComponent(
     L(`Join our team on Taseerak to price requests on behalf of ${team?.company_name || 'the company'}: ${link}`,
@@ -131,13 +143,14 @@ export default function SupplierTeamPage() {
             {lastLink && (
               <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-3 space-y-2">
                 <div className="inline-flex items-center gap-1 text-[13px] font-bold text-emerald-700"><Check className="w-4 h-4" aria-hidden />{L('Link ready', 'لنک تیار', 'الرابط جاهز')}</div>
-                <div className="text-xs text-gray-700 break-all" dir="ltr">{lastLink}</div>
+                <div className="text-xs text-gray-700 break-all select-all" dir="ltr">{lastLink}</div>
                 <div className="flex flex-wrap gap-2">
                   <button type="button" onClick={() => copy(lastLink)} className="min-h-[44px] text-sm font-bold px-3 rounded-lg border border-gray-200 bg-white">{copied === lastLink ? L('Copied', 'کاپی ہو گیا', 'تم النسخ') : L('Copy', 'کاپی', 'نسخ')}</button>
                   <a href={waShare(lastLink)} target="_blank" rel="noopener noreferrer" className="inline-flex items-center min-h-[44px] text-sm font-bold px-3 rounded-lg text-white" style={{ background: '#0B2438' }}>{L('Send on WhatsApp', 'واٹس ایپ پر بھیجیں', 'إرسال عبر واتساب')}</a>
                 </div>
               </div>
             )}
+            {copyFail && <p className="text-[13px] font-semibold text-[#8F6820] bg-[#D4A543]/10 border border-[#D4A543]/40 rounded-lg p-2.5" role="alert">{L('Could not copy automatically. Select the link and copy it by hand, or send it on WhatsApp.', 'خود بخود کاپی نہیں ہو سکا۔ لنک منتخب کر کے خود کاپی کریں، یا واٹس ایپ پر بھیجیں۔', 'تعذّر النسخ تلقائياً. حدّد الرابط وانسخه يدوياً، أو أرسله عبر واتساب.')}{copyFail !== lastLink && <span className="block mt-1 text-xs text-gray-700 break-all select-all font-normal" dir="ltr">{copyFail}</span>}</p>}
             {msg && <p className="text-sm text-red-600" role="alert">{msg}</p>}
 
             {(team.invites || []).length > 0 && (
@@ -145,11 +158,11 @@ export default function SupplierTeamPage() {
                 <div className="text-xs font-bold text-gray-500 mb-1.5">{L('Open invitations', 'کھلی دعوتیں', 'دعوات لم تُستخدم بعد')}</div>
                 <div className="space-y-1.5">
                   {team.invites.map((i: any) => (
-                    <div key={i.id} className="flex items-center justify-between gap-2 text-[13px] rounded-lg border border-gray-100 px-3 py-1">
+                    <div key={i.id} className="flex flex-wrap items-center justify-between gap-2 text-[13px] rounded-lg border border-gray-100 px-3 py-1">
                       <span className="text-gray-600">{roleLabel(i.role)} · {L('expires', 'ختم ہوگا', 'ينتهي')} {new Date(i.expires_at).toLocaleDateString(locale === 'ar' ? 'ar-SA-u-ca-gregory-nu-latn' : 'en-GB')}</span>
                       <span className="flex gap-2">
                         <button type="button" onClick={() => copy(linkFor(i.token))} className="min-h-[44px] px-2 font-bold text-navy">{copied === linkFor(i.token) ? L('Copied', 'کاپی ہو گیا', 'تم النسخ') : L('Copy', 'کاپی', 'نسخ')}</button>
-                        <button type="button" onClick={() => revoke(i.id)} disabled={busy === i.id} className="min-h-[44px] px-2 font-bold text-red-600">{L('Revoke the link', 'لنک منسوخ کریں', 'إبطال الرابط')}</button>
+                        <button type="button" onClick={() => revoke(i.id)} disabled={busy === i.id} className="min-h-[44px] px-2 font-bold text-[#B42318]">{L('Revoke the link', 'لنک منسوخ کریں', 'إبطال الرابط')}</button>
                       </span>
                     </div>
                   ))}
@@ -171,7 +184,7 @@ export default function SupplierTeamPage() {
                     <div key={m.user_id} className="flex items-center justify-between gap-3 py-2.5">
                       <div className="min-w-0">
                         <div className="font-semibold text-sm text-gray-800 truncate">{m.name || '—'}</div>
-                        <div className="text-[12px] text-gray-500">{roleLabel(m.role)}{m.phone ? ` · ${m.phone}` : ''} · {L(`${m.offers} offers`, `${m.offers} آفرز`, (Number(m.offers) || 0) === 0 ? 'لا توجد عروض' : arCount(Number(m.offers), 'عرض واحد', 'عرضان', 'عروض', 'عرضاً'))}</div>
+                        <div className="text-[12px] text-gray-500">{roleLabel(m.role)}{m.phone ? ` · ${m.phone}` : ''} · {L(`${Number(m.offers) || 0} offer${(Number(m.offers) || 0) === 1 ? '' : 's'}`, `${Number(m.offers) || 0} آفر`, (Number(m.offers) || 0) === 0 ? 'لا توجد عروض' : arCount(Number(m.offers), 'عرض واحد', 'عرضان', 'عروض', 'عرضاً'))}</div>
                       </div>
                       {team.can_manage && (
                         <button type="button" onClick={() => remove(m.user_id, false)} disabled={busy === m.user_id} className="min-h-[44px] px-2 text-sm font-bold text-red-600 shrink-0">{L('Remove', 'ہٹائیں', 'إزالة')}</button>

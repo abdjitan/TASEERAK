@@ -1,7 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useState } from 'react'
-import { noEmoji, timeAgo, dayBucket, dayBucketLabel, dateLocale, type DayBucket } from '@/lib/text'
+import { timeAgo, dayBucket, dayBucketLabel, dateLocale, type DayBucket } from '@/lib/text'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
@@ -11,8 +11,7 @@ import PageLoader from '@/components/shared/PageLoader'
 import LoadError from '@/components/shared/LoadError'
 import { getNav } from '@/lib/nav'
 import Glyph from '@/components/shared/Glyph'
-import AutoTr from '@/components/shared/AutoTr'
-import { notifGlyph, safeNotifUrl, NOTIFS_READ_EVENT } from '@/components/shared/NotificationBell'
+import { notifGlyph, safeNotifUrl, NOTIFS_READ_EVENT, NotifField } from '@/components/shared/NotificationBell'
 import { realtimeTopic } from '@/lib/realtimeTopic'
 import { readPageCache, writePageCache } from '@/lib/pageCache'
 
@@ -99,7 +98,10 @@ export default function NotificationsPage() {
         ) : notifs.length === 0 ? (
           <div className="bg-white rounded-2xl p-14 text-center border border-gray-100 shadow-sm">
             <div className="text-5xl mb-3 text-[#0B2438]"><Glyph e="🔔" /></div>
-            <p className="text-gray-600">{L('No notifications yet. We will notify you here about new offers, messages and your deals.', 'ابھی کوئی اطلاع نہیں۔ نئی آفرز، پیغامات اور آپ کی ڈیلز کی اطلاع یہاں ملے گی۔', 'لا توجد إشعارات بعد. ستصلك هنا تنبيهات العروض الجديدة والرسائل وصفقاتك.')}</p>
+            <p className="text-gray-600">{role === 'supplier'
+              // a supplier receives requests, not offers (UX-152)
+              ? L('No notifications yet. New requests that match your specialties, messages and your deals will appear here.', 'ابھی کوئی اطلاع نہیں۔ آپ کے تخصصات کے مطابق نئی درخواستیں، پیغامات اور آپ کی ڈیلز کی اطلاع یہاں ملے گی۔', 'لا توجد إشعارات بعد. ستصلك هنا تنبيهات الطلبات الجديدة المطابقة لتخصصاتك، والرسائل، وصفقاتك.')
+              : L('No notifications yet. We will notify you here about new offers, messages and your deals.', 'ابھی کوئی اطلاع نہیں۔ نئی آفرز، پیغامات اور آپ کی ڈیلز کی اطلاع یہاں ملے گی۔', 'لا توجد إشعارات بعد. ستصلك هنا تنبيهات العروض الجديدة والرسائل وصفقاتك.')}</p>
             <Link href={homeHref} className="inline-flex items-center justify-center mt-4 min-h-[44px] px-5 rounded-xl text-sm font-bold" style={{ background: '#D4A543', color: '#071827' }}>
               {role === 'supplier' ? L('New requests', 'نئی درخواستیں', 'الطلبات الجديدة') : role === 'admin' ? L('Admin', 'ایڈمن', 'لوحة الإدارة') : L('My requests', 'میری درخواستیں', 'طلباتي')}
             </Link>
@@ -110,22 +112,27 @@ export default function NotificationsPage() {
               <section key={g.b}>
                 <h2 className="text-xs font-bold text-gray-500 mb-2 px-1">{dayBucketLabel(g.b, locale)}</h2>
                 <div className="space-y-2">
-                  {g.list.map((n: any) => (
-                    <button key={n.id} onClick={() => go(n)}
-                      className={`w-full text-start rounded-2xl p-4 min-h-[56px] border transition-colors ${n.data?.url ? 'hover:border-[#D4A543]/40 cursor-pointer' : 'cursor-default'} ${n.is_read ? 'bg-white border-gray-100' : 'bg-[#D4A543]/5 border-[#D4A543]/30'}`}>
+                  {g.list.map((n: any) => {
+                    const linked = !!safeNotifUrl(n.data?.url)
+                    const cls = `block w-full text-start rounded-2xl p-4 min-h-[56px] border transition-colors ${linked ? 'hover:border-[#D4A543]/40 cursor-pointer' : ''} ${n.is_read ? 'bg-white border-gray-100' : 'bg-[#D4A543]/5 border-[#D4A543]/30'}`
+                    const inner = (
                       <div className="flex items-start gap-3">
                         <span aria-hidden="true" className="w-9 h-9 shrink-0 rounded-full grid place-items-center bg-[#0B2438]/5 text-[#0B2438]"><Glyph e={notifGlyph(n.type, n.data, n.title)} /></span>
                         <div className="min-w-0 flex-1">
-                          <div className="font-bold text-sm" style={{ color: '#0B2438' }}><AutoTr text={noEmoji(n.title)} locale={locale} noToggle /></div>
-                          {n.body && <div className="text-sm text-gray-600 mt-0.5"><AutoTr text={noEmoji(n.body)} locale={locale} noToggle /></div>}
+                          <div className="font-bold text-sm" style={{ color: '#0B2438' }}><NotifField n={n} field="title" locale={locale} /></div>
+                          {n.body && <div className="text-sm text-gray-600 mt-0.5"><NotifField n={n} field="body" locale={locale} /></div>}
                           <div className="text-xs text-gray-500 mt-1" title={new Date(n.created_at).toLocaleString(dateLocale(locale), { timeZone: 'Asia/Riyadh' })}>
                             {g.b === 'earlier' ? new Date(n.created_at).toLocaleDateString(dateLocale(locale), { timeZone: 'Asia/Riyadh', day: 'numeric', month: 'long' }) : timeAgo(n.created_at, locale)}
                           </div>
                         </div>
-                        {!n.is_read && <span className="w-2.5 h-2.5 rounded-full bg-[#D4A543] mt-1.5 shrink-0" aria-label={L('Unread', 'نئی', 'غير مقروء')} />}
+                        {!n.is_read && <span className="w-2.5 h-2.5 rounded-full bg-[#D4A543] mt-1.5 shrink-0" role="img" aria-label={L('Unread', 'نئی', 'غير مقروء')} />}
                       </div>
-                    </button>
-                  ))}
+                    )
+                    // a notice without a link is plain text, not a button that does nothing (UX-133)
+                    return linked
+                      ? <button type="button" key={n.id} onClick={() => go(n)} className={cls}>{inner}</button>
+                      : <div key={n.id} className={cls}>{inner}</div>
+                  })}
                 </div>
               </section>
             ))}

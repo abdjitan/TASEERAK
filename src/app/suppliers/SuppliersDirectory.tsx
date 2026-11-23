@@ -11,6 +11,7 @@ import { Check, X } from 'lucide-react'
 import { TIERS, tierLabel, normTier, tierIcon } from '@/lib/sellers'
 import SellerIcon from '@/components/shared/SellerIcon'
 import Glyph from '@/components/shared/Glyph'
+import { FEATURES } from '@/lib/features'
 
 // دليل الموردين مع بحث وفلاتر (منطقة/قطاع/نوع/موثّق) — يستقبل القائمة مُرتّبة
 // ومحسوبة الدرجة من صفحة الخادم ويُصفّيها في المتصفح (قائمة محدودة).
@@ -62,7 +63,7 @@ export default function SuppliersDirectory({ suppliers }: { suppliers: any[] }) 
       <p className="font-bold text-[#0B2438] mb-1">{L('Supplier directory coming soon', 'سپلائر ڈائریکٹری جلد', 'دليل الموردين قريباً')}</p>
       <p className="text-sm text-gray-600">{L('Verified companies and shops appear here as soon as they join. You can already send a price request; it reaches the suppliers of your materials.', 'تصدیق شدہ کمپنیاں اور دکانیں شامل ہوتے ہی یہاں نظر آئیں گی۔ آپ ابھی قیمت کی درخواست بھیج سکتے ہیں۔', 'نعرض هنا الشركات والمحلات الموثّقة فور انضمامها. يمكنك الآن إرسال طلب تسعير، فيصل إلى الموردين المختصين بموادك.')}</p>
       <div className="mt-4 flex flex-wrap items-center justify-center gap-2">
-        <a href="/contractor/rfq/quick" className="btn-orange text-sm">{L('Request a price', 'قیمت معلوم کریں', 'اطلب تسعيرة')}</a>
+        <a href="/contractor/rfq/quick" className="btn-orange text-sm">{L('Request a price', 'قیمت معلوم کریں', 'اطلب سعراً')}</a>
         <a href="/join" className="btn-ghost text-sm">{L('Sign up as a supplier', 'سپلائر کے طور پر رجسٹر کریں', 'سجّل كمورد')}</a>
       </div>
     </div>
@@ -79,8 +80,8 @@ export default function SuppliersDirectory({ suppliers }: { suppliers: any[] }) 
             <option value="">{L('All regions', 'تمام علاقے', 'كل المناطق')}</option>
             {regions.map((r) => <option key={r} value={r}>{getRegionLabel(r, locale)}</option>)}
           </select>
-          <select value={sector} onChange={(e: any) => setSector(e.target.value)} className={selectCls} aria-label={L('Sector', 'شعبہ', 'القطاع')}>
-            <option value="">{L('All sectors', 'تمام شعبے', 'كل القطاعات')}</option>
+          <select value={sector} onChange={(e: any) => setSector(e.target.value)} className={selectCls} aria-label={L('Sector', 'سیکٹر', 'القطاع')}>
+            <option value="">{L('All sectors', 'تمام سیکٹر', 'كل القطاعات')}</option>
             {Object.keys(SECTOR_LABELS).map((k) => <option key={k} value={k}>{getSectorLabel(k, locale)}</option>)}
           </select>
           <select value={tier} onChange={(e: any) => setTier(e.target.value)} className={selectCls} aria-label={L('Type', 'قسم', 'النوع')}>
@@ -109,14 +110,16 @@ export default function SuppliersDirectory({ suppliers }: { suppliers: any[] }) 
       ) : (
         <div className="space-y-3">
           {filtered.map((r: any, i: number) => {
-            const rb = rankBadge(rankOf.get(r.supplier_id) ?? i)
             const fresh = isNewSupplier(r)
+            const rb = FEATURES.gamification && !fresh ? rankBadge(rankOf.get(r.supplier_id) ?? i) : null
             const nOffers = Number(r.total_offers) || 0
             const nWon = Number(r.won_deals) || 0
             const rating = Number(r.rating_avg) || 0
             return (
               <Link key={r.supplier_id} href={`/suppliers/${r.supplier_id}`} className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 flex items-center gap-4 hover:border-[#D4A543]/40 transition-colors">
-                <div className="w-10 h-10 shrink-0 grid place-items-center rounded-xl font-extrabold text-lg" style={{ color: rb.c, background: `${rb.c}14` }}>{rb.e}</div>
+                {rb
+                  ? <div className="w-10 h-10 shrink-0 grid place-items-center rounded-xl font-extrabold text-lg" style={{ color: rb.c, background: `${rb.c}14` }}>{rb.e}</div>
+                  : <div className="w-10 h-10 shrink-0 grid place-items-center rounded-xl text-lg text-[#0B2438] bg-[#0B2438]/5" aria-hidden><SellerIcon name={r.supplier_tier ? tierIcon(r.supplier_tier) : 'store'} /></div>}
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
                     <span className="font-bold text-sm truncate" style={{ color: '#0B2438' }}>{r.company_name_ar || L('Supplier', 'سپلائر', 'مورد')}</span>
@@ -126,13 +129,13 @@ export default function SuppliersDirectory({ suppliers }: { suppliers: any[] }) 
                     <span><SellerIcon name={r.supplier_tier ? tierIcon(r.supplier_tier) : 'store'} /> {r.supplier_tier ? tierLabel(r.supplier_tier, lc) : L('Supplier', 'سپلائر', 'مورد')}</span>
                     {r.region && <span><Glyph e="📍" /> {getRegionLabel(r.region, locale)}</span>}
                     {rating > 0 && <span><Glyph e="⭐" /> {rating.toFixed(1)}</span>}
-                    <span><Glyph e="📦" /> {L(`${nOffers} offers`, `${nOffers} آفرز`, arCount(nOffers, 'عرض واحد', 'عرضان', 'عروض', 'عرضاً'))}</span>
-                    <span><SellerIcon name="handshake" /> {L(`${nWon} requests won`, `${nWon} جیتی گئی درخواستیں`, nWon === 0 ? 'لم يفز بطلب بعد' : (nWon <= 2 ? 'فاز ب' : 'فاز بـ') + arCount(nWon, 'طلب واحد', 'طلبين', 'طلبات', 'طلباً'))}</span>
+                    <span><Glyph e="📦" /> {L(nOffers === 1 ? '1 offer' : `${nOffers} offers`, `${nOffers} آفرز`, arCount(nOffers, 'عرض واحد', 'عرضان', 'عروض', 'عرضاً'))}</span>
+                    <span><SellerIcon name="handshake" /> {L(nWon === 0 ? 'No request won yet' : nWon === 1 ? '1 request won' : `${nWon} requests won`, nWon === 0 ? 'ابھی کوئی درخواست نہیں جیتی' : `${nWon} جیتی گئی درخواستیں`, nWon === 0 ? 'لم يفز بطلب بعد' : (nWon <= 2 ? 'فاز ب' : 'فاز بـ') + arCount(nWon, 'طلب واحد', 'طلبين', 'طلبات', 'طلباً'))}</span>
                   </div>
                   {Array.isArray(r.approvals) && r.approvals.length > 0 && (
                     <div className="flex gap-1 mt-1.5 flex-wrap">
                       {r.approvals.slice(0, 4).map((a: string) => (
-                        <span key={a} className="text-[12px] px-1.5 py-0.5 rounded" style={{ background: '#0B24380d', color: '#0B2438' }}><Glyph e="🏅" /> {approvalLabel(a)}</span>
+                        <span key={a} className="text-[12px] px-1.5 py-0.5 rounded" style={{ background: '#0B24380d', color: '#0B2438' }}><Glyph e="🏅" /> {approvalLabel(a, locale)}</span>
                       ))}
                     </div>
                   )}
