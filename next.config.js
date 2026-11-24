@@ -34,7 +34,11 @@ const nextConfig = {
     ignoreDuringBuilds: true,
   },
   async headers() {
-    return [{ source: '/:path*', headers: securityHeaders }]
+    return [
+      { source: '/:path*', headers: securityHeaders },
+      // iOS universal links (mobile R5): served without an extension, as JSON, no redirect
+      { source: '/.well-known/apple-app-site-association', headers: [{ key: 'Content-Type', value: 'application/json' }] },
+    ]
   },
   // static supplier invite page (marketing kit, public/invite/index.html)
   async rewrites() {
