@@ -22,7 +22,7 @@ Arabic-first, RTL, with English + Urdu i18n.
 - Logo: `public/taseerak-metallic-logo.webp` (sidebar/auth); app icons in `public/icons/`.
 - **No emoji in the UI**: line icons via `src/components/shared/Glyph.tsx` (emoji → lucide map) and `NavIcon.tsx` (menu).
 - Section medallions (navy/gold, owner-approved pack) in `public/images/section-icons/<sectionKey>.webp`; section photos in `public/images/sections/`.
-- Branch `redesign` is the working branch; ship by pushing `redesign:main` after the preview build is Ready.
+- Branch `redesign` is the working branch; ship by pushing `redesign:main` after tsc + a local `npm run build` pass. Vercel no longer builds `redesign` (vercel.json `git.deploymentEnabled`, owner 2026-11-23: Hobby function-storage limit); only `main` deploys.
 
 ## Environment / accounts (cloud — tied to owner's PERSONAL email + phone)
 - **GitHub** (code): `https://github.com/abdjitan/TASEERAK.git` — repo root = the working copy (no `buildora/` subfolder)
