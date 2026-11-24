@@ -39,11 +39,12 @@ export function dayBucketLabel(b: DayBucket, locale: string): string {
 }
 
 // «يوم واحد / يومان / 3 أيام / 11 يوماً» (en "3 days", ur «3 دن»).
-export function daysText(n: any, locale: string): string {
+/** case 'obl' = after a preposition («خلال يومين»), the default is the nominative («يومان») (round-5 UX-078) */
+export function daysText(n: any, locale: string, kase: 'nom' | 'obl' = 'nom'): string {
   const d = Number(n) || 0
   if (locale === 'en') return d === 1 ? '1 day' : `${d} days`
   if (locale === 'ur') return `${d} دن`
-  return arCount(d, 'يوم واحد', 'يومان', 'أيام', 'يوماً')
+  return arCount(d, 'يوم واحد', kase === 'obl' ? 'يومين' : 'يومان', 'أيام', 'يوماً')
 }
 
 // Arabic counted noun: (1) «بند واحد» (2) «بندان» (3–10) «3 بنود» (11–99) «11 بنداً».
@@ -56,10 +57,10 @@ export function arCount(n: number, one: string, two: string, few: string, many: 
   return r >= 3 && r <= 10 ? `${n} ${few}` : `${n} ${many}`
 }
 export const arItems = (n: number) => arCount(n, 'بند واحد', 'بندان', 'بنود', 'بنداً')
-export const arMaterials = (n: number) => arCount(n, 'مادة واحدة', 'مادتان', 'مواد', 'مادة')
+export const arMaterials = (n: number, kase: 'nom' | 'obl' = 'nom') => arCount(n, 'مادة واحدة', kase === 'obl' ? 'مادتين' : 'مادتان', 'مواد', 'مادة')
 export const arMessages = (n: number) => arCount(n, 'رسالة واحدة', 'رسالتان', 'رسائل', 'رسالة')
 export const arDeals = (n: number) => arCount(n, 'صفقة واحدة', 'صفقتان', 'صفقات', 'صفقة')
-export const arRequests = (n: number) => arCount(n, 'طلب واحد', 'طلبان', 'طلبات', 'طلباً')
+export const arRequests = (n: number, kase: 'nom' | 'obl' = 'nom') => arCount(n, 'طلب واحد', kase === 'obl' ? 'طلبين' : 'طلبان', 'طلبات', 'طلباً')
 export const arOffers = (n: number) => arCount(n, 'عرض واحد', 'عرضان', 'عروض', 'عرضاً')
 
 /** A counted noun in the reader's language: countLabel(3, 'ar', arOffers, 'offer', 'آفر') */

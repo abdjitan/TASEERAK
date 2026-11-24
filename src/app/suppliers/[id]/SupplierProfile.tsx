@@ -14,22 +14,11 @@ import { tierLabel, tierIcon } from '@/lib/sellers'
 import SellerIcon from '@/components/shared/SellerIcon'
 import Glyph from '@/components/shared/Glyph'
 import { getSectorLabel } from '@/types'
+import { REVIEW_TAGS, splitReview } from '@/lib/reviews'
 
 // The rating chips, stored in Arabic at the start of the comment («نقاط القوة: …»): shown as chips in
 // the reader's language, and only the free text goes to the translation (round-5 UX-035).
 // Same list as the deal page; to move into src/lib/reviews.ts (shared with the app).
-const REVIEW_TAGS: { key: string; ar: string; en: string; ur: string }[] = [
-  { key: 'on_time', ar: 'الالتزام بالموعد', en: 'On time', ur: 'وقت کی پابندی' },
-  { key: 'quality', ar: 'جودة المواد', en: 'Material quality', ur: 'سامان کا معیار' },
-  { key: 'dealing', ar: 'حسن التعامل', en: 'Good dealing', ur: 'اچھا برتاؤ' },
-]
-function splitReview(comment: any): { tags: string[]; text: string } {
-  const s = String(comment || '')
-  const m = s.match(/^نقاط القوة:\s*([^\n]*)\n?/)
-  if (!m) return { tags: [], text: s }
-  const tags = m[1].split('،').map(x => x.trim()).map(ar => REVIEW_TAGS.find(t => t.ar === ar)?.key).filter(Boolean) as string[]
-  return { tags, text: s.slice(m[0].length).trim() }
-}
 // a same-site path only (the deal page passes ?from=/contractor/orders/<id>), UX-070
 function safeFrom(v: string | null): string | null {
   if (!v || v[0] !== '/' || v[1] === '/' || /[\\\s]/.test(v)) return null

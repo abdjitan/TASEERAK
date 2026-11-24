@@ -26,6 +26,7 @@ import { waLink } from '@/lib/wa'
 import { SourceShopBadge } from '@/components/rfq/SourceShop'
 import { realtimeTopic } from '@/lib/realtimeTopic'
 import { dealStage } from '@/lib/dealStage'
+import { REVIEW_TAGS, splitReview } from '@/lib/reviews'
 
 const SECTOR_I18N: Record<string, Record<string, string>> = {
   en: { civil: 'Civil', architectural: 'Architectural', electrical: 'Electrical', mechanical: 'Mechanical', equipment: 'Machinery', supply_store: 'Supply Store' },
@@ -33,19 +34,6 @@ const SECTOR_I18N: Record<string, Record<string, string>> = {
 }
 // the optional rating chips: stored in one form (Arabic) whatever the reader's language, so every
 // review reads the same on the supplier's profile (UX-141)
-const REVIEW_TAGS: { key: string; ar: string; en: string; ur: string }[] = [
-  { key: 'on_time', ar: 'الالتزام بالموعد', en: 'On time', ur: 'وقت کی پابندی' },
-  { key: 'quality', ar: 'جودة المواد', en: 'Material quality', ur: 'سامان کا معیار' },
-  { key: 'dealing', ar: 'حسن التعامل', en: 'Good dealing', ur: 'اچھا برتاؤ' },
-]
-// a saved comment starts with «نقاط القوة: …» in Arabic: shown as chips in the reader's language (round-4 UX-132)
-function splitReview(comment: any): { tags: string[]; text: string } {
-  const s = String(comment || '')
-  const m = s.match(/^نقاط القوة:\s*([^\n]*)\n?/)
-  if (!m) return { tags: [], text: s }
-  const tags = m[1].split('،').map(x => x.trim()).map(ar => REVIEW_TAGS.find(t => t.ar === ar)?.key).filter(Boolean) as string[]
-  return { tags, text: s.slice(m[0].length).trim() }
-}
 const STAR_WORDS: Record<string, string[]> = {
   ar: ['ضعيف', 'مقبول', 'جيد', 'جيد جداً', 'ممتاز'],
   en: ['Poor', 'Fair', 'Good', 'Very good', 'Excellent'],

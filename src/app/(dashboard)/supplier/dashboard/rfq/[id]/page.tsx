@@ -1351,7 +1351,7 @@ export default function SupplierRFQPage() {
                           <div className="flex flex-wrap gap-1 mt-1">
                             <span className="text-[12px] px-1.5 py-0.5 rounded bg-[#0B2438]/5 text-[#0B2438]">{sectionOf(it)}</span>
                             {it.in_stock && <span className="text-[12px] px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-700"><Glyph e="⚡" /> {L('In stock now', 'فوری دستیاب', 'توفّر فوري')}</span>}
-                            {it.max_days && <span className="text-[12px] px-1.5 py-0.5 rounded bg-gray-100 text-gray-700"><Glyph e="⏱" /> {L(`within ${daysText(it.max_days, 'en')}`, `${daysText(it.max_days, 'ur')} میں`, `خلال ${daysText(it.max_days, 'ar')}`)}</span>}
+                            {it.max_days && <span className="text-[12px] px-1.5 py-0.5 rounded bg-gray-100 text-gray-700"><Glyph e="⏱" /> {L(`within ${daysText(it.max_days, 'en')}`, `${daysText(it.max_days, 'ur')} میں`, `خلال ${daysText(it.max_days, 'ar', 'obl')}`)}</span>}
                             {it.spec_file_url && it.spec_file_url !== it.photo_url && <a href={fileHref(it.spec_file_url)} target="_blank" rel="noopener noreferrer" className="inline-flex items-center min-h-[44px] text-[12px] px-2 rounded bg-[#0B2438]/5 text-[#0B2438] hover:underline"><Glyph e="📎" /> {L('File', 'فائل', 'ملف')}</a>}
                             {Array.isArray(it.attachments) && it.attachments.map((a: any, ai: number) => <a key={ai} href={fileHref(a.url)} target="_blank" rel="noopener noreferrer" className="inline-flex items-center min-h-[44px] text-[12px] px-2 rounded bg-[#0B2438]/5 text-[#0B2438] hover:underline truncate max-w-[10rem]"><Glyph e="📎" /> {a.name || L('File', 'فائل', 'ملف')}</a>)}
                           </div>
@@ -1626,7 +1626,7 @@ export default function SupplierRFQPage() {
                   <div key={idx} className={`px-3 py-2.5 border-t border-gray-100 flex items-center justify-between gap-3 ${won === false ? 'opacity-60' : ''}`}>
                     <span className="text-sm text-gray-800 font-medium min-w-0">
                       <AutoTr text={getProductLabel(it.product_name, locale)} locale={locale} />
-                      <span className="text-gray-500 text-[12px] font-normal"> ({(Number(it.quantity) || 0).toLocaleString('en-US')} {getUnitLabel(it.unit, locale)}{it.delivery_days ? ` · ${L(`delivery within ${daysText(it.delivery_days, 'en')}`, `${daysText(it.delivery_days, 'ur')} میں ڈیلیوری`, `التوصيل خلال ${daysText(it.delivery_days, 'ar')}`)}` : ''})</span>
+                      <span className="text-gray-500 text-[12px] font-normal"> ({(Number(it.quantity) || 0).toLocaleString('en-US')} {getUnitLabel(it.unit, locale)}{it.delivery_days ? ` · ${L(`delivery within ${daysText(it.delivery_days, 'en')}`, `${daysText(it.delivery_days, 'ur')} میں ڈیلیوری`, `التوصيل خلال ${daysText(it.delivery_days, 'ar', 'obl')}`)}` : ''})</span>
                     </span>
                     <span className="flex flex-wrap justify-end items-center gap-2 shrink-0">
                       {won === true && <span className="inline-flex items-center gap-1 text-[12px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700"><Check className="w-3.5 h-3.5" aria-hidden />{L('Chosen', 'منتخب', 'اختيرت')}</span>}
@@ -1936,7 +1936,7 @@ export default function SupplierRFQPage() {
                               </div>
                               <div className="flex flex-wrap gap-1 mt-1.5">
                                 {it.in_stock && <span className="text-[12px] px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-700"><Glyph e="⚡" /> {L('In stock now', 'فوری دستیاب', 'توفّر فوري')}</span>}
-                                {it.max_days && <span className="text-[12px] px-1.5 py-0.5 rounded bg-gray-100 text-gray-700"><Glyph e="⏱" /> {L(`within ${daysText(it.max_days, 'en')}`, `${daysText(it.max_days, 'ur')} میں`, `خلال ${daysText(it.max_days, 'ar')}`)}</span>}
+                                {it.max_days && <span className="text-[12px] px-1.5 py-0.5 rounded bg-gray-100 text-gray-700"><Glyph e="⏱" /> {L(`within ${daysText(it.max_days, 'en')}`, `${daysText(it.max_days, 'ur')} میں`, `خلال ${daysText(it.max_days, 'ar', 'obl')}`)}</span>}
                                 {it.spec_file_url && it.spec_file_url !== it.photo_url && <a href={fileHref(it.spec_file_url)} target="_blank" rel="noopener noreferrer" className="inline-flex items-center min-h-[44px] text-[12px] px-2 rounded bg-[#0B2438]/5 text-[#0B2438] hover:underline"><Glyph e="📎" /> {it.spec_file_name || L('Buyer file', 'خریدار کی فائل', 'ملف من المشتري')}</a>}
                                 {Array.isArray(it.attachments) && it.attachments.map((a: any, ai: number) => <a key={ai} href={fileHref(a.url)} target="_blank" rel="noopener noreferrer" className="inline-flex items-center min-h-[44px] text-[12px] px-2 rounded bg-[#0B2438]/5 text-[#0B2438] hover:underline truncate max-w-[10rem]"><Glyph e="📎" /> {a.name || L('File', 'فائل', 'ملف')}</a>)}
                               </div>
@@ -2428,7 +2428,7 @@ export default function SupplierRFQPage() {
                 <div className="text-sm font-bold mb-2" style={{ color: '#0B2438' }}><Glyph e="⏱" /> {isMultiItem ? L('Delivery time for all materials', 'تمام مال کی ڈیلیوری کا وقت', 'مدة التوصيل لكل المواد') : L('Delivery time', 'ڈیلیوری کا وقت', 'مدة التوصيل')}<span aria-hidden="true"> *</span></div>
                 {maxDaysAsked > 0 && (
                   <p className="mb-2 text-[13px] font-semibold rounded-lg bg-warn-bg border border-warn-border px-2.5 py-1.5 text-warn-text">
-                    <Glyph e="⚠" /> {L(`The buyer asked for delivery within ${daysText(maxDaysAsked, 'en')} at most.`, `خریدار نے زیادہ سے زیادہ ${daysText(maxDaysAsked, 'ur')} میں ڈیلیوری مانگی ہے۔`, `طلب المشتري التوصيل خلال ${daysText(maxDaysAsked, 'ar')} كحدٍّ أقصى.`)}
+                    <Glyph e="⚠" /> {L(`The buyer asked for delivery within ${daysText(maxDaysAsked, 'en')} at most.`, `خریدار نے زیادہ سے زیادہ ${daysText(maxDaysAsked, 'ur')} میں ڈیلیوری مانگی ہے۔`, `طلب المشتري التوصيل خلال ${daysText(maxDaysAsked, 'ar', 'obl')} كحدٍّ أقصى.`)}
                   </p>
                 )}
                 <div role="radiogroup" aria-label={L('Delivery time', 'ڈیلیوری کا وقت', 'مدة التوصيل')} className="flex flex-wrap gap-2">
