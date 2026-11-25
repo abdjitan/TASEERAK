@@ -31,7 +31,9 @@ export function deadlineUrgency(expiresAt?: string | null): DeadlineUrgency {
 }
 
 // "يومان و3 ساعات" / "5 ساعات" / "40 دقيقة" / "انتهت المهلة" (ur: "2 دن 3 گھنٹے")
-export function formatTimeLeft(expiresAt?: string | null, locale: string = 'ar'): string {
+// opts.case 'gen' (round-7 UX-021): after a preposition («خلال»، «بعد») the dual takes the genitive:
+// «خلال يومين / ساعتين / دقيقتين». Minutes are written in full, never «د».
+export function formatTimeLeft(expiresAt?: string | null, locale: string = 'ar', opts: { case?: 'nom' | 'gen' } = {}): string {
   const m = msLeft(expiresAt)
   if (m === null) return ''
   if (m <= 0) return locale === 'en' ? 'Expired' : locale === 'ur' ? 'مہلت ختم' : 'انتهت المهلة'
@@ -52,11 +54,14 @@ export function formatTimeLeft(expiresAt?: string | null, locale: string = 'ar')
   // Arabic counted nouns: يوم / يومان / 3 أيام / 11 يوماً
   const count = (n: number, one: string, two: string, few: string, many: string) =>
     n === 1 ? one : n === 2 ? two : n <= 10 ? `${n} ${few}` : `${n} ${many}`
-  const d = (n: number) => count(n, 'يوم', 'يومان', 'أيام', 'يوماً')
-  const h = (n: number) => count(n, 'ساعة', 'ساعتان', 'ساعات', 'ساعة')
+  const gen = opts.case === 'gen'
+  const d = (n: number) => count(n, 'يوم', gen ? 'يومين' : 'يومان', 'أيام', 'يوماً')
+  const h = (n: number) => count(n, 'ساعة', gen ? 'ساعتين' : 'ساعتان', 'ساعات', 'ساعة')
+  // 1 «دقيقة واحدة», 2 «دقيقتان», 3-10 «n دقائق», 11+ «n دقيقة»
+  const mi = (n: number) => count(n, 'دقيقة واحدة', gen ? 'دقيقتين' : 'دقيقتان', 'دقائق', 'دقيقة')
   if (days > 0) return `${d(days)}${hours ? ` و${h(hours)}` : ''}`
-  if (hours > 0) return `${h(hours)}${minutes ? ` و${minutes} د` : ''}`
-  return `${minutes} دقيقة`
+  if (hours > 0) return `${h(hours)}${minutes ? ` و${mi(minutes)}` : ''}`
+  return mi(Math.max(1, minutes))
 }
 
 // Gregorian, Western digits, e.g. "2026/06/13 14:30"

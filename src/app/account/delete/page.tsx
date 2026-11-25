@@ -10,7 +10,7 @@ import { clearAllLocalDrafts } from '@/lib/localDraft'
 import Glyph from '@/components/shared/Glyph'
 import { OPERATOR } from '@/lib/legal'
 import { arCount } from '@/lib/text'
-import HomeOrAccountLink from '@/components/public/HomeOrAccountLink'
+import PublicTopBar from '@/components/public/PublicTopBar'
 
 // Public page required by Google Play / the App Store: how to delete a Taseerak account, what is
 // deleted and what is kept. A signed-in visitor can delete the account here (POST /api/account/delete).
@@ -21,7 +21,7 @@ const C: Record<string, any> = {
     intro: 'يمكنك حذف حسابك في «تسعيرك» في أي وقت، من الموقع أو من تطبيق الجوال. يتم الحذف فوراً ولا يمكن التراجع عنه.',
     howTitle: 'طريقة الحذف',
     how: ['من التطبيق: الإعدادات ← حذف حسابي.', 'من الموقع: سجّل الدخول ثم افتح هذه الصفحة واضغط «احذف حسابي نهائياً».', 'إن تعذّر عليك ذلك، أو لم يكن لديك التطبيق، راسلنا من بريدك المسجّل على العنوان أدناه، وننفّذ الطلب خلال 30 يوماً.', 'إن سجّلت برقم الجوال فقط، فراسلنا من أي بريد، واذكر رقم جوالك المسجّل واسمك في الحساب، وسنتحقق من ملكيتك للحساب قبل الحذف.'],
-    mailTitle: 'البريد الإلكتروني للدعم', mailHint: 'أرسل طلب الحذف من البريد المسجّل في حسابك.',
+    mailTitle: 'البريد الإلكتروني للدعم', mailHint: 'أرسله من بريدك المسجّل، أو اذكر رقم جوالك المسجّل واسمك في الحساب إن سجّلت بالجوال فقط.',
     delTitle: 'ما الذي يُحذف',
     del: ['اسمك واسم منشأتك ورقم جوالك وعنوانك وموقعك.', 'مستندات التوثيق التي رفعتها (الرخصة والسجل التجاري).', 'المسودات والإشعارات وتخصصاتك وفروعك وأسعارك المحفوظة.', 'رموز الإشعارات على أجهزتك، وبيانات الدخول (البريد وكلمة المرور)، فلا يمكن الدخول إلى الحساب بعدها.', 'تُلغى طلباتك المفتوحة وعروضك التي لم يُبتّ فيها.'],
     keepTitle: 'ما الذي يُحتفظ به ولماذا',
@@ -35,6 +35,8 @@ const C: Record<string, any> = {
     keepHome: ['سجلّات مشترياتك المكتملة (الفواتير والمراسلات المرتبطة بها) تبقى لدى البائع باسم «حساب محذوف»، لأنها جزء من سجلّاته.', 'البيانات التي يُلزمنا النظام بحفظها، مثل بيانات الفواتير الضريبية، تُحفظ للمدة التي يحددها النظام ثم تُحذف.'],
     activeDeals: (n: number) => `لديك ${arCount(n, 'صفقة واحدة', 'صفقتان', 'صفقات', 'صفقة')} قيد التنفيذ. أكملها أو تواصل مع الطرف الآخر قبل الحذف، لأن الحذف يوقف المراسلة والتأكيدات فيها.`,
     openDeals: 'افتح صفقاتي',
+    activeBuys: (n: number) => n === 1 ? 'لديك عملية شراء قائمة. أكملها أو تواصل مع البائع قبل الحذف، لأن الحذف يوقف المراسلة والتأكيدات فيها.' : `لديك ${arCount(n, 'عملية شراء واحدة', 'عمليتا شراء', 'عمليات شراء', 'عملية شراء')} قائمة. أكملها أو تواصل مع البائع قبل الحذف، لأن الحذف يوقف المراسلة والتأكيدات فيها.`,
+    openBuys: 'افتح طلباتي', bannedDeal: 'تواصل مع الدعم بخصوص صفقة قائمة',
     team: (n: number) => `لديك ${arCount(n, 'عضو واحد', 'عضوان', 'أعضاء', 'عضواً')} في فريق الشركة، وسيفقدون الوصول إلى حساب الشركة فور الحذف.`,
     delBiz: ['اسمك واسم منشأتك ورقم جوالك وعنوانك وموقعك.', 'المسودات والإشعارات.', 'رموز الإشعارات على أجهزتك، وبيانات الدخول (البريد وكلمة المرور)، فلا يمكن الدخول إلى الحساب بعدها.', 'تُلغى طلباتك المفتوحة.'],
     backHome: 'العودة إلى الصفحة الرئيسية',
@@ -48,7 +50,7 @@ const C: Record<string, any> = {
     intro: 'You can delete your Taseerak account at any time, on the website or in the mobile app. Deletion is immediate and cannot be undone.',
     howTitle: 'How to delete',
     how: ['In the app: Settings → Delete my account.', 'On the website: sign in, open this page and press "Delete my account permanently".', 'If you cannot, or you do not have the app, email us from your registered address at the address below and we will complete it within 30 days.', 'If you signed up with your mobile number only, email us from any address with your registered mobile number and the name on the account; we check that the account is yours before deleting it.'],
-    mailTitle: 'Support email', mailHint: 'Send the deletion request from the email registered on your account.',
+    mailTitle: 'Support email', mailHint: 'Send it from your registered email, or give your registered mobile number and the name on the account if you signed up with your mobile only.',
     delTitle: 'What is deleted',
     del: ['Your name, business name, phone number, address and location.', 'The verification documents you uploaded (licence and commercial registration).', 'Drafts, notifications, specialties, branches and saved prices.', 'Your devices’ notification tokens and your sign-in (email and password), so the account can no longer be used.', 'Your open requests and undecided offers are cancelled.'],
     keepTitle: 'What is kept, and why',
@@ -62,6 +64,8 @@ const C: Record<string, any> = {
     keepHome: ['Your completed purchases (invoices and the messages about them) stay with the seller under the name "Deleted account", because they are part of their records.', 'Data the law requires us to keep, such as tax-invoice data, is kept for the legally required period and then deleted.'],
     activeDeals: (n: number) => `You have ${n} ${n === 1 ? 'deal' : 'deals'} in progress. Finish them or talk to the other party before deleting: deleting stops the messages and confirmations in them.`,
     openDeals: 'Open my deals',
+    activeBuys: (n: number) => `You have ${n === 1 ? 'a purchase' : n + ' purchases'} in progress. Finish ${n === 1 ? 'it' : 'them'} or talk to the seller before deleting: deleting stops the messages and confirmations in ${n === 1 ? 'it' : 'them'}.`,
+    openBuys: 'Open my requests', bannedDeal: 'Contact support about a deal in progress',
     team: (n: number) => `You have ${n} company team ${n === 1 ? 'member' : 'members'}; they lose access to the company account as soon as you delete it.`,
     delBiz: ['Your name, business name, phone number, address and location.', 'Drafts and notifications.', 'Your devices’ notification tokens and your sign-in (email and password), so the account can no longer be used.', 'Your open requests are cancelled.'],
     backHome: 'Back to the home page',
@@ -75,7 +79,7 @@ const C: Record<string, any> = {
     intro: 'آپ کسی بھی وقت ویب سائٹ یا موبائل ایپ سے اپنا تسعیرک اکاؤنٹ حذف کر سکتے ہیں۔ حذف فوری ہوتا ہے اور واپس نہیں ہو سکتا۔',
     howTitle: 'حذف کرنے کا طریقہ',
     how: ['ایپ میں: ترتیبات ← میرا اکاؤنٹ حذف کریں۔', 'ویب سائٹ پر: لاگ اِن کریں، یہ صفحہ کھولیں اور «میرا اکاؤنٹ مستقل حذف کریں» دبائیں۔', 'اگر ممکن نہ ہو یا آپ کے پاس ایپ نہیں ہے تو اپنی رجسٹرڈ ای میل سے نیچے دیے گئے پتے پر لکھیں، ہم 30 دن کے اندر حذف کر دیں گے۔', 'اگر آپ نے صرف موبائل نمبر سے رجسٹر کیا ہے تو کسی بھی ای میل سے لکھیں، اپنا رجسٹرڈ موبائل نمبر اور اکاؤنٹ کا نام بتائیں؛ حذف سے پہلے ہم تصدیق کریں گے کہ اکاؤنٹ آپ کا ہے۔'],
-    mailTitle: 'سپورٹ ای میل', mailHint: 'حذف کی درخواست اپنے اکاؤنٹ میں رجسٹرڈ ای میل سے بھیجیں۔',
+    mailTitle: 'سپورٹ ای میل', mailHint: 'یہ اپنی رجسٹرڈ ای میل سے بھیجیں، یا اگر آپ نے صرف موبائل سے رجسٹر کیا ہے تو اپنا رجسٹرڈ موبائل نمبر اور اکاؤنٹ کا نام بتائیں۔',
     delTitle: 'کیا حذف ہوتا ہے',
     del: ['آپ کا نام، ادارے کا نام، فون نمبر، پتہ اور مقام۔', 'آپ کی اپ لوڈ کردہ تصدیقی دستاویزات (لائسنس اور تجارتی رجسٹریشن)۔', 'ڈرافٹ، اطلاعات، مہارتیں، شاخیں اور محفوظ قیمتیں۔', 'آپ کے آلات کے اطلاعاتی ٹوکن اور لاگ اِن (ای میل اور پاس ورڈ)، اس کے بعد اکاؤنٹ استعمال نہیں ہو سکتا۔', 'آپ کی کھلی درخواستیں اور زیرِ غور پیشکشیں منسوخ ہو جاتی ہیں۔'],
     keepTitle: 'کیا محفوظ رہتا ہے اور کیوں',
@@ -89,6 +93,8 @@ const C: Record<string, any> = {
     keepHome: ['آپ کی مکمل خریداریاں (انوائس اور متعلقہ پیغامات) بیچنے والے کے پاس «حذف شدہ اکاؤنٹ» کے نام سے رہتی ہیں کیونکہ وہ اس کے ریکارڈ کا حصہ ہیں۔', 'جو ڈیٹا قانوناً رکھنا لازم ہے، جیسے ٹیکس انوائس کا ڈیٹا، مقررہ مدت تک رکھا جاتا ہے پھر حذف کر دیا جاتا ہے۔'],
     activeDeals: (n: number) => `آپ کے ${n} سودے جاری ہیں۔ حذف کرنے سے پہلے انہیں مکمل کریں یا دوسرے فریق سے بات کریں، کیونکہ حذف کرنے سے ان میں پیغامات اور تصدیقات رک جاتی ہیں۔`,
     openDeals: 'میرے سودے کھولیں',
+    activeBuys: (n: number) => `آپ کی ${n} خریداری جاری ہے۔ حذف کرنے سے پہلے اسے مکمل کریں یا بیچنے والے سے بات کریں، کیونکہ حذف کرنے سے پیغامات اور تصدیقات رک جاتی ہیں۔`,
+    openBuys: 'میری درخواستیں کھولیں', bannedDeal: 'جاری سودے کے بارے میں سپورٹ سے رابطہ کریں',
     team: (n: number) => `کمپنی کی ٹیم میں آپ کے ${n} رکن ہیں، اور حذف کرتے ہی وہ کمپنی کے اکاؤنٹ تک رسائی کھو دیں گے۔`,
     delBiz: ['آپ کا نام، ادارے کا نام، فون نمبر، پتہ اور مقام۔', 'ڈرافٹ اور اطلاعات۔', 'آپ کے آلات کے اطلاعاتی ٹوکن اور لاگ اِن (ای میل اور پاسورڈ)، اس کے بعد اکاؤنٹ استعمال نہیں ہو سکتا۔', 'آپ کی کھلی درخواستیں منسوخ ہو جاتی ہیں۔'],
     backHome: 'مرکزی صفحے پر واپس جائیں',
@@ -115,15 +121,21 @@ export default function DeleteAccountPage() {
   const [member, setMember] = useState(false)
   // a pricing agent / individual seller has no business name, documents or branches (round-6 UX-118)
   const [independent, setIndependent] = useState(false)
+  // round-7 UX-220: a suspended account cannot open its deals (it loops back to /banned): support instead;
+  // the lists wait for the profile (no company items flashing for a home buyer), a generic list if it fails
+  const [banned, setBanned] = useState(false)
+  const [prof, setProf] = useState<'loading' | 'ok' | 'fail'>('loading')
 
   useEffect(() => {
     const sb = createClient()
     sb.auth.getSession().then(async ({ data }) => {
       setSignedIn(!!data.session)
       const uid = data.session?.user?.id
-      if (!uid) return
+      if (!uid) { setProf('fail'); return }
       try {
-        const { data: p } = await sb.from('profiles').select('role, buyer_type, provider_type').eq('id', uid).maybeSingle()
+        const { data: p, error: pErr } = await sb.from('profiles').select('role, buyer_type, provider_type, banned_until').eq('id', uid).maybeSingle()
+        if (pErr || !p) throw pErr || new Error('no profile')
+        setBanned(!!p?.banned_until && new Date(p.banned_until).getTime() > Date.now())
         setIndependent(p?.role === 'supplier' && ['individual', 'broker', 'price_agent'].includes(String(p?.provider_type || '')))
         setHomeBuyer(p?.role === 'contractor' && p?.buyer_type === 'individual')
         setRole(p?.role || '')
@@ -133,7 +145,8 @@ export default function DeleteAccountPage() {
           const { count } = await sb.from('company_members').select('user_id', { count: 'exact', head: true }).eq('company_id', uid).eq('status', 'active')
           setTeamCount(count || 0)
         }
-      } catch {}
+        setProf('ok')
+      } catch { setProf('fail') }
       try {
         const { data: n, error } = await sb.rpc('my_active_deal_count')
         if (!error && typeof n === 'number') setActiveDeals(n)
@@ -159,15 +172,8 @@ export default function DeleteAccountPage() {
 
   return (
     <div className="min-h-screen bg-slate-50" dir={dir}>
-      <nav className="bg-white/90 backdrop-blur sticky top-0 z-50 border-b border-gray-100">
-        <div className="max-w-3xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between">
-          <a href="/" className="shrink-0" aria-label="تسعيرك">{/* eslint-disable-next-line @next/next/no-img-element */}<img src="/taseerak-metallic-logo.webp" alt="تسعيرك" className="h-11 w-auto" /></a>
-          <div className="flex items-center gap-2">
-            <LanguageSwitcher variant="minimal" />
-            <HomeOrAccountLink homeLabel={t.home} />
-          </div>
-        </div>
-      </nav>
+      {/* the one public top bar (round-7 UX-163) */}
+      <PublicTopBar />
 
       <div className="max-w-3xl mx-auto px-4 sm:px-6 py-8 space-y-6">
         <div>
@@ -180,8 +186,14 @@ export default function DeleteAccountPage() {
           <a href={`mailto:${OPERATOR.email}`} dir="ltr" className="inline-block font-mono text-base font-bold text-[#8F6820] hover:underline select-all break-all">{OPERATOR.email}</a>
           <p className="text-xs text-gray-500 mt-1">{t.mailHint}</p>
         </section>
-        <section><h2 className="text-base font-bold mb-1.5" style={{ color: '#0B2438' }}>{t.delTitle}</h2><List items={member ? t.delMember : homeBuyer ? t.delHome : role === 'contractor' ? t.delBiz : independent ? (t as any).delIndependent : t.del} /></section>
-        <section><h2 className="text-base font-bold mb-1.5" style={{ color: '#0B2438' }}>{t.keepTitle}</h2><List items={member ? t.keepMember : homeBuyer ? t.keepHome : t.keep} /></section>
+        {signedIn !== false && prof === 'loading' ? (
+          <div className="space-y-2 animate-pulse" aria-busy="true">
+            <div className="h-4 w-40 rounded bg-gray-200" /><div className="h-3 w-full rounded bg-gray-200" /><div className="h-3 w-5/6 rounded bg-gray-200" /><div className="h-3 w-2/3 rounded bg-gray-200" />
+          </div>
+        ) : (<>
+        <section><h2 className="text-base font-bold mb-1.5" style={{ color: '#0B2438' }}>{t.delTitle}</h2><List items={prof !== 'ok' ? t.del : member ? t.delMember : homeBuyer ? t.delHome : role === 'contractor' ? t.delBiz : independent ? (t as any).delIndependent : t.del} /></section>
+        <section><h2 className="text-base font-bold mb-1.5" style={{ color: '#0B2438' }}>{t.keepTitle}</h2><List items={prof !== 'ok' ? t.keep : member ? t.keepMember : homeBuyer ? t.keepHome : t.keep} /></section>
+        </>)}
 
         <div className="bg-white rounded-2xl border border-red-100 p-5">
           {done ? (
@@ -199,8 +211,10 @@ export default function DeleteAccountPage() {
           ) : signedIn ? (
             <div className="space-y-3">
               {activeDeals > 0 && (
-                <div className="rounded-xl border border-warn-border bg-warn-bg p-3 text-sm text-warn-text" role="alert">{t.activeDeals(activeDeals)}{' '}
-                  <a href={role === 'supplier' ? '/supplier/deals' : '/contractor/rfqs'} className="inline-flex items-center min-h-[44px] font-bold underline">{t.openDeals}</a>
+                <div className="rounded-xl border border-warn-border bg-warn-bg p-3 text-sm text-warn-text" role="alert">{role === 'contractor' ? t.activeBuys(activeDeals) : t.activeDeals(activeDeals)}{' '}
+                  {banned
+                    ? <a href="/support?topic=deal" className="inline-flex items-center min-h-[44px] font-bold underline">{t.bannedDeal}</a>
+                    : <a href={role === 'supplier' ? '/supplier/deals' : '/contractor/rfqs'} className="inline-flex items-center min-h-[44px] font-bold underline">{role === 'contractor' ? t.openBuys : t.openDeals}</a>}
                 </div>
               )}
               {teamCount > 0 && (

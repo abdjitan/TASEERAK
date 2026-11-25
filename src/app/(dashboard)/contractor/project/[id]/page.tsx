@@ -5,8 +5,7 @@ import Link from 'next/link'
 import PageLoader from '@/components/shared/PageLoader'
 import { useParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
-import { offerComparable, lineComparable, vatTag } from '@/lib/vat'
-import { askConfirm, notify } from '@/lib/askConfirm'
+import { offerComparable, lineComparable, vatTag, issuesTaxInvoice } from '@/lib/vat'
 import { arCount, daysText, dateLocale } from '@/lib/text'
 import { fileHref } from '@/lib/fileHref'
 import { useTranslation } from '@/i18n'
@@ -14,27 +13,22 @@ import Logo from '@/components/shared/Logo'
 import LanguageSwitcher from '@/components/shared/LanguageSwitcher'
 import AppShell from '@/components/shared/AppShell'
 import { getNav } from '@/lib/nav'
-import { SECTOR_LABELS, getProductLabel, getUnitLabel, getRegionLabel, getProductSpecs } from '@/types'
+import { SECTOR_LABELS, getSectorLabel, getProductLabel, getUnitLabel, getRegionLabel, getProductSpecs } from '@/types'
 import { fmtNum } from '@/components/tender/labels'
 import { tierLabel, tierIcon, sourceLabel, isDirectSource } from '@/lib/sellers'
 import SellerIcon from '@/components/shared/SellerIcon'
 import Glyph from '@/components/shared/Glyph'
-import { useEnsureVerified } from '@/components/shared/VerifyGate'
 
 const SECTOR_ICONS = { civil: <Glyph e="🏗" />, architectural: <Glyph e="🏛" />, electrical: <Glyph e="⚡" />, mechanical: <Glyph e="⚙" />, equipment: <Glyph e="🚜" />, supply_store: <Glyph e="🏪" /> }
 // one dark, on-brand tone per sector (no purple, no green: green means success)
 const SECTOR_COLORS = { civil: '#0B2438', architectural: '#435A70', electrical: '#9D7425', mechanical: '#102E45', equipment: '#48596E', supply_store: '#8F6820' }
-const SECTOR_L: Record<string, [string, string]> = {
-  civil: ['Civil', 'سول'], architectural: ['Architectural', 'آرکیٹیکچرل'], electrical: ['Electrical', 'الیکٹریکل'],
-  mechanical: ['Mechanical', 'مکینیکل'], equipment: ['Machinery and equipment', 'مشینری اور آلات'], supply_store: ['Supply store', 'سپلائی اسٹور'],
-}
-const sectorName = (s: string, locale: string) => (locale === 'ar' ? (SECTOR_LABELS as any)[s] || s : (SECTOR_L[s]?.[locale === 'ur' ? 1 : 0] || s))
+// one sector name per language on every page (round-7 UX-141): no local name map
+const sectorName = (s: string, locale: string) => getSectorLabel(s, locale)
 const arOffers = (n: number) => arCount(n, 'عرض واحد', 'عرضان', 'عروض', 'عرضاً')
 
 export default function ProjectResultsPage() {
   const { id } = useParams()
   const { locale, dir } = useTranslation()
-  const ensureVerified = useEnsureVerified()
   const L = (en: string, ur: string, ar: string) => (locale === 'en' ? en : locale === 'ur' ? ur : ar)
   const SAR = L('SAR', 'ریال', 'ر.س')
   const FWD = locale === 'en' ? '→' : '←' // «forward» points left in Arabic and Urdu
@@ -43,7 +37,6 @@ export default function ProjectResultsPage() {
   const [items, setItems] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [showAllOffers, setShowAllOffers] = useState<any>({})
-  const [selectedOffers, setSelectedOffers] = useState<any>({}) // item_id → offer_id
   const [filter, setFilter] = useState('all') // all | has_offers | pending | accepted
   const [sectorFilter, setSectorFilter] = useState('all')
   const [search, setSearch] = useState('')
@@ -87,51 +80,29 @@ export default function ProjectResultsPage() {
     load()
   }, [id])
 
-  async function acceptOffer(offerId: any, rfqId: any, itemId: any) {
-    // same wording as the request page: accepting rejects the other offers and closes the request
-    if (!(await askConfirm(L('Choose this offer? The other offers will be declined and the request will close.', 'یہ آفر منتخب کریں؟ باقی آفرز رد ہو جائیں گی اور درخواست بند ہو جائے گی۔', 'اختيار هذا العرض؟ ستُرفض العروض الأخرى ويُغلق الطلب.'), { okLabel: L('Choose this offer', 'یہ آفر منتخب کریں', 'اختر هذا العرض') }))) return
-    if (!(await ensureVerified())) return
-    const supabase = createClient()
-    // Atomic: accept + reject the competing offers + close the RFQ in one
-    // transaction (same as the single-RFQ flow) — prevents double-accept and
-    // leaving rival offers "pending".
-    const { error } = await supabase.rpc('accept_offer', { p_offer_id: offerId })
-    if (error) { await notify(L('Could not choose the offer: another one may already be chosen. Refresh the page and try again.', 'پیشکش منتخب نہیں ہو سکی: شاید پہلے ہی کوئی منتخب ہو چکی ہے۔ صفحہ تازہ کر کے دوبارہ کوشش کریں۔', 'تعذّر اختيار العرض، فقد يكون اختير عرض مسبقاً. حدّث الصفحة وحاول مرة أخرى.'), { tone: 'error' }); return }
-    setSelectedOffers((prev: any) => ({ ...prev, [itemId]: offerId }))
-    // the page is updated in place (no full reload) and says what happened (UX-104): the chosen offer is accepted,
-    // the others on the same request are declined and the request closes, as accept_offer did on the server
-    const supplierId: string | null = items.flatMap((it: any) => it.rfq?.offers || []).find((o: any) => o.id === offerId)?.supplier_id || null
-    setItems(prev => prev.map((it: any) => {
-      if (it.rfq_id !== rfqId || !it.rfq) return it
-      const offers = (it.rfq.offers || []).map((o: any) => (o.id === offerId ? { ...o, status: 'accepted' } : o.status === 'pending' ? { ...o, status: 'rejected' } : o))
-      return { ...it, rfq: { ...it.rfq, status: 'closed', offers } }
-    }))
-    // the chosen supplier's phone is readable now (RLS opens it after the award)
-    if (supplierId) {
-      try {
-        const { data: c } = await supabase.from('profiles').select('id, phone, contact_phone').eq('id', supplierId).maybeSingle()
-        if (c) setContactsById((m: any) => ({ ...m, [(c as any).id]: (c as any).contact_phone || (c as any).phone }))
-      } catch { /* the phone then shows on the purchase order */ }
-    }
-    await notify(L('Offer chosen and the supplier was notified. The purchase order is ready.', 'آفر منتخب ہو گئی اور سپلائر کو اطلاع دے دی گئی۔ پرچیز آرڈر تیار ہے۔', 'اختير العرض وأُبلغ المورد، وأمر الشراء جاهز.'), { tone: 'success' })
-  }
-
   // a spec key («dia») shown by its label in the page's language (round-5 UX-158)
   const attrLabel = (name: string, k: string) => { const f = getProductSpecs(name || '').find(x => x.key === k); return f ? (locale === 'en' ? f.en : f.ar) : k }
+  // round-7 UX-081: this older page follows the round-6 rules. Choosing happens on the request page only; here a
+  // withdrawn, declined or cancelled offer is not listed, an expired price is marked and never shown first, an offer
+  // without a tax invoice is set apart when the request asked for one, and a deal closed by an admin is not «مختار».
+  const priceGone = (o: any) => !!o?.price_valid_until && new Date(o.price_valid_until) < new Date()
+  const liveOffers = (it: any) => (it.rfq?.offers || []).filter((o: any) => o.status === 'accepted' || !['rejected', 'withdrawn', 'cancelled'].includes(o.status))
+  const chosenOf = (it: any) => (it.rfq?.offers || []).find((o: any) => o.status === 'accepted' && !o.deal_closed_at) || null
+  const closedOf = (it: any) => (it.rfq?.offers || []).find((o: any) => o.status === 'accepted' && !!o.deal_closed_at) || null
   const totalItems = items.length
-  const totalOffers = items.reduce((s: any, i: any) => s + (i.rfq?.offers?.length || 0), 0)
-  const acceptedItems = items.filter((i: any) => i.rfq?.offers?.some((o: any) => o.status === 'accepted')).length
+  const totalOffers = items.reduce((s: any, i: any) => s + liveOffers(i).length, 0)
+  const acceptedItems = items.filter((i: any) => !!chosenOf(i)).length
   const totalAcceptedCost = items.reduce((s: any, i: any) => {
-    const accepted = i.rfq?.offers?.find((o: any) => o.status === 'accepted')
+    const accepted = chosenOf(i)
     return s + (accepted ? offerComparable(accepted) : 0)
   }, 0)
 
   if (loading) return <PageLoader />
   if (notFound) return (
-    <AppShell title={L('Project', 'پراجیکٹ', 'المشروع')} nav={getNav('contractor', locale, '/contractor/project/new')} dir={dir}>
+    <AppShell title={L('Bill of quantities', 'مقداروں کا جدول', 'جدول الكميات')} nav={getNav('contractor', locale, '/contractor/project/new')} dir={dir}>
       <div className="max-w-xl mx-auto bg-white rounded-2xl border border-gray-100 p-8 text-center">
         <div className="text-4xl text-[#8F6820] mb-3"><Glyph e="🔍" /></div>
-        <h1 className="text-lg font-bold text-[#0B2438] mb-2">{L('Project not found', 'پراجیکٹ نہیں ملا', 'لم يُعثر على المشروع')}</h1>
+        <h1 className="text-lg font-bold text-[#0B2438] mb-2">{L('Bill of quantities not found', 'مقداروں کا جدول نہیں ملا', 'لم يُعثر على جدول الكميات')}</h1>
         <p className="text-sm text-gray-600 mb-5">{L('It may have been deleted, or it belongs to another account.', 'شاید حذف ہو گیا ہے یا کسی اور اکاؤنٹ کا ہے۔', 'ربما حُذف، أو يخص حساباً آخر.')}</p>
         <Link href="/contractor/rfqs" className="inline-flex items-center min-h-11 px-5 rounded-xl font-bold text-sm text-white bg-[#0B2438]">{L('My requests', 'میری درخواستیں', 'طلباتي')}</Link>
       </div>
@@ -139,7 +110,7 @@ export default function ProjectResultsPage() {
   )
 
   return (
-    <AppShell title={locale === 'en' ? 'Project Results' : locale === 'ur' ? 'پراجیکٹ نتائج' : 'نتائج المشروع'} nav={getNav('contractor', locale, '/contractor/project/new')} dir={dir}>
+    <AppShell title={L('Bill of quantities results', 'مقداروں کے جدول کے نتائج', 'نتائج جدول الكميات')} nav={getNav('contractor', locale, '/contractor/project/new')} dir={dir}>
       <div className="max-w-5xl mx-auto">
         {/* Project Header */}
         <div className="bg-white rounded-2xl p-5 sm:p-6 border border-gray-100 shadow-sm mb-5 animate-fade-in">
@@ -172,7 +143,7 @@ export default function ProjectResultsPage() {
         {/* an old project with no saved items is not a dead end: its request is followed from «طلباتي» (UX-136) */}
         {items.length === 0 && (
           <div className="bg-white rounded-2xl p-6 border border-[#D4A543]/40 shadow-sm mb-5 text-center">
-            <p className="text-sm text-[#0B2438] font-semibold mb-3">{tenderRfq ? L('This project has no saved items here. Follow it on its request page.', 'اس پراجیکٹ کے آئٹمز یہاں محفوظ نہیں۔ اسے اس کی درخواست کے صفحے پر دیکھیں۔', 'لا توجد بنود محفوظة لهذا المشروع هنا، فتابعه من صفحة طلبه.') : L('This project has no saved items here. Follow it from your requests.', 'اس پراجیکٹ کے آئٹمز یہاں محفوظ نہیں۔ اسے اپنی درخواستوں سے دیکھیں۔', 'لا توجد بنود محفوظة لهذا المشروع هنا، فتابعه من طلباتك.')}</p>
+            <p className="text-sm text-[#0B2438] font-semibold mb-3">{tenderRfq ? L('This bill of quantities has no saved items here. Follow it on its request page.', 'اس جدول کے آئٹمز یہاں محفوظ نہیں۔ اسے اس کی درخواست کے صفحے پر دیکھیں۔', 'لا توجد بنود محفوظة لجدول الكميات هذا هنا، فتابعه من صفحة طلبه.') : L('This bill of quantities has no saved items here. Follow it from your requests.', 'اس جدول کے آئٹمز یہاں محفوظ نہیں۔ اسے اپنی درخواستوں سے دیکھیں۔', 'لا توجد بنود محفوظة لجدول الكميات هذا هنا، فتابعه من طلباتك.')}</p>
             <Link href={tenderRfq ? `/contractor/rfq/${tenderRfq}` : '/contractor/rfqs'} className="inline-flex items-center min-h-11 px-5 rounded-xl font-bold text-sm text-[#071827]" style={{ background: 'linear-gradient(135deg,#F5C55B,#D4A543)' }}>{tenderRfq ? L('Open the request', 'درخواست کھولیں', 'فتح الطلب') : L('Follow it from your requests', 'اپنی درخواستوں سے دیکھیں', 'تابعه من طلباتك')}</Link>
           </div>
         )}
@@ -212,9 +183,9 @@ export default function ProjectResultsPage() {
                 { key: 'accepted', label: L('Chosen', 'منتخب', 'مختارة'), icon: <Glyph e="✅" /> },
               ].map((f: any) => {
                 const count = f.key === 'all' ? items.length
-                  : f.key === 'has_offers' ? items.filter((i: any) => (i.rfq?.offers?.length || 0) > 0 && !i.rfq?.offers?.some((o: any) => o.status === 'accepted')).length
-                  : f.key === 'pending' ? items.filter((i: any) => (i.rfq?.offers?.length || 0) === 0).length
-                  : items.filter((i: any) => i.rfq?.offers?.some((o: any) => o.status === 'accepted')).length
+                  : f.key === 'has_offers' ? items.filter((i: any) => liveOffers(i).length > 0 && !chosenOf(i)).length
+                  : f.key === 'pending' ? items.filter((i: any) => liveOffers(i).length === 0).length
+                  : items.filter((i: any) => !!chosenOf(i)).length
                 return (
                   <button key={f.key} type="button" onClick={() => setFilter(f.key)} aria-pressed={filter === f.key}
                     className={`min-h-11 px-4 py-2 rounded-xl text-xs font-semibold whitespace-nowrap transition-all flex items-center gap-1.5 ${
@@ -244,8 +215,8 @@ export default function ProjectResultsPage() {
         <div className="space-y-4 stagger">
           {(() => {
             const filtered = items.filter((item: any) => {
-              const offers = item.rfq?.offers || []
-              const hasAccepted = offers.some((o: any) => o.status === 'accepted')
+              const offers = liveOffers(item)
+              const hasAccepted = !!chosenOf(item)
               // status filter
               if (filter === 'has_offers' && (offers.length === 0 || hasAccepted)) return false
               if (filter === 'pending' && offers.length > 0) return false
@@ -265,13 +236,18 @@ export default function ProjectResultsPage() {
               </div>
             )
             return filtered.map((item: any) => {
-            const offers = item.rfq?.offers || []
-            // ranked AND shown by the comparable total (VAT added where the seller charges it)
-            const sortedOffers = [...offers].sort((a: any, b: any) => offerComparable(a) - offerComparable(b))
+            const allLive = liveOffers(item)
+            const acceptedOffer = chosenOf(item)
+            const closedDeal = closedOf(item)
+            // a request that asked for a tax invoice: offers without one are counted apart, not listed (as on the request page)
+            const wantsTax = !!item.rfq?.vat_invoice_required
+            const noTax = wantsTax ? allLive.filter((o: any) => o.status !== 'accepted' && !issuesTaxInvoice(o)) : []
+            const offers = wantsTax ? allLive.filter((o: any) => o.status === 'accepted' || issuesTaxInvoice(o)) : allLive
+            // ranked by the comparable total (VAT included where the seller charges it); an expired price never comes first
+            const sortedOffers = [...offers].sort((a: any, b: any) => (priceGone(a) ? 1 : 0) - (priceGone(b) ? 1 : 0) || offerComparable(a) - offerComparable(b))
             const top3 = sortedOffers.slice(0, 3)
             const showAll = showAllOffers[item.id]
             const displayOffers = showAll ? sortedOffers : top3
-            const acceptedOffer = offers.find((o: any) => o.status === 'accepted')
             const hasOffers = offers.length > 0
 
             return (
@@ -305,6 +281,7 @@ export default function ProjectResultsPage() {
                         </div>
                       ) : (
                         <div className="text-center">
+                          {closedDeal && <div className="badge text-xs bg-gray-100 text-gray-700 mb-1">{L('Deal closed', 'سودا بند', 'أُغلقت الصفقة')}</div>}
                           <div className="text-sm font-bold" style={{ color: '#8F6820' }}>{offers.length ? L(offers.length === 1 ? '1 offer' : `${offers.length} offers`, `${offers.length} پیشکشیں`, arOffers(offers.length)) : L('No offers yet', 'ابھی کوئی پیشکش نہیں', 'لا عروض بعد')}</div>
                         </div>
                       )}
@@ -357,7 +334,7 @@ export default function ProjectResultsPage() {
                   <div className="p-4 sm:p-5">
                     {!acceptedOffer && (
                       <div className="text-xs font-bold text-gray-500 mb-3">
-                        <Glyph e="🏆" /> {L('Top 3 Cheapest Offers', 'سب سے سستی 3 پیشکشیں', 'أفضل 3 عروض سعراً')}
+                        {L('Lowest offers (prices include VAT where the supplier charges it)', 'سب سے کم پیشکشیں (جہاں سپلائر VAT لیتا ہے وہاں قیمت VAT سمیت)', 'أقل العروض سعراً (الأسعار شاملة الضريبة حين يفرضها المورد)')}
                       </div>
                     )}
 
@@ -365,13 +342,10 @@ export default function ProjectResultsPage() {
                       {displayOffers.map((offer: any, rank: any) => (
                         <div key={offer.id} className={`rounded-xl p-3 border transition-all ${
                           offer.status === 'accepted' ? 'border-[#0F6E56]/40 bg-[#0F6E56]/[.06]' :
-                          rank === 0 && !acceptedOffer ? 'border-[#D4A543]/40 bg-[#D4A543]/5' : 'border-gray-100'
+                          'border-gray-100'
                         }`}>
                           <div className="flex items-center justify-between gap-2">
                             <div className="flex items-center gap-2 min-w-0">
-                              {rank === 0 && !acceptedOffer && <span className="text-sm"><Glyph e="🥇" /></span>}
-                              {rank === 1 && !acceptedOffer && <span className="text-sm"><Glyph e="🥈" /></span>}
-                              {rank === 2 && !acceptedOffer && <span className="text-sm"><Glyph e="🥉" /></span>}
                               <div className="min-w-0">
                                 <div className="font-semibold text-sm truncate" style={{ color: '#0B2438' }}>
                                   {offer.supplier?.company_name_ar}
@@ -387,6 +361,7 @@ export default function ProjectResultsPage() {
                                   )}
                                   {offer.supplier?.rating_avg > 0 && <span><Glyph e="⭐" /> {offer.supplier.rating_avg}</span>}
                                   {offer.delivery_days && <span><Glyph e="📦" /> {daysText(offer.delivery_days, locale)}</span>}
+                                  {priceGone(offer) && offer.status !== 'accepted' && <span className="font-bold text-[#8F6820]"><Glyph e="⏱" /> {L('Price expired', 'قیمت کی مدت ختم', 'انتهت صلاحية السعر')}</span>}
                                   {!isDirectSource(offer.source_type) && (
                                     <span className="font-bold text-[#8F6820]">{L('Sourced price', 'منقول قیمت', 'سعر منقول')}{sourceLabel(offer.source_type, locale as any) ? ` · ${sourceLabel(offer.source_type, locale as any)}` : ''}</span>
                                   )}
@@ -396,7 +371,7 @@ export default function ProjectResultsPage() {
                             </div>
                             <div className="flex items-center gap-2 flex-shrink-0">
                               <div className="text-end">
-                                <div className="font-bold text-sm" style={{ color: rank === 0 && !acceptedOffer ? '#8F6820' : '#0B2438' }}>
+                                <div className="font-bold text-sm" style={{ color: '#0B2438' }}>
                                   {offerComparable(offer).toLocaleString('en-US')} {SAR}
                                 </div>
                                 <div className="text-xs text-gray-500 max-w-[180px]">{vatTag(offer, locale)}</div>
@@ -410,15 +385,9 @@ export default function ProjectResultsPage() {
                                   </div>
                                 )}
                               </div>
-                              {offer.status === 'accepted' ? (
-                                <span className="badge badge-green text-xs" aria-label={L('Chosen', 'منتخب', 'مختار')}><Glyph e="✓" /></span>
-                              ) : !acceptedOffer && (
-                                <button type="button" onClick={() => acceptOffer(offer.id, item.rfq_id, item.id)}
-                                  className="min-h-11 text-sm px-4 rounded-xl font-bold text-[#071827] transition-all hover:shadow"
-                                  style={{ background: 'linear-gradient(135deg,#F5C55B,#D4A543)' }}>
-                                  {L('Choose this offer', 'یہ آفر منتخب کریں', 'اختر هذا العرض')}
-                                </button>
-                              )}
+                              {offer.status === 'accepted' && (offer.deal_closed_at
+                                ? <span className="badge text-xs bg-gray-100 text-gray-700">{L('Deal closed', 'سودا بند', 'أُغلقت الصفقة')}</span>
+                                : <span className="badge badge-green text-xs" aria-label={L('Chosen', 'منتخب', 'مختار')}><Glyph e="✓" /></span>)}
                             </div>
                           </div>
                           {offer.notes && <p className="text-xs text-gray-500 mt-1 pe-6">{offer.notes}</p>}
@@ -437,8 +406,19 @@ export default function ProjectResultsPage() {
                     )}
                   </div>
                 ) : (
-                  <div className="p-4 text-center text-sm text-gray-400">
-                    <Glyph e="⏳" /> {L('Waiting for offers...', 'پیشکشوں کا انتظار ہے...', 'في انتظار العروض...')}
+                  <div className="p-4 text-center text-sm text-gray-500">
+                    <Glyph e="⏳" /> {L('Waiting for offers…', 'پیشکشوں کا انتظار ہے…', 'في انتظار العروض…')}
+                  </div>
+                )}
+                {noTax.length > 0 && (
+                  <p className="px-4 sm:px-5 pb-2 text-xs text-gray-600">{L(`${noTax.length} offer(s) that do not issue a tax invoice are not listed, because you asked for a tax invoice. You can see them on the request page.`, `${noTax.length} آفرز جو ٹیکس انوائس جاری نہیں کرتیں یہاں نہیں دکھائی گئیں، کیونکہ آپ نے ٹیکس انوائس مانگی تھی۔ انہیں درخواست کے صفحے پر دیکھ سکتے ہیں۔`, `${arCount(noTax.length, 'عرض واحد لا يُصدر', 'عرضان لا يُصدران', 'عروض لا تُصدر', 'عرضاً لا يُصدر')} فاتورة ضريبية، لم نعرضها هنا لأنك طلبت فاتورة ضريبية، وتجدها في صفحة الطلب.`)}</p>
+                )}
+                {/* choosing happens on the request page only (round-7 UX-081), with all its rules */}
+                {item.rfq_id && (
+                  <div className="px-4 sm:px-5 pb-4">
+                    <Link href={`/contractor/rfq/${item.rfq_id}`} className="flex items-center justify-center w-full min-h-11 rounded-xl text-sm font-bold text-[#071827]" style={{ background: 'linear-gradient(135deg,#F5C55B,#D4A543)' }}>
+                      {acceptedOffer ? L('Open the request', 'درخواست کھولیں', 'فتح الطلب') : L('View the offers and choose', 'آفرز دیکھیں اور منتخب کریں', 'عرض العروض والاختيار')} {FWD}
+                    </Link>
                   </div>
                 )}
               </div>
@@ -452,11 +432,11 @@ export default function ProjectResultsPage() {
         {acceptedItems > 0 && (
           <div className="mt-5 bg-[#0F6E56]/[.06] rounded-2xl p-5 border border-[#0F6E56]/25">
             <h3 className="font-bold text-[#0B2438] mb-3">
-              <Glyph e="📊" /> {L('Project Cost Summary', 'پراجیکٹ کی لاگت کا خلاصہ', 'ملخص تكلفة المشروع')}
+              <Glyph e="📊" /> {L('Bill of quantities cost summary', 'جدول کی لاگت کا خلاصہ', 'ملخص تكلفة الجدول')}
             </h3>
             <div className="space-y-2">
-              {items.filter((i: any) => i.rfq?.offers?.some((o: any) => o.status === 'accepted')).map((item: any) => {
-                const acc = item.rfq.offers.find((o: any) => o.status === 'accepted')
+              {items.filter((i: any) => !!chosenOf(i)).map((item: any) => {
+                const acc = chosenOf(item)
                 return (
                   <div key={item.id} className="flex justify-between text-sm">
                     <span className="text-gray-600 truncate me-4">{getProductLabel(item.product_name, locale)}</span>
@@ -465,7 +445,7 @@ export default function ProjectResultsPage() {
                 )
               })}
               <div className="border-t border-[#0F6E56]/25 pt-2 flex justify-between font-bold">
-                <span style={{ color: '#0B2438' }}>{L('Total', 'کل', 'الإجمالي')}</span>
+                <span style={{ color: '#0B2438' }}>{L('Total (incl. VAT)', 'کل (VAT سمیت)', 'الإجمالي (شامل الضريبة)')}</span>
                 <span style={{ color: '#8F6820' }}>{totalAcceptedCost.toLocaleString('en-US')} {SAR}</span>
               </div>
             </div>

@@ -75,7 +75,7 @@ export default function SuggestionsPage() {
     setBoard(prev => prev.map(b => b.id === id ? { ...b, votes: Number(data) || 0, my_vote: !b.my_vote } : b))
   }
 
-  if (loading) return <PageLoader />
+  if (loading) return <PageLoader variant="form" />
   const navRole = role === 'admin' ? 'admin' : role === 'supplier' ? 'supplier' : 'contractor'
 
   return (
@@ -96,10 +96,12 @@ export default function SuggestionsPage() {
             ))}
           </div>
           <label htmlFor="suggestion-body" className="sr-only">{L('Your suggestion', 'آپ کی تجویز', 'اقتراحك')}</label>
-          <textarea id="suggestion-body" value={body} onChange={(e: any) => setBody(e.target.value)} maxLength={2000} rows={5} className="input-field"
+          <textarea id="suggestion-body" value={body} onChange={(e: any) => { setBody(e.target.value); if (msg) setMsg(null) }} maxLength={2000} rows={5} className="input-field"
             placeholder={kind === 'material' ? L('Which material, and how is it usually sold (unit, sizes)?', 'کون سی مواد، اور کیسے بکتی ہے؟', 'ما المادة، وكيف تُباع عادةً (الوحدة، المقاسات)؟') : L('Write your suggestion…', 'اپنی تجویز لکھیں…', 'اكتب اقتراحك…')} />
+          {/* the suggestion may be published for votes (round-7 UX-160) */}
+          <p className="text-[12px] text-gray-600 leading-relaxed">{L('The Taseerak team may publish your suggestion without your name so users can vote on it, so do not write phone numbers or personal details in it. For problems with a specific deal, use the support page.', 'تسعیرک کی ٹیم آپ کی تجویز آپ کے نام کے بغیر شائع کر سکتی ہے تاکہ صارفین اس پر ووٹ دیں، اس لیے اس میں فون نمبر یا ذاتی معلومات نہ لکھیں۔ کسی خاص سودے کے مسئلے کے لیے سپورٹ کا صفحہ استعمال کریں۔', 'قد ينشر فريق تسعيرك اقتراحك دون اسمك ليصوّت عليه المستخدمون، فلا تكتب فيه أرقام هواتف أو بيانات شخصية. وللمشكلات الخاصة بصفقة استخدم صفحة الدعم.')}{' '}<a href="/support" className="font-bold text-[#8F6820] underline">{L('Support', 'سپورٹ', 'الدعم')}</a></p>
           {msg && <p role={msg.ok ? 'status' : 'alert'} className={`text-sm font-semibold ${msg.ok ? 'text-emerald-700' : 'text-red-600'}`}>{msg.text}</p>}
-          <button type="submit" disabled={sending} className="w-full min-h-[48px] rounded-xl font-bold disabled:opacity-50" style={{ background: '#D4A543', color: '#071827' }}>
+          <button type="submit" disabled={sending} className="btn-primary w-full">
             {sending ? L('Sending…', 'بھیجا جا رہا ہے…', 'جارٍ الإرسال…') : L('Send suggestion', 'تجویز بھیجیں', 'أرسل الاقتراح')}
           </button>
         </form>

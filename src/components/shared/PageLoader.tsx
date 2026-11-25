@@ -24,7 +24,40 @@ function roleFromPath(p: string): string | null {
 // frame before the menu appears on every navigation (round-4 UX-146)
 let hintCache: string | null | undefined
 
-function Skeleton({ label }: { label: string }) {
+// 'form' (settings, suggestions) and 'thread' (support, messages) look like the page that loads, so
+// nothing jumps when the data arrives (round-7 UX-231). 'dashboard' is the default.
+export type LoaderVariant = 'dashboard' | 'form' | 'thread'
+
+function Skeleton({ label, variant = 'dashboard' }: { label: string; variant?: LoaderVariant }) {
+  if (variant === 'form') return (
+    <div className="max-w-3xl mx-auto animate-pulse" aria-busy="true" aria-live="polite">
+      <span className="sr-only" role="status">{label}</span>
+      <div className="h-7 w-48 rounded bg-white border border-gray-100 mb-5" />
+      <div className="rounded-2xl bg-white border border-gray-100 p-5 space-y-5">
+        {[0, 1, 2, 3].map(i => (
+          <div key={i} className="space-y-2">
+            <div className="h-3 w-28 rounded bg-gray-100" />
+            <div className="h-11 w-full rounded-xl bg-gray-100" />
+          </div>
+        ))}
+        <div className="h-11 w-40 rounded-xl bg-gray-100" />
+      </div>
+    </div>
+  )
+  if (variant === 'thread') return (
+    <div className="max-w-3xl mx-auto animate-pulse" aria-busy="true" aria-live="polite">
+      <span className="sr-only" role="status">{label}</span>
+      <div className="h-7 w-40 rounded bg-white border border-gray-100 mb-5" />
+      <div className="rounded-2xl bg-white border border-gray-100 p-4 space-y-3">
+        {[60, 45, 70, 38].map((w, i) => (
+          <div key={i} className={`flex ${i % 2 ? 'justify-end' : 'justify-start'}`}>
+            <div className="h-12 rounded-2xl bg-gray-100" style={{ width: w + '%' }} />
+          </div>
+        ))}
+        <div className="h-20 w-full rounded-xl bg-gray-100 mt-4" />
+      </div>
+    </div>
+  )
   return (
     <div className="max-w-5xl mx-auto space-y-4 animate-pulse" aria-busy="true" aria-live="polite">
       <span className="sr-only" role="status">{label}</span>
@@ -43,7 +76,7 @@ function Skeleton({ label }: { label: string }) {
   )
 }
 
-export default function PageLoader() {
+export default function PageLoader({ variant = 'dashboard' }: { variant?: LoaderVariant } = {}) {
   const { dir, locale } = useTranslation()
   const path = usePathname() || ''
   const [hint, setHint] = useState<string | null>(hintCache ?? null)
@@ -55,6 +88,6 @@ export default function PageLoader() {
   const label = locale === 'en' ? 'Loading…' : locale === 'ur' ? 'لوڈ ہو رہا ہے…' : 'جارٍ التحميل…'
   const role = path.startsWith('/onboarding') || path.startsWith('/welcome') || path.startsWith('/verify') || path.startsWith('/banned') ? null : (roleFromPath(path) || hint)
 
-  if (!role) return <div className="min-h-screen bg-slate-50 p-4 md:p-8" dir={dir}><Skeleton label={label} /></div>
-  return <AppShell nav={getNav(role, locale, path)} dir={dir}><Skeleton label={label} /></AppShell>
+  if (!role) return <div className="min-h-screen bg-slate-50 p-4 md:p-8" dir={dir}><Skeleton label={label} variant={variant} /></div>
+  return <AppShell nav={getNav(role, locale, path)} dir={dir}><Skeleton label={label} variant={variant} /></AppShell>
 }

@@ -68,7 +68,7 @@ const TR = {
     accountType: 'نوع الحساب', fullName: 'الاسم الكامل', pickTitle: 'كيف ستستخدم تسعيرك؟', pickSub: 'اختر نوع حسابك للمتابعة', change: 'تغيير',
     company: 'اسم المحل أو النشاط التجاري', companyHint: 'يظهر للمشترين على عروضك',
     brandH: 'ابدأ مجاناً خلال دقيقة.', brandP: 'حساب واحد تطلب به الأسعار أو تقدّمها، وتتابع طلبك حتى التسليم.',
-    l1: 'أرسل قائمة موادك مرة واحدة، وتصلك عروض عدة موردين', l2: 'قارن واختر الأرخص لكل مادة', l3: 'مجاني خلال الإطلاق، بلا عمولة',
+    l1: 'أرسل قائمة موادك مرة واحدة، وتصلك عروض عدة موردين', l2: 'قارن العروض واختر الأنسب لكل مادة', l3: 'مجاني خلال الإطلاق، بلا عمولة',
     corpQ: 'شركة لديها فريق مشتريات؟', corpA: 'نجهّز لك حساباً للشركة يضم موظفيك — تواصل معنا',
     copyright: '© 2026 تسعيرك · منصة التسعير والتوريد لمواد البناء',
     phone: 'رقم الجوال (واتساب)', email: 'البريد الإلكتروني', password: 'كلمة المرور', passwordPh: 'كلمة مرور قوية',
@@ -95,7 +95,7 @@ const TR = {
     accountType: 'Account type', fullName: 'Full name', pickTitle: 'How will you use Taseerak?', pickSub: 'Choose your account type to continue', change: 'Change',
     company: 'Shop or business name', companyHint: 'Shown to buyers on your offers',
     brandH: 'Start free in a minute.', brandP: 'One account to request prices or to quote them, and follow your request until delivery.',
-    l1: 'Send your list once and get quotes from several suppliers', l2: 'Compare and pick the cheapest for each item', l3: 'Free during launch, no commission',
+    l1: 'Send your list once and get quotes from several suppliers', l2: 'Compare the offers and choose the best one for each material', l3: 'Free during launch, no commission',
     corpQ: 'A company with a procurement team?', corpA: 'We set up a company account for your staff — contact us',
     copyright: '© 2026 Taseerak · Procurement platform for construction materials',
     phone: 'Phone (WhatsApp)', email: 'Email address', password: 'Password', passwordPh: 'A strong password',
@@ -122,7 +122,7 @@ const TR = {
     accountType: 'اکاؤنٹ کی قسم', fullName: 'پورا نام', pickTitle: 'آپ تسعیرک کیسے استعمال کریں گے؟', pickSub: 'جاری رکھنے کے لیے اکاؤنٹ کی قسم منتخب کریں', change: 'تبدیل کریں',
     company: 'دکان یا کاروبار کا نام', companyHint: 'خریدار آپ کی آفر پر یہی نام دیکھیں گے',
     brandH: 'ایک منٹ میں مفت شروع کریں۔', brandP: 'ایک اکاؤنٹ سے قیمتیں منگوائیں یا دیں، اور ڈیلیوری تک اپنی درخواست دیکھیں۔',
-    l1: 'اپنی فہرست ایک بار بھیجیں، کئی سپلائرز کی آفرز پائیں', l2: 'موازنہ کریں اور ہر چیز کی سستی قیمت چنیں', l3: 'لانچ کے دوران مفت، کوئی کمیشن نہیں',
+    l1: 'اپنی فہرست ایک بار بھیجیں، کئی سپلائرز کی آفرز پائیں', l2: 'آفرز کا موازنہ کریں اور ہر چیز کے لیے سب سے موزوں چنیں', l3: 'لانچ کے دوران مفت، کوئی کمیشن نہیں',
     corpQ: 'خریداری ٹیم والی کمپنی؟', corpA: 'ہم آپ کے عملے کے لیے کمپنی اکاؤنٹ بناتے ہیں — رابطہ کریں',
     copyright: '© 2026 تسعیرک · تعمیراتی سامان کی قیمتوں کا پلیٹ فارم',
     phone: 'فون (واٹس ایپ)', email: 'ای میل', password: 'پاسورڈ', passwordPh: 'مضبوط پاسورڈ',
@@ -388,10 +388,14 @@ export default function RegisterPage() {
               </div>
             ) : (<>
             <div className="mb-6">
-              <h1 className="text-2xl font-extrabold text-navy">{teamToken
+              <h1 className="text-2xl font-extrabold text-navy">{teamToken && teamInvalid
+                ? (locale === 'en' ? 'The invitation is not valid' : locale === 'ur' ? 'دعوت درست نہیں' : 'الدعوة غير صالحة')
+                : teamToken
                 ? (locale === 'en' ? `Join the team of ${teamCompany || 'the company'}` : locale === 'ur' ? `${teamCompany || 'کمپنی'} کی ٹیم میں شامل ہوں` : `انضم إلى فريق ${teamCompany || 'الشركة'}`)
                 : selectedType === 'supplier' ? (sellerKind === 'independent' ? (locale === 'en' ? 'Register as a pricing agent' : locale === 'ur' ? 'قیمت ایجنٹ کے طور پر رجسٹر کریں' : 'سجّل كوسيط تسعير') : t.supTitle) : t.title}</h1>
-              <p className="text-ink-2 mt-1.5 text-sm">{teamToken
+              <p className="text-ink-2 mt-1.5 text-sm">{teamToken && teamInvalid
+                ? (locale === 'en' ? 'Ask the account owner for a new invitation link from the Team page.' : locale === 'ur' ? 'اکاؤنٹ کے مالک سے ٹیم کے صفحے سے نیا دعوتی لنک مانگیں۔' : 'اطلب من صاحب الحساب رابط دعوة جديداً من صفحة فريق العمل.')
+                : teamToken
                 ? (locale === 'en' ? 'You will price requests in the company name from your own account. You do not need a commercial registration.' : locale === 'ur' ? 'آپ اپنے اکاؤنٹ سے کمپنی کے نام پر قیمتیں دیں گے۔ تجارتی رجسٹریشن کی ضرورت نہیں۔' : 'ستسعّر الطلبات باسم الشركة من حسابك الخاص، ولا تحتاج سجلاً تجارياً.')
                 : selectedType === 'supplier' ? (sellerKind === 'independent'
                   ? (locale === 'en' ? 'Enter your basic details now, and complete your location and what you price after signing in. Your name is shown to buyers on your offers.' : locale === 'ur' ? 'ابھی اپنی بنیادی تفصیلات درج کریں، اور سائن اِن کے بعد مقام اور آپ کن چیزوں کی قیمت دیتے ہیں مکمل کریں۔ آپ کا نام آپ کی آفرز پر خریداروں کو دکھتا ہے۔' : 'أدخل بياناتك الأساسية الآن، وأكمل موقعك وما تسعّره بعد الدخول. يظهر اسمك للمشترين على عروضك.')
@@ -401,7 +405,7 @@ export default function RegisterPage() {
           {teamToken && teamInvalid ? (
             <div role="alert" className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-800">
               <p className="font-bold">{locale === 'en' ? 'This invitation is not valid. Ask the company for a new link.' : locale === 'ur' ? 'یہ دعوت درست نہیں۔ کمپنی سے نیا لنک مانگیں۔' : 'الدعوة غير صالحة. اطلب من الشركة رابطاً جديداً.'}</p>
-              <Link href="/login?m=email" className="mt-3 inline-flex items-center min-h-[44px] px-4 rounded-xl font-bold text-white text-sm" style={{ background: '#0B2438' }}>{t.haveAccount} {t.login}</Link>
+              <Link href="/login?m=email" className="mt-3 inline-flex items-center min-h-[44px] px-4 rounded-xl font-bold text-white text-sm" style={{ background: '#0B2438' }}>{t.login}</Link>
             </div>
           ) : (
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 text-start">
@@ -471,7 +475,7 @@ export default function RegisterPage() {
               <label htmlFor="reg-cr" className="block text-xs font-semibold text-gray-600 mb-1 mt-3">{locale === 'en' ? 'Commercial registration no.' : locale === 'ur' ? 'تجارتی رجسٹریشن نمبر' : 'رقم السجل التجاري'} *</label>
               <input id="reg-cr" value={cr} inputMode="numeric" dir="ltr" maxLength={10} className="input-field" placeholder="7XXXXXXXXX"
                 aria-invalid={crTaken || !!crErr} aria-describedby={crTaken ? 'reg-cr-taken' : crErr ? 'reg-cr-err' : undefined}
-                onChange={(e) => { setCr(normalizeCrInput(e.target.value).slice(0, 10)); crChecked.current = ''; crResult.current = ''; if (crTaken) setCrTaken(false); setCrErr(''); setCrCheckFailed(false) }} onBlur={(e) => { checkCr(e.target.value) }} />
+                onChange={(e) => { setCr(normalizeCrInput(e.target.value).slice(0, 10)); crChecked.current = ''; crResult.current = ''; if (crTaken) setCrTaken(false); setCrErr(''); setCrCheckFailed(false) }} onBlur={(e) => { const v = normalizeCrInput(e.target.value); if (v && !isUnifiedCr(v)) { setCrErr(crFormatText(locale)); return } checkCr(e.target.value) }} />
               <p className="text-[12px] text-gray-500 mt-1">{locale === 'en' ? 'The unified national number: 10 digits starting with 7.' : locale === 'ur' ? 'متحدہ قومی نمبر: 7 سے شروع ہونے والے 10 ہندسے۔' : 'الرقم الوطني الموحد: 10 أرقام يبدأ بـ7.'}</p>
               {crErr && <p id="reg-cr-err" role="alert" className="text-red-600 text-[13px] mt-1">{crErr}</p>}
               {/* round-4 UX-090: the check could not run (rate limit / offline): sign-up still waits, and support is one tap away */}
@@ -508,7 +512,10 @@ export default function RegisterPage() {
                 className="input-field" placeholder="name@example.com" type="email" />
               {errors.email && <p className="text-red-600 text-[13px] mt-1">{vmsg(errors.email.message, locale)}</p>}
               {(() => { const sug = emailTypoSuggestion(watch('email') || ''); return sug ? (
-                <p className="text-xs mt-1 text-[#8F6820]">{locale === 'en' ? 'Did you mean' : locale === 'ur' ? 'کیا آپ کا مطلب' : 'هل تقصد'} <button type="button" dir="ltr" className="font-bold underline" onClick={() => { setValue('email', sug, { shouldValidate: true }); checkEmailDup(sug) }}>{sug}</button>{locale === 'en' ? '?' : '؟'}</p>
+                <button type="button" onClick={() => { setValue('email', sug, { shouldValidate: true }); checkEmailDup(sug) }}
+                  className="mt-1.5 w-full min-h-[44px] px-3 rounded-xl border border-[#D4A543]/60 bg-[#D4A543]/5 text-sm text-[#071827] text-start hover:bg-[#D4A543]/10">
+                  {locale === 'en' ? 'Did you mean ' : locale === 'ur' ? 'کیا آپ کا مطلب ' : 'هل تقصد '}<b dir="ltr">{sug}</b>{locale === 'en' ? '?' : '؟'}
+                </button>
               ) : null })()}
               {emailDup && <p className="text-red-700 text-[13px] bg-red-50 border border-red-200 rounded-lg p-2 mt-1"><Glyph e="⚠" /> {t.emailTaken}<Link href={selectedType === 'supplier' ? '/login?m=email' : '/login'} className="inline-flex items-center min-h-[44px] underline font-bold">{t.signInInstead}</Link>{' · '}<Link href="/forgot-password" className="inline-flex items-center min-h-[44px] font-bold underline">{locale === 'en' ? 'Forgot your password?' : locale === 'ur' ? 'پاسورڈ بھول گئے؟' : 'نسيت كلمة المرور؟'}</Link></p>}
             </div>

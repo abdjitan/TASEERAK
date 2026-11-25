@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { Check, RotateCcw, Plus, X } from 'lucide-react'
 import { noEmoji, timeAgo as timeAgoText, arCount, arMaterials, arRequests, countLabel, dateLocale } from '@/lib/text'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import PageLoader from '@/components/shared/PageLoader'
 import { createClient } from '@/lib/supabase/client'
 import { getProductLabel, getUnitLabelLong, getRegionLabel } from '@/types'
@@ -22,9 +23,9 @@ import { readPageCache, writePageCache } from '@/lib/pageCache'
 import { FEATURES } from '@/lib/features'
 import { canUseProjects } from '@/lib/plans'
 import { clearAllLocalDrafts } from '@/lib/localDraft'
-import { cleanArName } from '@/lib/displayName'
+import { cleanArName, getPlaceLabel } from '@/lib/displayName'
 import { normalizeText } from '@/lib/normalize'
-import { offerComparable, lineComparable } from '@/lib/vat'
+import { offerComparable, lineComparable, liveComparableOffers, buyerBasisTag } from '@/lib/vat'
 import Glyph from '@/components/shared/Glyph'
 import { askConfirm } from '@/lib/askConfirm'
 import { readProjectDraft } from '@/lib/tender/projectDraft'
@@ -89,6 +90,7 @@ function markSeen(id: string, count: number) {
 
 export default function ContractorDashboard() {
   const { locale, dir } = useTranslation()
+  const router = useRouter()
   const t = txt[locale] || txt.ar
   const sectors = (sectorLabels as any)[locale] || sectorLabels.ar
   const L = (en: string, ur: string, ar: string) => (locale === 'en' ? en : locale === 'ur' ? ur : ar)
@@ -202,7 +204,7 @@ export default function ContractorDashboard() {
         const openIds = (r || []).filter((x: any) => x.status === 'open' && (x.offer_count || 0) > 0).map((x: any) => x.id).slice(0, 60)
         const [acc, offs] = await Promise.all([
           closedIds.length ? supabase.from('offers').select('id, rfq_id, accepted_at, supplier_delivered_at, received_at, payment_status, payment_confirmed_at, dispute_status, payment_terms, deal_closed_at').in('rfq_id', closedIds).eq('status', 'accepted') : Promise.resolve({ data: [] } as any),
-          openIds.length ? safe(supabase.from('offers').select('rfq_id, status, total_price, vat_included, vat_status, item_prices, price_valid_until').in('rfq_id', openIds)) : Promise.resolve({ data: [] } as any),
+          openIds.length ? safe(supabase.from('offers').select('rfq_id, status, total_price, vat_included, vat_status, item_prices, price_valid_until, supplier:profiles_public(supplier_tier)').in('rfq_id', openIds)) : Promise.resolve({ data: [] } as any),
         ])
         // keep ALL accepted offers per RFQ (per-item awards → multiple suppliers), not one arbitrary (B11)
         const m: Record<string, any[]> = {}
@@ -236,6 +238,7 @@ export default function ContractorDashboard() {
   const templates = drafts.filter((d: any) => d?.data?.is_template)
   const plainDrafts = drafts.filter((d: any) => !d?.data?.is_template)
   // round-6 UX-103: an unsent bill of quantities saved as a draft is listed once, under «المسودّات»
+  const newHome = homeBuyer && rfqs.length === 0 && loadErr !== 'empty' // round-7 UX-108
   const boqSaved = plainDrafts.some((d: any) => d?.data?.kind === 'boq')
   const active = rfqs.filter((r: any) => r.status === 'open')
   const closed = rfqs.filter((r: any) => r.status === 'closed')
@@ -298,23 +301,32 @@ export default function ContractorDashboard() {
   const whenShort = (d: any) => new Date(d).toLocaleString(dateLocale(locale), { day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit', timeZone: 'Asia/Riyadh' })
 
   // «أقل سعر» for one material, «أفضل مجموع» or «سُعّرت k من n مواد» for several (UX-194)
+  // round-7 UX-005: the same offers as the request page (liveComparableOffers: not expired, with a tax invoice
+  // when the request needs one), and the price basis of the offer it comes from (never a fixed «شامل الضريبة»)
   function bestLine(rfq: any): string {
-    const offs = openOffers[rfq.id] || []
-    if (!offs.length) return ''
+    const all = openOffers[rfq.id] || []
+    if (!all.length) return ''
+    const offs = liveComparableOffers(all, rfq)
+    if (!offs.length) return L('Offer prices have expired; ask for an update', 'آفرز کی قیمتوں کی مدت ختم ہو گئی؛ تازہ قیمت مانگیں', 'انتهت صلاحية الأسعار، اطلب تحديثها')
     const items = itemsOf(rfq)
     const n = Math.max(1, items.length)
     if (n === 1) {
-      const min = Math.min(...offs.map(offerComparable).filter((x: number) => x > 0))
-      return isFinite(min) ? L(`Lowest price: ${sar(min)}`, `کم ترین قیمت: ${sar(min)}`, `أقل سعر: ${sar(min)}`) : ''
+      const live = offs.filter((o: any) => offerComparable(o) > 0)
+      if (!live.length) return ''
+      const low = live.reduce((a: any, b: any) => (offerComparable(b) < offerComparable(a) ? b : a))
+      const min = offerComparable(low)
+      return L(`Lowest price: ${sar(min)} (${buyerBasisTag(low, 'en')})`, `کم ترین قیمت: ${sar(min)} (${buyerBasisTag(low, 'ur')})`, `أقل سعر: ${sar(min)} (${buyerBasisTag(low, 'ar')})`)
     }
     const pricedIdx = new Set<number>()
     let bestFull = Infinity
+    let bestO: any = null
     for (const o of offs) {
       const list = (Array.isArray(o.item_prices) ? o.item_prices : []).filter((e: any) => Number(e?.total) > 0)
       list.forEach((e: any, i: number) => pricedIdx.add(Number.isInteger(e.item_index) ? e.item_index : i))
-      if (list.length >= n) { const tot = list.reduce((s: number, e: any) => s + lineComparable(e.total, o), 0); if (tot > 0 && tot < bestFull) bestFull = tot }
+      // what the buyer pays for a complete offer (charges included), as in «طلباتي» (round-5 UX-032)
+      if (list.length >= n) { const tot = offerComparable(o) || list.reduce((s: number, e: any) => s + lineComparable(e.total, o), 0); if (tot > 0 && tot < bestFull) { bestFull = tot; bestO = o } }
     }
-    if (isFinite(bestFull)) return L(`Best total: ${sar(bestFull)}`, `بہترین کل: ${sar(bestFull)}`, `أفضل مجموع: ${sar(bestFull)}`)
+    if (isFinite(bestFull)) return L(`Best total: ${sar(bestFull)} (${buyerBasisTag(bestO, 'en')})`, `بہترین کل: ${sar(bestFull)} (${buyerBasisTag(bestO, 'ur')})`, `أفضل مجموع: ${sar(bestFull)} (${buyerBasisTag(bestO, 'ar')})`)
     const k = Math.min(pricedIdx.size, n)
     return k ? L(`${k} of ${n} items priced`, `${n} میں سے ${k} اشیاء کی قیمت آئی`, `سُعّرت ${k} من ${arCount(n, 'مادة واحدة', 'مادتين', 'مواد', 'مادة')}`) : ''
   }
@@ -339,6 +351,8 @@ export default function ContractorDashboard() {
     rfq.title, rfq.ref_no, rfqRef(rfq, locale), rfqDesc(rfq, locale), rfq.product_name,
     ...itemsOf(rfq).flatMap((it: any) => { const n = String(it?.product_name || ''); return [n, cleanArName(n), getProductLabel(n, locale)] }),
   ].filter(Boolean).join(' '))
+  // round-7 UX-020: the counter shows the requests after the filter
+  const shownCount = (() => { const q = normalizeText(search.trim()); return rfqs.filter((rfq: any) => !(filter === 'has_offers' && !needsChoice(rfqState(rfq))) && !(filter === 'pending' && rfqState(rfq) !== 'awaiting') && !(filter === 'closed' && rfq.status !== 'closed') && !(sectorFilter !== 'all' && rfq.sector !== sectorFilter && !(Array.isArray(rfq.sectors) && rfq.sectors.includes(sectorFilter))) && !(q && !haystack(rfq).includes(q))).length })()
 
   return (
     <AppShell
@@ -415,7 +429,8 @@ export default function ContractorDashboard() {
                 className="min-h-[44px] px-1 text-[13px] font-bold text-[#8F6820] hover:underline">{L('All my requests', 'میری تمام درخواستیں', 'كل طلباتي')} {fwd}</button>
             </div>
             {awaitingReply > 0 && (
-              <button type="button" onClick={() => { setFilter('has_offers'); document.getElementById('rfq-list')?.scrollIntoView({ behavior: 'smooth', block: 'start' }) }}
+              // round-7 UX-020: one request → straight to it; several → the list filtered, with a removable chip
+              <button type="button" onClick={() => { const one = awaitingReply === 1 ? rfqs.find(hasNew) : null; if (one) { openRfq(one); router.push(`/contractor/rfq/${one.id}`); return } setFilter('has_offers'); document.getElementById('rfq-list')?.scrollIntoView({ behavior: 'smooth', block: 'start' }) }}
                 className="w-full mb-2 rounded-xl p-3 flex items-center gap-3 text-start transition-all hover:shadow-md border"
                 style={{ background: 'linear-gradient(135deg,#D4A54318,#0B243808)', borderColor: '#D4A54366' }}>
                 <span className="w-10 h-10 rounded-xl grid place-items-center text-[#071827] shrink-0" style={{ background: '#D4A543' }}><Glyph e="🔔" /></span>
@@ -450,7 +465,7 @@ export default function ContractorDashboard() {
                 <Glyph e="⏰" />
                 <span className="flex-1">{L(`An offer price on «${rfqDesc(expiring.rfq, locale)}» ends in ${formatTimeLeft(expiring.at, locale)}. Choose before it changes.`,
                   `«${rfqDesc(expiring.rfq, locale)}» کی ایک آفر کی قیمت ${formatTimeLeft(expiring.at, locale)} میں ختم ہو گی۔ بدلنے سے پہلے انتخاب کریں۔`,
-                  `سعر أحد عروض «${rfqDesc(expiring.rfq, locale)}» ينتهي خلال ${formatTimeLeft(expiring.at, locale)}، اختر قبل أن يتغيّر.`)}</span>
+                  `سعر أحد عروض «${rfqDesc(expiring.rfq, locale)}» ينتهي خلال ${formatTimeLeft(expiring.at, locale, { case: 'gen' })}، اختر قبل أن يتغيّر.`)}</span>
               </Link>
             )}
             {rfqs.length > 2 && <div className="grid sm:grid-cols-2 gap-2">
@@ -482,11 +497,18 @@ export default function ContractorDashboard() {
         )}
 
         {/* السوق: «ماذا تحتاج اليوم؟» + الأقسام بالصور (التصميم المعتمد); the greeting lives in the hero */}
-        <MarketHero locale={locale} homeBuyer={homeBuyer} greeting={greeting} />
-
-        {/* the first visit of a home buyer: how it works, in one short row right under the market (round-4 UX-110) */}
-        {homeBuyer && rfqs.length === 0 && loadErr !== 'empty' && (
-          <ol className="mb-6 grid grid-cols-1 sm:grid-cols-3 gap-2 text-start" aria-label={L('How it works', 'یہ کیسے کام کرتا ہے', 'كيف يعمل تسعيرك؟')}>
+        {/* round-7 UX-108: a new home buyer sees the delivery address card and «how it works» right under the search */}
+        <MarketHero locale={locale} homeBuyer={homeBuyer} greeting={greeting} belowSearch={newHome ? (<>
+          {profile && !profile.region && <Link href="/onboarding" className="flex items-center justify-between gap-3 rounded-2xl p-4 mb-3 bg-white border-2 border-[#D4A543]/60 hover:shadow-md transition-shadow">
+            <div>
+              <div className="font-extrabold text-sm text-[#0B2438]"><Glyph e="📍" /> {homeBuyer ? L('Add your delivery address', 'ڈیلیوری کا پتہ شامل کریں', 'أضف عنوان التوصيل') : L('Complete your profile', 'اپنی پروفائل مکمل کریں', 'أكمل ملفك')}</div>
+              <div className="text-[13px] text-gray-700 mt-0.5">{homeBuyer
+                ? L('Add your delivery address so your request reaches the suppliers near you.', 'ڈیلیوری کا پتہ شامل کریں تاکہ آپ کی درخواست قریبی سپلائرز تک پہنچے۔', 'أضف عنوان التوصيل، ليصل طلبك إلى الموردين القريبين منك.')
+                : L('Add your location so your request reaches the suppliers near you.', 'اپنا مقام شامل کریں تاکہ آپ کی درخواست قریبی سپلائرز تک پہنچے۔', 'أضف موقعك، ليصل طلبك إلى الموردين القريبين منك.')}</div>
+            </div>
+            <span className="shrink-0 text-sm font-bold text-[#0B2438] border border-[#0B2438]/30 rounded-full px-3 py-1.5">{L('Add', 'شامل کریں', 'أضف')} {fwd}</span>
+          </Link>}
+          <ol className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-start" aria-label={L('How it works', 'یہ کیسے کام کرتا ہے', 'كيف يعمل تسعيرك؟')}>
             {[
               L('Write what you need or take a photo of it', 'جو چاہیے لکھیں یا اس کی تصویر لیں', 'اكتب ما تحتاجه أو صوّره'),
               L('Offers from the right suppliers reach you', 'متعلقہ سپلائرز کی آفرز آپ تک پہنچتی ہیں', 'تصلك عروض الموردين المختصين'),
@@ -498,7 +520,7 @@ export default function ContractorDashboard() {
               </li>
             ))}
           </ol>
-        )}
+        </>) : undefined} />
 
         {/* «قوائمي»: a business buyer's recurring lists, sent again in one tap (round-4 UX-187) */}
         {!homeBuyer && templates.length > 0 && (
@@ -529,7 +551,7 @@ export default function ContractorDashboard() {
 
         {/* one attention card at a time, by priority (UX-087) */}
         {/* round-6 UX-026: no «أكمل ملفك» before the profile has loaded */}
-        {!profile ? null : !profile.region ? (
+        {!profile ? null : !profile.region && !newHome ? (
           <Link href="/onboarding" className="flex items-center justify-between gap-3 rounded-2xl p-4 mb-4 bg-white border-2 border-[#D4A543]/60 hover:shadow-md transition-shadow">
             <div>
               <div className="font-extrabold text-sm text-[#0B2438]"><Glyph e="📍" /> {homeBuyer ? L('Add your delivery address', 'ڈیلیوری کا پتہ شامل کریں', 'أضف عنوان التوصيل') : L('Complete your profile', 'اپنی پروفائل مکمل کریں', 'أكمل ملفك')}</div>
@@ -647,7 +669,7 @@ export default function ContractorDashboard() {
         </div>
         )}
 
-        {/* آخر النشاطات + إنجازاتك */}
+        {/* آخر النشاطات + نشاطك (round-7 UX-178) */}
         {!homeBuyer && (activity.length > 0 || rfqs.length > 0) && (
           <div className="grid lg:grid-cols-3 gap-4 mb-8 animate-fade-in">
             <div className="lg:col-span-2 bg-white rounded-2xl p-5 border border-gray-100 shadow-sm">
@@ -675,7 +697,7 @@ export default function ContractorDashboard() {
               )}
             </div>
             <div className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm">
-              <h2 className="text-sm font-bold mb-3" style={{ color: '#0B2438' }}>{L('Your progress', 'آپ کی پیش رفت', 'إنجازاتك')}</h2>
+              <h2 className="text-sm font-bold mb-3" style={{ color: '#0B2438' }}>{L('Your activity', 'آپ کی سرگرمی', 'نشاطك')}</h2>
               {FEATURES.gamification && <div className="rounded-xl p-3 mb-3 text-center" style={{ background: 'linear-gradient(135deg,#D4A54312,#0B243808)' }}>
                 <div className="text-3xl">{gameBadge.e}</div>
                 <div className="text-[12px] font-bold mt-1" style={{ color: '#0B2438' }}>{gameBadge.t}</div>
@@ -687,23 +709,23 @@ export default function ContractorDashboard() {
                 </div>
                 <div className="bg-gray-50 rounded-xl p-2.5">
                   <div className="text-lg font-bold" style={{ color: '#8F6820' }}>{rfqsThisWeek}</div>
-                  <div className="text-[12px] text-gray-600">{L('This week', 'اس ہفتے', 'هذا الأسبوع')}</div>
+                  <div className="text-[12px] text-gray-600">{L('Requests this week', 'اس ہفتے کی درخواستیں', 'طلبات هذا الأسبوع')}</div>
                 </div>
               </div>
             </div>
           </div>
         )}
 
-        {/* Quantity lists: one name, «القائمة», the same as the list page (round-6 UX-103) */}
+        {/* round-7 UX-139: one name for the tool, «جدول الكميات» / «جداول الكميات» */}
         {projects.length > 0 && canUseProjects(profile) && !homeBuyer && (
           <div className="mb-6 animate-fade-in">
             <div className="flex items-center justify-between mb-3">
               <h2 className="text-sm font-bold" style={{ color: '#0B2438' }}>
-                <Glyph e="📋" /> {L('My quantity lists', 'میری مقداروں کی فہرستیں', 'قوائم الكميات')}
+                <Glyph e="📋" /> {L('My bills of quantities', 'میرے مقداروں کے جدول', 'جداول الكميات')}
               </h2>
               <span className="flex items-center gap-3">
                 <Link href="/contractor/project/new" className="min-h-[44px] inline-flex items-center text-[13px] font-semibold" style={{ color: '#8F6820' }}>
-                  + {L('New list', 'نئی فہرست', 'قائمة جديدة')}
+                  + {L('New bill of quantities', 'نیا مقداروں کا جدول', 'جدول كميات جديد')}
                 </Link>
                 {/* round-6 UX-103: the tender tool stays reachable after the first bill of quantities */}
                 <Link href="/contractor/tender/new" className="min-h-[44px] inline-flex items-center text-[13px] font-semibold" style={{ color: '#8F6820' }}>
@@ -740,7 +762,7 @@ export default function ContractorDashboard() {
           <div className="bg-white rounded-2xl p-4 shadow-sm border border-[#D4A543]/50 mb-6 space-y-2">
             {boqDraftItems > 0 && !boqSaved && (
               <Link href="/contractor/project/new" className="flex items-center justify-between gap-2 rounded-xl px-3 min-h-[52px] border border-gray-100 hover:border-[#D4A543]/50">
-                <span className="text-sm font-bold text-[#0B2438]"><Glyph e="📋" /> {L(`Unsent list (${boqDraftItems} items)`, `نہ بھیجی گئی فہرست (${boqDraftItems} اشیاء)`, `قائمة غير مُرسلة (${arCount(boqDraftItems, 'بند واحد', 'بندان', 'بنود', 'بنداً')})`)}</span>
+                <span className="text-sm font-bold text-[#0B2438]"><Glyph e="📋" /> {L(`Unsent bill of quantities (${boqDraftItems} items)`, `نہ بھیجا گیا مقداروں کا جدول (${boqDraftItems} اشیاء)`, `جدول كميات غير مُرسل (${arCount(boqDraftItems, 'بند واحد', 'بندان', 'بنود', 'بنداً')})`)}</span>
                 <span className="shrink-0 text-[13px] font-bold text-[#8F6820]">{L('Continue', 'جاری رکھیں', 'إكمال')} {fwd}</span>
               </Link>
             )}
@@ -759,7 +781,7 @@ export default function ContractorDashboard() {
             <h2 className="font-bold text-sm mb-2" style={{ color: '#0B2438' }}><Glyph e="📊" /> {L('Business tools', 'کاروباری اوزار', 'أدوات الشركات')}</h2>
             <div className="grid sm:grid-cols-2 gap-2">
               <Link href="/contractor/project/new" className="rounded-xl border border-gray-100 px-3 py-2.5 min-h-[52px] hover:border-[#D4A543]/60">
-                <span className="block text-sm font-bold text-[#0B2438]">{L('Quantity list', 'مقداروں کی فہرست', 'قائمة الكميات')}</span>
+                <span className="block text-sm font-bold text-[#0B2438]">{L('Bill of quantities', 'مقداروں کا جدول', 'جدول الكميات')}</span>
                 <span className="block text-[12px] text-gray-600">{L('Upload Excel, PDF or a photo; every item goes to the right suppliers', 'Excel، PDF یا تصویر اپ لوڈ کریں؛ ہر چیز متعلقہ سپلائرز کو جاتی ہے', 'ارفع Excel أو PDF أو صورة، ويصل كل بند إلى الموردين المختصين')}</span>
               </Link>
               <Link href="/contractor/tender" className="rounded-xl border border-gray-100 px-3 py-2.5 min-h-[52px] hover:border-[#D4A543]/60">
@@ -820,8 +842,16 @@ export default function ContractorDashboard() {
           <div className="animate-fade-in" id="rfq-list" style={{ scrollMarginTop: '70px' }}>
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-sm font-bold" style={{ color: '#0B2438' }}>{homeBuyer ? L('All my requests', 'میری تمام درخواستیں', 'كل طلباتي') : t.rfqList}</h2>
-              <span className="text-[12px] text-gray-500">{countLabel(rfqs.length, locale, arRequests, 'request', 'درخواستیں')}</span>
+              <span className="text-[12px] text-gray-500">{countLabel(shownCount, locale, arRequests, 'request', 'درخواستیں')}</span>
             </div>
+            {/* round-7 UX-020: a filter set from the banner or the numbers is always visible and removable */}
+            {filter !== 'all' && (
+              <button type="button" onClick={() => setFilter('all')} className="mb-3 inline-flex items-center gap-2 min-h-[44px] px-4 rounded-full border border-[#D4A543] bg-[#D4A543]/10 text-[13px] font-bold text-[#0B2438]">
+                <span>{filter === 'has_offers' ? L('Showing only requests that received offers', 'صرف وہ درخواستیں جن پر آفرز آئیں', 'تُعرض الطلبات التي وصلتها عروض فقط') : filter === 'pending' ? L('Showing only requests awaiting offers', 'صرف آفرز کی منتظر درخواستیں', 'تُعرض الطلبات التي تنتظر العروض فقط') : L('Showing only closed requests', 'صرف بند درخواستیں', 'تُعرض الطلبات المغلقة فقط')}</span>
+                <span className="text-[#8F6820]">· {L('Show all', 'سب دکھائیں', 'عرض الكل')}</span>
+                <X className="w-4 h-4" aria-hidden />
+              </button>
+            )}
 
             {/* Filters; round-6 UX-085: only with more than four requests */}
             {rfqs.length > 4 && <div className="bg-white rounded-2xl p-4 border border-gray-100 shadow-sm mb-4">
@@ -945,7 +975,8 @@ export default function ContractorDashboard() {
                             const u = deadlineUrgency(rfq.expires_at); const st = urgencyStyle(u)
                             return (
                               <span className="badge text-[12px]" style={{ background: st.bg, color: st.fg }}>
-                                {formatTimeLeft(rfq.expires_at, locale)}
+                                {/* round-7 UX-107: say what the countdown counts */}
+                                {L(`Receiving offers for ${formatTimeLeft(rfq.expires_at, locale)}`, `آفرز ${formatTimeLeft(rfq.expires_at, locale)} تک وصول کر رہی ہے`, `يستقبل العروض لمدة ${formatTimeLeft(rfq.expires_at, locale, { case: 'gen' })}`)}
                               </span>
                             )
                           })()}
@@ -982,7 +1013,7 @@ export default function ContractorDashboard() {
                   {canExtend && <p className="mb-2 text-[13px] text-gray-700">{L('The offer window ended and no offers have arrived yet. Extend it so more suppliers can reach you.', 'آفرز کی مہلت ختم ہو گئی اور ابھی کوئی آفر نہیں آئی۔ مہلت بڑھائیں تاکہ مزید سپلائرز آپ تک پہنچیں۔', 'انتهت المهلة ولم تصل عروض بعد. مدّد المهلة ليصلك المزيد من الموردين.')}</p>}
                   <div className="flex items-center gap-x-4 gap-y-1 text-[12px] text-gray-600 font-medium flex-wrap">
                     <span><Glyph e="📦" /> {items.length > 1 ? arItems(items.length, locale) : `${rfq.quantity} ${getUnitLabelLong(rfq.unit, locale)}`}</span>
-                    <span><Glyph e="📍" /> {getRegionLabel(rfq.region || '', locale)}</span>
+                    <span><Glyph e="📍" /> {getPlaceLabel(rfq.city, rfq.region, locale)}</span>{/* round-7 UX-111: the city too, in the reader's language */}
                     {/* a home buyer reads the time left once (badge + bar), not a third time (round-4 UX-113) */}
                     {openNow && rfq.expires_at && !homeBuyer && <span><Glyph e="⏰" /> {L('The offer window ends: ', 'آفرز کی مہلت ختم ہو گی: ', 'تنتهي مهلة العروض: ')}{whenShort(rfq.expires_at)}</span>}
                     {!homeBuyer && rfq.specification && <span className="truncate max-w-[200px]"><Glyph e="⚙" /> {rfq.specification}</span>}
@@ -995,7 +1026,8 @@ export default function ContractorDashboard() {
                     const pct = total > 0 ? Math.max(2, Math.min(100, (remain / total) * 100)) : 0
                     const barColor = pct < 40 ? '#8F6820' : '#0B2438' // never red for a normal countdown (round-4 UX-113)
                     return (
-                      <div className="mt-3 h-1.5 rounded-full bg-gray-100 overflow-hidden">
+                      <div className="mt-3 h-1.5 rounded-full bg-gray-100 overflow-hidden" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(pct)}
+                        aria-label={L('Time left to receive offers', 'آفرز وصول کرنے کا باقی وقت', 'الوقت المتبقي لاستقبال العروض')} aria-valuetext={formatTimeLeft(rfq.expires_at, locale)}>
                         <div className="h-full rounded-full transition-all duration-500" style={{ width: `${pct}%`, background: barColor }} />
                       </div>
                     )

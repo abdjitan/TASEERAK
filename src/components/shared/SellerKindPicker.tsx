@@ -11,13 +11,15 @@ import { askConfirm } from '@/lib/askConfirm'
 // from CR verification, so it is shown here read-only with what it takes to reach "company".
 // The kind itself is fixed once chosen (owner 2026-11-16, migration 215): only the company activity
 // can still change; switching company ↔ pricing agent needs a new account.
-export default function SellerKindPicker({ providerType, supplierTier, locale, onChange, onVerify }: {
+export default function SellerKindPicker({ providerType, supplierTier, locale, onChange, onVerify, verifyLocked }: {
   providerType: string | null | undefined
   supplierTier: string | null | undefined
   locale: string
   onChange?: (providerType: string, supplierTier: string | null) => void
   /** round-6 UX-031: «وثّق الآن» saves the page first (onboarding passes save('/settings?tab=docs')); without it, a plain link */
   onVerify?: () => void
+  /** round-7 UX-145: before the profile is complete there is no «وثّق الآن» yet */
+  verifyLocked?: boolean
 }) {
   const L = (en: string, ur: string, ar: string) => (locale === 'en' ? en : locale === 'ur' ? ur : ar)
   const pick = (o: any) => (locale === 'en' ? o.en : locale === 'ur' ? o.ur : o.ar)
@@ -110,7 +112,9 @@ export default function SellerKindPicker({ providerType, supplierTier, locale, o
               ? L('Verify your commercial registration so your offers carry the «Verified» badge.', 'اپنی تجارتی رجسٹریشن کی تصدیق کریں تاکہ آپ کی آفرز پر «تصدیق شدہ» بیج آئے۔', 'وثّق سجلك التجاري لتحمل عروضك شارة «موثّق».')
               : L('Verify your commercial registration to appear under "Verified companies & factories".', 'تصدیق شدہ کمپنیوں اور فیکٹریوں میں آنے کے لیے اپنی تجارتی رجسٹریشن کی تصدیق کریں۔', 'وثّق سجلك التجاري لتظهر ضمن «شركات ومصانع موثّقة».')}
             {/* round-5 UX-163: the way to verification, one tap away */}
-            {' '}{onVerify
+            {' '}{verifyLocked
+              ? <span className="font-semibold text-gray-600">{L('Verify your registration after completing your profile.', 'پروفائل مکمل کرنے کے بعد اپنی رجسٹریشن کی تصدیق کریں۔', 'وثّق سجلك بعد إكمال ملفك.')}</span>
+              : onVerify
               ? <button type="button" onClick={onVerify} className="inline-flex items-center min-h-[44px] font-bold underline text-[#8F6820]">{L('Verify now', 'ابھی تصدیق کریں', 'وثّق الآن')}</button>
               : <a href="/settings?tab=docs" className="inline-flex items-center min-h-[44px] font-bold underline text-[#8F6820]">{L('Verify now', 'ابھی تصدیق کریں', 'وثّق الآن')}</a>}
           </div>

@@ -25,7 +25,7 @@ import { crSupportMessage, crSupportNote } from '@/lib/cr'
 const SUPPORT_WHATSAPP = '12135614366'
 
 export default function SupportPage() {
-  return <Suspense fallback={<PageLoader />}><Support /></Suspense>
+  return <Suspense fallback={<PageLoader variant="thread" />}><Support /></Suspense>
 }
 
 function Support() {
@@ -72,11 +72,13 @@ function Support() {
     ? L('I would like to change my account type (company / pricing agent). Reason: ', 'میں اپنے اکاؤنٹ کی قسم بدلنا چاہتا ہوں (کمپنی / قیمت ایجنٹ)۔ وجہ: ', 'أرغب في تغيير نوع حسابي (شركة / وسيط تسعير). السبب: ')
     : topic === 'cr' && topicCr ? crSupportMessage(topicCr, locale)
     : topic === 'deal' ? L('I need to coordinate a deal in progress. Request number: ', 'مجھے ایک جاری سودے میں رابطہ کرنا ہے۔ درخواست نمبر: ', 'أحتاج إلى التنسيق في صفقة جارية. رقم الطلب: ')
+    // round-7 UX-221: while SMS is down the email code is the way in, so its own topic
+    : topic === 'email' ? L('The email verification code does not reach my inbox. ', 'ای میل کا تصدیقی کوڈ میری ای میل پر نہیں پہنچ رہا۔ ', 'لا يصل رمز توثيق البريد إلى بريدي. ')
     : topic === 'sms' ? L('The verification text message does not reach my mobile. ', 'تصدیقی ٹیکسٹ میسج میرے موبائل پر نہیں پہنچ رہا۔ ', 'لا تصل رسالة رمز التحقق إلى جوالي. ')
     : ''
   const waText = encodeURIComponent(L('Hello Taseerak, I need help with: ', 'السلام علیکم تسعیرک، مجھے مدد چاہیے: ', 'مرحباً تسعيرك، أحتاج مساعدة بخصوص: '))
 
-  if (!loaded) return <PageLoader />
+  if (!loaded) return <PageLoader variant="thread" />
 
   const role = me?.role || 'contractor'
   const banned = !!me?.banned_until && new Date(me.banned_until).getTime() > Date.now() && role !== 'admin'
@@ -114,7 +116,7 @@ function Support() {
         style={{ background: 'linear-gradient(120deg,#071827,#0B2438)' }}>
         <div className="min-w-0">
           <div className="font-bold flex items-center gap-2"><MessageCircle className="w-5 h-5 text-[#F5C55B]" aria-hidden />{L('Message the Taseerak team on WhatsApp', 'تسعیرک ٹیم کو واٹس ایپ پر پیغام بھیجیں', 'راسل فريق تسعيرك على واتساب')}</div>
-          <div className="text-[13px] text-[#C7CED6] mt-0.5">{L('Taseerak’s official WhatsApp number (an international business number)', 'تسعیرک کا سرکاری واٹس ایپ نمبر (بین الاقوامی کاروباری نمبر)', 'رقم واتساب تسعيرك الرسمي (رقم أعمال دولي)')}: <span dir="ltr">+1 213 561 4366</span></div>
+          <div className="text-[13px] text-[#C7CED6] mt-0.5">{/* round-7 UX-204 */}<span dir="ltr">+1 213 561 4366</span>: {L('Taseerak’s official WhatsApp Business number (it starts with +1 and shows the name Taseerak)', 'تسعیرک کا سرکاری واٹس ایپ بزنس نمبر (یہ +1 سے شروع ہوتا ہے اور تسعیرک کے نام سے دکھائی دیتا ہے)', 'رقم تسعيرك الرسمي على واتساب للأعمال (يبدأ بـ ‎+1 ويظهر باسم تسعيرك)')}</div>
         </div>
         {/* an outline, not a second gold button on the page (UX-142) */}
         <span className="shrink-0 min-h-[44px] inline-flex items-center px-4 rounded-xl text-sm font-bold border border-[#F5C55B] text-[#F5C55B]">{L('Open', 'کھولیں', 'فتح')}</span>

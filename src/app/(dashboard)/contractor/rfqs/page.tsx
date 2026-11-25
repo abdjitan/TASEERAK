@@ -22,7 +22,8 @@ import { readPageCache, writePageCache } from '@/lib/pageCache'
 import { askConfirm } from '@/lib/askConfirm'
 import { rfqState, rfqStatusLabel, rfqStateTone, type RfqState } from '@/lib/rfqState'
 import { dealStage, buyerTodo, buyerActionLabel } from '@/lib/dealStage'
-import { offerComparable, lineComparable, sarLabel } from '@/lib/vat'
+import { offerComparable, lineComparable, sarLabel, liveComparableOffers, buyerBasisTag } from '@/lib/vat'
+import { realtimeTopic } from '@/lib/realtimeTopic'
 import { fileHref } from '@/lib/fileHref'
 import { normalizedIncludes } from '@/lib/normalize'
 
@@ -86,7 +87,7 @@ function MyRequests() {
         const waiting = list.filter((r: any) => r.status === 'open' && Number(r.offer_count) > 0).map((r: any) => r.id).slice(0, 80)
         const closed = list.filter((r: any) => r.status === 'closed').map((r: any) => r.id).slice(0, 120)
         const [offs, acc] = await Promise.all([
-          waiting.length ? sb.from('offers').select('rfq_id, status, total_price, vat_included, vat_status, item_prices').in('rfq_id', waiting) : Promise.resolve({ data: [] } as any),
+          waiting.length ? sb.from('offers').select('rfq_id, status, total_price, vat_included, vat_status, item_prices, price_valid_until, supplier:profiles_public(supplier_tier)').in('rfq_id', waiting) : Promise.resolve({ data: [] } as any),
           closed.length ? sb.from('offers').select('id, rfq_id, supplier_delivered_at, received_at, payment_status, payment_confirmed_at, dispute_status, payment_terms, deal_closed_at').in('rfq_id', closed).eq('status', 'accepted') : Promise.resolve({ data: [] } as any),
         ])
         const om: Record<string, any[]> = {}
@@ -103,6 +104,22 @@ function MyRequests() {
     }
   }, [])
   useEffect(() => { load() }, [load])
+  // round-7 UX-034: the list stays live: a quiet reload on return to the tab and on each new notification
+  useEffect(() => {
+    let last = 0
+    const quiet = () => { if (document.visibilityState !== 'visible' || Date.now() - last < 3000) return; last = Date.now(); load() }
+    document.addEventListener('visibilitychange', quiet)
+    window.addEventListener('focus', quiet)
+    const sb = createClient()
+    let ch: any
+    sb.auth.getSession().then(({ data: { session } }) => {
+      if (!session) return
+      ch = sb.channel(realtimeTopic(`rfqs-live-${session.user.id}`))
+        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'notifications', filter: `user_id=eq.${session.user.id}` }, () => { last = 0; quiet() })
+        .subscribe()
+    })
+    return () => { document.removeEventListener('visibilitychange', quiet); window.removeEventListener('focus', quiet); if (ch) sb.removeChannel(ch) }
+  }, [load])
 
   const offersOf = (r: any) => Number(r?.offer_count || 0)
   // the shared reading of a request (src/lib/rfqState.ts, UX-003). A request the housekeeping job
@@ -122,23 +139,31 @@ function MyRequests() {
   const extendable = (r: any) => r.status === 'open' && stateOf(r) === 'ended' && offersOf(r) === 0
   const sar = (n: number) => `${Math.round(n).toLocaleString('en-US')} ${sarLabel(locale)}`
   // «أقل سعر» for one material, «أفضل مجموع» for several, or «سُعّرت k من n» (UX-003)
+  // round-7 UX-005: only offers the buyer can still choose (liveComparableOffers: not expired, and with a
+  // tax invoice when the request needs one), with the price basis of the offer it comes from
   function bestLine(r: any, items: any[]): string {
-    const offs = offersBy[r.id] || []
-    if (!offs.length) return ''
+    const all = offersBy[r.id] || []
+    if (!all.length) return ''
+    const offs = liveComparableOffers(all, r)
+    if (!offs.length) return L('Offer prices have expired; ask for an update', 'آفرز کی قیمتوں کی مدت ختم ہو گئی؛ تازہ قیمت مانگیں', 'انتهت صلاحية الأسعار، اطلب تحديثها')
     const n = Math.max(1, items.length)
     if (n === 1) {
-      const min = Math.min(...offs.map(offerComparable).filter((x: number) => x > 0))
-      return isFinite(min) ? L(`Lowest price: ${sar(min)}`, `کم ترین قیمت: ${sar(min)}`, `أقل سعر: ${sar(min)}`) : ''
+      const live = offs.filter((o: any) => offerComparable(o) > 0)
+      if (!live.length) return ''
+      const low = live.reduce((a: any, b: any) => (offerComparable(b) < offerComparable(a) ? b : a))
+      const min = offerComparable(low)
+      return L(`Lowest price: ${sar(min)} (${buyerBasisTag(low, 'en')})`, `کم ترین قیمت: ${sar(min)} (${buyerBasisTag(low, 'ur')})`, `أقل سعر: ${sar(min)} (${buyerBasisTag(low, 'ar')})`)
     }
     const priced = new Set<number>()
     let best = Infinity
+    let bestO: any = null
     for (const o of offs) {
       const list = (Array.isArray(o.item_prices) ? o.item_prices : []).filter((e: any) => Number(e?.total) > 0)
       list.forEach((e: any, i: number) => priced.add(Number.isInteger(e.item_index) ? e.item_index : i))
       // an offer that prices every material: what the buyer pays for it (offerComparable, delivery charges included) (round-5 UX-032)
-      if (list.length >= n) { const tot = offerComparable(o) || list.reduce((sum: number, e: any) => sum + lineComparable(e.total, o), 0); if (tot > 0 && tot < best) best = tot }
+      if (list.length >= n) { const tot = offerComparable(o) || list.reduce((sum: number, e: any) => sum + lineComparable(e.total, o), 0); if (tot > 0 && tot < best) { best = tot; bestO = o } }
     }
-    if (isFinite(best)) return L(`Best total: ${sar(best)}`, `بہترین کل: ${sar(best)}`, `أفضل مجموع: ${sar(best)}`)
+    if (isFinite(best)) return L(`Best total: ${sar(best)} (${buyerBasisTag(bestO, 'en')})`, `بہترین کل: ${sar(best)} (${buyerBasisTag(bestO, 'ur')})`, `أفضل مجموع: ${sar(best)} (${buyerBasisTag(bestO, 'ar')})`)
     const k = Math.min(priced.size, n)
     return k ? L(`${k} of ${n} items priced`, `${n} میں سے ${k} اشیاء کی قیمت آئی`, `سُعّرت ${k} من ${n}`) : ''
   }

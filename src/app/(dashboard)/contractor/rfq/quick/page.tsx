@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useState, type ReactNode } from 'react'
-import { Check, Pencil, ChevronDown, ChevronUp, X, Lock, Calculator, Paperclip } from 'lucide-react'
+import { Check, Pencil, ChevronDown, ChevronUp, X, Lock, Calculator, Paperclip, Minus, Plus } from 'lucide-react'
 import { parseBudget, saveRfqBudgets, budgetToStored, budgetShown, type ItemBudget } from '@/lib/budget'
 import BudgetField from '@/components/rfq/BudgetField'
 import { useCatalogSpecs } from '@/lib/useCatalogSpecs'
@@ -14,6 +14,8 @@ import { SPEC_UNSURE, specUnsureLabel, REGIONS, CITIES_BY_REGION, SECTOR_LABELS,
 import CatalogPicker, { CatalogBrowser } from '@/components/shared/CatalogPicker'
 import { rememberBuyerType, storedBuyerType } from '@/lib/buyerType'
 import PackSheet, { type PackLine } from '@/components/buyer/PackSheet'
+import { inviteLink } from '@/lib/referral'
+import VatInvoiceToggle from '@/components/shared/VatInvoiceToggle'
 import { packById, homeName, HOME_ROOM_PACKS, type HomePack } from '@/lib/homePacks'
 import LocationPicker from '@/components/shared/LocationPicker'
 import SellerIcon from '@/components/shared/SellerIcon'
@@ -319,7 +321,8 @@ export default function QuickRequestPage() {
         if (typeof d.rfqId === 'string') rfqIdRef.current = d.rfqId
         if (typeof d.draftId === 'string' && d.draftId) { localDraftId = d.draftId; setDraftId(d.draftId) }
         if (typeof d.notes === 'string') setNotes(d.notes)
-        if (typeof d.vatRequired === 'boolean') setVatRequired(d.vatRequired)
+        // round-7 UX-025: a saved «off» counts only when saved with the version mark (older saves had false by default)
+        if (typeof d.vatRequired === 'boolean' && (d.vatRequired || d.vatV === 2)) setVatRequired(d.vatRequired)
         if (typeof d.verifiedOnly === 'boolean') setVerifiedOnly(d.verifiedOnly)
         if (typeof d.nearbyOnly === 'boolean') setNearbyOnly(d.nearbyOnly)
         if (d.tier) setTier(d.tier)
@@ -366,7 +369,9 @@ export default function QuickRequestPage() {
           if (md > 0) setNeedDays(md)
           if (r.region && r.region !== 'كل المناطق') { setRegion(r.region); setCity(r.city || '') }
           if (r.notes) setNotes(r.notes)
-          setVatRequired(!!r.vat_invoice_required); setVerifiedOnly(!!r.verified_only)
+          // round-7 UX-025: «اطلب مرة أخرى» never turns the tax invoice off (a home request or an older one saved false by default)
+          if (r.vat_invoice_required) setVatRequired(true)
+          setVerifiedOnly(!!r.verified_only)
           if (typeof r.nearby_only === 'boolean') setNearbyOnly(r.nearby_only)
           setTier(Array.isArray(r.target_tiers) && r.target_tiers.length === 1 ? r.target_tiers[0] : 'all'); setPickup(r.delivery_required === false)
           // the precise delivery point lives in rfq_private (owner only)
@@ -401,7 +406,8 @@ export default function QuickRequestPage() {
           if (dd.is_template) setDraftId(null)
           if (dd.region) { setRegion(dd.region); setCity(dd.city || '') }
           if (dd.notes) setNotes(dd.notes)
-          setVatRequired(!!dd.vatRequired); setVerifiedOnly(!!dd.verifiedOnly); if (dd.tier) setTier(dd.tier); setPickup(dd.deliveryRequired === false)
+          if (dd.vatRequired === true || (dd.vatRequired === false && dd.vatV === 2)) setVatRequired(!!dd.vatRequired) // round-7 UX-025
+          setVerifiedOnly(!!dd.verifiedOnly); if (dd.tier) setTier(dd.tier); setPickup(dd.deliveryRequired === false)
           if (typeof dd.nearbyOnly === 'boolean') setNearbyOnly(dd.nearbyOnly)
           // the offer window, the delivery date and the delivery point come back too (round-4 UX-092)
           if (typeof dd.hours === 'number' && dd.hours > 0) setHours(dd.hours)
@@ -477,7 +483,7 @@ export default function QuickRequestPage() {
   useEffect(() => {
     if (!restored || (!userId && !guest) || done) return
     const t = setTimeout(() => saveLocalDraft(userId ? 'quick:' + userId : GUEST_KEY, {
-      text, lines, region, city, hours, needDays, rfqId: rfqIdRef.current, notes, vatRequired, verifiedOnly, nearbyOnly, tier, pickup, geo, address, draftId,
+      text, lines, region, city, hours, needDays, rfqId: rfqIdRef.current, notes, vatRequired, vatV: 2, verifiedOnly, nearbyOnly, tier, pickup, geo, address, draftId,
       photos: photos.map(p => ({ id: p.id, name: p.file.name, type: p.file.type, status: p.status, share: p.share, confidence: p.confidence, localName: p.localName })),
     }), 300)
     return () => clearTimeout(t)
@@ -518,6 +524,11 @@ export default function QuickRequestPage() {
 
   // the status line after adding goes away by itself
   useEffect(() => { if (!info) { setInfoWarn(false); return } if (infoWarn) return; const t = setTimeout(() => setInfo(''), 7000); return () => clearTimeout(t) }, [info, infoWarn])
+  // round-7 UX-024: the «… need a check» line goes once no line needs a check any more
+  const reviewWarnRef = useRef(false)
+  useEffect(() => {
+    if (reviewWarnRef.current && !lines.some(l => l.review?.length)) { reviewWarnRef.current = false; setInfo(''); setInfoWarn(false) }
+  }, [lines])
 
   useFocusTrap(confirmRef, confirming) // round-5 UX-141
   // the review dialog: Escape closes, focus starts inside (UX-174)
@@ -534,6 +545,8 @@ export default function QuickRequestPage() {
     if (userId) clearLocalDraft('quick:' + userId)
     setLines([]); setPhotos([]); setText(''); setNotes(''); setError(''); setErrKey(null); setErrField(null); rfqIdRef.current = ''
     setDraftId(null) // «ابدأ من جديد» must never delete the saved draft it was opened from (round-2 UX-136)
+    setInfo(''); setInfoWarn(false); reviewWarnRef.current = false // round-7 UX-024
+    replaceRef.current = null; setReplaceKey(null) // round-7 UX-023
   }
 
   // «احفظ كمسودة» (round-4 UX-092) and «احفظ كقائمة متكرّرة» (UX-187): saved to rfq_drafts so the list opens on
@@ -571,7 +584,7 @@ export default function QuickRequestPage() {
           custom: !CATALOG_NAMES.has(l.product_name.trim()),
         }
       })
-      const data: any = { items, region, city, notes, vatRequired, verifiedOnly, tier, deliveryRequired: !pickup, nearbyOnly, hours, needDays, geo, address, ...(template ? { is_template: true } : {}) }
+      const data: any = { items, region, city, notes, vatRequired, vatV: 2, verifiedOnly, tier, deliveryRequired: !pickup, nearbyOnly, hours, needDays, geo, address, ...(template ? { is_template: true } : {}) }
       const first = nameLabel(items[0].product_name)
       const title = template ? tplName.trim().slice(0, 60) : (items.length > 1 ? `${first} +${items.length - 1}` : first).slice(0, 80)
       const sb = createClient()
@@ -686,6 +699,7 @@ export default function QuickRequestPage() {
       setText('')
       const toCheck = add.filter(l => !l.done).length
       setInfoWarn(toCheck > 0)
+      reviewWarnRef.current = toCheck > 0
       setInfo(locale === 'ar'
         ? `أضفنا ${arCount(add.length, 'مادة واحدة', 'مادتين', 'مواد', 'مادة')}${toCheck ? `، منها ${arCount(toCheck, 'مادة واحدة تحتاج', 'مادتان تحتاجان', 'مواد تحتاج', 'مادة تحتاج')} إلى مراجعة` : ''}.`
         : L(`We added ${countLabel(add.length, 'en', arMaterials, 'item', '')}${toCheck ? `, ${toCheck} need a check` : ''}.`,
@@ -700,7 +714,7 @@ export default function QuickRequestPage() {
   // whether suppliers get the photo itself.
   async function addPhotos(files: FileList | null) {
     if (!files) return
-    if (files.length > 6) setInfo(L('You can add 6 photos at a time; the first 6 were added.', 'ایک وقت میں 6 تصاویر شامل کی جا سکتی ہیں؛ پہلی 6 شامل کر دی گئیں۔', 'يمكنك إضافة 6 صور في المرة الواحدة، وقد أُضيفت أول 6 صور.'))
+    if (files.length > 6) { setInfoWarn(true); setInfo(L('You can add 6 photos at a time; only the first 6 were added.', 'ایک وقت میں 6 تصاویر شامل کی جا سکتی ہیں؛ صرف پہلی 6 شامل کی گئیں۔', 'يمكنك إضافة 6 صور في المرة الواحدة؛ أُضيفت أول 6 صور فقط.')) } // round-7 UX-122: a warning, not green
     for (const file of Array.from(files).slice(0, 6)) {
       if (!/^image\/(jpeg|png|webp)$/.test(file.type) || file.size > 6 * 1024 * 1024) {
         showError(L('Photos must be JPG, PNG or WEBP and under 6 MB.', 'تصویر JPG، PNG یا WEBP اور 6 میگا بائٹ سے کم ہو۔', 'يجب أن تكون الصورة بصيغة JPG أو PNG أو WEBP وأقل من 6 ميجابايت.'))
@@ -750,7 +764,7 @@ export default function QuickRequestPage() {
   // a home project pack: every ticked material becomes a line (saved when it has a quantity)
   function addPack(items: PackLine[]) {
     setLines(prev => [...foldDone(prev), ...items.filter(it => !prev.some(l => l.product_name === it.name)).map(it => ({
-      key: uid(), product_name: it.name, sector: it.sector, quantity: it.quantity, unit: it.unit, details: '', done: parseFloat(it.quantity) > 0,
+      key: uid(), product_name: it.name, sector: it.sector, quantity: it.quantity, unit: it.unit, details: it.details || '', done: parseFloat(it.quantity) > 0, // round-7 UX-007: the chosen size
       // round-6 UX-084: «اطلب السعر مع التركيب» from the pack, on the items that can be installed
       ...(it.with_install && isInstallable(it.sector, detectSubCategory(it.name, it.sector)) ? { with_install: true } : {}),
     }))])
@@ -759,11 +773,13 @@ export default function QuickRequestPage() {
   }
 
   // a material written inside a catalog section (not listed) goes to all of that section's suppliers
-  function addFromCatalog({ name, sector, section, sub }: { name: string; sector: Sector; section?: string; sub?: string }) {
+  function addFromCatalog({ name, sector, section, sub, noReplace }: { name: string; sector: Sector; section?: string; sub?: string; noReplace?: boolean }) {
     const unit = getDefaultUnit(name, sector) || 'حبة'
     // «تغيير المادة»: swap the material in the same line, keep the quantity (and the unit when it still fits)
-    const rk = replaceRef.current
-    if (rk) {
+    // round-7 UX-023: «طلبتَها سابقاً» always adds (noReplace); a replaced line that was removed meanwhile never swallows the pick
+    const rk = noReplace ? null : replaceRef.current
+    if (rk && !lines.some(l => l.key === rk)) { replaceRef.current = null; setReplaceKey(null) }
+    else if (rk) {
       replaceRef.current = null; setReplaceKey(null)
       setLines(prev => prev.map(l => l.key !== rk ? l : {
         ...l, product_name: name, sector, unit: l.unit && (unitChoicesFor(name, sector) || UNITS).includes(l.unit) ? l.unit : unit,
@@ -827,7 +843,7 @@ export default function QuickRequestPage() {
 
   function changeMaterial(key: string) {
     replaceRef.current = key; setReplaceKey(key)
-    setInfoWarn(false)
+    setInfoWarn(true) // round-7 UX-122: an instruction, not a success
     setInfo(L('Choose the new material from the guide; it replaces this one and keeps the quantity.', 'فہرست سے نیا سامان منتخب کریں؛ یہ اسی لائن میں مقدار کے ساتھ بدل جائے گا۔', 'اختر المادة الجديدة من الدليل، وستحلّ محلّ هذه المادة مع الإبقاء على الكمية.'))
     addMore()
   }
@@ -863,6 +879,7 @@ export default function QuickRequestPage() {
     const photo = l.photoId ? photos.find(p => p.id === l.photoId) : undefined
     if (undo) dropBlobs(undo.line)
     setLines(prev => prev.filter(x => x.key !== key))
+    if (replaceRef.current === key) { replaceRef.current = null; setReplaceKey(null); setInfo(''); setInfoWarn(false) } // round-7 UX-023
     if (photo) setPhotos(prev => prev.filter(p => p.id !== photo.id))
     if (key === errKey) { setError(''); setErrKey(null) }
     const u = { line: l, index, photo }
@@ -1125,7 +1142,8 @@ export default function QuickRequestPage() {
       const { error: insErr } = await supabase.from('rfqs').insert({
         id: rfqIdRef.current,
         contractor_id: userId, sector: first.sector,
-        product_name: items.length > 1 ? `${first.product_name} +${items.length - 1} ${L('more', 'مزید', 'أصناف أخرى')}` : first.product_name,
+        // round-7 UX-120: suppliers read it in Arabic, whatever the buyer's language
+        product_name: items.length > 1 ? `${first.product_name} +${items.length - 1} أصناف أخرى` : first.product_name,
         sectors: Array.from(new Set(items.map(it => it.sector))),
         sub_category: first.sub_category, specification: first.specification, quantity: first.quantity, unit: first.unit,
         items,
@@ -1257,6 +1275,27 @@ export default function QuickRequestPage() {
     }
   }
 
+  // round-7 UX-238: an invite for a shop the buyer knows, shared by the buyer (Arabic text, the shop's language)
+  async function inviteShop(what: string) {
+    let link = ''
+    try {
+      const { data } = await createClient().rpc('my_invite')
+      const code = (data as any)?.code
+      if (code) link = inviteLink(code, 'supplier')
+    } catch { /* a plain sign-up link below */ }
+    if (!link) link = `${window.location.origin}/register?role=supplier`
+    const t = `أطلب سعر «${what}» على تسعيرك. سجّل محلك مجاناً لتصلك طلبات المشترين: ${link}`
+    try { if ((navigator as any).share) { await (navigator as any).share({ text: t }); return } } catch { return }
+    window.open(`https://wa.me/?text=${encodeURIComponent(t)}`, '_blank', 'noopener')
+  }
+  // round-7 UX-242: Thursday from 16:00 or Friday, Riyadh time
+  const weekendNow = () => {
+    try {
+      const parts = new Intl.DateTimeFormat('en-US', { timeZone: 'Asia/Riyadh', weekday: 'short', hour: 'numeric', hourCycle: 'h23' }).formatToParts(new Date())
+      const wd = parts.find(x => x.type === 'weekday')?.value, h = Number(parts.find(x => x.type === 'hour')?.value)
+      return wd === 'Fri' || (wd === 'Thu' && h >= 16)
+    } catch { return false }
+  }
   // one promise for a material no supplier covers yet (round-2 UX-070); before sending it is said in the future
   const uncoveredMsg = (n: string, sentAlready: boolean) => sentAlready
     ? L(`No supplier for «${nameLabel(n)}» is registered yet. We told our team to find one for you, and we will let you know as soon as an offer on it arrives.`,
@@ -1326,6 +1365,11 @@ export default function QuickRequestPage() {
             {uncovered.map(n => (
               <p key={n} className="text-[13px] text-[#0B2438]">{uncoveredMsg(n, true)}</p>
             ))}
+            {/* round-7 UX-238: the buyer may know a shop that sells it (no personal data in the text) */}
+            <button type="button" onClick={() => inviteShop(uncovered.map(n => nameLabel(n)).join('، '))}
+              className="mt-1 inline-flex items-center min-h-[44px] px-4 rounded-xl text-[13px] font-bold border border-[#0B2438] text-[#0B2438] bg-white">
+              <Glyph e="🏪" /> <span className="ms-1.5">{L('Know a shop that sells it? Invite it to send you an offer', 'کوئی دکان جانتے ہیں جو یہ بیچتی ہے؟ اسے آفر بھیجنے کی دعوت دیں', 'هل تعرف محلاً يبيعها؟ ادعُه ليرسل لك عرضاً')}</span>
+            </button>
           </div>
         )}
         {firstHours != null && !firstOffer && (
@@ -1333,6 +1377,10 @@ export default function QuickRequestPage() {
             `The first offer usually arrives within ${firstHours} hour${firstHours === 1 ? '' : 's'}.`,
             `پہلی آفر عموماً ${firstHours} گھنٹوں میں آ جاتی ہے۔`,
             `يصل أول عرض عادةً خلال ${arCount(firstHours, 'ساعة واحدة', 'ساعتين', 'ساعات', 'ساعة')}.`)}</p>
+        )}
+        {/* round-7 UX-242: a request sent on Thursday evening or Friday (Riyadh time) waits for Saturday morning */}
+        {weekendNow() && (
+          <p className="mt-3 text-[13px] font-semibold text-[#8F6820]">{L('Offers may be slower on Friday: many suppliers get back to pricing on Saturday morning.', 'جمعہ کو آفرز میں تاخیر ہو سکتی ہے، کیونکہ بہت سے سپلائرز ہفتے کی صبح قیمتیں دینا شروع کرتے ہیں۔', 'قد تتأخّر العروض يوم الجمعة، إذ يعود كثير من الموردين إلى التسعير صباح السبت.')}</p>
         )}
         {sent?.expires && (
           <p className="mt-3 text-[13px] text-gray-600">{L('The offer window ends: ', 'آفرز کی مہلت ختم ہو گی: ', 'تنتهي مهلة العروض: ')}<b className="text-[#0B2438]">{whenText(new Date(sent.expires).getTime())}</b></p>
@@ -1361,7 +1409,7 @@ export default function QuickRequestPage() {
             </Link>
           )}
           <div className="grid grid-cols-2 gap-2">
-            <button type="button" onClick={() => { setDone(false); setSent(null); setViews(null); setLines([]); setPhotos([]); setNotes(''); setText(''); setError(''); setErrKey(null); setErrField(null); setNeedDays(null); setReach(null) }}
+            <button type="button" onClick={() => { setDone(false); setSent(null); setViews(null); setLines([]); setPhotos([]); setNotes(''); setText(''); setError(''); setErrKey(null); setErrField(null); setNeedDays(null); setReach(null); setInfo(''); setInfoWarn(false); reviewWarnRef.current = false; replaceRef.current = null; setReplaceKey(null) }}
               className="min-h-12 py-3 rounded-xl font-bold border border-[#0B2438]/30 text-[#0B2438] bg-white">{L('New request', 'نئی درخواست', 'طلب جديد')}</button>
             <Link href="/contractor/rfqs" className="min-h-12 py-3 grid place-items-center rounded-xl font-bold border border-[#0B2438]/30 text-[#0B2438] bg-white">{L('My requests', 'میری درخواستیں', 'طلباتي')}</Link>
           </div>
@@ -1399,6 +1447,13 @@ export default function QuickRequestPage() {
 
   // a home buyer: the guide with photos stays on the page (phones) once they start picking from it
   const emptySimple = simple && (lines.length === 0 || inlinePick)
+  // «تغيير المادة»: one banner for every guide on the page (round-7 UX-023)
+  const replaceBanner = replaceKey ? (
+            <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-[#D4A543] bg-[#D4A543]/10 px-3 py-1.5 text-[13px] font-bold text-[#0B2438]" role="status">
+              <span>{L(`You are choosing a replacement for «${nameLabel(lines.find(x => x.key === replaceKey)?.product_name || '')}»; the quantity stays the same`, `آپ «${nameLabel(lines.find(x => x.key === replaceKey)?.product_name || '')}» کا متبادل چن رہے ہیں؛ مقدار وہی رہے گی`, `تختار الآن بديلاً لـ«${nameLabel(lines.find(x => x.key === replaceKey)?.product_name || '')}»، وتبقى الكمية كما هي`)}</span>
+              <button type="button" onClick={() => { replaceRef.current = null; setReplaceKey(null); setInfo('') }} className="min-h-[44px] px-2 underline">{L('Cancel', 'منسوخ', 'إلغاء')}</button>
+            </div>
+  ) : null
 
   return shell(
     <div className="relative">
@@ -1449,8 +1504,7 @@ export default function QuickRequestPage() {
 
         {startPhoto && (
           <button type="button" id="quick-photo" onClick={() => { setStartPhoto(false); fileRef.current?.click() }}
-            className="w-full flex items-center justify-center gap-3 py-5 rounded-2xl font-extrabold text-lg text-[#071827] shadow-sm"
-            style={{ background: 'linear-gradient(135deg,#F5C55B,#D4A543)' }}>
+            className="btn-primary btn-lg w-full">{/* round-7 UX-171: the shared main-action button */}
             <Glyph e="📷" /> {L('Take a photo or choose one', 'تصویر لیں یا منتخب کریں', 'التقط صورة أو اختر صورة')}
           </button>
         )}
@@ -1495,7 +1549,7 @@ export default function QuickRequestPage() {
               <div className="text-[12px] font-bold text-gray-600 mb-1">{L('Ordered before:', 'پہلے منگوایا:', 'طلبتَها سابقاً:')}</div>
               <div className="flex flex-wrap gap-1.5">
                 {pastItems.filter(p => !lines.some(l => l.product_name === p.name)).map(p => (
-                  <button key={p.name} type="button" onClick={() => addFromCatalog({ name: p.name, sector: p.sector as Sector })}
+                  <button key={p.name} type="button" onClick={() => addFromCatalog({ name: p.name, sector: p.sector as Sector, noReplace: true })}
                     className="min-h-[44px] max-w-[16rem] truncate px-3 rounded-full border-2 border-gray-200 bg-white text-[13px] font-bold text-[#0B2438] hover:border-[#D4A543]" dir="auto">
                     + {nameLabel(p.name)}
                   </button>
@@ -1509,6 +1563,15 @@ export default function QuickRequestPage() {
         {emptySimple && (
           <div id="catalog-inline-m" className="lg:hidden bg-white rounded-2xl p-4 border border-gray-100 shadow-sm space-y-3 scroll-mt-24">
             <h2 className="font-bold text-navy">{L('Or choose by photos', 'یا تصاویر سے چنیں', 'أو اختر بالصور')}</h2>
+            {replaceBanner /* round-7 UX-023: the replace mode is visible here too */}
+            {/* round-7 UX-026: after the first pick, a navy chip that stays on screen and leads to the next steps */}
+            {inlinePick && lines.length > 0 && (
+              <button type="button" onClick={() => document.getElementById('request-list')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+                className="sticky top-2 z-20 w-full min-h-[48px] px-4 rounded-xl bg-[#0B2438] text-white text-[13px] font-bold flex items-center justify-between gap-2 shadow-lg">
+                <span>{L(`Your request (${lines.length}) · Next: how many? then where and when`, `آپ کی درخواست (${lines.length}) · اگلا: کتنا؟ پھر کہاں اور کب`, `طلبك (${lines.length}) · التالي: كم تحتاج؟ ثم أين ومتى`)}</span>
+                <span aria-hidden="true" className="text-[#F5C55B]">{dir === 'rtl' ? '←' : '→'}</span>
+              </button>
+            )}
             <CatalogBrowser key={'m|' + startQ + '|' + (startSection || '')} simple inline initialQuery={startQ} initialSection={startSection as any} locale={locale}
               picked={lines.map(l => ({ key: l.key, name: l.product_name, qty: l.quantity, unit: l.unit }))} onPick={it => { setInlinePick(true); addFromCatalog(it) }} onRemove={removeLine} onQty={(k, q) => updateLine(k, { quantity: q })} />
             <div>
@@ -1538,12 +1601,7 @@ export default function QuickRequestPage() {
         {/* Desktop: the catalog fills the main column; phones open it as a sheet */}
         <div id="catalog-inline" className="hidden lg:block lg:col-start-1 lg:row-start-2 lg:mt-5 bg-white rounded-2xl p-5 border border-gray-100 shadow-sm space-y-3">
           <h2 className="font-bold text-navy"><Glyph e="🔍" /> {L('Browse the materials guide', 'مواد کی فہرست دیکھیں', 'تصفّح دليل المواد')}</h2>
-          {replaceKey && (
-            <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-[#D4A543] bg-[#D4A543]/10 px-3 py-1.5 text-[13px] font-bold text-[#0B2438]" role="status">
-              <span>{L(`You are choosing a replacement for «${nameLabel(lines.find(x => x.key === replaceKey)?.product_name || '')}»; the quantity stays the same`, `آپ «${nameLabel(lines.find(x => x.key === replaceKey)?.product_name || '')}» کا متبادل چن رہے ہیں؛ مقدار وہی رہے گی`, `تختار الآن بديلاً لـ«${nameLabel(lines.find(x => x.key === replaceKey)?.product_name || '')}»، وتبقى الكمية كما هي`)}</span>
-              <button type="button" onClick={() => { replaceRef.current = null; setReplaceKey(null); setInfo('') }} className="min-h-[44px] px-2 underline">{L('Cancel', 'منسوخ', 'إلغاء')}</button>
-            </div>
-          )}
+          {replaceBanner}
           {simple && packsRow}
           <CatalogBrowser key={startQ + '|' + (startSection || '')} simple={simple} inline initialQuery={startQ} initialSection={startSection as any} locale={locale}
             picked={lines.map(l => ({ key: l.key, name: l.product_name, qty: l.quantity, unit: l.unit }))} onPick={addFromCatalog} onRemove={removeLine} onQty={(k, q) => updateLine(k, { quantity: q })} />
@@ -1578,33 +1636,6 @@ export default function QuickRequestPage() {
               <span className="text-[12px] text-gray-500">{L('Check each line before sending', 'بھیجنے سے پہلے ہر لائن چیک کریں', 'راجع كل سطر قبل الإرسال')}</span>
             </div>
             {info && <p className={'text-[13px] font-bold rounded-lg px-2 py-1 ' + (infoWarn ? 'text-[#0B2438] bg-[#D4A543]/10' : 'text-[#0F6E56] bg-[#E1F5EE]')} role="status">{infoWarn && <Glyph e="⚠" />} {info}</p>}
-            {simple && <div className="lg:hidden">{packsRow}</div>}
-            <div className="flex items-center justify-between gap-2 text-[12px] text-gray-500">
-              <span className="inline-flex items-center gap-1.5"><SellerIcon name="checkCircle" className="w-4 h-4 text-[#0F6E56]" />{L('Saved on this device, you can leave and come back', 'اس ڈیوائس پر محفوظ ہے، واپس آ سکتے ہیں', 'محفوظ على جهازك، يمكنك المغادرة والعودة لاحقاً')}</span>
-              <button type="button" onClick={async () => { if ((await askConfirm(L('Clear the whole request? This cannot be undone.', 'پوری درخواست صاف کریں؟ یہ واپس نہیں ہو سکتا۔', 'هل تريد مسح الطلب بالكامل؟ لا يمكن التراجع عن ذلك.'), { danger: true }))) startOver() }} className="min-h-[44px] px-1 font-bold text-gray-600 hover:text-red-600">
-                {L('Start over', 'نئے سرے سے', 'ابدأ من جديد')}
-              </button>
-            </div>
-            {/* saved to the account, so it opens on any device (round-4 UX-092), and a recurring list for a business buyer (UX-187) */}
-            <div className="flex flex-wrap items-center gap-2">
-              <button type="button" onClick={() => saveDraft(false)} disabled={savingDraft}
-                className="min-h-[44px] px-3 rounded-xl text-[13px] font-bold border border-[#0B2438]/40 bg-white text-[#0B2438] disabled:opacity-50">
-                {savingDraft && !tplOpen ? L('Saving…', 'محفوظ ہو رہا ہے…', 'جارٍ الحفظ…') : L('Save it to my account to open from any device', 'اپنے اکاؤنٹ میں محفوظ کریں تاکہ کسی بھی ڈیوائس سے کھولیں', 'احفظه في حسابي لفتحه من أي جهاز')}
-              </button>
-              {!simple && !tplOpen && (
-                <button type="button" onClick={() => setTplOpen(true)} className="min-h-[44px] px-3 rounded-xl text-[13px] font-bold border border-[#0B2438]/40 bg-white text-[#0B2438]">
-                  {L('Save it in my lists', 'میری فہرستوں میں محفوظ کریں', 'احفظها في قوائمي')}
-                </button>
-              )}
-            </div>
-            {!simple && tplOpen && (
-              <div className="flex flex-wrap items-center gap-2 rounded-xl border border-gray-200 bg-gray-50 p-2">
-                <input value={tplName} onChange={e => setTplName(e.target.value.slice(0, 60))} className="input-field flex-1 min-w-[10rem] text-[16px] sm:text-sm"
-                  aria-label={L('List name', 'فہرست کا نام', 'اسم القائمة')} placeholder={L('List name, e.g. Villa site materials', 'فہرست کا نام', 'اسم القائمة، مثل: مواد موقع الفيلا')} />
-                <button type="button" onClick={() => saveDraft(true)} disabled={savingDraft} className="min-h-[44px] px-4 rounded-xl text-[13px] font-bold text-white bg-[#0B2438] disabled:opacity-50">{L('Save', 'محفوظ کریں', 'حفظ')}</button>
-                <button type="button" onClick={() => { setTplOpen(false); setTplName('') }} className="min-h-[44px] px-2 text-[13px] font-bold text-gray-600">{L('Cancel', 'منسوخ', 'إلغاء')}</button>
-              </div>
-            )}
             <div className="space-y-3 lg:max-h-[60vh] lg:overflow-y-auto lg:pe-1">
             {lines.map(l => {
               const ph = l.photoId ? photos.find(p => p.id === l.photoId) : undefined
@@ -1638,10 +1669,10 @@ export default function QuickRequestPage() {
                     {simple && COUNT_UNITS.includes(l.unit) && (
                       <div className="order-last sm:order-none basis-full sm:basis-auto ps-14 sm:ps-0 shrink-0"><div className="inline-flex items-center rounded-xl border border-gray-200 bg-white" role="group" aria-label={L('Quantity', 'مقدار', 'الكمية')}>
                         <button type="button" onClick={() => updateLine(l.key, { quantity: String(Math.max(1, (parseFloat(l.quantity) || 1) - 1)) })} disabled={(parseFloat(l.quantity) || 1) <= 1}
-                          className="w-[44px] h-[44px] grid place-items-center text-lg font-bold text-[#0B2438] disabled:opacity-30" aria-label={L('Less', 'کم', 'أنقص')}>−</button>
+                          className="w-[44px] h-[44px] grid place-items-center text-lg font-bold text-[#0B2438] disabled:opacity-30" aria-label={L('Decrease the quantity', 'مقدار کم کریں', 'إنقاص الكمية')}><Minus className="w-5 h-5" aria-hidden /></button>
                         <span className="min-w-[2ch] text-center text-sm font-extrabold text-[#0B2438]" aria-live="polite">{l.quantity || '1'}</span>
                         <button type="button" onClick={() => updateLine(l.key, { quantity: String((parseFloat(l.quantity) || 0) + 1) })}
-                          className="w-[44px] h-[44px] grid place-items-center text-lg font-bold text-[#0B2438]" aria-label={L('More', 'زیادہ', 'زِد')}>+</button>
+                          className="w-[44px] h-[44px] grid place-items-center text-lg font-bold text-[#0B2438]" aria-label={L('Increase the quantity', 'مقدار بڑھائیں', 'زيادة الكمية')}><Plus className="w-5 h-5" aria-hidden /></button>
                       </div></div>
                     )}
                     <button type="button" onClick={() => removeLine(l.key)} className="min-w-[44px] min-h-[44px] grid place-items-center rounded-lg text-gray-500 hover:text-red-600 hover:bg-red-50 shrink-0" aria-label={L(`Remove ${nameLabel(l.product_name)}`, `${nameLabel(l.product_name)} ہٹائیں`, `حذف ${nameLabel(l.product_name)}`)}><X className="w-5 h-5" aria-hidden /></button>
@@ -1900,6 +1931,36 @@ export default function QuickRequestPage() {
               className="lg:hidden w-full min-h-[48px] rounded-xl border-2 border-dashed border-[#D4A543]/60 text-[#8F6820] font-bold text-sm hover:bg-[#D4A543]/5 transition-all">
               + {L('Add another material', 'ایک اور سامان شامل کریں', 'أضف مادة أخرى')}
             </button>
+            {/* round-7 UX-115: the lines first; the packs under «+ أضف مادة أخرى», the save options in a quiet row below */}
+            {simple && <div className="lg:hidden">{packsRow}</div>}
+            <div className="pt-2 border-t border-gray-100 space-y-2">
+            <div className="flex items-center justify-between gap-2 text-[12px] text-gray-500">
+              <span className="inline-flex items-center gap-1.5"><SellerIcon name="checkCircle" className="w-4 h-4 text-[#0F6E56]" />{L('Saved on this device, you can leave and come back', 'اس ڈیوائس پر محفوظ ہے، واپس آ سکتے ہیں', 'محفوظ على جهازك، يمكنك المغادرة والعودة لاحقاً')}</span>
+              <button type="button" onClick={async () => { if ((await askConfirm(L('Clear the whole request? This cannot be undone.', 'پوری درخواست صاف کریں؟ یہ واپس نہیں ہو سکتا۔', 'هل تريد مسح الطلب بالكامل؟ لا يمكن التراجع عن ذلك.'), { danger: true }))) startOver() }} className="min-h-[44px] px-1 font-bold text-gray-600 hover:text-red-600">
+                {L('Start over', 'نئے سرے سے', 'ابدأ من جديد')}
+              </button>
+            </div>
+            {/* saved to the account, so it opens on any device (round-4 UX-092), and a recurring list for a business buyer (UX-187) */}
+            <div className="flex flex-wrap items-center gap-2">
+              <button type="button" onClick={() => saveDraft(false)} disabled={savingDraft}
+                className="min-h-[44px] px-3 rounded-xl text-[13px] font-bold border border-[#0B2438]/40 bg-white text-[#0B2438] disabled:opacity-50">
+                {savingDraft && !tplOpen ? L('Saving…', 'محفوظ ہو رہا ہے…', 'جارٍ الحفظ…') : L('Save it to my account to open from any device', 'اپنے اکاؤنٹ میں محفوظ کریں تاکہ کسی بھی ڈیوائس سے کھولیں', 'احفظه في حسابي لفتحه من أي جهاز')}
+              </button>
+              {!simple && !tplOpen && (
+                <button type="button" onClick={() => setTplOpen(true)} className="min-h-[44px] px-3 rounded-xl text-[13px] font-bold border border-[#0B2438]/40 bg-white text-[#0B2438]">
+                  {L('Save it in my lists', 'میری فہرستوں میں محفوظ کریں', 'احفظها في قوائمي')}
+                </button>
+              )}
+            </div>
+            {!simple && tplOpen && (
+              <div className="flex flex-wrap items-center gap-2 rounded-xl border border-gray-200 bg-gray-50 p-2">
+                <input value={tplName} onChange={e => setTplName(e.target.value.slice(0, 60))} className="input-field flex-1 min-w-[10rem] text-[16px] sm:text-sm"
+                  aria-label={L('List name', 'فہرست کا نام', 'اسم القائمة')} placeholder={L('List name, e.g. Villa site materials', 'فہرست کا نام', 'اسم القائمة، مثل: مواد موقع الفيلا')} />
+                <button type="button" onClick={() => saveDraft(true)} disabled={savingDraft} className="min-h-[44px] px-4 rounded-xl text-[13px] font-bold text-white bg-[#0B2438] disabled:opacity-50">{L('Save', 'محفوظ کریں', 'حفظ')}</button>
+                <button type="button" onClick={() => { setTplOpen(false); setTplName('') }} className="min-h-[44px] px-2 text-[13px] font-bold text-gray-600">{L('Cancel', 'منسوخ', 'إلغاء')}</button>
+              </div>
+            )}
+            </div>
           </div>
         )}
 
@@ -2021,9 +2082,13 @@ export default function QuickRequestPage() {
             <div className="rounded-xl border border-gray-200 bg-gray-50/60 p-3">
               {simple
                 ? <button type="button" onClick={() => setMoreOpen(o => !o)} aria-expanded={moreOpen} className="w-full min-h-[44px] text-start text-sm font-bold text-[#0B2438] flex items-center justify-between">{L('More options (optional)', 'مزید اختیارات (اختیاری)', 'خيارات إضافية (اختياري)')} {moreOpen ? <ChevronUp className="w-4 h-4" aria-hidden /> : <ChevronDown className="w-4 h-4" aria-hidden />}</button>
-                : <div className="text-sm font-bold text-[#0B2438]">{L('More options (optional)', 'مزید اختیارات (اختیاری)', 'خيارات إضافية (اختياري)')}</div>}
+                : <div className="text-sm font-bold text-[#0B2438]">{L('Supply details', 'سپلائی کی تفصیل', 'تفاصيل التوريد')}</div>/* round-7 UX-124 */}
               <div className={`mt-3 space-y-3 ${simple && !moreOpen ? 'hidden' : ''}`}>
                 {!simple && needBlock}
+                {/* round-7 UX-124: the tax invoice right after the delivery date */}
+                {!simple && (<>
+                <VatInvoiceToggle checked={vatRequired} onChange={setVatRequired} locale={locale} />
+                </>)}
                 <textarea value={notes} onChange={e => setNotes(e.target.value)} rows={2} className="input-field text-[16px] sm:text-sm" aria-label={L('Notes for suppliers (optional)', 'سپلائرز کے لیے نوٹس (اختیاری)', 'ملاحظات للموردين (اختياري)')} placeholder={L('Notes for suppliers (optional)', 'سپلائرز کے لیے نوٹس (اختیاری)', 'ملاحظات للموردين (اختياري)')} />
                 {!simple && (<>
                 <div>
@@ -2038,11 +2103,6 @@ export default function QuickRequestPage() {
                     ))}
                   </div>
                 </div>
-                <label className="flex items-center gap-2 min-h-[44px] text-sm text-gray-700 cursor-pointer select-none">
-                  <input type="checkbox" checked={vatRequired} onChange={e => setVatRequired(e.target.checked)} className="w-5 h-5 accent-[#0B2438]" />
-                  {L('I need a VAT tax invoice', 'مجھے VAT ٹیکس انوائس چاہیے', 'أحتاج فاتورة ضريبية')}
-                </label>
-                {!vatRequired && <p className="-mt-1 text-[13px] text-[#6C531F] leading-relaxed">{L('You may receive offers from suppliers without a VAT number, who do not issue a tax invoice.', 'آپ کو ایسے سپلائرز کی آفرز بھی مل سکتی ہیں جن کے پاس VAT نمبر نہیں، اس لیے وہ ٹیکس انوائس جاری نہیں کرتے۔', 'قد تصلك عروض من موردين ليس لديهم رقم ضريبي، فلا يُصدرون فاتورة ضريبية.')}</p>}
                 </>)}
                 <label className="flex items-center gap-2 min-h-[44px] text-sm text-gray-700 cursor-pointer select-none">
                   <input type="checkbox" checked={verifiedOnly} onChange={e => setVerifiedOnly(e.target.checked)} className="w-5 h-5 accent-[#0B2438]" />
@@ -2104,14 +2164,14 @@ export default function QuickRequestPage() {
               )}
               {marketEst != null && (
                 <p className="rounded-xl bg-[#0B2438]/5 border border-[#0B2438]/15 px-3 py-2 text-[13px] font-bold text-[#0B2438]">
-                  {L(`Expected market cost: about ${Math.round(marketEst).toLocaleString('en-US')} SAR incl. VAT`, `مارکیٹ میں متوقع لاگت: تقریباً ${Math.round(marketEst).toLocaleString('en-US')} ریال VAT سمیت`, `التكلفة المتوقعة في السوق: نحو ${Math.round(marketEst).toLocaleString('en-US')} ر.س شاملة الضريبة`)}
+                  {/* round-7 UX-118: materials only */}{L(`Expected market cost of the materials: about ${Math.round(marketEst).toLocaleString('en-US')} SAR incl. VAT, without delivery and installation`, `سامان کی مارکیٹ میں متوقع لاگت: تقریباً ${Math.round(marketEst).toLocaleString('en-US')} ریال VAT سمیت، ڈیلیوری اور تنصیب کے بغیر`, `التكلفة المتوقعة للمواد في السوق: نحو ${Math.round(marketEst).toLocaleString('en-US')} ر.س شاملة الضريبة، دون التوصيل والتركيب`)}
                 </p>
               )}
               {reach && (
                 <div className="space-y-1.5 min-h-[40px]">
                   {reach.reached >= 1 && (() => {
                     const cityName = city ? getPlaceLabel(city, null, locale) : ''
-                    const where = nearbyOnly && cityName
+                    const where = (simple || nearbyOnly) && cityName // round-7 UX-119: the same rule as sending (simple || nearbyOnly)
                       ? L(` in ${cityName}`, ` ${cityName} میں`, ` في ${cityName}`)
                       : region ? L(` in the ${getRegionLabel(region, 'en')} region`, ` ${getRegionLabel(region, 'ur')} علاقے میں`, ` في منطقة ${getRegionLabel(region, 'ar')}`) : ''
                     return (
@@ -2157,7 +2217,7 @@ export default function QuickRequestPage() {
                         {bud != null && (
                           <div className="text-[12px] font-bold text-[#8F6820] mt-1">
                             {L(`Most you pay: ${bud} SAR/${unitLabel(l.unit)} incl. VAT`, `زیادہ سے زیادہ رقم: ${bud} ریال/${unitLabel(l.unit)} VAT سمیت`, `أقصى مبلغ: ${bud} ر.س/${unitLabel(l.unit)} شامل الضريبة`)}
-                            {' · '}{l.budgetVisible ? L('visible to suppliers', 'سپلائرز کو نظر آئے گا', 'ظاهرة للموردين') : L('(hidden from suppliers)', '(سپلائرز سے پوشیدہ)', '(مخفية عن الموردين)')}
+                            {' · '}{l.budgetVisible ? L('visible to suppliers', 'سپلائرز کو نظر آئے گا', 'ظاهر للموردين') : L('(hidden from suppliers)', '(سپلائرز سے پوشیدہ)', '(مخفي عن الموردين)')}
                           </div>
                         )}
                         {wantsInstall(l) && (
@@ -2189,16 +2249,23 @@ export default function QuickRequestPage() {
                 </>)}
                 {!simple && region && (<>
                   <dt className="text-gray-600">{L('Sent to', 'کس کو', 'يصل إلى')}</dt>
-                  <dd className="font-semibold">{nearbyOnly ? L('The suppliers nearest to you', 'آپ کے قریب ترین سپلائرز', 'الموردين الأقرب إليك') : L(`Suppliers across all of ${getRegionLabel(region, 'en')}`, `پورے ${getRegionLabel(region, 'ur')} کے سپلائرز`, `الموردين في كل أنحاء ${getRegionLabel(region, 'ar')}`)}{tier !== 'all' ? ' · ' + tierLabel(tier, locale as any, false) : ''}</dd>
+                  <dd className="font-semibold">{(simple || nearbyOnly) ? L('The suppliers nearest to you', 'آپ کے قریب ترین سپلائرز', 'الموردين الأقرب إليك') : L(`Suppliers across all of ${getRegionLabel(region, 'en')}`, `پورے ${getRegionLabel(region, 'ur')} کے سپلائرز`, `الموردين في كل أنحاء ${getRegionLabel(region, 'ar')}`)}{tier !== 'all' ? ' · ' + tierLabel(tier, locale as any, false) : ''}</dd>
                 </>)}
                 {notes.trim() && (<>
                   <dt className="text-gray-600">{L('Notes', 'نوٹس', 'ملاحظات')}</dt>
                   <dd className="font-semibold whitespace-pre-wrap" dir="auto">{notes.trim()}</dd>
                 </>)}
               </dl>
+              {/* round-7 UX-116: the last screen says whether a tax invoice was asked for */}
+              {!simple && (vatRequired
+                ? <p className="rounded-xl bg-gray-50 border border-gray-100 px-3 py-2 text-[13px] font-semibold text-[#0B2438]"><Glyph e="🧾" /> {L('Tax invoice: required', 'ٹیکس انوائس: درکار', 'فاتورة ضريبية: مطلوبة')}</p>
+                : <div className="rounded-xl border-2 border-[#D4A543] bg-[#D4A543]/10 px-3 py-2 text-[13px] text-[#0B2438] flex flex-wrap items-center justify-between gap-2">
+                    <span className="font-semibold">{L('No tax invoice: you may receive offers from suppliers who do not issue a tax invoice.', 'ٹیکس انوائس کے بغیر: آپ کو ایسے سپلائرز کی آفرز مل سکتی ہیں جو ٹیکس انوائس جاری نہیں کرتے۔', 'بلا فاتورة ضريبية: قد تصلك عروض من موردين لا يُصدرون فاتورة ضريبية.')}</span>
+                    <button type="button" onClick={() => setVatRequired(true)} className="min-h-[44px] px-3 rounded-xl text-[13px] font-bold border border-[#0B2438] text-[#0B2438] bg-white">{L('Turn the tax invoice on', 'ٹیکس انوائس فعال کریں', 'تفعيل الفاتورة الضريبية')}</button>
+                  </div>)}
               <div className="flex flex-wrap gap-1.5 text-[12px]">
                 <span className="px-2 py-1 rounded-full bg-gray-100 text-gray-700 inline-flex items-center gap-1"><Lock className="w-3 h-3" aria-hidden />{L('Name hidden until you choose', 'انتخاب تک نام پوشیدہ', 'الاسم مخفي حتى تختار')}</span>
-                {!simple && vatRequired && <span className="px-2 py-1 rounded-full bg-gray-100 text-gray-700">{L('VAT invoice', 'VAT انوائس', 'فاتورة ضريبية')}</span>}
+
                 {verifiedOnly && <span className="px-2 py-1 rounded-full bg-gray-100 text-gray-700">{L('Verified suppliers only', 'صرف تصدیق شدہ', 'الموردون الموثّقون فقط')}</span>}
                 
                 {photos.some(p => p.share) && <span className="px-2 py-1 rounded-full bg-gray-100 text-gray-700 inline-flex items-center gap-1"><Paperclip className="w-3 h-3" aria-hidden />{L('Photos shared', 'تصاویر شیئر', 'الصور مرفقة')}</span>}

@@ -95,11 +95,11 @@
     @apply inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold;
   }
   .badge-navy  { @apply text-white; background: var(--navy); }
-  .badge-orange { @apply text-white; background: var(--orange); }
+  .badge-orange { color: #071827; background: var(--orange); }
   .badge-green { @apply bg-emerald-100 text-emerald-800; }
   .badge-red   { @apply bg-red-100 text-red-800; }
   .badge-gray  { @apply bg-gray-100 text-gray-700; }
-  .badge-blue  { @apply bg-blue-100 text-blue-800; }
+  .badge-blue  { color: #124B69; background: #DCEFF6; }
 
   /* ---- Eyebrow chip (section kickers) ---- */
   .eyebrow {

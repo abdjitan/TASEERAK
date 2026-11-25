@@ -6,7 +6,8 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Check, Star } from 'lucide-react'
 import { useTranslation } from '@/i18n'
-import { getRegionLabel } from '@/types'
+import { getRegionLabel, CITIES_BY_REGION } from '@/types'
+import { createClient } from '@/lib/supabase/client'
 import { approvalLabel, isNewSupplier } from '@/lib/supplierScore'
 import { arCount } from '@/lib/text'
 import AutoTr from '@/components/shared/AutoTr'
@@ -44,6 +45,20 @@ export default function SupplierProfile({ s }: { s: any }) {
     try { setCanBack(window.history.length > 1 && !!document.referrer && new URL(document.referrer).origin === window.location.origin) } catch {}
   }, [])
   const sectors: string[] = Array.isArray(s.sectors) ? s.sectors.filter(Boolean) : []
+  // the city in the reader's language (round-7 UX-111; English name when known, else as saved)
+  const cityRow = s.city ? ((CITIES_BY_REGION as any)[s.region] || []).find((c: any) => c.ar === s.city) : null
+  const cityLabel = s.city ? (locale === 'en' && cityRow?.en ? cityRow.en : s.city) : ''
+  // a signed-in seller does not get «request a price» (round-7 UX-166)
+  const [viewerRole, setViewerRole] = useState<string | null>(null)
+  useEffect(() => {
+    const sb = createClient()
+    sb.auth.getSession().then(async ({ data }: any) => {
+      const uid = data?.session?.user?.id
+      if (!uid) return
+      const { data: p } = await sb.from('profiles').select('role').eq('id', uid).maybeSingle()
+      setViewerRole(p?.role || null)
+    }, () => {})
+  }, [])
 
   return (
     <main className="max-w-3xl mx-auto px-4 py-8" dir={dir}>
@@ -69,6 +84,10 @@ export default function SupplierProfile({ s }: { s: any }) {
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
               <h1 className="text-xl font-extrabold" style={{ color: '#0B2438' }}>{name}</h1>
+              {/* checked VAT number (round-7 UX-235; needs vat_verified_at from get_supplier_public) */}
+              {!!s.vat_verified_at && (
+                <span className="badge text-[12px]" style={{ background: '#0B243812', color: '#0B2438' }}>{L('Issues a tax invoice', 'ٹیکس انوائس جاری کرتا ہے', 'يُصدر فاتورة ضريبية')}</span>
+              )}
               {s.verification_status === 'verified' && (
                 <span className="badge text-[12px] inline-flex items-center gap-0.5" style={{ background: '#0F6E5614', color: '#0F6E56' }}>
                   <Check className="w-3 h-3" aria-hidden />{L('Commercial registration verified', 'تجارتی رجسٹریشن تصدیق شدہ', 'سجلّه التجاري موثّق')}
@@ -76,8 +95,9 @@ export default function SupplierProfile({ s }: { s: any }) {
               )}
             </div>
             <div className="text-sm text-gray-600 mt-1 flex items-center gap-3 flex-wrap">
-              <span><SellerIcon name={s.supplier_tier ? tierIcon(s.supplier_tier) : 'store'} /> {s.supplier_tier ? tierLabel(s.supplier_tier, lc) : L('Supplier', 'سپلائر', 'مورد')}</span>
-              {s.region && <span><Glyph e="📍" /> {getRegionLabel(s.region, locale)}{s.city ? ` · ${s.city}` : ''}</span>}
+              {/* the seller icon is in the medallion already: no second copy here (round-7 UX-235) */}
+              <span>{s.supplier_tier ? tierLabel(s.supplier_tier, lc) : L('Supplier', 'سپلائر', 'مورد')}</span>
+              {s.region && <span><Glyph e="📍" /> {getRegionLabel(s.region, locale)}{cityLabel ? ` · ${cityLabel}` : ''}</span>}
             </div>
           </div>
           {/* a supplier with almost no history: «new» (UX-104); no score circle any more (round-6 UX-079) */}
@@ -145,10 +165,13 @@ export default function SupplierProfile({ s }: { s: any }) {
           </div>
         )}
 
+        {viewerRole !== 'supplier' && (
         <div className="mt-6 pt-5 border-t border-gray-100 text-center">
-          <p className="text-sm text-gray-600 mb-3">{L('Your request reaches this supplier if your materials are in their specialty and region. It reaches all the specialised suppliers.', 'آپ کی درخواست اس سپلائر تک پہنچتی ہے اگر آپ کا سامان اس کے شعبے اور علاقے میں ہو۔ یہ تمام ماہر سپلائرز تک پہنچتی ہے۔', 'يصل طلبك إلى هذا المورد إذا كانت موادك ضمن تخصصه وفي منطقته، ويصل إلى كل الموردين المختصين.')}</p>
-          <Link href="/contractor/rfq/quick" className="btn-orange text-sm">{L('Request new prices', 'نئی قیمتیں منگوائیں', 'اطلب تسعيراً جديداً')}</Link>
+          {/* honest about routing (round-7 UX-166) */}
+          <p className="text-sm text-gray-600 mb-3">{L('A request cannot be sent to one particular supplier: your request reaches all the suppliers specialised in your materials in your region, this supplier among them if your materials are in its specialty.', 'درخواست کسی خاص سپلائر کو نہیں بھیجی جا سکتی: آپ کی درخواست آپ کے علاقے میں آپ کے سامان کے تمام ماہر سپلائرز تک پہنچتی ہے، اور اگر آپ کا سامان اس سپلائر کے شعبے میں ہو تو اس تک بھی۔', 'لا يمكن توجيه الطلب إلى مورد بعينه: يصل طلبك إلى كل الموردين المختصين بموادك في منطقتك، ومنهم هذا المورد إذا كانت موادك ضمن تخصصه.')}</p>
+          <Link href="/contractor/rfq/quick" className="btn-orange text-sm">{L('Request a price', 'قیمت منگوائیں', 'اطلب سعراً')}</Link>
         </div>
+        )}
       </div>
       {s.member_since && <p className="text-center text-[12px] text-gray-600 mt-6">{L('Member since', 'رکن از', 'عضو منذ')} {new Date(s.member_since).toLocaleDateString(dateLocale)}</p>}
     </main>

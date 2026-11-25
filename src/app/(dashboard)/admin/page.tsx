@@ -308,7 +308,8 @@ export default function AdminPanel() {
   }
 
   async function closeDeal(offerId: string, text: string) {
-    const reason = text.trim()
+    // no final full stop: the notice adds its own (round-7 UX-089)
+    const reason = text.trim().replace(/[\s.。۔!؟?،,;:]+$/u, '')
     if (!reason) return
     setCloseModal(null)
     setActionLoading('close-' + offerId)
@@ -1575,8 +1576,8 @@ export default function AdminPanel() {
             {closeModal.text.trim() && (
               <div className="mt-3 rounded-xl border border-gray-200 bg-[#F5F7FA] p-3 text-sm">
                 <div className="text-xs font-bold text-gray-600 mb-1">معاينة ما يصل إلى الطرفين</div>
-                <div className="font-bold text-[#0B2438]">أُلغيت الصفقة بقرار الإدارة</div>
-                <div className="text-gray-700 mt-0.5 whitespace-pre-wrap">أُلغيت صفقة «{closeModal.label}» بقرار الإدارة: {closeModal.text.trim().slice(0, 300)}.</div>
+                <div className="font-bold text-[#0B2438]">أُلغيت الصفقة بقرار فريق تسعيرك</div>
+                <div className="text-gray-700 mt-0.5 whitespace-pre-wrap">أُلغيت صفقة «{closeModal.label}» بقرار فريق تسعيرك: {closeModal.text.trim().replace(/[\s.。۔!؟?،,;:]+$/u, '').slice(0, 300)}.</div>
               </div>
             )}
             <div className="flex gap-2 mt-4">

@@ -19,19 +19,19 @@ export default function PublicFooter() {
         <div className="flex items-center justify-center gap-1 text-[13px] text-gray-700 flex-wrap">
           <Link href="/" className="inline-flex items-center min-h-[44px] px-2 font-semibold text-[#0B2438] hover:underline">{L('Home', 'ہوم', 'الرئيسية')}</Link>
           {FEATURES.priceBoard && (<>
-            <span className="text-gray-300" aria-hidden>·</span>
+            <span className="hidden sm:inline text-gray-300" aria-hidden>·</span>
             <Link href="/prices" className="inline-flex items-center min-h-[44px] px-2 hover:text-[#0B2438]">{L('Material prices', 'سامان کی قیمتیں', 'أسعار المواد')}</Link>
           </>)}
-          <span className="text-gray-300" aria-hidden>·</span>
+          <span className="hidden sm:inline text-gray-300" aria-hidden>·</span>
           <Link href="/deal-protection" className="inline-flex items-center min-h-[44px] px-2 hover:text-[#0B2438]">{L('How we protect your deal', 'ہم آپ کے سودے کی حفاظت کیسے کرتے ہیں', 'كيف نحمي صفقتك')}</Link>
-          <span className="text-gray-300" aria-hidden>·</span>
+          <span className="hidden sm:inline text-gray-300" aria-hidden>·</span>
           <Link href="/privacy" className="inline-flex items-center min-h-[44px] px-2 hover:text-[#0B2438]">{L('Privacy policy', 'رازداری کی پالیسی', 'سياسة الخصوصية')}</Link>
-          <span className="text-gray-300" aria-hidden>·</span>
+          <span className="hidden sm:inline text-gray-300" aria-hidden>·</span>
           <Link href="/terms" className="inline-flex items-center min-h-[44px] px-2 hover:text-[#0B2438]">{L('Terms and conditions', 'شرائط و ضوابط', 'الشروط والأحكام')}</Link>
-          <span className="text-gray-300" aria-hidden>·</span>
+          <span className="hidden sm:inline text-gray-300" aria-hidden>·</span>
           {/* /support is open to visitors (round-6 UX-036) */}
           <Link href="/support" className="inline-flex items-center min-h-[44px] px-2 hover:text-[#0B2438]">{L('Contact us', 'ہم سے رابطہ کریں', 'تواصل معنا')}</Link>
-          <span className="text-gray-300" aria-hidden>·</span>
+          <span className="hidden sm:inline text-gray-300" aria-hidden>·</span>
           <Link href="/account/delete" className="inline-flex items-center min-h-[44px] px-2 hover:text-[#0B2438]">{L('Delete an account', 'اکاؤنٹ حذف کریں', 'حذف الحساب')}</Link>
         </div>
         <p className="text-[12px] text-gray-600 mt-4">© {new Date().getFullYear()} {L('Taseerak. All rights reserved.', 'تسعیرک۔ جملہ حقوق محفوظ ہیں۔', 'تسعيرك. جميع الحقوق محفوظة.')}</p>

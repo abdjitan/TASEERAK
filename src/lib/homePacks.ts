@@ -19,7 +19,11 @@ import { cleanArName } from '@/lib/displayName'
 // derive (round-4 UX-185): the quantity follows other rows of the pack (sum ÷ per, rounded up) until the buyer edits it,
 //   e.g. tile adhesive = one bag per 4 m² of the wall and floor tiles.
 export type PackCalc = 'room' | 'area' | 'none'
-export type PackItem = { name: string; sector: Sector; qty: number | null; unit?: string; on?: boolean; hint?: { ar: string; en: string; ur: string }; calc?: PackCalc; cover?: number; coats?: number; derive?: { from: string[]; per: number } }
+// choose (round-7 UX-007): a size the buyer MUST pick before adding (AC capacity, heater volume), so every supplier
+//   prices the same thing; the chosen option's Arabic text goes into the line's details for the suppliers.
+export type Tri = { ar: string; en: string; ur: string }
+export type PackChoice = { key: string; label: Tri; hint?: Tri; options: { value: string; label: Tri }[] }
+export type PackItem = { name: string; sector: Sector; qty: number | null; unit?: string; on?: boolean; hint?: { ar: string; en: string; ur: string }; calc?: PackCalc; cover?: number; coats?: number; derive?: { from: string[]; per: number }; choose?: PackChoice[] }
 export type HomePack = {
   id: string
   img: string // /images/sections/<img>.webp (sheet header background)
@@ -34,6 +38,27 @@ const AREA = { ar: 'المساحة بالمتر المربع، أو احسبها
 const LEN = { ar: 'قِس الطول بالمتر', en: 'Measure the length in metres', ur: 'لمبائی میٹر میں ناپیں' }
 const HOW_MANY = { ar: 'اكتب العدد الذي تحتاجه', en: 'Write how many you need', ur: 'تعداد لکھیں' }
 const WINDOWS = { ar: 'اضرب عرض كل نافذة في ارتفاعها بالمتر، ثم اجمع النتائج', en: 'Multiply each window’s width by its height in metres, then add the results', ur: 'ہر کھڑکی کی چوڑائی کو اس کی اونچائی سے میٹر میں ضرب دیں، پھر نتائج جمع کریں' }
+// round-7 UX-007: the AC capacity and type, the heater volume
+const AC_CHOICES: PackChoice[] = [
+  { key: 'btu', label: { ar: 'قدرة المكيف', en: 'AC capacity', ur: 'اے سی کی طاقت' }, hint: { ar: 'اختر قدرة المكيف حسب مساحة الغرفة', en: 'Choose the AC capacity by the room size', ur: 'کمرے کے سائز کے مطابق اے سی کی طاقت چنیں' }, options: [
+    { value: 'قدرة 12 ألف وحدة (غرفة حتى 12 م²)', label: { ar: '12 ألف وحدة (غرفة حتى 12 م²)', en: '12,000 BTU (room up to 12 m²)', ur: '12 ہزار BTU (12 م² تک کمرہ)' } },
+    { value: 'قدرة 18 ألف وحدة (غرفة حتى 20 م²)', label: { ar: '18 ألف وحدة (غرفة حتى 20 م²)', en: '18,000 BTU (room up to 20 m²)', ur: '18 ہزار BTU (20 م² تک کمرہ)' } },
+    { value: 'قدرة 24 ألف وحدة (غرفة حتى 30 م²)', label: { ar: '24 ألف وحدة (غرفة حتى 30 م²)', en: '24,000 BTU (room up to 30 m²)', ur: '24 ہزار BTU (30 م² تک کمرہ)' } },
+    { value: 'قدرة 30 ألف وحدة (مجلس كبير)', label: { ar: '30 ألف وحدة (مجلس كبير)', en: '30,000 BTU (large sitting room)', ur: '30 ہزار BTU (بڑی بیٹھک)' } },
+  ] },
+  { key: 'mode', label: { ar: 'النوع', en: 'Type', ur: 'قسم' }, options: [
+    { value: 'بارد فقط', label: { ar: 'بارد فقط', en: 'Cooling only', ur: 'صرف ٹھنڈا' } },
+    { value: 'حار وبارد', label: { ar: 'حار وبارد', en: 'Heating and cooling', ur: 'گرم اور ٹھنڈا' } },
+  ] },
+]
+const HEATER_CHOICES: PackChoice[] = [
+  { key: 'litres', label: { ar: 'سعة السخان', en: 'Heater volume', ur: 'گیزر کی گنجائش' }, hint: { ar: 'اختر سعة السخان (50 لتراً تكفي حمّاماً واحداً عادةً)', en: 'Choose the heater volume (50 litres usually serves one bathroom)', ur: 'گیزر کی گنجائش چنیں (50 لیٹر عموماً ایک باتھ روم کے لیے کافی)' }, options: [
+    { value: 'سعة 30 لتراً', label: { ar: '30 لتراً', en: '30 litres', ur: '30 لیٹر' } },
+    { value: 'سعة 50 لتراً', label: { ar: '50 لتراً', en: '50 litres', ur: '50 لیٹر' } },
+    { value: 'سعة 80 لتراً', label: { ar: '80 لتراً', en: '80 litres', ur: '80 لیٹر' } },
+    { value: 'سعة 100 لتر', label: { ar: '100 لتر', en: '100 litres', ur: '100 لیٹر' } },
+  ] },
+]
 const OUT_AREA = { ar: 'اكتب المساحة بالمتر المربع (مثلاً 4 × 5 = 20)', en: 'Write the area in square metres (e.g. 4 × 5 = 20)', ur: 'رقبہ مربع میٹر میں لکھیں (مثلاً 4 × 5 = 20)' }
 
 export const HOME_PACKS: HomePack[] = [
@@ -86,7 +111,7 @@ export const HOME_PACKS: HomePack[] = [
     id: 'ac', img: 'hvac_fire', cover: 'مكيف سبليت', photo: '/images/packs/ac.webp', ar: 'تكييف غرفة', en: 'Air-condition a room', ur: 'کمرے کا اے سی',
     sub: { ar: 'مكيف سبليت وملحقات تركيبه', en: 'Split AC and its mounting parts', ur: 'اسپلٹ اے سی اور اس کی فٹنگ' },
     items: [
-      { name: 'مكيف سبليت', sector: 'mechanical', qty: 1 },
+      { name: 'مكيف سبليت', sector: 'mechanical', qty: 1, choose: AC_CHOICES },
       { name: 'حامل وقاعدة مكيف', sector: 'mechanical', qty: 1 },
       { name: 'مفتاح مكيّف ثنائي القطب بلمبة (20A/45A DP Switch)', sector: 'electrical', qty: 1 },
     ],
@@ -95,7 +120,7 @@ export const HOME_PACKS: HomePack[] = [
     id: 'heater', img: 'plumbing', cover: 'سخانات مياه كهربائية', photo: '/images/packs/heater.webp', ar: 'تغيير سخان', en: 'Replace a water heater', ur: 'گیزر بدلیں',
     sub: { ar: 'سخان وصمام أمان وتوصيلات', en: 'Heater, safety valve, hoses', ur: 'گیزر، سیفٹی والو، پائپ' },
     items: [
-      { name: 'سخانات مياه كهربائية', sector: 'mechanical', qty: 1 },
+      { name: 'سخانات مياه كهربائية', sector: 'mechanical', qty: 1, choose: HEATER_CHOICES },
       { name: 'صمام أمان السخان (Water Heater Safety Valve)', sector: 'mechanical', qty: 1 },
       { name: 'خرطوم سخان مرن', sector: 'mechanical', qty: 2 },
       { name: 'مجموعة تثبيت حائط للسخان والغسالة (Wall-mount Group)', sector: 'mechanical', qty: 1 },
@@ -106,7 +131,8 @@ export const HOME_PACKS: HomePack[] = [
     sub: { ar: 'ستائر وحوامل', en: 'Curtains and rails', ur: 'پردے اور ریلیں' },
     items: [
       { name: 'ستائر قماش', sector: 'architectural', qty: null, unit: 'م.ط', calc: 'none', hint: { ar: 'اكتب عرض النوافذ بالمتر', en: 'Write the window width in metres', ur: 'کھڑکی کی چوڑائی میٹر میں لکھیں' } },
-      { name: 'ستائر رول (بلاك آوت)', sector: 'architectural', qty: null, unit: 'م²', hint: WINDOWS, calc: 'none' },
+      // round-7 UX-022: an alternative to the fabric curtains for the same windows: unticked by default
+      { name: 'ستائر رول (بلاك آوت)', sector: 'architectural', qty: null, unit: 'م²', on: false, calc: 'none', hint: { ar: 'بديل عن الستائر القماش، اختر أحدهما. اضرب عرض كل نافذة في ارتفاعها بالمتر ثم اجمع النتائج', en: 'An alternative to the fabric curtains: choose one of them. Multiply each window’s width by its height in metres, then add the results', ur: 'کپڑے کے پردوں کا متبادل، ان میں سے ایک چنیں۔ ہر کھڑکی کی چوڑائی کو اس کی اونچائی سے میٹر میں ضرب دیں، پھر نتائج جمع کریں' } },
       { name: 'مجاري وحوامل الستائر', sector: 'architectural', qty: null, unit: 'م.ط', hint: LEN },
     ],
   },

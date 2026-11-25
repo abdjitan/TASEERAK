@@ -4,7 +4,9 @@
 // askConfirm() opens a navy/gold modal and resolves true/false; notify() shows a message with one
 // gold «حسناً» button and resolves when it is closed. Imperative on purpose, so a call site only
 // changes `confirm(x)` → `await askConfirm(x)` and `alert(x)` → `notify(x)` (no provider to wire).
-// Escape / backdrop = cancel; Enter = the focused button.
+// Escape / backdrop = cancel; Enter = the focused button. With { dismissValue: null } a dismissal
+// (Escape, a tap outside) resolves null instead, so «stay on the page» differs from the second button
+// (round-7 UX-035: «leave without saving?» must not treat a tap outside as «leave»).
 // A destructive confirm (danger) focuses «تراجع», so a stray Enter never deletes anything.
 // Focus stays inside the open dialog (Tab cycles, the page behind is inert) and returns to the
 // control that opened it when it closes (UX-106).
@@ -12,7 +14,7 @@ import { createRoot } from 'react-dom/client'
 import { useEffect, useRef, type ReactElement } from 'react'
 import { Info, Check, AlertCircle, type LucideIcon } from 'lucide-react'
 
-type Opts = { danger?: boolean; okLabel?: string; cancelLabel?: string; title?: string }
+type Opts = { danger?: boolean; okLabel?: string; cancelLabel?: string; title?: string; dismissValue?: null }
 export type NotifyTone = 'info' | 'success' | 'error'
 type NotifyOpts = { tone?: NotifyTone; okLabel?: string; title?: string }
 
@@ -23,20 +25,21 @@ function labels() {
   return { ok: 'تأكيد', cancel: 'تراجع', done: 'حسناً', dir: 'rtl' as const }
 }
 
-function Dialog({ message, opts, done }: { message: string; opts: Opts; done: (v: boolean) => void }) {
+function Dialog({ message, opts, done }: { message: string; opts: Opts; done: (v: boolean | null) => void }) {
+  const dismiss = opts.dismissValue === null ? null : false
   const okRef = useRef<HTMLButtonElement>(null)
   const cancelRef = useRef<HTMLButtonElement>(null)
   const l = labels()
   useEffect(() => {
     // destructive: the safe choice has the focus
     ;(opts.danger ? cancelRef.current : okRef.current)?.focus()
-    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') done(false) }
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') done(dismiss) }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [done, opts.danger])
+  }, [done, opts.danger, dismiss])
   return (
     <div className="fixed inset-0 z-[1000] flex items-end sm:items-center justify-center p-4 bg-[#071827]/60 backdrop-blur-sm" dir={l.dir}
-      onClick={() => done(false)} role="presentation">
+      onClick={() => done(dismiss)} role="presentation">
       <div role="alertdialog" aria-modal="true" aria-label={(opts.title || message).slice(0, 80)} onClick={e => e.stopPropagation()}
         className={`w-full max-w-sm rounded-2xl bg-white shadow-2xl border-t-4 ${opts.danger ? 'border-[#B42318]' : 'border-[#D4A543]'} p-5 animate-fade-in`}>
         {opts.title && <h2 className="text-base font-bold text-[#071827] mb-1.5">{opts.title}</h2>}
@@ -94,7 +97,7 @@ function Notice({ message, opts, done }: { message: string; opts: NotifyOpts; do
   )
 }
 
-function mount(render: (done: (v: boolean) => void) => ReactElement): Promise<boolean> {
+function mount(render: (done: (v: boolean | null) => void) => ReactElement): Promise<boolean | null> {
   if (typeof document === 'undefined') return Promise.resolve(false)
   return new Promise(resolve => {
     // remember where the focus was, make the page behind inert and keep Tab inside the dialog (UX-106)
@@ -115,7 +118,7 @@ function mount(render: (done: (v: boolean) => void) => ReactElement): Promise<bo
     document.addEventListener('keydown', trap)
     const root = createRoot(host)
     let settled = false
-    const done = (v: boolean) => {
+    const done = (v: boolean | null) => {
       if (settled) return
       settled = true
       document.removeEventListener('keydown', trap)
@@ -132,7 +135,9 @@ function mount(render: (done: (v: boolean) => void) => ReactElement): Promise<bo
   })
 }
 
-export function askConfirm(message: string, opts: Opts = {}): Promise<boolean> {
+export function askConfirm(message: string, opts: Opts & { dismissValue: null }): Promise<boolean | null>
+export function askConfirm(message: string, opts?: Opts): Promise<boolean>
+export function askConfirm(message: string, opts: Opts = {}): Promise<boolean | null> {
   return mount(done => <Dialog message={message} opts={opts} done={done} />)
 }
 

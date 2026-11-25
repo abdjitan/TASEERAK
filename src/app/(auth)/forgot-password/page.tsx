@@ -16,7 +16,9 @@ const txt = {
     back: 'رجوع إلى تسجيل الدخول', home: 'الرئيسية',
     sentTitle: 'تحقق من بريدك',
     sentSub: 'إذا كان {email} مسجّلاً لدينا فستصلك رسالة فيها رابط لتعيين كلمة مرور جديدة. تفقّد مجلد الرسائل غير المرغوب فيها أيضاً.',
-    phoneQ: 'سجّلت برقم جوالك؟', phoneA: 'لا تحتاج كلمة مرور: ادخل برمز يصلك على جوالك.', phoneBtn: 'الدخول برقم الجوال',
+    sentSubIn: 'أرسلنا إلى {email} رابطاً لتعيين كلمة مرور جديدة. تفقّد مجلد الرسائل غير المرغوب فيها أيضاً.',
+    phoneQ: 'سجّلت برقم جوالك؟', phoneA: 'إن أضفت بريداً إلى حسابك فاكتبه أعلاه لتعيين كلمة مرور تدخل بها، وإلا فادخل برمز يصلك على جوالك.', phoneBtn: 'الدخول برقم الجوال',
+    phoneADown: 'إن أضفت بريداً إلى حسابك فاكتبه أعلاه لتعيين كلمة مرور تدخل بها. خدمة الرسائل النصية متوقفة مؤقتاً، فإن لم يكن لحسابك بريد فتواصل مع الدعم.', supportBtn: 'تواصل مع الدعم',
     err: 'تعذّر الإرسال، تأكد من البريد وحاول مرة أخرى',
     resent: 'أرسلنا الرابط مرة أخرى.', notArrived: 'لم تصلك الرسالة؟', resend: 'أعد الإرسال', resendIn: 'أعد الإرسال بعد {s} ثانية', editEmail: 'تعديل البريد',
   },
@@ -26,7 +28,9 @@ const txt = {
     back: 'Back to sign in', home: 'Home',
     sentTitle: 'Check your inbox',
     sentSub: 'If {email} is registered with us, you will get a message with a link to set a new password. Check your spam folder too.',
-    phoneQ: 'Signed up with your mobile number?', phoneA: 'You do not need a password: sign in with a code sent to your mobile.', phoneBtn: 'Sign in with my mobile',
+    sentSubIn: 'We sent a link to set a new password to {email}. Check your spam folder too.',
+    phoneQ: 'Signed up with your mobile number?', phoneA: 'If you added an email to your account, type it above to set a password to sign in with; otherwise sign in with a code sent to your mobile.', phoneBtn: 'Sign in with my mobile',
+    phoneADown: 'If you added an email to your account, type it above to set a password to sign in with. The text message service is temporarily down, so if your account has no email, contact support.', supportBtn: 'Contact support',
     err: 'Could not send. Check the email and try again',
     resent: 'We sent the link again.', notArrived: 'Did the message not arrive?', resend: 'Send it again', resendIn: 'Send again in {s} s', editEmail: 'Change the email',
   },
@@ -36,7 +40,9 @@ const txt = {
     back: 'سائن ان پر واپس', home: 'مرکزی صفحہ',
     sentTitle: 'اپنا ان باکس دیکھیں',
     sentSub: 'اگر {email} ہمارے پاس رجسٹرڈ ہے تو آپ کو نیا پاسورڈ مقرر کرنے کے لنک والا پیغام ملے گا۔ اسپام فولڈر بھی دیکھیں۔',
-    phoneQ: 'موبائل نمبر سے رجسٹر کیا تھا؟', phoneA: 'پاسورڈ کی ضرورت نہیں: موبائل پر آنے والے کوڈ سے سائن اِن کریں۔', phoneBtn: 'موبائل نمبر سے سائن اِن',
+    sentSubIn: 'ہم نے نیا پاسورڈ مقرر کرنے کا لنک {email} پر بھیج دیا ہے۔ اسپام فولڈر بھی دیکھیں۔',
+    phoneQ: 'موبائل نمبر سے رجسٹر کیا تھا؟', phoneA: 'اگر آپ نے اپنے اکاؤنٹ میں ای میل شامل کی ہے تو اسے اوپر لکھیں اور سائن اِن کے لیے پاسورڈ مقرر کریں، ورنہ موبائل پر آنے والے کوڈ سے سائن اِن کریں۔', phoneBtn: 'موبائل نمبر سے سائن اِن',
+    phoneADown: 'اگر آپ نے اپنے اکاؤنٹ میں ای میل شامل کی ہے تو اسے اوپر لکھیں اور سائن اِن کے لیے پاسورڈ مقرر کریں۔ ٹیکسٹ میسج سروس عارضی طور پر بند ہے، اس لیے اگر اکاؤنٹ میں ای میل نہیں تو سپورٹ سے رابطہ کریں۔', supportBtn: 'سپورٹ سے رابطہ کریں',
     err: 'بھیجنے میں ناکامی، دوبارہ کوشش کریں',
     resent: 'ہم نے لنک دوبارہ بھیج دیا۔', notArrived: 'پیغام نہیں ملا؟', resend: 'دوبارہ بھیجیں', resendIn: '{s} سیکنڈ بعد دوبارہ بھیجیں', editEmail: 'ای میل تبدیل کریں',
   },
@@ -70,6 +76,9 @@ export default function ForgotPasswordPage() {
       if (data?.user && e && !/@phone\.taseerak\.com$/i.test(e)) { setEmail(e); setSignedIn(true) }
     }, () => {})
   }, [])
+  // while SMS is down the «sign in with a mobile code» way out leads nowhere: support instead (round-7 UX-093)
+  const [smsDown, setSmsDown] = useState(false)
+  useEffect(() => { createClient().rpc('sms_is_down').then(({ data }: any) => { if (data === true) setSmsDown(true) }, () => {}) }, [])
   const backHref = signedIn ? '/settings?tab=password' : '/login?m=email'
   const backLabel = signedIn ? L('Back to settings', 'ترتیبات پر واپس', 'رجوع إلى الإعدادات') : t.back
   const supportNote = (
@@ -78,6 +87,8 @@ export default function ForgotPasswordPage() {
       <a href="https://wa.me/12135614366" target="_blank" rel="noopener noreferrer" className="inline-flex items-center min-h-[44px] font-bold underline" style={{ color: '#8F6820' }}>
         {L('Contact the support team on WhatsApp', 'واٹس ایپ پر سپورٹ ٹیم سے رابطہ کریں', 'تواصل مع فريق الدعم عبر واتساب')}
       </a>
+      {/* a US number with no word on it can look like a scam (round-7 UX-204) */}
+      <span className="block text-[12px] text-gray-600">{L('Taseerak’s official WhatsApp Business number (it starts with +1 and shows the name Taseerak).', 'تسعیرک کا سرکاری واٹس ایپ بزنس نمبر (یہ +1 سے شروع ہوتا ہے اور تسعیرک کے نام سے دکھائی دیتا ہے)۔', 'رقم تسعيرك الرسمي على واتساب للأعمال (يبدأ بـ ‎+1 ويظهر باسم تسعيرك).')}</span>
     </p>
   )
   function backToForm(focus: boolean) {
@@ -142,7 +153,8 @@ export default function ForgotPasswordPage() {
             <div className="text-center">
               <div className="text-5xl mb-4"><Glyph e="📬" /></div>
               <h2 className="text-xl font-bold text-[#0B2438] mb-2">{t.sentTitle}</h2>
-              <p className="text-sm text-gray-700 mb-6">{t.sentSub.split('{email}')[0]}<span dir="ltr" className="font-bold">{email}</span>{t.sentSub.split('{email}')[1]}</p>
+              {/* signed in: the account is known, so no «if it is registered with us» (round-7 UX-164) */}
+              <p className="text-sm text-gray-700 mb-6">{(signedIn ? t.sentSubIn : t.sentSub).split('{email}')[0]}<span dir="ltr" className="font-bold">{email}</span>{(signedIn ? t.sentSubIn : t.sentSub).split('{email}')[1]}</p>
               <div className="mb-5 rounded-xl bg-[#F5F7FA] border border-gray-200 p-3 text-sm text-gray-700">
                 <div className="font-bold text-[#0B2438] mb-1">{t.notArrived}</div>
                 {resent && <p role="status" className="text-[13px] font-semibold text-emerald-800 mb-2">{t.resent}</p>}
@@ -166,20 +178,20 @@ export default function ForgotPasswordPage() {
               {error && <div role="alert" className="bg-red-50 border border-red-200 text-red-700 text-sm rounded-xl p-3 mb-4"><Glyph e="⚠" /> {error}</div>}
               <form onSubmit={handleSubmit}>
                 <label htmlFor="fp-email" className="block text-xs font-bold text-gray-500 mb-1.5">{t.email}</label>
-                <input id="fp-email" ref={emailRef} type="email" autoComplete="email" dir="ltr" value={email} onChange={e => setEmail(e.target.value)} readOnly={signedIn} className={`input-field mb-4 ${signedIn ? 'bg-gray-50 text-gray-700' : ''}`} placeholder="info@company.com" required disabled={loading} />
+                <input id="fp-email" ref={emailRef} type="email" autoComplete="email" dir="ltr" value={email} onChange={e => setEmail(e.target.value)} readOnly={signedIn} className={`input-field mb-4 ${signedIn ? 'bg-gray-50 text-gray-700' : ''}`} placeholder="name@example.com" required disabled={loading} />
                 <div className="flex justify-center mb-5">
                   <Turnstile ref={captchaRef} siteKey={TURNSTILE_SITE_KEY} onToken={setCaptchaToken} dir={dir} language={locale} />
                 </div>
-                <button type="submit" disabled={loading || needCaptcha}
-                  className="w-full min-h-[48px] py-3.5 rounded-xl font-bold text-[#071827] text-sm disabled:opacity-50 transition-all active:scale-[0.98] hover:shadow-lg"
-                  style={{ background: '#D4A543' }}>
+                <button type="submit" disabled={loading || needCaptcha} className="btn-primary btn-lg w-full">
                   {loading ? t.sending : t.send}
                 </button>
               </form>
               {/* a phone sign-up has no password to reset (UX-184) */}
               {!signedIn && <div className="mt-5 rounded-xl bg-[#F5F7FA] border border-gray-200 p-3 text-sm text-gray-700">
-                <span className="font-bold text-[#0B2438]">{t.phoneQ}</span> {t.phoneA}{' '}
-                <Link href="/login" className="inline-flex items-center min-h-[44px] font-bold hover:underline" style={{ color: '#8F6820' }}>{t.phoneBtn}</Link>
+                <span className="font-bold text-[#0B2438]">{t.phoneQ}</span> {smsDown ? t.phoneADown : t.phoneA}{' '}
+                {smsDown
+                  ? <Link href="/support?topic=email" className="inline-flex items-center min-h-[44px] font-bold hover:underline" style={{ color: '#8F6820' }}>{t.supportBtn}</Link>
+                  : <Link href="/login" className="inline-flex items-center min-h-[44px] font-bold hover:underline" style={{ color: '#8F6820' }}>{t.phoneBtn}</Link>}
               </div>}
               <p className="text-center text-sm text-gray-600 mt-3">
                 <Link href={backHref} className="inline-flex items-center min-h-[44px] font-medium hover:underline" style={{ color: '#8F6820' }}>{backLabel}</Link>

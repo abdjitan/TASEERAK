@@ -41,9 +41,9 @@ export default function PartialExtrasConfirm({ offer, locale, wonCount, onDone }
   }
 
   return (
-    <div className="mt-4 rounded-xl border border-amber-300 bg-amber-50 p-4 text-start" role="region" aria-label={L('Confirm charges', 'چارجز کی تصدیق', 'تأكيد الرسوم')}>
-      <h4 className="font-bold text-amber-900 text-sm mb-1"><Glyph e="🚚" /> {L('Confirm the delivery and other charges', 'ڈیلیوری اور دیگر چارجز کی تصدیق کریں', 'أكّد رسوم التوصيل والرسوم الإضافية')}</h4>
-      <p className="text-xs text-amber-900/80 leading-relaxed mb-3">
+    <div className="mt-4 rounded-xl border border-warn-border bg-warn-bg p-4 text-start" role="region" aria-label={L('Confirm charges', 'چارجز کی تصدیق', 'تأكيد الرسوم')}>
+      <h4 className="font-bold text-warn-text text-sm mb-1"><Glyph e="🚚" /> {L('Confirm the delivery and other charges', 'ڈیلیوری اور دیگر چارجز کی تصدیق کریں', 'أكّد رسوم التوصيل والرسوم الإضافية')}</h4>
+      <p className="text-xs text-warn-text leading-relaxed mb-3">
         {wonCount
           ? L(`The buyer chose ${wonCount} of the materials you priced, not all of them. Set the charges for these materials only: keep them or lower them.`, `خریدار نے آپ کی قیمت والے سامان میں سے صرف ${wonCount} چنے ہیں۔ صرف انہی کے چارجز رکھیں یا کم کریں۔`, `اختار المشتري ${arCount(wonCount, 'مادة واحدة', 'مادتين', 'مواد', 'مادة')} مما سعّرته، لا كل المواد. حدّد الرسوم لهذه المواد فقط: أبقِها أو خفّضها.`)
           : L('The buyer chose only some of the materials you priced. Set the charges for these materials only: keep them or lower them.', 'خریدار نے آپ کی قیمت والے سامان میں سے کچھ ہی چنے ہیں۔ صرف انہی کے چارجز رکھیں یا کم کریں۔', 'اختار المشتري بعض المواد التي سعّرتها فقط. حدّد الرسوم لهذه المواد فقط: أبقِها أو خفّضها.')}

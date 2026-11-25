@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
+import { cache } from 'react'
 import { createPublicClient } from '@/lib/supabase/server'
 import PublicHeader from '@/components/public/PublicHeader'
 import PublicFooter from '@/components/public/PublicFooter'
@@ -11,14 +12,15 @@ export const dynamic = 'force-dynamic'
 
 
 // a network or server failure is not «this supplier does not exist» (round-6 UX-138)
-async function loadSupplier(id: string): Promise<{ s: any; failed: boolean }> {
+// cache(): generateMetadata and the page share ONE call per request (round-7 UX-235)
+const loadSupplier = cache(async (id: string): Promise<{ s: any; failed: boolean }> => {
   try {
     const supabase = createPublicClient()
     const { data, error } = await supabase.rpc('get_supplier_public', { p_id: id })
     if (error) return { s: null, failed: true }
     return { s: Array.isArray(data) ? data[0] : data, failed: false }
   } catch { return { s: null, failed: true } }
-}
+})
 async function getSupplier(id: string) { return (await loadSupplier(id)).s }
 
 export async function generateMetadata(props: { params: Promise<{ id: string }> }): Promise<Metadata> {

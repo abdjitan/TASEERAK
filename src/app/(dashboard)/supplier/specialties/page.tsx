@@ -194,8 +194,27 @@ export default function SpecialtiesPage() {
     if (!dirty) return
     const h = (e: BeforeUnloadEvent) => { e.preventDefault(); e.returnValue = '' }
     window.addEventListener('beforeunload', h)
-    return () => window.removeEventListener('beforeunload', h)
-  }, [dirty])
+    // round-7 UX-070: menu links inside the site skip beforeunload, so they are caught here (capture phase)
+    const onClick = async (e: MouseEvent) => {
+      if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return
+      const a = (e.target as HTMLElement | null)?.closest?.('a[href]') as HTMLAnchorElement | null
+      if (!a || a.target === '_blank' || a.hasAttribute('download')) return
+      const url = new URL(a.href, window.location.href)
+      if (url.origin !== window.location.origin || url.pathname === window.location.pathname) return
+      e.preventDefault(); e.stopPropagation()
+      // dismissValue (askConfirm, round-7 UX-035): closing the dialog = stay on the page
+      const r = await askConfirm(
+        locale === 'en' ? 'Your specialties are not saved. Do you want to save them?' : locale === 'ur' ? 'آپ کے تخصصات محفوظ نہیں ہوئے۔ کیا آپ انہیں محفوظ کرنا چاہتے ہیں؟' : 'لم تُحفظ تخصصاتك. هل تريد حفظها؟',
+        { okLabel: locale === 'en' ? 'Save' : locale === 'ur' ? 'محفوظ کریں' : 'احفظ', cancelLabel: locale === 'en' ? 'Leave without saving' : locale === 'ur' ? 'محفوظ کیے بغیر نکلیں' : 'اخرج دون حفظ', dismissValue: null },
+      )
+      if (r === null || r === undefined) return
+      if (r === true) { const ok = await handleSave(); if (!ok) return }
+      window.removeEventListener('beforeunload', h)
+      window.location.href = url.href
+    }
+    document.addEventListener('click', onClick, true)
+    return () => { window.removeEventListener('beforeunload', h); document.removeEventListener('click', onClick, true) }
+  }, [dirty]) // eslint-disable-line react-hooks/exhaustive-deps
   // UX-006: the sticky save bar is an action bar (the assistant bubble must not cover it)
   useEffect(() => {
     if (typeof document === 'undefined' || isMember) return
@@ -220,14 +239,14 @@ export default function SpecialtiesPage() {
     setMySpecialties(prev => prev.includes(key) ? prev.filter(x => x !== key) : [...prev, key])
   }
 
-  async function handleSave() {
-    if (isMember || loadFailed) return
+  async function handleSave(): Promise<boolean> {
+    if (isMember || loadFailed) return false
     // no sector at all: the seller would receive no requests (audit 2026-11-01) — ask first
     if (sectorsFor(mySectors, mySpecialties).length === 0 && !(await askConfirm(locale === 'en'
       ? 'You have not chosen any sector, so no requests will reach you. Save anyway?'
       : locale === 'ur'
         ? 'آپ نے کوئی شعبہ منتخب نہیں کیا، اس لیے آپ کو کوئی درخواست نہیں ملے گی۔ پھر بھی محفوظ کریں؟'
-        : 'لم تختر أي قطاع، ولن تصلك أي طلبات تسعير. هل تريد الحفظ على أي حال؟'))) return
+        : 'لم تختر أي قطاع، ولن تصلك أي طلبات تسعير. هل تريد الحفظ على أي حال؟'))) return false
     setSaving(true); setMsg(''); setMsgErr(false)
     const supabase = createClient()
 
@@ -239,7 +258,7 @@ export default function SpecialtiesPage() {
       p_specialties: mySpecialties,
     })
     setSaving(false)
-    if (error) { setMsgErr(true); setMsg(locale === 'en' ? 'Could not save your specialties. Check your connection and try again.' : locale === 'ur' ? 'آپ کے تخصصات محفوظ نہیں ہو سکے۔ کنکشن چیک کر کے دوبارہ کوشش کریں۔' : 'تعذّر حفظ تخصصاتك. تحقّق من اتصالك وحاول مرة أخرى.'); return }
+    if (error) { setMsgErr(true); setMsg(locale === 'en' ? 'Could not save your specialties. Check your connection and try again.' : locale === 'ur' ? 'آپ کے تخصصات محفوظ نہیں ہو سکے۔ کنکشن چیک کر کے دوبارہ کوشش کریں۔' : 'تعذّر حفظ تخصصاتك. تحقّق من اتصالك وحاول مرة أخرى.'); return false }
     setMySectors(secs)
     setSavedKey(selKey(secs, mySpecialties))
     // round-4 UX-141: one success sign only (the «saved» bar below); no second green message
@@ -255,6 +274,7 @@ export default function SpecialtiesPage() {
       }).length
       setMatchCount(n)
     }, () => {})
+    return true
   }
 
   async function submitSuggestion() {
@@ -402,15 +422,22 @@ export default function SpecialtiesPage() {
           <h2 className="font-bold text-sm" style={{ color: '#0B2438' }}>{T.suggestTitle}</h2>
           <p className="text-xs text-gray-500 mt-0.5 mb-4">{T.suggestSub}</p>
 
+          {/* round-7 UX-149: visible labels, the required field marked */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <input value={suggestName} onChange={e => setSuggestName(e.target.value)} aria-label={T.sNamePh}
-              className="input-field" placeholder={T.sNamePh} />
-            <select value={suggestSector} onChange={e => setSuggestSector(e.target.value)} className="input-field" aria-label={T.sSectorPh}>
+            <div>
+              <label htmlFor="sug-name" className="block text-xs font-bold text-gray-600 mb-1">{locale === 'en' ? 'Material name *' : locale === 'ur' ? 'مواد کا نام *' : 'اسم المادة *'}</label>
+              <input id="sug-name" value={suggestName} onChange={e => setSuggestName(e.target.value)} required aria-required="true"
+                className="input-field" placeholder={T.sNamePh} />
+            </div>
+            <div>
+              <label htmlFor="sug-sector" className="block text-xs font-bold text-gray-600 mb-1">{locale === 'en' ? 'Sector (optional)' : locale === 'ur' ? 'شعبہ (اختیاری)' : 'القطاع (اختياري)'}</label>
+            <select id="sug-sector" value={suggestSector} onChange={e => setSuggestSector(e.target.value)} className="input-field">
               <option value="">{T.sSectorPh}</option>
               {Object.keys(SECTOR_LABELS).map(s => (
                 <option key={s} value={s}>{secLabel(s)}</option>
               ))}
             </select>
+            </div>
           </div>
           {suggestSector && (() => {
             const gks = sortGroupKeys([...new Set(Object.values((SUB_CATEGORIES as any)[suggestSector] || {}).map((x: any) => x.group))] as string[])
@@ -422,8 +449,9 @@ export default function SpecialtiesPage() {
               </select>
             )
           })()}
-          <textarea value={suggestDesc} onChange={e => setSuggestDesc(e.target.value)} aria-label={T.sDescPh}
-            className="input-field mt-3" rows={2} placeholder={T.sDescPh} />
+          <label htmlFor="sug-desc" className="block text-xs font-bold text-gray-600 mt-3 mb-1">{locale === 'en' ? 'Description or specifications (optional)' : locale === 'ur' ? 'تفصیل یا خصوصیات (اختیاری)' : 'الوصف أو المواصفات (اختياري)'}</label>
+          <textarea id="sug-desc" value={suggestDesc} onChange={e => setSuggestDesc(e.target.value)}
+            className="input-field" rows={2} placeholder={T.sDescPh} />
           {/* round-4 UX-141: a dashed upload area in the page language (no browser «Choose file») */}
           {suggestFile ? (
             <div className="mt-3 flex items-center gap-3 bg-[#0B2438]/5 rounded-xl p-2.5 border border-[#0B2438]/20">

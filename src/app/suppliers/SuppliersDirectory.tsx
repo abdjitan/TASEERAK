@@ -17,9 +17,10 @@ import { FEATURES } from '@/lib/features'
 // ومحسوبة الدرجة من صفحة الخادم ويُصفّيها في المتصفح (قائمة محدودة).
 
 function rankBadge(i: number) {
-  if (i === 0) return { e: <Glyph e="🥇" />, c: '#D4AF37' }
-  if (i === 1) return { e: <Glyph e="🥈" />, c: '#9CA3AF' }
-  if (i === 2) return { e: <Glyph e="🥉" />, c: '#CD7F32' }
+  // brand colours (round-7 UX-175)
+  if (i === 0) return { e: <Glyph e="🥇" />, c: '#D4A543' }
+  if (i === 1) return { e: <Glyph e="🥈" />, c: '#728196' }
+  if (i === 2) return { e: <Glyph e="🥉" />, c: '#9D7425' }
   return { e: `${i + 1}`, c: '#0B2438' }
 }
 
@@ -63,7 +64,7 @@ export default function SuppliersDirectory({ suppliers }: { suppliers: any[] }) 
       <p className="font-bold text-[#0B2438] mb-1">{L('Supplier directory coming soon', 'سپلائر ڈائریکٹری جلد', 'دليل الموردين قريباً')}</p>
       <p className="text-sm text-gray-600">{L('Verified companies and shops appear here as soon as they join. You can already send a price request; it reaches the suppliers of your materials.', 'تصدیق شدہ کمپنیاں اور دکانیں شامل ہوتے ہی یہاں نظر آئیں گی۔ آپ ابھی قیمت کی درخواست بھیج سکتے ہیں۔', 'نعرض هنا الشركات والمحلات الموثّقة فور انضمامها. يمكنك الآن إرسال طلب تسعير، فيصل إلى الموردين المختصين بموادك.')}</p>
       <div className="mt-4 flex flex-wrap items-center justify-center gap-2">
-        <a href="/contractor/rfq/quick" className="btn-orange text-sm">{L('Request a price', 'قیمت معلوم کریں', 'اطلب سعراً')}</a>
+        <a href="/contractor/rfq/quick" className="btn-orange text-sm">{L('Start now for free', 'ابھی مفت شروع کریں', 'ابدأ الآن مجاناً')}</a>
         <a href="/join" className="btn-ghost text-sm">{L('Sign up as a supplier', 'سپلائر کے طور پر رجسٹر کریں', 'سجّل كمورد')}</a>
       </div>
     </div>

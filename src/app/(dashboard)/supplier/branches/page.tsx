@@ -68,22 +68,30 @@ export default function SupplierBranchesPage() {
     setLoading(false)
   }
 
-  function reset() { setName(''); setRegion(''); setCity(''); setDistrict(''); setPhone(''); setAddress(''); setLat(null); setLng(null); setEditId(null); setShowForm(false) }
+  function reset() { setFormErr(''); setName(''); setRegion(''); setCity(''); setDistrict(''); setPhone(''); setAddress(''); setLat(null); setLng(null); setEditId(null); setShowForm(false) }
   function startEdit(b: any) {
     setEditId(b.id); setName(b.name || ''); setRegion(b.region || ''); setCity(b.city || ''); setDistrict(b.district || '')
     setPhone(b.phone || ''); setAddress(b.address || ''); setLat(b.latitude ?? null); setLng(b.longitude ?? null); setShowForm(true); setErr('')
     setTimeout(() => document.getElementById('branch-form')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50)
   }
 
+  // round-7 UX-071: a form error is shown above «حفظ الفرع» and the missing field gets the focus
+  const [formErr, setFormErr] = useState('')
+  function failAt(msg: string, fieldId: string) {
+    setFormErr(msg)
+    const el = document.getElementById(fieldId)
+    el?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    if (el && typeof (el as any).focus === 'function') setTimeout(() => (el as any).focus(), 250)
+  }
   async function save(e: any) {
     e.preventDefault()
-    if (!name.trim()) { setErr(L('Write the branch name.', 'شاخ کا نام لکھیں۔', 'اكتب اسم الفرع.')); return }
-    if (!region) { setErr(L('Choose the branch region.', 'شاخ کا علاقہ منتخب کریں۔', 'اختر منطقة الفرع.')); return }
-    if (lat == null || lng == null) { setErr(L('Set the branch location on the map, so requests near it reach you.', 'شاخ کا مقام نقشے پر مقرر کریں تاکہ اس کے قریب کی درخواستیں آپ تک پہنچیں۔', 'حدّد موقع الفرع على الخريطة لتصلك الطلبات القريبة منه.')); return }
+    if (!name.trim()) return failAt(L('Write the branch name.', 'شاخ کا نام لکھیں۔', 'اكتب اسم الفرع.'), 'br-name')
+    if (!region) return failAt(L('Choose the branch region.', 'شاخ کا علاقہ منتخب کریں۔', 'اختر منطقة الفرع.'), 'br-region')
+    if (lat == null || lng == null) return failAt(L('Set the branch location on the map, so requests near it reach you.', 'شاخ کا مقام نقشے پر مقرر کریں تاکہ اس کے قریب کی درخواستیں آپ تک پہنچیں۔', 'حدّد موقع الفرع على الخريطة لتصلك الطلبات القريبة منه.'), 'br-map')
     // round-4 UX-141: the branch mobile is normalised and checked (05XXXXXXXX)
     const ph = phone.trim() ? toLocalSa(phone) : null
-    if (phone.trim() && !ph) { setErr(L('Mobile number: 10 digits starting with 05.', 'موبائل نمبر: 05 سے شروع ہونے والے 10 ہندسے۔', 'رقم الجوال: 10 أرقام يبدأ بـ05.')); document.getElementById('br-phone')?.focus(); return }
-    setSaving(true); setErr('')
+    if (phone.trim() && !ph) return failAt(L('Mobile number: 10 digits starting with 05.', 'موبائل نمبر: 05 سے شروع ہونے والے 10 ہندسے۔', 'رقم الجوال: 10 أرقام يبدأ بـ05.'), 'br-phone')
+    setSaving(true); setErr(''); setFormErr('')
     const supabase = createClient()
     const row = { name, region, city: city || null, district: district || null, phone: ph, address: address || null, latitude: lat, longitude: lng }
     const { error } = editId
@@ -91,7 +99,7 @@ export default function SupplierBranchesPage() {
       : await supabase.from('branches').insert({ supplier_id: user.id, ...row })
     setSaving(false)
     // keep what was typed when the save fails
-    if (error) { setErr(L('Could not save the branch — please try again.', 'شاخ محفوظ نہیں ہو سکی — دوبارہ کوشش کریں۔', 'تعذّر حفظ الفرع. تحقّق من اتصالك وحاول مرة أخرى.')); return }
+    if (error) { setFormErr(L('Could not save the branch. Check your connection and try again.', 'شاخ محفوظ نہیں ہو سکی۔ اپنا کنکشن چیک کریں اور دوبارہ کوشش کریں۔', 'تعذّر حفظ الفرع. تحقّق من اتصالك وحاول مرة أخرى.')); return }
     toast.success(L('Branch saved', 'شاخ محفوظ ہو گئی', 'حُفظ الفرع'))
     reset(); load()
   }
@@ -122,8 +130,9 @@ export default function SupplierBranchesPage() {
         </div>
 
         {/* round-5 UX-105: the example is advice for the owner, not for a team member */}
-        {!readOnly && <div className="bg-warn-bg border border-warn-border rounded-xl p-3 mb-5 text-sm text-warn-text">
-          <Glyph e="💡" /> {L('Example: with branches in Riyadh, Jeddah and Dammam, add all three — you will receive price requests from buyers in all of them.', 'مثال: اگر ریاض، جدہ اور دمام میں شاخیں ہیں تو تینوں شامل کریں — ان سب علاقوں کے خریداروں کی درخواستیں آپ کو ملیں گی۔', 'مثال: إذا كانت لديك فروع في الرياض وجدة والدمام، فأضف الثلاثة — وستصلك طلبات التسعير من المشترين في جميع هذه المناطق.')}
+        {/* round-7 UX-148: plain advice in a light navy panel (not a warning) */}
+        {!readOnly && <div className="bg-[#0B2438]/5 border border-[#0B2438]/15 rounded-xl p-3 mb-5 text-sm text-[#0B2438]">
+          <Glyph e="💡" /> {L('Example: if you have branches in Riyadh, Jeddah and Dammam, add all three so you receive price requests from buyers in all these cities.', 'مثال: اگر آپ کی شاخیں ریاض، جدہ اور دمام میں ہیں تو تینوں شامل کریں تاکہ ان تمام شہروں کے خریداروں کی قیمت کی درخواستیں آپ کو ملیں۔', 'مثال: إذا كانت لديك فروع في الرياض وجدة والدمام، فأضف الثلاثة لتصلك طلبات التسعير من المشترين في هذه المدن كلها.')}
         </div>}
 
         {/* UX-122: the main location (from the profile) */}
@@ -131,7 +140,7 @@ export default function SupplierBranchesPage() {
           <div className="min-w-0">
             <div className="text-[13px] font-bold text-gray-600">{L('Main location', 'مرکزی مقام', 'الموقع الرئيسي')}</div>
             <div className="font-bold text-[#0B2438] mt-0.5">{mainLoc?.region ? <><Glyph e="📍" /> {getRegionLabel(mainLoc.region, locale)}{mainLoc.city ? ' - ' + cityLabel(mainLoc.region, mainLoc.city) : ''}{mainLoc.district ? ' - ' + mainLoc.district : ''}</> : L('Not set yet', 'ابھی مقرر نہیں', 'لم يُحدَّد بعد')}</div>
-            {mainLoc && !mainLoc.latitude && <div className="text-[13px] text-amber-800 mt-0.5">{L('No map pin yet.', 'ابھی نقشے پر نشان نہیں۔', 'لم تحدّد موقعك على الخريطة بعد.')}</div>}
+            {mainLoc && !mainLoc.latitude && <div className="text-[13px] text-warn-text mt-0.5">{L('No map pin yet.', 'ابھی نقشے پر نشان نہیں۔', 'لم تحدّد موقعك على الخريطة بعد.')}</div>}
           </div>
           {!readOnly && <a href="/location" className="inline-flex items-center min-h-[44px] px-4 rounded-xl text-sm font-bold text-[#0B2438] border border-[#0B2438]/30 shrink-0">{L('Edit', 'ترمیم', 'تعديل')}</a>}
         </div>
@@ -178,16 +187,17 @@ export default function SupplierBranchesPage() {
               </div>
               <div className="sm:col-span-2">
                 <label htmlFor="br-address" className="block text-xs font-bold text-gray-600 mb-1">{L('Address (optional)', 'پتہ (اختیاری)', 'العنوان (اختياري)')}</label>
-                <input id="br-address" value={address} onChange={e => setAddress(e.target.value)} className="input-field" placeholder={L('Street, building no…', 'گلی، عمارت نمبر…', 'الشارع، رقم المبنى...')} />
+                <input id="br-address" value={address} onChange={e => setAddress(e.target.value)} className="input-field" placeholder={L('Street, building no…', 'گلی، عمارت نمبر…', 'الشارع، رقم المبنى…')} />
               </div>
-              <div className="sm:col-span-2">
+              <div id="br-map" tabIndex={-1} className="sm:col-span-2 outline-none scroll-mt-24">
                 <div className="block text-xs font-bold text-gray-600 mb-1">{L('Branch location on the map', 'نقشے پر شاخ کا مقام', 'موقع الفرع على الخريطة')} *</div>
-                <LocationPicker lat={lat} lng={lng} onChange={(a: number, b: number) => { setLat(a); setLng(b); setErr(''); const near = nearestSaCity(a, b); if (near) { if (near.city !== city) { const shown = cityLabel(near.region, near.city); toast(L(`We updated the city to ${shown} from the pin`, `پن کے مقام کے مطابق شہر ${shown} کر دیا گیا`, `حدّثنا المدينة إلى ${shown} حسب موقع الدبوس`)) } setRegion(near.region); setCity(near.city) } }} locale={locale} />
+                <LocationPicker lat={lat} lng={lng} onChange={(a: number, b: number) => { setLat(a); setLng(b); setErr(''); setFormErr(''); const near = nearestSaCity(a, b); if (near) { if (near.city !== city) { const shown = cityLabel(near.region, near.city); toast(L(`We updated the city to ${shown} from the pin`, `پن کے مقام کے مطابق شہر ${shown} کر دیا گیا`, `حدّثنا المدينة إلى ${shown} حسب موقع الدبوس`)) } setRegion(near.region); setCity(near.city) } }} locale={locale} />
               </div>
             </div>
+            {formErr && <div role="alert" className="mb-3 bg-red-50 border border-red-200 text-red-700 text-sm rounded-xl p-3">{formErr}</div>}
             <div className="flex gap-2">
               <button type="submit" disabled={saving} className="flex-1 min-h-[44px] py-2.5 rounded-xl font-extrabold text-[#071827] text-sm disabled:opacity-50" style={{ background: 'linear-gradient(135deg,#F5C55B,#D4A543)' }}>
-                {saving ? L('Saving…', 'محفوظ ہو رہا ہے…', 'جارٍ الحفظ...') : L('Save branch', 'شاخ محفوظ کریں', 'حفظ الفرع')}
+                {saving ? L('Saving…', 'محفوظ ہو رہا ہے…', 'جارٍ الحفظ…') : L('Save branch', 'شاخ محفوظ کریں', 'حفظ الفرع')}
               </button>
               <button type="button" onClick={reset} aria-label={L('Close without saving', 'محفوظ کیے بغیر بند کریں', 'إغلاق دون حفظ')} className="min-h-[44px] px-5 rounded-xl font-semibold text-sm border border-gray-200 text-gray-600"><X className="w-4 h-4" aria-hidden /></button>
             </div>
@@ -214,7 +224,7 @@ export default function SupplierBranchesPage() {
                   <div className="font-bold" style={{ color: '#0B2438' }}>{b.name}</div>
                   <div className="flex items-center gap-2 mt-1 flex-wrap text-xs text-gray-500">
                     <span className="badge text-[12px] bg-[#0B2438]/5 text-[#0B2438]"><Glyph e="📍" /> {getRegionLabel(b.region, locale)}{b.city ? ' - ' + cityLabel(b.region, b.city) : ''}</span>
-                    {b.latitude == null && <span className="text-amber-800 font-semibold">{L('No map pin', 'نقشے پر نشان نہیں', 'بلا موقع على الخريطة')}</span>}
+                    {b.latitude == null && <span className="text-warn-text font-semibold">{L('No map pin', 'نقشے پر نشان نہیں', 'بلا موقع على الخريطة')}</span>}
                     {b.district && <span><Glyph e="🏘" /> {b.district}</span>}
                     {b.phone && <span dir="ltr"><Glyph e="📞" /> {b.phone}</span>}
                   </div>

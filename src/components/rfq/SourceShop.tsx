@@ -26,9 +26,10 @@ export function SourceShopFields({ value, onChange, locale }: { value: SourceVal
       </div>
       {/* UX-144: the rules as five short points instead of one long paragraph */}
       <ul className="text-[12px] text-gray-700 mb-2 leading-relaxed list-disc ps-5 space-y-0.5">
-        <li>{L('Before the buyer chooses your offer, they see only the district of the shop.', 'خریدار کے آپ کی آفر چننے سے پہلے وہ صرف دکان کا علاقہ دیکھتا ہے۔', 'قبل أن يختار المشتري عرضك لا يرى إلا حي المحل.')}</li>
+        <li>{L('Before the buyer chooses your offer, they see only the district and the city.', 'خریدار کے آپ کی آفر چننے سے پہلے وہ صرف محلہ اور شہر دیکھتا ہے۔', 'قبل أن يختار المشتري عرضك لا يرى إلا الحي والمدينة.')}</li>
         <li>{L('After choosing, they see the shop’s name, never its phone.', 'انتخاب کے بعد وہ دکان کا نام دیکھتا ہے، فون کبھی نہیں۔', 'بعد اختياره يرى اسم المحل، ولا يرى رقم هاتفه أبداً.')}</li>
-        <li>{L('The invoice is issued by the shop in the buyer’s name.', 'انوائس دکان سے خریدار کے نام جاری ہوتی ہے۔', 'تصدر الفاتورة من المحل باسم المشتري.')}</li>
+        {/* round-7 UX-039: the invoice line matches the VAT answer (no «tax invoice» promise here) */}
+        <li>{L('The invoice is issued by this shop in the buyer’s name at your offer’s price; attach it at delivery.', 'انوائس اسی دکان سے خریدار کے نام آپ کی آفر کی قیمت پر جاری ہوتی ہے؛ ڈیلیوری پر اسے منسلک کریں۔', 'تصدر الفاتورة من هذا المحل باسم المشتري وبسعر عرضك نفسه، وأرفقها عند التسليم.')}</li>
         {/* UX-135: the shop rule said plainly */}
         <li>{L('The shop must have a commercial registration, and its invoice carries the same price as your offer.', 'دکان کی تجارتی رجسٹریشن ہونا ضروری ہے، اور اس کی انوائس میں وہی قیمت ہو جو آپ کی آفر میں ہے۔', 'يجب أن يكون للمحل سجل تجاري، وأن تحمل فاتورته السعر نفسه الذي في عرضك.')}</li>
         <li>{L('Upload the invoice in the invoice step first, then confirm the delivery.', 'پہلے انوائس کے مرحلے میں انوائس اپ لوڈ کریں، پھر ڈیلیوری کی تصدیق کریں۔', 'ارفع الفاتورة في خطوة الفاتورة أولاً، ثم أكّد التسليم.')}</li>
@@ -79,13 +80,13 @@ export function SourceShopCard({ offerId, editable, locale }: { offerId: string;
   }
   const missing = !data
   return (
-    <div className={`mt-3 rounded-xl border p-3 text-start ${missing && editable ? 'border-amber-300 bg-amber-50' : 'border-gray-200 bg-white'}`}>
+    <div className={`mt-3 rounded-xl border p-3 text-start ${missing && editable ? 'border-warn-border bg-warn-bg' : 'border-gray-200 bg-white'}`}>
       <div className="text-xs font-bold text-[#071827]">{L('Source shop (pricing agent)', 'ماخذ دکان (قیمت ایجنٹ)', 'المحل المصدر (وسيط تسعير)')}</div>
       {missing && editable && !edit && (
-        <p className="text-[13px] font-semibold text-amber-900 mt-1">{L('Add the shop you buy from, or the buyer can’t choose your offer.', 'جس دکان سے آپ خریدتے ہیں وہ شامل کریں، ورنہ خریدار آپ کی آفر منتخب نہیں کر سکے گا۔', 'أضف المحل الذي ستشتري منه، وإلا فلن يستطيع المشتري اختيار عرضك.')}</p>
+        <p className="text-[13px] font-semibold text-warn-text mt-1">{L('Add the shop you buy from, or the buyer can’t choose your offer.', 'جس دکان سے آپ خریدتے ہیں وہ شامل کریں، ورنہ خریدار آپ کی آفر منتخب نہیں کر سکے گا۔', 'أضف المحل الذي ستشتري منه، وإلا فلن يستطيع المشتري اختيار عرضك.')}</p>
       )}
       {!missing && !edit && (
-        <p className="text-sm text-gray-700 mt-1">{[data.name, data.area, data.city].filter(Boolean).join(' — ')}{data.phone ? ` · ${data.phone}` : ''}</p>
+        <p className="text-sm text-gray-700 mt-1">{[data.name, data.area, data.city].filter(Boolean).join(L(', ', '، ', '، '))}{data.phone ? ` · ${data.phone}` : ''}</p>
       )}
       {edit && <SourceShopFields value={v} onChange={setV} locale={locale} />}
       {err && <p role="alert" className="text-[13px] text-red-600 mt-1">{err}</p>}
@@ -97,7 +98,7 @@ export function SourceShopCard({ offerId, editable, locale }: { offerId: string;
               <button type="button" onClick={() => setEdit(false)} className="min-h-[44px] px-4 rounded-lg text-sm font-semibold border border-gray-300">{L('Close without saving', 'محفوظ کیے بغیر بند کریں', 'إغلاق دون حفظ')}</button>
             </>
           ) : (
-            <button type="button" onClick={() => setEdit(true)} className={`min-h-[44px] px-4 rounded-lg text-sm font-bold ${missing ? 'text-[#071827]' : 'border border-gray-300'}`} style={missing ? { background: 'linear-gradient(135deg,#F5C55B,#D4A543)' } : {}}>{missing ? L('Add the shop now', 'ابھی دکان شامل کریں', 'أضف المحل الآن') : L('Edit', 'ترمیم', 'تعديل')}</button>
+            <button type="button" onClick={() => setEdit(true)} className={missing ? 'btn-primary min-h-[44px] px-4 rounded-xl text-sm font-bold' : 'min-h-[44px] px-4 rounded-lg text-sm font-bold border border-gray-300'}>{missing ? L('Add the shop now', 'ابھی دکان شامل کریں', 'أضف المحل الآن') : L('Edit', 'ترمیم', 'تعديل')}</button>
           )}
         </div>
       )}
@@ -106,15 +107,18 @@ export function SourceShopCard({ offerId, editable, locale }: { offerId: string;
 }
 
 /** Buyer side: the area only. get_offer_source never returns the shop name or phone to the buyer (214), even after the deal. */
-export function SourceShopBadge({ offerId, locale, compact }: { offerId: string; locale: Loc; compact?: boolean }) {
+// round-7 UX-130: a page that already read get_offer_source passes it as `data` (no second call per offer)
+export function SourceShopBadge({ offerId, locale, compact, data }: { offerId: string; locale: Loc; compact?: boolean; data?: any }) {
   const L = tr(locale)
-  const [d, setD] = useState<any>(null)
+  const [fetched, setFetched] = useState<any>(null)
   const [why, setWhy] = useState(false)
   useEffect(() => {
+    if (data !== undefined) return
     let on = true
-    createClient().rpc('get_offer_source', { p_offer_id: offerId }).then(({ data }: any) => { if (on) setD(data || null) })
+    createClient().rpc('get_offer_source', { p_offer_id: offerId }).then(({ data: r }: any) => { if (on) setFetched(r || null) })
     return () => { on = false }
-  }, [offerId])
+  }, [offerId, data])
+  const d = data !== undefined ? data : fetched
   if (!d) return null
   const where = [d.area, d.city].filter(Boolean).join('، ')
   if (d.revealed && d.name) {
@@ -122,7 +126,7 @@ export function SourceShopBadge({ offerId, locale, compact }: { offerId: string;
       <div className={`${compact ? 'text-[12px]' : 'text-xs'} mt-1 rounded-lg bg-[#0B2438]/5 border border-[#0B2438]/15 px-2 py-1 text-[#0B2438]`}>
         {/* UX-002: never the shop phone here (this badge is also printed on the deal page); the seller sees it in SourceShopCard */}
         {/* UX-138: one name everywhere («المحل المصدر»), and the invoice said once */}
-        {L('Source shop:', 'ماخذ دکان:', 'المحل المصدر:')} <b>{d.name}</b>{where ? ` — ${where}` : ''}
+        {L('Source shop:', 'ماخذ دکان:', 'المحل المصدر:')} <b>{d.name}</b>{where ? `${L(', ', '، ', '، ')}${where}` : ''}
         {d.viewer === 'seller' && <div className="text-[12px] text-[#0B2438]/80">{L('The invoice is issued by the source shop in the buyer’s name.', 'انوائس ماخذ دکان سے خریدار کے نام جاری ہوگی۔', 'تصدر الفاتورة من المحل المصدر باسم المشتري.')}</div>}
       </div>
     )

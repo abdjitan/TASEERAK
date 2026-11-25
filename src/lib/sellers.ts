@@ -195,8 +195,11 @@ export function offerHasOpenQuestion(o: any, rfqStatus?: string | null): boolean
 
 /** What happened to an offer, from the offer AND its request (round-2 UX-010): a cancelled or expired
  *  request is not a loss, and is left out of the win rate. */
-export type OfferOutcome = 'won' | 'lost' | 'cancelled' | 'expired' | 'pending'
-export function offerOutcome(offerStatus: string | null | undefined, rfqStatus: string | null | undefined): OfferOutcome {
+export type OfferOutcome = 'won' | 'lost' | 'cancelled' | 'expired' | 'pending' | 'closed'
+/** round-7 UX-056: a deal the admin closed (offers.deal_closed_at) is 'closed': never a win, never in
+ *  the sales, the deal count or the win rate (same rule as get_my_supplier_analytics, migration 290). */
+export function offerOutcome(offerStatus: string | null | undefined, rfqStatus: string | null | undefined, dealClosedAt?: string | null): OfferOutcome {
+  if (dealClosedAt) return 'closed'
   if (offerStatus === 'accepted') return 'won'
   if (rfqStatus === 'cancelled') return 'cancelled'
   if (rfqStatus === 'expired') return 'expired'
@@ -210,6 +213,7 @@ export const OUTCOME_LABEL: Record<OfferOutcome, T3> = {
   lost: { ar: 'لم تُختر', en: 'Not chosen', ur: 'منتخب نہیں ہوئی' },
   cancelled: { ar: 'ألغى المشتري الطلب', en: 'Request cancelled', ur: 'درخواست منسوخ' },
   expired: { ar: 'انتهت المهلة', en: 'Request expired', ur: 'مہلت ختم' },
+  closed: { ar: 'أُلغيت الصفقة', en: 'Deal cancelled', ur: 'سودا منسوخ' },
 }
 /** The full sentence on the offer page. */
 export const OUTCOME_TITLE: Record<OfferOutcome, T3> = {
@@ -218,6 +222,7 @@ export const OUTCOME_TITLE: Record<OfferOutcome, T3> = {
   lost: { ar: 'انتهى التسعير، واختار المشتري عرضاً آخر', en: 'Pricing closed: the buyer chose another offer', ur: 'قیمتیں بند: خریدار نے دوسری آفر چن لی' },
   cancelled: { ar: 'ألغى المشتري الطلب، ولم يُختر أي عرض', en: 'The buyer cancelled the request; no offer was chosen', ur: 'خریدار نے درخواست منسوخ کر دی؛ کوئی آفر منتخب نہیں ہوئی' },
   expired: { ar: 'انتهت مهلة الطلب دون اختيار أي عرض', en: 'The request ended without any offer being chosen', ur: 'درخواست کی مہلت کسی آفر کے انتخاب کے بغیر ختم ہو گئی' },
+  closed: { ar: 'أُلغيت هذه الصفقة بقرار الإدارة', en: 'This deal was cancelled by an admin decision', ur: 'یہ سودا انتظامیہ کے فیصلے سے منسوخ کر دیا گیا' },
 }
 export function outcomeLabel(k: OfferOutcome, locale: Locale): string { return pick(OUTCOME_LABEL[k], locale) }
 export function outcomeTitle(k: OfferOutcome, locale: Locale): string { return pick(OUTCOME_TITLE[k], locale) }

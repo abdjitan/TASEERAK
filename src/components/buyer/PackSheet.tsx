@@ -13,7 +13,7 @@ import type { Sector } from '@/types'
 
 import { toLatinNumber } from '@/lib/number' // «2,500» = 2500: commas are thousands separators (round-4 UX-002)
 
-export type PackLine = { name: string; sector: Sector; quantity: string; unit: string; with_install?: boolean }
+export type PackLine = { name: string; sector: Sector; quantity: string; unit: string; with_install?: boolean; details?: string }
 // round-6 UX-084: these packs are usually bought with the installation: the price is asked with it by default
 const INSTALL_PACKS = ['ac', 'heater']
 
@@ -32,7 +32,7 @@ export default function PackSheet({ pack, locale, onAdd, onClose }: {
   const L = (en: string, ur: string, ar: string) => (locale === 'en' ? en : locale === 'ur' ? ur : ar)
   const pick = (o: { ar: string; en: string; ur: string }) => (locale === 'en' ? o.en : locale === 'ur' ? o.ur : o.ar)
   const [rows, setRows] = useState(() => pack.items.map(it => ({
-    ...it, on: it.on !== false, quantity: it.qty != null ? String(it.qty) : '', unit: it.unit || getDefaultUnit(it.name, it.sector) || 'حبة', edited: false,
+    ...it, on: it.on !== false, quantity: it.qty != null ? String(it.qty) : '', unit: it.unit || getDefaultUnit(it.name, it.sector) || 'حبة', edited: false, picked: {} as Record<string, string>,
   })))
   const [dirty, setDirty] = useState(false) // something changed: closing asks first (round-4 UX-025)
   const [withInstall, setWithInstall] = useState(INSTALL_PACKS.includes(pack.id))
@@ -50,6 +50,8 @@ export default function PackSheet({ pack, locale, onAdd, onClose }: {
   const [calcFor, setCalcFor] = useState<number | null>(null)
   const ready = chosen.filter(r => parseFloat(r.quantity) > 0).length
   const noQty = chosen.length - ready
+  // round-7 UX-007: a size the buyer must choose (AC capacity and type, heater volume) before adding
+  const missingPick = chosen.filter(r => (r.choose || []).some(c => !r.picked[c.key]))
   // a new onClose on every parent render must not re-run the effect (focus jumped while typing, round-2 UX-036)
   const dirtyRef = useRef(false)
   dirtyRef.current = dirty
@@ -125,6 +127,20 @@ export default function PackSheet({ pack, locale, onAdd, onClose }: {
                 <span className="text-[12px] text-gray-600 w-full text-center truncate mt-0.5">{getUnitLabelLong(r.unit, locale)}</span>
               </div>
               </div>
+              {r.on && (r.choose || []).map(c => {
+                const miss = !r.picked[c.key]
+                return (
+                  <div key={c.key} className="ms-9 mt-1 mb-1">
+                    <label className="block text-[12px] font-bold text-[#0B2438] mb-0.5" htmlFor={`pk-${i}-${c.key}`}>{pick(c.label)}</label>
+                    {c.hint && <span className="block text-[12px] text-gray-600 mb-1">{pick(c.hint)}</span>}
+                    <select id={`pk-${i}-${c.key}`} value={r.picked[c.key] || ''} onChange={e => set(i, { picked: { ...r.picked, [c.key]: e.target.value } })}
+                      aria-invalid={miss} className={`w-full input-field text-[16px] sm:text-sm min-h-[44px] ${miss ? 'border-[#D4A543] bg-[#D4A543]/10 ring-1 ring-[#D4A543]' : ''}`}>
+                      <option value="">{L('Choose…', 'منتخب کریں…', 'اختر…')}</option>
+                      {c.options.map(o => <option key={o.value} value={o.value}>{pick(o.label)}</option>)}
+                    </select>
+                  </div>
+                )
+              })}
               {/* «احسبها من مقاس الغرفة» for measured items (shared calculator) */}
               {/* curtains and blinds have no room calculator: their hint explains the window sizes (UX-061) */}
               {r.on && r.calc !== 'none' && (r.calc || calcSupported(r.unit)) && (calcFor === i ? (
@@ -153,8 +169,11 @@ export default function PackSheet({ pack, locale, onAdd, onClose }: {
             </span>
           </label>
           <p className="text-[12px] text-gray-600 mb-2">{L('Each material goes to the suppliers who sell it. You can still edit everything in your request.', 'ہر چیز اس کے سپلائرز تک جاتی ہے۔ درخواست میں سب بدل سکتے ہیں۔', 'تصل كل مادة إلى الموردين المختصين بها، ويمكنك تعديل كل شيء في طلبك.')}</p>
-          <button type="button" disabled={!chosen.length}
-            onClick={() => onAdd(chosen.map(r => ({ name: r.name, sector: r.sector, quantity: r.quantity, unit: r.unit, ...(withInstall ? { with_install: true } : {}) })))}
+          {missingPick.length > 0 && (
+            <p className="text-[13px] font-bold text-[#8F6820] mb-1.5" role="status">{L(`Choose the size of: ${missingPick.map(r => name(r.name)).join(', ')}`, `ان کا سائز چنیں: ${missingPick.map(r => name(r.name)).join('، ')}`, `اختر المقاس أولاً لـ: ${missingPick.map(r => name(r.name)).join('، ')}`)}</p>
+          )}
+          <button type="button" disabled={!chosen.length || missingPick.length > 0}
+            onClick={() => onAdd(chosen.map(r => ({ name: r.name, sector: r.sector, quantity: r.quantity, unit: r.unit, ...(withInstall ? { with_install: true } : {}), ...(r.choose?.length ? { details: r.choose.map(c => r.picked[c.key]).filter(Boolean).join('، ') } : {}) })))}
             className="w-full min-h-12 rounded-xl font-extrabold text-sm disabled:opacity-40" style={{ background: 'linear-gradient(135deg,#F5C55B,#D4A543)', color: '#071827' }}>
             {noQty > 0
               ? L(`Add to my request (${ready} ready, ${noQty} without quantity)`, `میری درخواست میں شامل کریں (${ready} تیار، ${noQty} بغیر مقدار)`, `أضف إلى طلبي (${ready} جاهزة، ${noQty} بلا كمية)`)

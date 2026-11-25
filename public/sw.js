@@ -1,5 +1,5 @@
 /* تسعيرك — Service Worker: web-push notifications + app-shell offline cache */
-const CACHE_VERSION = 'taseerak-v2' // v2: navy/gold redesign
+const CACHE_VERSION = 'taseerak-v3' // v3: push lang/dir (round-7 UX-091)
 const STATIC_CACHE = CACHE_VERSION + '-static'
 const PAGE_CACHE = CACHE_VERSION + '-pages'
 
@@ -74,8 +74,9 @@ self.addEventListener('push', (event) => {
     body: data.body || '',
     icon: '/icons/icon-192.png',
     badge: '/icons/icon-192.png',
-    dir: 'rtl',
-    lang: 'ar',
+    // the server sends lang/dir with the reader's language (round-7 UX-091); Arabic when absent
+    dir: data.dir === 'ltr' || data.lang === 'en' ? 'ltr' : 'rtl',
+    lang: data.lang === 'en' || data.lang === 'ur' ? data.lang : 'ar',
     tag: data.tag || 'taseerak',
     renotify: true,
     data: { url: data.url || '/' },

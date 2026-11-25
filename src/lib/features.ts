@@ -21,6 +21,7 @@ export const FEATURES = {
   subscription: false,
   /** Buyer badges («مشتري محترف»…). */
   gamification: false,
+  wathqLive: false, // Wathq production key not live yet: no instant CR check promise (round-7 UX-045)
   suppliersDirectory: false, // public supplier directory (round-5 UX-069): off until enough suppliers join
   /** «الموقع» as its own menu item — still reachable from the profile checklist. */
   locationNav: false,

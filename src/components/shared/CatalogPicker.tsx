@@ -12,6 +12,7 @@ import { productImageUrl, imgFallback } from '@/lib/productImage'
 import CatIcon from '@/components/shared/CatIcon'
 import Glyph from '@/components/shared/Glyph'
 import { useFocusTrap } from '@/components/shared/useFocusTrap'
+import { toLatinNumber } from '@/lib/number'
 
 // Pick materials from the catalog inside the request page (the 4th way to add a line, next to
 // writing, speaking and a photo). Search across everything, or browse the 8 user-facing sections
@@ -165,13 +166,19 @@ export function CatalogBrowser({ locale, onPick, onRemove, onQty, picked = [], i
           <span className="block text-[13px] font-extrabold text-[#0B2438] text-center leading-tight" aria-live="polite">{qn}{last.unit ? <span className="block text-[12px] font-semibold text-gray-600 truncate">{getUnitLabelLong(last.unit, locale)}</span> : null}</span>
           <div className="flex items-center justify-between">
             <button type="button" onClick={() => onQty(last.key, String(Math.max(1, qn - 1)))} disabled={qn <= 1}
-              className="relative w-9 h-9 grid place-items-center text-[#0B2438] disabled:opacity-30 before:absolute before:-inset-1 before:content-['']" aria-label={L('Less', 'کم', 'إنقاص')}><Minus className="w-4 h-4" aria-hidden /></button>
+              className="relative w-9 h-9 grid place-items-center text-[#0B2438] disabled:opacity-30 before:absolute before:-inset-1 before:content-['']" aria-label={L('Decrease the quantity', 'مقدار کم کریں', 'إنقاص الكمية')}><Minus className="w-4 h-4" aria-hidden /></button>
             <button type="button" onClick={() => onQty(last.key, String(qn + 1))}
-              className="relative w-9 h-9 grid place-items-center text-[#0B2438] before:absolute before:-inset-1 before:content-['']" aria-label={L('More', 'زیادہ', 'زيادة')}><Plus className="w-4 h-4" aria-hidden /></button>
+              className="relative w-9 h-9 grid place-items-center text-[#0B2438] before:absolute before:-inset-1 before:content-['']" aria-label={L('Increase the quantity', 'مقدار بڑھائیں', 'زيادة الكمية')}><Plus className="w-4 h-4" aria-hidden /></button>
           </div>
         </div>
       ) : (
-        <span className="text-[12px] font-bold text-[#8F6820] text-center">{L('Set the quantity in your request', 'درخواست میں مقدار لکھیں', 'حدّد الكمية في طلبك')}</span>
+        // round-7 UX-027: a material not counted in pieces (paint, tiles, cement): type the quantity right here
+        <label className="block">
+          <input type="text" inputMode="decimal" value={last.qty || ''} onChange={e => onQty(last.key, toLatinNumber(e.target.value).slice(0, 8))}
+            placeholder={L('Qty', 'مقدار', 'الكمية')} aria-label={L(`Quantity of ${nameOf(name)}`, `${nameOf(name)} کی مقدار`, `كمية ${nameOf(name)}`)}
+            className="w-full min-h-[44px] rounded-lg border border-[#D4A543] bg-white px-1 text-center text-[16px] sm:text-[13px] font-extrabold text-[#0B2438]" />
+          {last.unit && <span className="block text-[12px] font-semibold text-gray-600 text-center truncate">{getUnitLabelLong(last.unit, locale)}</span>}
+        </label>
       ))}
       </div>
     )

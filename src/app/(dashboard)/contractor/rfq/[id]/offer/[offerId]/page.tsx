@@ -17,7 +17,7 @@ import { tierLabel, sourceLabel, availabilityLabel, isDirectSource, sourceIcon, 
 import { rfqRefLine, rfqDesc } from '@/lib/rfqName'
 import SellerIcon from '@/components/shared/SellerIcon'
 import Glyph from '@/components/shared/Glyph'
-import { vatStatusOf, totalLabel, offerComparable, vatTag, priceBasisLabel, sarLabel, buyerLinePrice, lineComparable } from '@/lib/vat'
+import { vatStatusOf, totalLabel, offerComparable, vatTag, priceBasisLabel, sarLabel, buyerLinePrice, lineComparable, issuesTaxInvoice } from '@/lib/vat'
 import { installTotalOf, materialTotalOf } from '@/lib/installation'
 import { SourceShopBadge } from '@/components/rfq/SourceShop'
 import { dbMessage } from '@/lib/dbMessage'
@@ -58,6 +58,8 @@ export default function OfferDetailPage() {
   const home = useHomeBuyer() // a home buyer («لبيتي»): plain words, no sector, no procurement terms (profile-backed, UX-068)
   const pname = (n: string) => (home && locale === 'ar' ? cleanArName(n || '') : getProductLabel(n || '', locale))
   const unitL = (u: string) => getUnitLabelLong(u, locale)
+  // round-6 UX-098 / round-7 UX-129: the Urdu singular after 1
+  const urN = (n: any, one: string, many: string) => `${n} ${Number(n) === 1 ? one : many}`
   const showErr = (m: string) => { setErr(m); setTimeout(() => document.getElementById('offer-err')?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 30) }
   const [declinedNote, setDeclinedNote] = useState('') // after «رفض»: what happened (round-4 UX-123)
   const [infoOpen, setInfoOpen] = useState(false)
@@ -65,6 +67,7 @@ export default function OfferDetailPage() {
   const [infoBusy, setInfoBusy] = useState(false)
   const [taxVerified, setTaxVerified] = useState(false) // owner 2026-11-25: «يُصدر فاتورة ضريبية» (profiles.vat_verified_at, 286)
   const [chosenId, setChosenId] = useState<string | null>(null) // another offer on this request is the deal (round-5 UX-041)
+  const [chosenN, setChosenN] = useState(0) // round-7 UX-128: how many deals this request has
   // the two dialogs keep focus inside, close with Escape and give focus back (round-5 UX-141)
   const reqRef = useRef<HTMLDivElement>(null)
   const infoRef = useRef<HTMLDivElement>(null)
@@ -146,8 +149,9 @@ export default function OfferDetailPage() {
         } catch { /* optional */ }
       }
       if (offerData && offerData.status !== 'accepted') {
-        const { data: acc } = await supabase.from('offers').select('id').eq('rfq_id', id).eq('status', 'accepted').limit(1)
+        const { data: acc } = await supabase.from('offers').select('id').eq('rfq_id', id).eq('status', 'accepted').limit(2)
         setChosenId(acc?.[0]?.id || null)
+        setChosenN((acc || []).length)
       }
       setLoading(false)
     }
@@ -159,6 +163,7 @@ export default function OfferDetailPage() {
   const rfqOpen = rfq?.status === 'open'
   const pastDeadline = rfqOpen && !!rfq?.expires_at && isExpired(rfq.expires_at)
   const showBar = offer?.status === 'pending' && rfqOpen
+  const noTaxOffer = !!rfq?.vat_invoice_required && !!offer && !issuesTaxInvoice(offer)
   // the floating assistant bubble steps aside while a sticky action bar is on screen
   useEffect(() => {
     if (!showBar) return
@@ -173,11 +178,14 @@ export default function OfferDetailPage() {
     // an expired price: confirm it in messages before choosing (round-4 UX-123)
     const gone = offer?.price_valid_until && new Date(offer.price_valid_until) < new Date()
       ? '\n\n' + L('This offer’s price has expired. Confirm the price with the supplier in messages before choosing it.', 'اس آفر کی قیمت کی مدت ختم ہو گئی ہے۔ منتخب کرنے سے پہلے پیغامات میں سپلائر سے قیمت کنفرم کریں۔', 'انتهت صلاحية سعر هذا العرض. تأكّد من السعر مع المورد عبر الرسائل قبل اختياره.') : ''
+    // round-7 UX-003: a request that needs a tax invoice, an offer without one
+    const noTax = noTaxOffer
+    const nt = noTax ? '\n\n' + L('This supplier does not issue a tax invoice, and you asked for a tax invoice.', 'یہ سپلائر ٹیکس انوائس جاری نہیں کرتا، اور آپ نے ٹیکس انوائس مانگی تھی۔', 'هذا المورد لا يُصدر فاتورة ضريبية، وقد طلبتَ فاتورة ضريبية.') : ''
     if (!(await askConfirm(L(
-      `Choose the offer from ${who} for ${total} SAR (${vatTag(offer, 'en')})?\nWe will tell the other suppliers and close the request, and a deal opens with this supplier.${gone}`,
-      `${who} کی آفر ${total} ریال (${vatTag(offer, 'ur')}) میں منتخب کریں؟\nہم باقی سپلائرز کو بتا دیں گے اور درخواست بند ہو جائے گی، اور اس سپلائر کے ساتھ ڈیل کھل جائے گی۔${gone}`,
-      `اختيار عرض ${who} بمبلغ ${total} ر.س (${vatTag(offer, 'ar')})؟\nسنُبلغ بقية الموردين ويُغلق الطلب، وتُفتح صفقة مع هذا المورد.${gone}`),
-      { okLabel: L('Choose this offer', 'یہ آفر منتخب کریں', 'اختر هذا العرض'), cancelLabel: L('Go back', 'واپس', 'تراجع') }))) return
+      `Choose the offer from ${who} for ${total} SAR (${vatTag(offer, 'en')})?\nWe will tell the other suppliers and close the request, and a deal opens with this supplier.${gone}${nt}`,
+      `${who} کی آفر ${total} ریال (${vatTag(offer, 'ur')}) میں منتخب کریں؟\nہم باقی سپلائرز کو بتا دیں گے اور درخواست بند ہو جائے گی، اور اس سپلائر کے ساتھ ڈیل کھل جائے گی۔${gone}${nt}`,
+      `اختيار عرض ${who} بمبلغ ${total} ر.س (${vatTag(offer, 'ar')})؟\nسنُبلغ بقية الموردين ويُغلق الطلب، وتُفتح صفقة مع هذا المورد.${gone}${nt}`),
+      { okLabel: noTax ? L('Yes, choose it without a tax invoice', 'ہاں، ٹیکس انوائس کے بغیر منتخب کریں', 'نعم، أختاره دون فاتورة ضريبية') : L('Choose this offer', 'یہ آفر منتخب کریں', 'اختر هذا العرض'), cancelLabel: L('Go back', 'واپس', 'تراجع') }))) return
     setActing(true)
     const supabase = createClient()
     const { error } = await supabase.rpc('accept_offer', { p_offer_id: offerId })
@@ -237,6 +245,10 @@ export default function OfferDetailPage() {
   const statusBadge = offer.status === 'accepted' ? { t: L('Chosen', 'منتخب', 'تم اختياره'), c: 'bg-[#E1F5EE] text-[#0F6E56]' }
     // round-6 UX-076: an offer closed by another choice was «not chosen», not declined by the buyer
     : offer.status === 'rejected' ? (chosenId ? { t: L('Not chosen', 'منتخب نہیں ہوئی', 'لم يُختر'), c: 'bg-gray-100 text-gray-600' } : { t: L('Declined', 'رد شدہ', 'مرفوض'), c: 'bg-gray-100 text-gray-600' })
+    // round-7 UX-126: never «بانتظار قرارك» once another offer was chosen or the request is no longer open
+    : chosenId ? { t: L('Not chosen', 'منتخب نہیں ہوئی', 'لم يُختر'), c: 'bg-gray-100 text-gray-600' }
+    : rfq.status === 'cancelled' ? { t: L('Request cancelled', 'درخواست منسوخ', 'أُلغي الطلب'), c: 'bg-gray-100 text-gray-600' }
+    : rfq.status !== 'open' ? { t: L('Request ended', 'درخواست ختم', 'انتهى الطلب'), c: 'bg-gray-100 text-gray-600' }
     : { t: L('Waiting for your decision', 'آپ کے فیصلے کا انتظار', 'بانتظار قرارك'), c: 'bg-warn-bg text-warn-text' }
   const fmt = (n: any) => (+Number(n).toFixed(2)).toLocaleString('en-US')
   // the reply deadline passed without a new price (round-5 UX-030): the request is over
@@ -279,7 +291,13 @@ export default function OfferDetailPage() {
         {/* a priced subset of the request: say so, so it never looks cheaper than complete offers (round-4 UX-031) */}
         {isMulti && partial && (
           <div className="rounded-xl border-2 border-[#D4A543] bg-[#D4A543]/10 px-4 py-2.5 text-sm font-semibold text-[#0B2438]">
-            <Glyph e="⚠" /> {L(`This offer prices ${pricedN} of ${allN} items. Not priced: ${missingNames}.`, `یہ آفر ${allN} میں سے ${pricedN} اشیاء کی قیمت دیتی ہے۔ قیمت نہیں دی: ${missingNames}۔`, `يسعّر هذا العرض ${pricedN} من ${arMaterials(allN, 'obl')}. لم يسعّر: ${missingNames}.`)}
+            <Glyph e="⚠" /> {L(`This offer prices ${pricedN} of ${allN} items. Not priced: ${missingNames}.`, `یہ آفر ${allN} میں سے ${urN(pricedN, 'چیز', 'اشیاء')} کی قیمت دیتی ہے۔ قیمت نہیں دی: ${missingNames}۔`, `يسعّر هذا العرض ${pricedN} من ${arMaterials(allN, 'obl')}. لم يسعّر: ${missingNames}.`)}
+          </div>
+        )}
+        {/* round-7 UX-003: say it on the offer page too */}
+        {noTaxOffer && offer.status !== 'accepted' && (
+          <div role="note" className="bg-warn-bg border border-warn-border text-warn-text text-sm rounded-xl px-4 py-2.5 font-semibold">
+            <Glyph e="🧾" /> {L('This supplier does not issue a tax invoice, and your request needs a tax invoice.', 'یہ سپلائر ٹیکس انوائس جاری نہیں کرتا، اور آپ کی درخواست کو ٹیکس انوائس درکار ہے۔', 'لا يُصدر هذا المورد فاتورة ضريبية، وطلبك يحتاج فاتورة ضريبية.')}
           </div>
         )}
         {offer.status === 'pending' && offer.price_valid_until && (
@@ -340,10 +358,10 @@ export default function OfferDetailPage() {
                 {s.cr_verification_source === 'wathq' ? L('Commercial registration verified', 'کمرشل رجسٹریشن کی تصدیق شدہ', 'سجلّه التجاري موثّق') : L('Verified', 'تصدیق شدہ', 'موثّق')}
               </span>
             )}
-            {s.verification_status !== 'verified' && s.cr_verification_source !== 'wathq' && (
+            {!independentSeller && s.verification_status !== 'verified' && s.cr_verification_source !== 'wathq' && (
               <span className="badge text-xs bg-gray-100 text-gray-600">{L('Not verified yet', 'ابھی تصدیق نہیں ہوئی', 'غير موثّق بعد')}</span>
             )}
-            {offer.source_type && (
+            {!independentSeller && offer.source_type && (
               <span className={`badge text-xs ${isDirectSource(offer.source_type) ? 'bg-[#E1F5EE] text-[#0F6E56]' : 'bg-warn-bg text-warn-text'}`}>
                 {isDirectSource(offer.source_type) ? <><SellerIcon name="check" /> {L('Direct price from the supplier', 'سپلائر سے براہ راست قیمت', 'سعر مباشر من المورد')}</> : <><SellerIcon name={sourceIcon(offer.source_type)} /> {L(`Goods source: ${sourceLabel(offer.source_type, locale)}`, `سامان کا ماخذ: ${sourceLabel(offer.source_type, locale)}`, `مصدر البضاعة: ${sourceLabel(offer.source_type, locale)}`)}</>}
               </span>
@@ -377,7 +395,11 @@ export default function OfferDetailPage() {
         <div className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm">
           <h2 className="font-bold text-sm mb-3" style={{ color: '#0B2438' }}><Glyph e="💰" /> {L('Price and delivery', 'قیمت اور ڈیلیوری', 'السعر والتوصيل')}</h2>
           {!isMulti && <Row label={L('Unit price', 'فی یونٹ قیمت', 'سعر الوحدة')} value={Number(offer.unit_price) > 0 ? `${fmt(buyerLinePrice(offer.unit_price, offer))} ${SAR}` : null} />}
-          <Row label={L('Delivery time', 'ڈیلیوری کا وقت', 'مدة التوصيل')} value={Number(offer.delivery_days) > 0 ? L(`Within ${daysText(offer.delivery_days, locale)}`, `${daysText(offer.delivery_days, locale)} میں`, `خلال ${arCount(Number(offer.delivery_days), 'يوم واحد', 'يومين', 'أيام', 'يوماً')}`) : null} />
+          {/* round-7 UX-132: the date is counted in working days (no Friday); pickup reads «جاهز للاستلام خلال» */}
+          <Row label={rfq.delivery_required === false ? L('Ready for pickup', 'وصولی کے لیے تیار', 'جاهز للاستلام') : L('Delivery time', 'ڈیلیوری کا وقت', 'مدة التوصيل')} value={Number(offer.delivery_days) > 0 ? (() => {
+            const n = Number(offer.delivery_days)
+            return L(`Within ${n} working day${n === 1 ? '' : 's'} (Friday not counted)`, `${n} کاروباری ${n === 1 ? 'دن' : 'دنوں'} میں (جمعہ کے علاوہ)`, `خلال ${arCount(n, 'يوم عمل واحد', 'يومَي عمل', 'أيام عمل', 'يوم عمل')} (دون الجمعة)`)
+          })() : null} />
 
           {/* per-item pricing */}
           {ip.length > 0 && (
@@ -508,8 +530,14 @@ export default function OfferDetailPage() {
         {/* the request ended while the offer was still waiting: no actions, a way to ask again (UX-023) */}
         {!accepted && chosenId && (
           <div className="bg-white rounded-2xl p-4 border border-[#D4A543]/60 shadow-sm flex flex-wrap items-center justify-between gap-3">
-            <span className="text-sm font-semibold text-gray-800"><Glyph e="✅" /> {L('You chose another offer on this request.', 'آپ نے اس درخواست پر دوسری آفر منتخب کی ہے۔', 'اخترت عرضاً آخر في هذا الطلب.')}</span>
-            <Link href={`/contractor/orders/${chosenId}#deal`} className="min-h-11 inline-flex items-center gap-1 px-4 rounded-xl text-sm font-bold" style={{ background: '#D4A543', color: '#071827' }}>{L('Follow the deal', 'ڈیل دیکھیں', 'متابعة الصفقة')} <span aria-hidden="true">{FWD}</span></Link>
+            {/* round-7 UX-128: several deals on this request → the request page lists them */}
+            {chosenN > 1 ? (<>
+              <span className="text-sm font-semibold text-gray-800"><Glyph e="✅" /> {L('You chose other suppliers for the materials of this request.', 'آپ نے اس درخواست کی اشیاء کے لیے دوسرے سپلائرز منتخب کیے ہیں۔', 'اخترت موردين آخرين لمواد هذا الطلب.')}</span>
+              <Link href={`/contractor/rfq/${id}`} className="min-h-11 inline-flex items-center gap-1 px-4 rounded-xl text-sm font-bold" style={{ background: '#D4A543', color: '#071827' }}>{L('View the deals of this request', 'اس درخواست کی ڈیلز دیکھیں', 'عرض صفقات هذا الطلب')} <span aria-hidden="true">{FWD}</span></Link>
+            </>) : (<>
+              <span className="text-sm font-semibold text-gray-800"><Glyph e="✅" /> {L('You chose another offer on this request.', 'آپ نے اس درخواست پر دوسری آفر منتخب کی ہے۔', 'اخترت عرضاً آخر في هذا الطلب.')}</span>
+              <Link href={`/contractor/orders/${chosenId}#deal`} className="min-h-11 inline-flex items-center gap-1 px-4 rounded-xl text-sm font-bold" style={{ background: '#D4A543', color: '#071827' }}>{L('Follow the deal', 'ڈیل دیکھیں', 'متابعة الصفقة')} <span aria-hidden="true">{FWD}</span></Link>
+            </>)}
           </div>
         )}
         {offer.status === 'pending' && !rfqOpen && !chosenId && (

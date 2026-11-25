@@ -16,6 +16,10 @@ import { Check } from 'lucide-react'
 // Company team: the owner (or an admin member) invites sales staff with a one-time link. A
 // member signs in with their own account and quotes on behalf of the company; their offers
 // belong to the company. Deals after award and conversations stay with the owner for now.
+// round-7 UX-072: turn on once the lead migration adds company_invites.label + create_company_invite(p_role, p_label)
+// and list_company_team returns label; until then the «who is this link for» field stays hidden
+const INVITE_LABEL_LIVE = true
+
 export default function SupplierTeamPage() {
   const { locale, dir } = useTranslation()
   const L = (en: string, ur: string, ar: string) => (locale === 'en' ? en : locale === 'ur' ? ur : ar)
@@ -56,12 +60,11 @@ export default function SupplierTeamPage() {
 
   async function createInvite() {
     setBusy('invite'); setMsg('')
-    // round-6 UX-032: the employee name is kept on the invitation (company_invites.label, p_label) so every device
-    // shows whom each open link is for; until the server takes p_label, the call falls back to the old signature
+    // round-7 UX-072: the employee name goes to the server only once create_company_invite(p_role, p_label) exists
+    // (INVITE_LABEL_LIVE); no silent fallback that drops the name
     const sb = createClient()
-    const label = inviteFor.trim()
-    let { data, error } = await sb.rpc('create_company_invite', label ? { p_role: newRole, p_label: label } : { p_role: newRole })
-    if (error && label && /p_label|function|schema cache/i.test(error.message || '')) ({ data, error } = await sb.rpc('create_company_invite', { p_role: newRole }))
+    const label = INVITE_LABEL_LIVE ? inviteFor.trim() : ''
+    const { data, error } = await sb.rpc('create_company_invite', label ? { p_role: newRole, p_label: label } : { p_role: newRole })
     const j: any = error ? { ok: false } : (data || {})
     if (j.ok) {
       setLastLink(linkFor(j.token)); setLastFor(inviteFor.trim()); setInviteFor('')
@@ -139,10 +142,10 @@ export default function SupplierTeamPage() {
           <div className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm space-y-3">
             <h2 className="font-bold text-navy">{L('Invite a team member', 'رکن کو مدعو کریں', 'دعوة عضو جديد')}</h2>
             <p className="text-[13px] text-gray-600">{L('Each link works once and expires after 7 days. Send it to the employee on WhatsApp.', 'ہر لنک ایک بار استعمال ہوتا ہے اور 7 دن بعد ختم ہو جاتا ہے۔ اسے واٹس ایپ پر ملازم کو بھیجیں۔', 'كل رابط يُستخدم مرة واحدة وينتهي بعد 7 أيام. أرسله إلى الموظف عبر واتساب.')}</p>
-            <div>
+            {INVITE_LABEL_LIVE && <div>
               <label htmlFor="inv-for" className="block text-xs font-bold text-gray-600 mb-1">{L('Who is this link for? (employee name, optional)', 'یہ لنک کس کے لیے ہے؟ (ملازم کا نام، اختیاری)', 'لمن هذا الرابط؟ (اسم الموظف، اختياري)')}</label>
               <input id="inv-for" value={inviteFor} onChange={e => setInviteFor(e.target.value.slice(0, 60))} className="input-field" placeholder={L('e.g. Ahmed, sales', 'مثلاً احمد، سیلز', 'مثال: أحمد، المبيعات')} />
-            </div>
+            </div>}
             <div className="flex flex-wrap items-center gap-2">
               <select value={newRole} onChange={e => setNewRole(e.target.value as any)} className="input-field w-auto" aria-label={L('Role', 'کردار', 'الدور')}>
                 <option value="member">{roleLabel('member')}: {L('prices requests', 'قیمتیں دیتا ہے', 'يسعّر الطلبات')}</option>

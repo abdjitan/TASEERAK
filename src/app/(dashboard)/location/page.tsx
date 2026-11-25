@@ -201,6 +201,14 @@ export default function LocationPage() {
           </div>
         ) : (<>
           <div className="bg-[#F5F7FA] border border-gray-200 rounded-xl p-3 mb-5 text-sm text-gray-700">{isBuyer ? T.verifyNoteBuyer : T.verifyNote}</div>
+          {/* who sees what (round-7 UX-076): a company's location is public to buyers, an agent's is not */}
+          {!isBuyer && profile?.role === 'supplier' && (
+            <div className="bg-white border border-[#0B2438]/15 rounded-xl p-3 mb-5 text-sm text-[#0B2438]" role="note">
+              {['individual', 'price_agent', 'broker'].includes(profile?.provider_type)
+                ? L('Buyers see only your city; the district and the exact location are shown to no one.', 'خریدار صرف آپ کا شہر دیکھتے ہیں؛ محلہ اور درست مقام کسی کو نہیں دکھایا جاتا۔', 'لا يظهر للمشترين إلا مدينتك، أما الحي والموقع الدقيق فلا يُعرضان لأحد.')
+                : L('Your establishment’s location and short address are shown to buyers on the platform.', 'آپ کے ادارے کا مقام اور مختصر پتہ پلیٹ فارم پر خریداروں کو دکھایا جاتا ہے۔', 'يظهر موقع منشأتك وعنوانها المختصر للمشترين على المنصة.')}
+            </div>
+          )}
 
           {/* a buyer starts with the map pin; the formal national address is optional (UX-118) */}
           {isBuyer ? (<>
@@ -221,9 +229,7 @@ export default function LocationPage() {
             {/* an error shows in red, never in the success green (UX-140) */}
             {msg && <div role={msgOk ? 'status' : 'alert'} className={`text-sm rounded-xl p-3 mb-3 border flex items-center justify-center gap-1.5 ${msgOk ? 'bg-emerald-50 border-emerald-200 text-emerald-800' : 'bg-red-50 border-red-200 text-red-700'}`}>{msgOk && <Check className="w-4 h-4" aria-hidden />}{msg}
               {msgOk && <a href={homeHref} className="inline-flex items-center min-h-[44px] px-2 font-bold underline underline-offset-2">{L('Back to the home page', 'ہوم پیج پر واپس', 'العودة إلى الرئيسية')}</a>}</div>}
-            <button onClick={handleSave} disabled={saving}
-              className="w-full py-4 rounded-xl font-bold text-[#071827] text-base disabled:opacity-50 transition-all hover:shadow-lg shadow-lg"
-              style={{ background: '#D4A543' }}>
+            <button onClick={handleSave} disabled={saving} className="btn-primary btn-lg w-full">
               {saving ? T.saving : T.save}
             </button>
           </div>

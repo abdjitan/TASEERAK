@@ -12,8 +12,9 @@ export const dynamic = 'force-dynamic' // عرض وقت الطلب — يتفا�
 
 // the title promises only what the page shows: «coming soon» while the board is off (round-5 UX-194)
 export const metadata: Metadata = {
-  title: FEATURES.priceBoard ? 'أسعار مواد البناء في السعودية اليوم | تسعيرك' : 'أسعار مواد البناء قريباً | تسعيرك',
-  description: 'مؤشّر أسعار مواد البناء في السعودية — متوسّط أسعار الحديد والأسمنت والخرسانة والبلاط والمواد الكهربائية والميكانيكية، محسوبة من صفقات حقيقية على منصة تسعيرك.',
+  title: FEATURES.priceBoard ? 'أسعار مواد البناء في السعودية اليوم | تسعيرك' : 'أسعار المواد قريباً | تسعيرك',
+  // round-7 UX-234: no promise of an index that does not exist yet
+  description: !FEATURES.priceBoard ? 'مؤشّر أسعار مواد البناء على تسعيرك قريباً. لمعرفة سعر مادة اليوم أرسل طلب تسعير مجاناً، فيرد الموردون بأسعارهم شاملة الضريبة.' : 'مؤشّر أسعار مواد البناء في السعودية — متوسّط أسعار الحديد والأسمنت والخرسانة والبلاط والمواد الكهربائية والميكانيكية، محسوبة من صفقات حقيقية على منصة تسعيرك.',
   alternates: { canonical: '/prices' },
   // «قريباً» while the price board is off: keep the placeholder out of search results
   ...(FEATURES.priceBoard ? {} : { robots: { index: false, follow: true } }),

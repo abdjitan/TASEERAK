@@ -305,8 +305,10 @@ export default function NewTenderPage() {
 
         {allowed !== false && (<>
           <label className="block bg-white rounded-2xl border border-gray-200 p-4">
-            <span className="block text-sm font-bold text-[#0B2438] mb-1.5">{L('Tender name', 'ٹینڈر کا نام', 'اسم المناقصة')}</span>
-            <input value={title} onChange={(e: any) => setTitle(e.target.value.slice(0, 200))} className="input-field" placeholder={L('e.g. Energy centre — stage 4', 'مثلاً: انرجی سینٹر — چوتھا مرحلہ', 'مثال: مركز الطاقة — المرحلة الرابعة')} />
+            {/* round-7 UX-144: a required field says so (mark, hint, aria-required) */}
+            <span className="block text-sm font-bold text-[#0B2438] mb-1.5">{L('Tender name', 'ٹینڈر کا نام', 'اسم المناقصة')} <span className="text-red-700" aria-hidden>*</span></span>
+            <input value={title} onChange={(e: any) => setTitle(e.target.value.slice(0, 200))} required aria-required="true" aria-describedby="tender-name-hint" className="input-field" placeholder={L('e.g. Energy centre, stage 4', 'مثلاً: انرجی سینٹر، چوتھا مرحلہ', 'مثال: مركز الطاقة، المرحلة الرابعة')} />
+            {!title.trim() && <span id="tender-name-hint" className="block text-xs text-[#8F6820] mt-1">{L('Write the tender name.', 'ٹینڈر کا نام لکھیں۔', 'اكتب اسم المناقصة.')}</span>}
             <span className="block text-xs text-gray-500 mt-1"><Glyph e="🔒" /> {L('Only you see this name; it is never sent to suppliers.', 'یہ نام صرف آپ دیکھتے ہیں؛ یہ کبھی سپلائرز کو نہیں بھیجا جاتا۔', 'يظهر هذا الاسم لك وحدك، ولا يُرسل إلى الموردين أبداً.')}</span>
           </label>
 

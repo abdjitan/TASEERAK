@@ -19,6 +19,7 @@ import { readPageCache, writePageCache } from '@/lib/pageCache'
 import { rfqDesc, rfqRefLine } from '@/lib/rfqName'
 import { arDeals, countLabel } from '@/lib/text'
 import { normalizedIncludes } from '@/lib/normalize'
+import { realtimeTopic } from '@/lib/realtimeTopic'
 
 // The deal's amount, the same as the deal page shows it (UX-018): a per-item award counts only the
 // awarded materials, plus the delivery/other charges once confirmed (not while extras_pending),
@@ -97,6 +98,22 @@ function ContractorDeals() {
   }, [])
 
   useEffect(() => { load() }, [load])
+  // round-7 UX-034: the list stays live: a quiet reload on return to the tab and on each new notification
+  useEffect(() => {
+    let last = 0
+    const quiet = () => { if (document.visibilityState !== 'visible' || Date.now() - last < 3000) return; last = Date.now(); load() }
+    document.addEventListener('visibilitychange', quiet)
+    window.addEventListener('focus', quiet)
+    const supabase = createClient()
+    let ch: any
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (!session) return
+      ch = supabase.channel(realtimeTopic(`orders-live-${session.user.id}`))
+        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'notifications', filter: `user_id=eq.${session.user.id}` }, () => { last = 0; quiet() })
+        .subscribe()
+    })
+    return () => { document.removeEventListener('visibilitychange', quiet); window.removeEventListener('focus', quiet); if (ch) supabase.removeChannel(ch) }
+  }, [load])
 
   if (loading) return <PageLoader />
 

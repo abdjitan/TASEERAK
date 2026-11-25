@@ -71,7 +71,10 @@ function Verify() {
       <div className="max-w-xl mx-auto p-4 sm:p-6 space-y-5">
         <div>
           <h1 className="text-2xl font-bold text-[#071827]">{L('Verify your account', 'اپنا اکاؤنٹ تصدیق کریں', 'وثّق حسابك')}</h1>
-          <p className="text-sm text-gray-600 mt-1">{isBuyer
+          {/* while SMS is down the intro says the same thing as the steps below (round-7 UX-221) */}
+          <p className="text-sm text-gray-600 mt-1">{emailFirst
+            ? L('One step now: verify your email to continue, and verify your mobile later when the text-message service is back.', 'ابھی ایک قدم: جاری رکھنے کے لیے اپنی ای میل تصدیق کریں، اور ٹیکسٹ میسج سروس واپس آنے پر موبائل بعد میں تصدیق کریں۔', 'خطوة واحدة الآن: وثّق بريدك الإلكتروني لتتابع، ووثّق جوالك لاحقاً حين تعود خدمة الرسائل.')
+            : isBuyer
             ? L('One quick step to protect your account and deals: your mobile number.', 'اکاؤنٹ اور سودوں کے تحفظ کے لیے ایک آسان قدم: موبائل نمبر۔', 'خطوة واحدة سريعة لحماية حسابك وصفقاتك: رقم جوالك.')
             : L('Two quick steps to protect your account and deals: your mobile number and your email.', 'اکاؤنٹ اور سودوں کے تحفظ کے لیے دو آسان قدم: موبائل نمبر اور ای میل۔', 'خطوتان سريعتان لحماية حسابك وصفقاتك: رقم جوالك وبريدك الإلكتروني.')}</p>
         </div>
@@ -122,7 +125,7 @@ function Verify() {
 
             <button type="button" disabled={!canGo}
               onClick={() => { window.location.href = next || home }}
-              className="w-full min-h-[48px] rounded-xl bg-[#D4A543] text-[#071827] font-bold py-3 disabled:opacity-50">
+              className="btn-primary btn-lg w-full">
               {canGo ? L('Continue', 'جاری رکھیں', 'متابعة')
                 : emailFirst ? L('Verify your email to continue', 'جاری رکھنے کے لیے ای میل تصدیق کریں', 'وثّق بريدك للمتابعة')
                 : isBuyer ? L('Verify your mobile to continue', 'جاری رکھنے کے لیے موبائل تصدیق کریں', 'وثّق جوالك للمتابعة')
@@ -140,7 +143,7 @@ function Verify() {
         )}
         {!canGo && <p className="text-sm text-gray-600 text-center">
           {L('Did the code not arrive?', 'کوڈ نہیں ملا؟', 'لم يصلك الرمز؟')}{' '}
-          <Link href="/support?topic=sms" className="font-bold text-[#8F6820] underline underline-offset-2 inline-flex min-h-[44px] items-center">{L('Contact support', 'سپورٹ سے رابطہ کریں', 'تواصل مع الدعم')}</Link>
+          <Link href={emailFirst ? '/support?topic=email' : '/support?topic=sms'} className="font-bold text-[#8F6820] underline underline-offset-2 inline-flex min-h-[44px] items-center">{L('Contact support', 'سپورٹ سے رابطہ کریں', 'تواصل مع الدعم')}</Link>
         </p>}
         {/* deleting the account is a right (PDPL) and a store requirement, also before verifying (UX-024) */}
         <p className="text-sm text-gray-600 text-center">

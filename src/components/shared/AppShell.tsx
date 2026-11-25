@@ -17,7 +17,8 @@ import { realtimeTopic } from '@/lib/realtimeTopic'
 import PhoneVerifyBanner from '@/components/shared/PhoneVerifyBanner'
 import { storedBuyerType, rememberBuyerType } from '@/lib/buyerType'
 import { askConfirm } from '@/lib/askConfirm'
-import { LogOut, ShieldCheck, Plus } from 'lucide-react'
+import { LogOut, ShieldCheck, Plus, WifiOff } from 'lucide-react'
+import { fetchNavBadges, cachedNavBadges, type NavBadges } from '@/components/shared/navBadges'
 
 // A request draft (text or photos) saved on this device: signing out deletes it, so ask first (UX-036).
 function hasLocalDraft(): boolean {
@@ -69,10 +70,12 @@ export default function AppShell({
   // a menu badge stops at «9+», with «unread» for screen readers (round-6 UX-120)
   const badgeText = (b: any) => (typeof b === 'number' && b > 9 ? '9+' : b)
   const unreadWord = locale === 'en' ? 'unread' : locale === 'ur' ? 'نئے' : 'غير مقروءة'
-  const [card, setCard] = useState<ShellCard | null>(company ? { company, meta: companyMeta, verified: companyVerified } : shellCache.card || null)
+  const [card, setCard] = useState<ShellCard | null>(company ? { company, meta: companyMeta ?? shellCache.card?.meta, verified: companyVerified ?? shellCache.card?.verified } : shellCache.card || null)
   useEffect(() => {
     if (company) {
-      const c: ShellCard = { company, meta: companyMeta, verified: companyVerified }
+      // a page that passes only the name keeps the meta line and the badge remembered before (round-7 UX-225)
+      const prev = shellCache.card
+      const c: ShellCard = { company, meta: companyMeta ?? prev?.meta, verified: companyVerified ?? prev?.verified }
       shellCache.card = c; setCard(c)
       try { localStorage.setItem(CARD_KEY, JSON.stringify(c)) } catch {}
     } else if (!shellCache.card) {
@@ -255,6 +258,27 @@ export default function AppShell({
       if (onRead) window.removeEventListener('tsk:msgs-read', onRead)
     }
   }, [userId])
+  // The other menu badges, as on the app's tabs (round-7 UX-099, UX-244): cached 60 s across pages.
+  const [badges, setBadges] = useState<NavBadges>(() => cachedNavBadges(userId, roleHint) || {})
+  useEffect(() => {
+    if (!sessionUid || !roleHint || roleHint === 'admin') return
+    let gone = false
+    const supabase = createClient()
+    const load = (force = false) => fetchNavBadges(supabase, sessionUid, roleHint, force).then((b) => { if (!gone) setBadges(b) }, () => {})
+    load()
+    const onSupportRead = () => load(true)
+    window.addEventListener('tsk:support-read', onSupportRead)
+    return () => { gone = true; window.removeEventListener('tsk:support-read', onSupportRead) }
+  }, [sessionUid, roleHint, pathname])
+  const badgeFor = (n: ShellNavItem) => (n.href === '/messages' && unreadMsgs > 0) ? unreadMsgs : (badges[n.href] || n.badge)
+  // No connection: one bar says so, instead of pages that seem to hang (round-7 UX-226)
+  const [offline, setOffline] = useState(false)
+  useEffect(() => {
+    const on = () => setOffline(!navigator.onLine)
+    on()
+    window.addEventListener('online', on); window.addEventListener('offline', on)
+    return () => { window.removeEventListener('online', on); window.removeEventListener('offline', on) }
+  }, [])
   // «Online» heartbeat for the owner dashboard: touch_last_seen now and every 2 minutes while the
   // tab is visible (paused when hidden). Throttled across page changes by the module cache.
   useEffect(() => {
@@ -323,7 +347,7 @@ export default function AppShell({
         <nav className="flex-1 overflow-y-auto px-3 pb-3 space-y-0.5">
           {nav.map((n, i) => {
             const showSection = n.section && n.section !== nav[i - 1]?.section
-            const badge = (n.href === '/messages' && unreadMsgs > 0) ? unreadMsgs : n.badge
+            const badge = badgeFor(n)
             return (
               <div key={n.href}>
                 {showSection && (
@@ -413,6 +437,12 @@ export default function AppShell({
           </div>
         </header>
 
+        {offline && (
+          <div role="status" className="print:hidden sticky top-[61px] sm:top-[69px] z-30 flex items-center gap-2 px-4 py-2.5 text-sm font-semibold bg-warn-bg text-warn-text border-b border-warn-border">
+            <WifiOff className="w-4 h-4 shrink-0" aria-hidden />
+            {L('No internet connection. Check the network, then try again.', 'انٹرنیٹ کنکشن نہیں ہے۔ نیٹ ورک چیک کریں، پھر دوبارہ کوشش کریں۔', 'لا يوجد اتصال بالإنترنت، تحقّق من الشبكة ثم أعد المحاولة.')}
+          </div>
+        )}
         <main id="main" tabIndex={-1} ref={mainRef} className="ts-dashboard-main flex-1 p-4 sm:p-6 lg:p-7 pb-[calc(96px+env(safe-area-inset-bottom))] lg:pb-7 focus:outline-none"><PhoneVerifyBanner />{children}</main>
       </div>
 
@@ -424,7 +454,7 @@ export default function AppShell({
           const curated = nav.filter((n) => n.mobile != null).sort((a, b) => (a.mobile! - b.mobile!)).slice(0, 4)
           return curated.length > 0 ? curated : nav.slice(0, 4)
         })().map((n) => {
-          const badge = (n.href === '/messages' && unreadMsgs > 0) ? unreadMsgs : n.badge
+          const badge = badgeFor(n)
           const label = n.mobileLabel || n.label
           // The buyer's main action (new price request) is a raised gold circle, not one more tab (UX-196).
           // Its label is light on the navy bar (gold when open), the ring matches the bar (UX-019).

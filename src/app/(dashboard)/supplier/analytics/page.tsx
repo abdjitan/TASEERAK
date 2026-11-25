@@ -21,7 +21,7 @@ export default function SupplierAnalyticsPage() {
   const [a, setA] = useState<any>(null)
   const [failed, setFailed] = useState(false) // UX-083: a failed load is never «no offers yet»
   // round-6 UX-111: results by the browse sections the seller knows («أدوات صحية»), not the old engineering sectors
-  const [bySection, setBySection] = useState<{ name: string; total: number; won: number; lost: number }[] | null>(null)
+  const [bySection, setBySection] = useState<{ name: string; total: number; won: number; lost: number; pending: number; ended: number }[] | null>(null)
 
   async function load() {
     setFailed(false)
@@ -35,9 +35,9 @@ export default function SupplierAnalyticsPage() {
       // by section, from my own offers (quiet: the sector rows stay as a fallback)
       Promise.resolve(supabase.rpc('acting_uid')).then(async ({ data: act }: any) => {
         const sid = (act as string) || session.user.id
-        const { data: offs, error: oe } = await supabase.from('offers').select('status, item_prices, rfq:rfqs(status, sector, sub_category, product_name)').eq('supplier_id', sid).limit(500)
+        const { data: offs, error: oe } = await supabase.from('offers').select('status, item_prices, deal_closed_at, rfq:rfqs(status, sector, sub_category, product_name)').eq('supplier_id', sid).limit(500)
         if (oe || !Array.isArray(offs)) return
-        const m: Record<string, { name: string; total: number; won: number; lost: number }> = {}
+        const m: Record<string, { name: string; total: number; won: number; lost: number; pending: number; ended: number }> = {}
         for (const o of offs as any[]) {
           const lines: any[] = Array.isArray(o.item_prices) && o.item_prices.length ? o.item_prices : [{ sector: o.rfq?.sector, sub_category: o.rfq?.sub_category, product_name: o.rfq?.product_name }]
           const names = new Set<string>()
@@ -46,10 +46,12 @@ export default function SupplierAnalyticsPage() {
             const nm = sectionLabelOf(ln.sector, sub, locale as any)
             if (nm) names.add(nm)
           }
-          const oc = offerOutcome(o.status, o.rfq?.status)
+          // round-7: an admin-closed deal is not a win (same rule as get_my_supplier_analytics, migration 290)
+          const oc = offerOutcome(o.status, o.rfq?.status, o.deal_closed_at)
           for (const nm of names) {
-            const r = (m[nm] = m[nm] || { name: nm, total: 0, won: 0, lost: 0 })
-            r.total++; if (oc === 'won') r.won++; if (oc === 'lost') r.lost++
+            const r = (m[nm] = m[nm] || { name: nm, total: 0, won: 0, lost: 0, pending: 0, ended: 0 })
+            // round-7 UX-154: «waiting» and «ended without a choice» are counted apart
+            r.total++; if (oc === 'won') r.won++; else if (oc === 'lost') r.lost++; else if (oc === 'pending') r.pending++; else r.ended++
           }
         }
         const rows = Object.values(m).sort((x, y) => y.total - x.total)
@@ -118,8 +120,8 @@ export default function SupplierAnalyticsPage() {
 
             {/* البطاقات */}
             <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 mb-5">
-              {cards.map((c) => (
-                <div key={c.label} className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 text-center">
+              {cards.map((c, k) => (
+                <div key={c.label} className={`bg-white rounded-2xl border border-gray-100 shadow-sm p-4 text-center ${k === cards.length - 1 ? 'col-span-2 sm:col-span-1' : ''}`}>
                   <div className="text-2xl font-extrabold" style={{ color: c.color }}>{c.value.toLocaleString('en-US')}</div>
                   <div className="text-[12px] text-gray-500 mt-1">{c.label}</div>
                 </div>
@@ -138,7 +140,9 @@ export default function SupplierAnalyticsPage() {
                         <span className="font-semibold text-[#0B2438]">{s.name}</span>
                         <span className="text-gray-700">{dec
                           ? L(`Chosen in ${s.won} of ${dec}`, `${dec} میں سے ${s.won} منتخب`, `اختيرت ${s.won} من ${dec}`)
-                          : L('Waiting for the buyer', 'خریدار کے فیصلے کی منتظر', 'بانتظار قرار المشتري')}
+                          : s.pending > 0
+                            ? L('Waiting for the buyer', 'خریدار کے فیصلے کی منتظر', 'بانتظار قرار المشتري')
+                            : L('Ended without a choice', 'کسی انتخاب کے بغیر ختم', 'انتهت دون اختيار')}
                           <span className="text-gray-500"> · {L(`${s.total} offer${s.total === 1 ? '' : 's'}`, `${s.total} آفر`, arCount(s.total, 'عرض واحد', 'عرضان', 'عروض', 'عرضاً'))}</span></span>
                       </li>
                     )

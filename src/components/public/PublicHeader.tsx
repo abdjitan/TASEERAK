@@ -19,13 +19,14 @@ export default function PublicHeader({ active }: { active?: string }) {
   ]
   return (
     <header className="bg-white border-b border-gray-100 sticky top-0 z-30" dir={dir}>
-      <div className="max-w-4xl mx-auto px-4 h-[72px] flex items-center justify-between gap-2">
+      <div className="max-w-4xl mx-auto px-3 sm:px-4 h-[64px] sm:h-[72px] flex items-center justify-between gap-2">
         <Link href="/" className="flex items-center shrink-0 min-h-[44px]" aria-label={L('Taseerak', 'تسعیرک', 'تسعيرك')}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/taseerak-metallic-logo.webp" alt={L('Taseerak', 'تسعیرک', 'تسعيرك')} className="h-14 w-auto" />
+          <img src="/taseerak-metallic-logo.webp" alt={L('Taseerak', 'تسعیرک', 'تسعيرك')} className="h-11 sm:h-14 w-auto" />
         </Link>
 
-        <nav className="flex items-center gap-1 text-sm font-semibold">
+        {/* 375px: a smaller logo, min-w-0 and tighter padding so the gold button is never squeezed (round-7 UX-106) */}
+        <nav className="flex items-center gap-0.5 sm:gap-1 text-sm font-semibold min-w-0">
           {/* phones: only the logo, the language, «دخول» and «ابدأ الآن» (UX-162) */}
           {links.map(l => (
             <Link key={l.key} href={l.href}
@@ -39,8 +40,8 @@ export default function PublicHeader({ active }: { active?: string }) {
           {signedIn ? (
             <Link href="/login" className="inline-flex items-center min-h-[44px] px-4 rounded-xl text-[#071827] font-bold whitespace-nowrap" style={{ background: '#D4A543' }}>{L('My account', 'میرا اکاؤنٹ', 'حسابي')}</Link>
           ) : (<>
-            <Link href="/login" className="inline-flex items-center min-h-[44px] px-3 rounded-lg text-[#0B2438] hover:bg-gray-100 whitespace-nowrap">{L('Sign in', 'سائن اِن', 'دخول')}</Link>
-            <Link href="/contractor/rfq/quick" className="inline-flex items-center min-h-[44px] px-4 rounded-xl text-[#071827] font-bold whitespace-nowrap" style={{ background: '#D4A543' }}>{L('Start now', 'ابھی شروع کریں', 'ابدأ الآن')}</Link>
+            <Link href="/login" className="inline-flex items-center min-h-[44px] px-2 sm:px-3 rounded-lg text-[#0B2438] hover:bg-gray-100 whitespace-nowrap">{L('Sign in', 'سائن اِن', 'دخول')}</Link>
+            <Link href="/contractor/rfq/quick" className="inline-flex items-center min-h-[44px] px-3 sm:px-4 rounded-xl text-[#071827] font-bold whitespace-nowrap" style={{ background: '#D4A543' }}>{L('Start now', 'ابھی شروع کریں', 'ابدأ الآن')}</Link>
           </>)}
         </nav>
       </div>

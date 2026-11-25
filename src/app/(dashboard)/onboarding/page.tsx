@@ -139,6 +139,7 @@ export default function OnboardingPage() {
   // owner 2026-11-25: a company or shop may add its VAT number here (optional), with an explicit confirmation
   const [supVat, setSupVat] = useState('')
   const [supVatSaved, setSupVatSaved] = useState('')
+  const [supVatVerified, setSupVatVerified] = useState(false) // round-7 UX-037: profiles.vat_verified_at
   const [supVatOk, setSupVatOk] = useState(false)
   // round-2 UX-037: the map pin changed the city: say so
   const [cityNote, setCityNote] = useState('')
@@ -147,6 +148,15 @@ export default function OnboardingPage() {
   const [kindBusy, setKindBusy] = useState(false)
   // فرد / وكيل أسعار / سمسار: ما عنده محل ولا سجل — ثقته من التقييمات، فما نسأله تصنيف ولا توثيق
   const isIndividual = ['individual', 'price_agent', 'broker'].includes(providerType)
+  // round-7 UX-069: a pricing agent «prices» (he sells nothing himself) and nobody sees his location
+  const ta = !isIndividual ? t : {
+    ...t,
+    subS: locale === 'en' ? 'Add your region and the kinds of materials you price so the right requests reach you' : locale === 'ur' ? 'اپنا علاقہ اور وہ اقسام شامل کریں جن کی آپ قیمت دیتے ہیں تاکہ مناسب درخواستیں آپ تک پہنچیں' : 'أضف منطقتك وأنواع المواد التي تسعّرها لتصلك الطلبات المناسبة',
+    stepSpecialties: locale === 'en' ? 'What you price' : locale === 'ur' ? 'آپ کس چیز کی قیمت دیتے ہیں' : 'ما تسعّره',
+    warn: locale === 'en' ? 'Without your region and what you price, no requests will reach you.' : locale === 'ur' ? 'اپنے علاقے اور آپ کس چیز کی قیمت دیتے ہیں، اس کے بغیر کوئی درخواست نہیں پہنچے گی۔' : 'بدون منطقتك وما تسعّره لن تصلك أي طلبات.',
+    needSpec: locale === 'en' ? 'Pick at least one kind of material you price so requests can reach you' : locale === 'ur' ? 'کم از کم ایک قسم منتخب کریں جس کی آپ قیمت دیتے ہیں تاکہ درخواستیں آپ تک پہنچیں' : 'اختر نوعاً واحداً على الأقل مما تسعّره حتى تصلك الطلبات',
+    sectorsHintS: locale === 'en' ? 'Choose what you price; your sectors follow from it' : locale === 'ur' ? 'منتخب کریں کہ آپ کس چیز کی قیمت دیتے ہیں؛ شعبے اسی سے طے ہوں گے' : 'اختر ما تسعّره، وتُحدَّد قطاعاتك منه تلقائياً',
+  }
   // a company's main activity is chosen (provider_type is one of the four activities, not the bare «company»)
   const hasActivity = COMPANY_ACTIVITIES.some(a => a.k === providerType) || providerType === 'dealer'
   // business name for a company seller: the WhatsApp sign-up only asks for the person's name
@@ -189,7 +199,7 @@ export default function OnboardingPage() {
         if (act && act !== session.user.id) { window.location.replace('/supplier/dashboard'); return }
       } catch {}
       const metaRole = (session.user.user_metadata as any)?.role
-      const { data: p, error: pErr } = await supabase.from('profiles').select('role, buyer_type, region, city, district, supplier_tier, min_order_value, contractor_grade, latitude, longitude, provider_type, full_name, company_name_ar, commercial_registration, vat_number').eq('id', session.user.id).single()
+      const { data: p, error: pErr } = await supabase.from('profiles').select('role, buyer_type, region, city, district, supplier_tier, min_order_value, contractor_grade, latitude, longitude, provider_type, full_name, company_name_ar, commercial_registration, vat_number, vat_verified_at').eq('id', session.user.id).single()
       if (pErr) { setLoadFailed(true); showErr(t.loadFailed) }
       setRole(((p?.role || metaRole) === 'supplier') ? 'supplier' : 'contractor')
       setHomeBuyer(p?.buyer_type === 'individual')
@@ -203,7 +213,7 @@ export default function OnboardingPage() {
         const cn = (p.company_name_ar || '').trim()
         const own = !cn || cn === 'شركة جديدة' || cn === (p.full_name || '').trim()
         setBizName(own ? '' : cn); setBizOrig(own ? '' : cn)
-        setBuyerCo(own ? '' : cn); setBuyerVat(p.vat_number || ''); setSupVatSaved(p.vat_number || '')
+        setBuyerCo(own ? '' : cn); setBuyerVat(p.vat_number || ''); setSupVatSaved(p.vat_number || ''); setSupVatVerified(!!p.vat_verified_at)
         // Invitation links (/join/company, /join/seller) pass the kind at signup: apply it once.
         // only the kind the seller tapped on the sign-up form; a device hint (e.g. an old /join visit) just pre-selects nothing (owner 2026-11-19)
         const metaKind = (session.user.user_metadata as any)?.seller_kind
@@ -312,7 +322,7 @@ export default function OnboardingPage() {
     const pendingMat = extraMaterialInput.trim()
     const extraNow = pendingMat && role === 'supplier' ? [...extraMaterials.filter(m => !(m.name === pendingMat)), { sector: openSector || sectors[0] || '', name: pendingMat }] : extraMaterials
     if (pendingMat && role === 'supplier') { setExtraMaterials(extraNow); setExtraMaterialInput('') }
-    if (role === 'supplier' && specialties.length === 0) { showErr(t.needSpec, 'ob-specs'); return }
+    if (role === 'supplier' && specialties.length === 0) { showErr(ta.needSpec, 'ob-specs'); return }
     // نتحقّق من البيانات قبل أي كتابة: قطاعات معروفة فقط (عمود enum) وبلا تكرار.
     // UX-038: the sectors follow from the materials chosen (picking materials without ticking a sector still saves)
     const validSectors = Array.from(new Set(sectorsFor(sectors, specialties).filter(s => Object.prototype.hasOwnProperty.call(SECTOR_LABELS, s))))
@@ -399,8 +409,10 @@ export default function OnboardingPage() {
   // and asks before dropping unsaved changes
   async function leaveLater() {
     if (dirty) {
+      // round-7 UX-035: closing the dialog (outside click / Escape) keeps the seller on the page (dismissValue: null)
       const keep = await askConfirm(locale === 'en' ? 'Your details are not saved yet. Do you want to save them before leaving?' : locale === 'ur' ? 'آپ کی معلومات ابھی محفوظ نہیں ہوئیں۔ کیا جانے سے پہلے انہیں محفوظ کرنا چاہتے ہیں؟' : 'لم تُحفظ بياناتك بعد. هل تريد حفظها قبل الخروج؟',
-        { okLabel: locale === 'en' ? 'Save and continue' : locale === 'ur' ? 'محفوظ کریں اور جاری رکھیں' : 'احفظ وتابع', cancelLabel: locale === 'en' ? 'Leave without saving' : locale === 'ur' ? 'محفوظ کیے بغیر جائیں' : 'اخرج دون حفظ' })
+        { okLabel: locale === 'en' ? 'Save and continue' : locale === 'ur' ? 'محفوظ کریں اور جاری رکھیں' : 'احفظ وتابع', cancelLabel: locale === 'en' ? 'Leave without saving' : locale === 'ur' ? 'محفوظ کیے بغیر جائیں' : 'اخرج دون حفظ', dismissValue: null })
+      if (keep === null || keep === undefined) return
       if (keep) { save(); return }
     }
     leavingRef.current = true
@@ -423,7 +435,7 @@ export default function OnboardingPage() {
         ] : []),
         { label: t.stepLocation, done: !!(region && city), target: 'ob-region' },
         ...(!isIndividual ? [{ label: t.stepMap, done: lat != null && lng != null, target: 'ob-map' }] : []),
-        { label: t.stepSpecialties, done: specialties.length > 0, target: 'ob-specs' },
+        { label: ta.stepSpecialties, done: specialties.length > 0, target: 'ob-specs' },
       ]
     : [{ label: t.stepLocation, done: !!(region && city), target: 'ob-region' }] // المشتري: الموقع فقط مطلوب، والقطاعات اختيارية
   const firstMissing = steps.find(s => !s.done) || null
@@ -433,11 +445,10 @@ export default function OnboardingPage() {
   const profileComplete = canSave && (role !== 'supplier' || specialties.length > 0)
   const ringC = 2 * Math.PI * 24
 
-  // the button stays active (UX-125): pressing it says what is missing
+  // the button stays active (UX-125): pressing it says what is missing; round-7 UX-171: the shared btn-primary
   const SaveBtn = ({ full }: { full?: boolean }) => (
     <button type="button" onClick={() => save()} disabled={saving || loadFailed}
-      className={`${full ? 'w-full' : 'w-full'} min-h-[44px] py-3 rounded-xl font-extrabold text-[#071827] text-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed`}
-      style={{ background: 'linear-gradient(135deg,#F5C55B,#D4A543)', opacity: canSave ? 1 : 0.85 }}>
+      className={`${full ? 'w-full' : 'w-full'} btn-primary btn-lg min-h-[44px] rounded-xl font-bold disabled:opacity-50 disabled:cursor-not-allowed`}>
       {saving ? t.saving : t.save}
     </button>
   )
@@ -499,7 +510,7 @@ export default function OnboardingPage() {
                     <div className="mt-3">
                       <SellerKindPicker providerType={providerType || null} supplierTier={supplierTier} locale={locale}
                         onChange={(pt: string, tr: string | null) => { setProviderType(pt); setSupplierTier(tr) }}
-                        onVerify={() => save('/settings?tab=docs')} />
+                        onVerify={() => save('/settings?tab=docs')} verifyLocked={!profileComplete} />
                     </div>
                   )}
                 </>)}
@@ -536,7 +547,7 @@ export default function OnboardingPage() {
         }} />
       <header className="bg-white/90 backdrop-blur border-b border-line sticky top-0 z-20">
         <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
-          <a href={roleHome} className="flex items-center gap-2">
+          <a href={roleHome} onClick={(e: any) => { e.preventDefault(); leaveLater() }} className="flex items-center gap-2">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src="/taseerak-metallic-logo.webp" alt="تسعيرك — Taseerak" className="h-9 w-auto" />
           </a>
@@ -550,7 +561,7 @@ export default function OnboardingPage() {
       <div className="max-w-6xl mx-auto px-4 py-6 lg:py-8">
         <div className="mb-6">
           <h1 className="text-2xl font-extrabold text-navy">{role !== 'supplier' && homeBuyer ? (locale === 'en' ? 'Your delivery address' : locale === 'ur' ? 'آپ کا ڈیلیوری پتہ' : 'عنوان التوصيل') : role !== 'supplier' && !buyerType ? (locale === 'en' ? 'Complete your details' : locale === 'ur' ? 'اپنی تفصیلات مکمل کریں' : 'أكمل بياناتك') : role === 'supplier' && isIndividual ? (locale === 'en' ? 'Set up your profile as a pricing agent' : locale === 'ur' ? 'قیمت ایجنٹ کے طور پر اپنی پروفائل ترتیب دیں' : 'إعداد ملفك كوسيط تسعير') : t.title}</h1>
-          <p className="text-ink-2 mt-1.5 text-sm">{role === 'supplier' ? t.subS : !buyerType ? (locale === 'en' ? 'Choose who you are buying for, then add the delivery address.' : locale === 'ur' ? 'منتخب کریں کہ آپ کس کے لیے خرید رہے ہیں، پھر ڈیلیوری کا پتہ شامل کریں۔' : 'اختر لمن تشتري، ثم أضف عنوان التوصيل.') : homeBuyer ? (locale === 'en' ? 'So suppliers near you can price your requests.' : locale === 'ur' ? 'تاکہ قریبی سپلائرز قیمت دے سکیں۔' : 'ليصل طلبك إلى الموردين القريبين منك.') : t.subC}</p>
+          <p className="text-ink-2 mt-1.5 text-sm">{role === 'supplier' ? ta.subS : !buyerType ? (locale === 'en' ? 'Choose who you are buying for, then add the delivery address.' : locale === 'ur' ? 'منتخب کریں کہ آپ کس کے لیے خرید رہے ہیں، پھر ڈیلیوری کا پتہ شامل کریں۔' : 'اختر لمن تشتري، ثم أضف عنوان التوصيل.') : homeBuyer ? (locale === 'en' ? 'So suppliers near you can price your requests.' : locale === 'ur' ? 'تاکہ قریبی سپلائرز قیمت دے سکیں۔' : 'ليصل طلبك إلى الموردين القريبين منك.') : t.subC}</p>
         </div>
 
         <div className="lg:flex lg:gap-6 lg:items-start">
@@ -619,6 +630,8 @@ export default function OnboardingPage() {
                 <h2 className="text-sm font-bold text-navy"><Glyph e="📍" /> {role === 'supplier' ? t.location : t.deliveryAddr}</h2>
                 <span className="text-[12px] font-bold text-navy bg-navy/5 rounded-full px-2 py-0.5">{t.required}</span>
               </div>
+              {/* round-7 UX-145: a pricing agent's location is never shown */}
+              {role === 'supplier' && isIndividual && <p className="text-[13px] text-gray-600 mb-3">{locale === 'en' ? 'Your location and district are not shown to buyers; we use them only so requests from your area reach you.' : locale === 'ur' ? 'آپ کا مقام اور محلہ خریداروں کو نہیں دکھایا جاتا؛ ہم انہیں صرف اس لیے استعمال کرتے ہیں کہ آپ کے علاقے کی درخواستیں آپ تک پہنچیں۔' : 'لا يظهر موقعك ولا حيّك للمشترين؛ نستخدمه فقط لتصلك طلبات منطقتك.'}</p>}
               {mapFirst && mapBlock}
               {mapFirst && <p className="text-xs font-bold text-gray-600 mb-2">{locale === 'en' ? 'Or choose manually' : locale === 'ur' ? 'یا خود منتخب کریں' : 'أو اختر يدوياً'}</p>}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -657,7 +670,7 @@ export default function OnboardingPage() {
                   ? <span className="text-[12px] font-bold text-navy bg-navy/5 rounded-full px-2 py-0.5">{t.required}</span>
                   : <span className="text-[12px] font-bold text-gray-600 bg-gray-100 rounded-full px-2 py-0.5">{t.optional}</span>}
               </div>
-              <p className="text-xs text-gray-500 mb-1">{role === 'supplier' ? t.sectorsHintS : t.sectorsHintC}</p>
+              <p className="text-xs text-gray-500 mb-1">{role === 'supplier' ? ta.sectorsHintS : t.sectorsHintC}</p>
 
               {role !== 'supplier' && (
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mt-4">
@@ -759,13 +772,19 @@ export default function OnboardingPage() {
             {role === 'supplier' && !!providerType && !isIndividual && (
               <div className={cardCls} style={{ borderInlineStartWidth: 4, borderInlineStartColor: '#D4A543' }}>
                 <div className="flex items-center justify-between mb-1">
-                  <h2 className="text-sm font-bold text-navy"><Glyph e="🧾" /> {locale === 'en' ? 'Do you have a VAT number? Add it now' : locale === 'ur' ? 'کیا آپ کے پاس VAT نمبر ہے؟ ابھی شامل کریں' : 'هل لديك رقم ضريبي؟ أضفه الآن'}</h2>
+                  <h2 className="text-sm font-bold text-navy"><Glyph e="🧾" /> {locale === 'en' ? 'Is your business registered for VAT?' : locale === 'ur' ? 'کیا آپ کا ادارہ VAT میں رجسٹرڈ ہے؟' : 'هل منشأتك مسجّلة في ضريبة القيمة المضافة؟'}</h2>
                   <span className="text-[12px] font-bold text-gray-600 bg-gray-100 rounded-full px-2 py-0.5">{t.optional}</span>
                 </div>
                 {supVatSaved ? (
+                  <>
                   <p className="text-sm text-navy"><b>{locale === 'en' ? 'Your VAT number:' : locale === 'ur' ? 'آپ کا VAT نمبر:' : 'رقمك الضريبي:'}</b> <span dir="ltr">{supVatSaved}</span></p>
+                  {/* round-7 UX-037: «قيد المراجعة» until the admin sets vat_verified_at */}
+                  {supVatVerified
+                    ? <p className="text-[13px] font-semibold text-[#0F6E56] mt-1 inline-flex items-center gap-1"><Check className="w-4 h-4" aria-hidden /> {locale === 'en' ? 'We verified your VAT number.' : locale === 'ur' ? 'ہم نے آپ کے VAT نمبر کی تصدیق کر دی۔' : 'تحقّقنا من رقمك الضريبي.'}</p>
+                    : <p className="text-[13px] text-gray-700 mt-1 leading-relaxed">{locale === 'en' ? 'Your VAT number is being reviewed by the Taseerak team; the badge «Issues a VAT invoice» appears on your offers once it is verified.' : locale === 'ur' ? 'آپ کا VAT نمبر تسعیرک ٹیم کے جائزے میں ہے؛ تصدیق کے بعد آپ کی آفرز پر «VAT انوائس جاری کرتا ہے» کا نشان ظاہر ہوگا۔' : 'رقمك الضريبي قيد المراجعة لدى فريق تسعيرك، وتظهر شارة «يُصدر فاتورة ضريبية» على عروضك بعد التحقق منه.'}</p>}
+                  </>
                 ) : (<>
-                  <p className="text-xs text-gray-600 mb-3 leading-relaxed">{locale === 'en' ? 'Most requests from companies and contractors require a VAT invoice. If you are registered for VAT, add your VAT number so these requests reach you and your prices are shown including VAT.' : locale === 'ur' ? 'کمپنیوں اور ٹھیکیداروں کی زیادہ تر درخواستوں میں VAT انوائس شرط ہوتی ہے۔ اگر آپ VAT میں رجسٹرڈ ہیں تو اپنا VAT نمبر شامل کریں تاکہ یہ درخواستیں آپ تک پہنچیں اور آپ کی قیمتیں VAT سمیت دکھائی جائیں۔' : 'أغلب طلبات الشركات والمقاولين تشترط فاتورة ضريبية. إن كان لديك تسجيل في ضريبة القيمة المضافة فأضف رقمك الضريبي لتصلك هذه الطلبات وتُعرض أسعارك شاملة الضريبة.'}</p>
+                  <p className="text-xs text-gray-600 mb-3 leading-relaxed">{locale === 'en' ? 'Most requests from companies and contractors require a VAT invoice, and in them the offers that do not come with a VAT invoice are shown in a separate collapsed section. If your business is registered for VAT, add your VAT number; once our team verifies it, your offers carry the badge «Issues a VAT invoice».' : locale === 'ur' ? 'کمپنیوں اور ٹھیکیداروں کی زیادہ تر درخواستوں میں VAT انوائس شرط ہوتی ہے، اور ان میں VAT انوائس جاری نہ کرنے والی آفرز ایک الگ بند حصے میں دکھائی جاتی ہیں۔ اگر آپ کا ادارہ VAT میں رجسٹرڈ ہے تو اپنا VAT نمبر شامل کریں؛ ہماری ٹیم کی تصدیق کے بعد آپ کی آفرز پر «VAT انوائس جاری کرتا ہے» کا نشان ظاہر ہوگا۔' : 'أغلب طلبات الشركات والمقاولين تشترط فاتورة ضريبية، وتُعرض فيها العروض التي لا تُصدر فاتورة ضريبية في قسم منفصل مطويّ. إن كانت منشأتك مسجّلة في ضريبة القيمة المضافة فأضف رقمك الضريبي، وبعد أن يتحقق فريقنا منه تظهر على عروضك شارة «يُصدر فاتورة ضريبية».'}</p>
                   <label htmlFor="ob-sup-vat" className="block text-xs font-bold text-navy mb-1">{locale === 'en' ? 'VAT number' : locale === 'ur' ? 'VAT نمبر' : 'الرقم الضريبي'}</label>
                   <input id="ob-sup-vat" value={supVat} onChange={(e: any) => setSupVat(normalizeCrInput(e.target.value).slice(0, 15))} inputMode="numeric" dir="ltr" maxLength={15} className="input-field" placeholder="3XXXXXXXXXXXXX3" aria-invalid={!!supVat && supVat.length === 15 && !isVatNo(supVat)} />
                   {!!supVat && supVat.length === 15 && !isVatNo(supVat) && <p role="alert" className="text-[12px] text-red-700 mt-1">{vatFormatMsg(locale)}</p>}
@@ -843,7 +862,7 @@ export default function OnboardingPage() {
                 )}
               </div>
 
-              {role === 'supplier' && pct < 100 && <div className="text-[12px] text-white bg-white/10 rounded-lg p-2.5 mb-4 leading-relaxed"><Glyph e="⚠" /> {t.warn}</div>}
+              {role === 'supplier' && pct < 100 && <div className="text-[12px] text-white bg-white/10 rounded-lg p-2.5 mb-4 leading-relaxed"><Glyph e="⚠" /> {ta.warn}</div>}
 
               <SaveBtn full />
               <button type="button" onClick={leaveLater} className="w-full flex items-center justify-center min-h-[44px] text-sm text-white/80 hover:text-white mt-1">{t.later}</button>
@@ -890,8 +909,7 @@ export default function OnboardingPage() {
             <button type="button" onClick={leaveLater} className="shrink-0 inline-flex items-center min-h-[44px] text-sm font-semibold text-ink-2 px-3 rounded-xl border border-line hover:border-navy hover:text-navy transition-colors">{t.later}</button>
             {/* حفظ — الزر الأساسي الوحيد ذو البرتقالي القوي على الموبايل */}
             <button type="button" onClick={() => save()} disabled={saving || loadFailed}
-              className="flex-1 min-h-[44px] py-3 rounded-xl font-extrabold text-sm text-[#071827] transition-all disabled:cursor-not-allowed disabled:opacity-60"
-              style={{ background: 'linear-gradient(135deg,#F5C55B,#D4A543)', opacity: canSave ? 1 : 0.85 }}>
+              className="flex-1 btn-primary min-h-[44px] rounded-xl font-bold text-sm disabled:cursor-not-allowed disabled:opacity-50">
               {saving ? t.saving : t.save}
             </button>
           </div>

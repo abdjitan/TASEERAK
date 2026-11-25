@@ -8,7 +8,7 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import { useTranslation } from '@/i18n'
-import LanguageSwitcher from '@/components/shared/LanguageSwitcher'
+import PublicTopBar from '@/components/public/PublicTopBar'
 import SellerIcon from '@/components/shared/SellerIcon'
 import { Check } from 'lucide-react'
 import PublicFooter from '@/components/public/PublicFooter'
@@ -16,6 +16,34 @@ import Glyph from '@/components/shared/Glyph'
 import { teamInviteHintText } from '@/lib/cr'
 
 export const INVITE_CODE_KEY = 'tsk_invite_code'
+
+// round-7 UX-147: the three steps and the example request, shared with /join/company and /join/seller
+export function JoinSteps() {
+  const { locale } = useTranslation()
+  const L = (en: string, ur: string, ar: string) => (locale === 'en' ? en : locale === 'ur' ? ur : ar)
+  return (
+    <>
+      <h2 className="mt-8 mb-3 text-lg font-extrabold text-navy">{L('How it works', 'یہ کیسے کام کرتا ہے', 'كيف يعمل؟')}</h2>
+      <ol className="grid sm:grid-cols-3 gap-3">
+        {[
+          L('Create your account and choose what you sell.', 'اکاؤنٹ بنائیں اور منتخب کریں کہ آپ کیا بیچتے ہیں۔', 'أنشئ حسابك واختر ما تبيعه.'),
+          L('Requests for your materials in your area reach you.', 'آپ کے علاقے میں آپ کے سامان کی درخواستیں آپ تک پہنچتی ہیں۔', 'تصلك طلبات موادك في منطقتك.'),
+          L('Price each item and send one offer; the buyer chooses.', 'ہر آئٹم کی قیمت دیں اور ایک آفر بھیجیں؛ خریدار انتخاب کرتا ہے۔', 'سعّر كل مادة وأرسل عرضاً واحداً، ويختار المشتري.'),
+        ].map((s, i) => (
+          <li key={i} className="bg-white rounded-2xl p-4 border border-line flex items-start gap-3">
+            <span className="w-8 h-8 shrink-0 grid place-items-center rounded-full font-extrabold text-[#071827]" style={{ background: '#D4A543' }}>{i + 1}</span>
+            <span className="text-[13px] text-ink-2 leading-relaxed">{s}</span>
+          </li>
+        ))}
+      </ol>
+      <div className="mt-8 bg-white rounded-2xl p-4 border border-line">
+        <span className="inline-block text-[12px] font-bold px-2 py-0.5 rounded-full bg-[#0B2438]/5 text-[#0B2438]">{L('Example', 'مثال', 'مثال')}</span>
+        <div className="mt-2 font-bold text-navy">{L('Cement 50 kg: 200 bags, Rebar 12 mm: 3 tons', 'سیمنٹ 50 کلو: 200 بوری، سریا 12 ملی میٹر: 3 ٹن', 'أسمنت 50 كغ: 200 كيس، حديد تسليح 12 ملم: 3 أطنان')}</div>
+        <div className="text-[13px] text-ink-2 mt-1">{L('Riyadh · delivery required · pricing closes in 2 days', 'ریاض · ڈیلیوری ضروری · قیمت کی مہلت 2 دن', 'الرياض · التوصيل مطلوب · تنتهي مهلة التسعير بعد يومين')}</div>
+      </div>
+    </>
+  )
+}
 
 export default function JoinSupplier() {
   const { locale, dir } = useTranslation()
@@ -45,15 +73,8 @@ export default function JoinSupplier() {
 
   return (
     <div className="min-h-screen bg-canvas" dir={dir}>
-      <header className="bg-white border-b border-line">
-        <div className="max-w-3xl mx-auto px-4 h-16 flex items-center justify-between">
-          <Link href="/" className="flex items-center" aria-label={L('Taseerak home', 'تسعیرک مرکزی صفحہ', 'تسعيرك، الرئيسية')}>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/taseerak-metallic-logo.webp" alt="تسعيرك — Taseerak" className="h-11 w-auto" />
-          </Link>
-          <LanguageSwitcher variant="minimal" />
-        </div>
-      </header>
+      {/* round-7 UX-163: the shared public top bar (logo, language, «الرئيسية») */}
+      <PublicTopBar />
 
       <main className="max-w-3xl mx-auto px-4 py-8 sm:py-10">
         <div className="text-center mb-6">
@@ -92,27 +113,8 @@ export default function JoinSupplier() {
         {/* round-5 UX-097: an employee joins through the owner's invitation, not with the company's CR */}
         <p className="mt-2.5 text-[13px] text-ink-2 leading-relaxed"><Glyph e="👥" /> {teamInviteHintText(locale)}</p>
 
-        {/* UX-103: three steps */}
-        <h2 className="mt-8 mb-3 text-lg font-extrabold text-navy">{L('How it works', 'یہ کیسے کام کرتا ہے', 'كيف يعمل؟')}</h2>
-        <ol className="grid sm:grid-cols-3 gap-3">
-          {[
-            L('Create your account and choose what you sell.', 'اکاؤنٹ بنائیں اور منتخب کریں کہ آپ کیا بیچتے ہیں۔', 'أنشئ حسابك واختر ما تبيعه.'),
-            L('Requests for your materials in your area reach you.', 'آپ کے علاقے میں آپ کے سامان کی درخواستیں آپ تک پہنچتی ہیں۔', 'تصلك طلبات موادك في منطقتك.'),
-            L('Price each item and send one offer; the buyer chooses.', 'ہر آئٹم کی قیمت دیں اور ایک آفر بھیجیں؛ خریدار انتخاب کرتا ہے۔', 'سعّر كل مادة وأرسل عرضاً واحداً، ويختار المشتري.'),
-          ].map((s, i) => (
-            <li key={i} className="bg-white rounded-2xl p-4 border border-line flex items-start gap-3">
-              <span className="w-8 h-8 shrink-0 grid place-items-center rounded-full font-extrabold text-[#071827]" style={{ background: '#D4A543' }}>{i + 1}</span>
-              <span className="text-[13px] text-ink-2 leading-relaxed">{s}</span>
-            </li>
-          ))}
-        </ol>
-
-        {/* UX-103: an example request, marked as an example */}
-        <div className="mt-8 bg-white rounded-2xl p-4 border border-line">
-          <span className="inline-block text-[12px] font-bold px-2 py-0.5 rounded-full bg-[#0B2438]/5 text-[#0B2438]">{L('Example', 'مثال', 'مثال')}</span>
-          <div className="mt-2 font-bold text-navy">{L('Cement 50 kg: 200 bags, Rebar 12 mm: 3 tons', 'سیمنٹ 50 کلو: 200 بوری، سریا 12 ملی میٹر: 3 ٹن', 'أسمنت 50 كغ: 200 كيس، حديد تسليح 12 ملم: 3 أطنان')}</div>
-          <div className="text-[13px] text-ink-2 mt-1">{L('Riyadh · delivery required · pricing closes in 2 days', 'ریاض · ڈیلیوری ضروری · قیمت کی مہلت 2 دن', 'الرياض · التوصيل مطلوب · تنتهي مهلة التسعير بعد يومين')}</div>
-        </div>
+        {/* UX-103: three steps and an example request (round-7 UX-147: shared with the join pages) */}
+        <JoinSteps />
 
         {/* round-4 UX-138: a closing call to action */}
         <div className="mt-8 rounded-2xl p-6 text-center text-white" style={{ background: 'linear-gradient(135deg,#071827,#102E45)' }}>

@@ -412,13 +412,16 @@ export default function DealProtection({
       <p className="text-xs text-gray-500 mb-3">{L('The platform records each stage of the deal as proof that protects both sides; it never holds any money.', 'پلیٹ فارم ڈیل کے ہر مرحلے کو ریکارڈ کرتا ہے تاکہ دونوں فریقوں کا تحفظ ہو؛ یہ کوئی رقم اپنے پاس نہیں رکھتا۔', 'توثّق المنصة مراحل الصفقة دليلاً يحمي الطرفين، ولا تحتفظ بأي مبالغ.')}</p>
       {closed && (
         <div role="status" className="mb-4 rounded-xl bg-gray-100 border border-gray-300 text-gray-800 text-sm font-semibold px-3 py-2 leading-relaxed">
-          <Glyph e="ℹ" /> {L('This deal was cancelled by an admin decision', 'یہ ڈیل انتظامیہ کے فیصلے سے منسوخ کر دی گئی', 'أُلغيت هذه الصفقة بقرار الإدارة')}{offer.deal_closed_reason ? <>: <span dir="auto">{offer.deal_closed_reason}</span></> : '.'}
+          <Glyph e="ℹ" /> {L('This deal was cancelled by a decision of the Taseerak team', 'یہ ڈیل تسعیرک کی ٹیم کے فیصلے سے منسوخ کر دی گئی', 'أُلغيت هذه الصفقة بقرار فريق تسعيرك')}{offer.deal_closed_reason ? <>: <span dir="auto">{offer.deal_closed_reason}</span></> : '.'}
         </div>
       )}
       {/* a team member: the supplier page shows the one «يدير صاحب الحساب» note (round-4 UX-079) */}
       {pickup && (
         <div className="mb-4 rounded-xl bg-[#0B2438]/5 border border-[#0B2438]/15 text-[#0B2438] text-xs font-semibold px-3 py-2 leading-relaxed">
-          <Glyph e="📍" /> {pickupPlace
+          {/* round-7 UX-032: a pricing agent's own address is private (migration 285): he sets the pickup place */}
+          <Glyph e="📍" /> {isContractor && isIndependentOffer(vo)
+            ? L('The pricing agent sets the pickup place; message him to confirm the place and time.', 'وصولی کی جگہ پرائس ایجنٹ طے کرتا ہے؛ جگہ اور وقت کی تصدیق کے لیے اسے پیغام بھیجیں۔', 'مكان الاستلام يحدّده وسيط التسعير؛ راسله لتأكيد المكان والموعد.')
+            : pickupPlace
             ? L(`Pickup place: ${pickupPlace}`, `وصولی کی جگہ: ${pickupPlace}`, `مكان الاستلام: ${pickupPlace}`)
             : L('The buyer collects the goods from the supplier’s shop.', 'خریدار سامان سپلائر کی دکان سے لے گا۔', 'يستلم المشتري البضاعة من محل المورد.')}
         </div>
@@ -529,8 +532,9 @@ export default function DealProtection({
         ) : !canAct ? null : !showDispute ? (
           <button type="button" onClick={() => openDispute()} className="text-xs font-semibold text-[#B42318] hover:underline min-h-11"><Glyph e="⚠" /> {L('Had a problem? Report it', 'کوئی مسئلہ ہوا؟ شکایت درج کریں', 'واجهت مشكلة؟ أبلغ عنها')}</button>
         ) : (
-          <div className="bg-red-50 border border-red-200 rounded-xl p-3">
-            <label htmlFor="deal-dispute-reason" className="block text-xs font-bold text-[#B42318] mb-1.5">{L('Describe the problem', 'مسئلہ بیان کریں', 'صف المشكلة')}</label>
+          // round-7 UX-131: reporting is not destructive: a light navy panel and the gold action
+          <div className="bg-[#0B2438]/5 border border-[#0B2438]/15 rounded-xl p-3">
+            <label htmlFor="deal-dispute-reason" className="block text-xs font-bold text-[#0B2438] mb-1.5">{L('Describe the problem', 'مسئلہ بیان کریں', 'صف المشكلة')}</label>
             <textarea id="deal-dispute-reason" value={disputeReason} onChange={(e: any) => setDisputeReason(e.target.value)} className="input-field text-base sm:text-sm" rows={2} placeholder={isSupplier
               ? L('e.g. late payment / the buyer does not reply…', 'مثال: ادائیگی میں تاخیر / خریدار جواب نہیں دیتا…', 'مثال: تأخّر الدفع / المشتري لا يردّ…')
               : L('e.g. goods not delivered / different from the specs / late delivery…', 'مثال: مال ڈیلیور نہیں ہوا / اسپیسیفکیشن سے مختلف ہے / ڈیلیوری میں تاخیر…', 'مثال: البضاعة لم تُسلّم / مختلفة عن المواصفات / تأخّر التوصيل…')} />
@@ -542,7 +546,7 @@ export default function DealProtection({
                   setShowDispute(false)
                   setNotice(L('Report sent. The Taseerak team will contact both sides.', 'رپورٹ بھیج دی گئی۔ تسعیرک کی ٹیم دونوں فریقوں سے رابطہ کرے گی۔', 'أُرسل البلاغ. سيتواصل فريق تسعيرك مع الطرفين.'))
                 }
-              }} disabled={!disputeReason.trim() || busy === 'dispute'} className={`${BTN} text-white bg-[#B42318] hover:bg-[#912018]`}>{L('Send report', 'شکایت بھیجیں', 'إرسال البلاغ')}</button>
+              }} disabled={!disputeReason.trim() || busy === 'dispute'} className={`${BTN} bg-[#D4A543] text-[#071827] hover:bg-[#F5C55B] disabled:opacity-50`}>{L('Send report', 'شکایت بھیجیں', 'إرسال البلاغ')}</button>
               <button type="button" onClick={() => setShowDispute(false)} className={`${BTN} text-gray-600`}>{L('Close without sending', 'بھیجے بغیر بند کریں', 'إغلاق دون إرسال')}</button>
             </div>
           </div>

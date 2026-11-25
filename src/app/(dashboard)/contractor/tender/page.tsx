@@ -9,7 +9,7 @@ import AppShell from '@/components/shared/AppShell'
 import Glyph from '@/components/shared/Glyph'
 import { getNav } from '@/lib/nav'
 import { makeL } from '@/components/tender/labels'
-import { arItems, dateLocale } from '@/lib/text'
+import { arItems, arCount, dateLocale } from '@/lib/text'
 import { friendlyError } from '@/lib/friendlyError'
 import { askConfirm, notify } from '@/lib/askConfirm'
 import { storedBuyerType } from '@/lib/buyerType'
@@ -21,7 +21,8 @@ export default function TendersPage() {
   const [rows, setRows] = useState<any[] | null>(null)
   const [error, setError] = useState('')
   const [homeMode, setHomeMode] = useState(false)
-  const [sentCounts, setSentCounts] = useState<Record<string, { done: number; all: number }>>({})
+  // per tender: materials sent / all, and the requests they went in (one per send: round-7 UX-078)
+  const [sentCounts, setSentCounts] = useState<Record<string, { done: number; all: number; batches: string[] }>>({})
 
   useEffect(() => {
     // «لبيتي» mode hides tenders (never deletes them): say so, with the way back, instead of a silent redirect (UX-098)
@@ -36,15 +37,14 @@ export default function TendersPage() {
       if (e) setError(/relation|does not exist|schema cache/i.test(e.message || '') ? L('Tender pricing is not enabled yet.', 'ٹینڈر کی قیمت ابھی فعال نہیں۔', 'تسعير المناقصات غير مفعّل بعد.') : friendlyError(e.message, L('Could not load your tenders. Check your connection and try again.', 'آپ کے ٹینڈرز لوڈ نہیں ہو سکے۔ کنکشن چیک کر کے دوبارہ کوشش کریں۔', 'تعذّر تحميل مناقصاتك. تحقّق من الاتصال وحاول مرة أخرى.'), locale))
       setRows(t || [])
       // a partly sent tender (round-5 UX-021): «أُرسل جزء منها (X من Y)», counted per tender when the column exists
-      const partial = (t || []).filter((x: any) => x.status !== 'sent' && x.project_rfq_id).slice(0, 20)
-      for (const x of partial) {
+      // round-7 UX-078: also for a sent tender, to count its sends (each send is its own request)
+      const withSends = (t || []).filter((x: any) => x.project_rfq_id).slice(0, 20)
+      for (const x of withSends) {
         try {
-          const [{ count: all, error: e1 }, { count: done, error: e2 }] = await Promise.all([
-            supabase.from('tender_items').select('id', { count: 'exact', head: true }).eq('tender_id', x.id).eq('kind', 'material'),
-            supabase.from('tender_items').select('id', { count: 'exact', head: true }).eq('tender_id', x.id).eq('kind', 'material').not('sent_rfq_id', 'is', null),
-          ])
-          if (e1 || e2 || typeof all !== 'number' || typeof done !== 'number') continue
-          setSentCounts(m => ({ ...m, [x.id]: { done, all } }))
+          const { data: mats, error: e1 } = await supabase.from('tender_items').select('sent_rfq_id').eq('tender_id', x.id).eq('kind', 'material').limit(5000)
+          if (e1 || !Array.isArray(mats)) continue
+          const sentIds = mats.map((m: any) => m.sent_rfq_id).filter(Boolean) as string[]
+          setSentCounts(m => ({ ...m, [x.id]: { done: sentIds.length, all: mats.length, batches: Array.from(new Set(sentIds)) } }))
         } catch { /* the chip then shows without numbers */ }
       }
     })
@@ -76,7 +76,20 @@ export default function TendersPage() {
     return t.status === 'review' ? L('Awaiting your approval', 'آپ کی منظوری کا منتظر', 'بانتظار اعتمادك') : L('Draft', 'مسودہ', 'مسودة')
   }
   // the offers: straight to the request when the tender knows it (round-5 UX-158), else the project page
-  const offersHref = (t: any) => (t.rfq_id ? `/contractor/rfq/${t.rfq_id}` : `/contractor/project/${t.project_rfq_id}`)
+  // round-7 UX-078: a tender sent in several batches opens its review page, which lists every batch with its offers
+  const batchesOf = (t: any) => sentCounts[t.id]?.batches || []
+  const offersHref = (t: any) => {
+    const b = batchesOf(t)
+    if (b.length > 1) return `/contractor/tender/${t.id}#tender-batches`
+    if (b.length === 1) return `/contractor/rfq/${b[0]}`
+    return t.rfq_id ? `/contractor/rfq/${t.rfq_id}` : `/contractor/project/${t.project_rfq_id}`
+  }
+  const offersText = (t: any) => {
+    const n = batchesOf(t).length
+    if (n < 2) return L('View the offers received →', 'موصول آفرز دیکھیں ←', 'عرض العروض الواردة ←')
+    return L(`View the offers (${n} batches) →`, `آفرز دیکھیں (${n} کھیپیں) ←`, `عرض العروض (${arCount(n, 'دفعة واحدة', 'دفعتان', 'دفعات', 'دفعة')}) ←`)
+  }
+  const flagsN = (t: any) => (t.summary?.flags ? Object.values(t.summary.flags as Record<string, number>).reduce((s, n) => s + (Number(n) || 0), 0) : 0)
 
   return (
     <AppShell title={homeMode ? L('Company tools', 'کمپنی کے ٹولز', 'أدوات الشركات') : L('Tender pricing', 'ٹینڈر کی قیمت', 'تسعير مناقصة')} nav={getNav('contractor', locale, '/contractor/tender')} dir={dir}>
@@ -121,12 +134,13 @@ export default function TendersPage() {
               <p className="text-xs text-gray-500 mt-1">
                 {new Date(t.created_at).toLocaleDateString(dateLocale(locale))}
                 {t.summary?.items ? ` · ${L(`${t.summary.items} items`, `${t.summary.items} آئٹمز`, arItems(Number(t.summary.items)))}` : ''}
-                {t.summary?.flags ? ` · ${L('flags', 'نشانات', 'تنبيهات')} ${Object.values(t.summary.flags as Record<string, number>).reduce((s, n) => s + n, 0)}` : ''}
+                {/* round-7 UX-144: «7 تنبيهات», never «تنبيهات 0» */}
+                {flagsN(t) > 0 ? ` · ${L(`${flagsN(t)} flags`, `${flagsN(t)} انتباہات`, arCount(flagsN(t), 'تنبيه واحد', 'تنبيهان', 'تنبيهات', 'تنبيهاً'))}` : ''}
               </p>
             </Link>
             {(t.status === 'sent' || isPartial(t)) && t.project_rfq_id && (
               <Link href={offersHref(t)} className="flex items-center min-h-11 px-4 border-t border-gray-100 text-sm font-bold text-[#8F6820] hover:underline">
-                {L('View the offers received →', 'موصول آفرز دیکھیں ←', 'عرض العروض الواردة ←')}
+                {offersText(t)}
               </Link>
             )}
             {t.status !== 'sent' && (

@@ -130,7 +130,6 @@ a { text-decoration: none; }
   border-radius: 18px;
 }
 .public-empty-icon svg { width: 26px; height: 26px; }
-.public-page a[style*="background"] { border-radius: 10px !important; color: #050B12 !important; }
 .public-page .font-semibold.underline { color: #0B2438 !important; text-decoration-color: var(--ts-gold-500); text-decoration-thickness: 2px; text-underline-offset: 3px; }
 
 .public-document { background: #F5F7FA; color: #10243B; }
@@ -282,7 +281,6 @@ input[type="checkbox"]:focus-visible, input[type="radio"]:focus-visible { outlin
 .ts-dashboard [class*="text-orange"] { color: #8F6820; }
 .ts-dashboard .text-orange { color: #8F6820; }
 .ts-dashboard .border-orange { border-color: rgba(212,165,67,.5); }
-.ts-dashboard [style*="background: '#D4A543'"] { color: #050B12 !important; }
 .ts-dashboard button[style*="rgb(212, 165, 67)"], .ts-dashboard a[style*="rgb(212, 165, 67)"] { color: #050B12 !important; }
 .ts-dashboard .btn-orange, .ts-dashboard .btn-primary {
   box-shadow: 0 9px 22px rgba(157,116,37,.22), inset 0 1px rgba(255,255,255,.22);
@@ -424,7 +422,6 @@ input[type="checkbox"]:focus-visible, input[type="radio"]:focus-visible { outlin
 /* One error state for every form (round-4 UX-019): set aria-invalid="true" on the field that is wrong or missing. */
 :is(input, select, textarea)[aria-invalid="true"] { border-color: #B42318 !important; background-color: #FEF2F2 !important; }
 :is(input, select, textarea)[aria-invalid="true"]:focus { border-color: #B42318 !important; box-shadow: 0 0 0 4px rgba(180,35,24,.16) !important; }
-.ts-dashboard-sidebar { border-inline-start: 1px solid rgba(245,197,91,.28); }
 .ts-dashboard-brand img { filter: drop-shadow(0 8px 20px rgba(245,197,91,.18)); }
 .ts-company-card { background: linear-gradient(120deg, rgba(245,197,91,.13), rgba(255,255,255,.045)) !important; }
 .ts-mobile-nav {
@@ -492,6 +489,8 @@ input[type="checkbox"]:focus-visible, input[type="radio"]:focus-visible { outlin
 .ts-dashboard main table tbody tr:hover { background-color: rgba(212,165,67,.065); }
 .ts-dashboard main input::placeholder, .ts-dashboard main textarea::placeholder { color: #8894A0; }
 .ts-dashboard main label:not([class*="text-"]) { color: #34485B; font-weight: 700; }
+/* an option label (radio / checkbox) reads at a regular weight; only field titles are bold (round-7 UX-172) */
+.ts-dashboard main label:has(> input:is([type="radio"], [type="checkbox"])):not([class*="font-bold"]):not([class*="font-semibold"]) { font-weight: 400; }
 /* a field inside a label keeps a regular weight: the value typed is not bold (round-5 UX-195) */
 .ts-dashboard main label :where(input, select, textarea):not([class*="font-bold"]):not([class*="font-semibold"]) { font-weight: 400; }
 .ts-dashboard .ts-sidebar-link { border-radius: 13px; }

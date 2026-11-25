@@ -29,7 +29,8 @@ const CATS: { key: string; img: string; ar: string; en: string; ur: string; sub:
   { key: 'outdoor', img: 'outdoor', ar: 'الحدائق والخارجيات', en: 'Garden & outdoor', ur: 'باغ اور بیرونی', sub: { ar: 'عشب وري وإنترلوك', en: 'Turf, irrigation, interlock', ur: 'گھاس، آبپاشی' } },
 ]
 
-export default function MarketHero({ locale, homeBuyer = false, greeting }: { locale: string; homeBuyer?: boolean; greeting?: string }) {
+// round-7 UX-108: belowSearch = what a new buyer needs first (the delivery address card and «how it works»), right under the search
+export default function MarketHero({ locale, homeBuyer = false, greeting, belowSearch }: { locale: string; homeBuyer?: boolean; greeting?: string; belowSearch?: React.ReactNode }) {
   const L = (en: string, ur: string, ar: string) => (locale === 'en' ? en : locale === 'ur' ? ur : ar)
   const pick = (o: { ar: string; en: string; ur: string }) => (locale === 'en' ? o.en : locale === 'ur' ? o.ur : o.ar)
   const router = useRouter()
@@ -158,6 +159,8 @@ export default function MarketHero({ locale, homeBuyer = false, greeting }: { lo
         </div>
       </section>
 
+      {belowSearch ? <div className="mt-4">{belowSearch}</div> : null}
+
       {/* every section as a medallion chip (same row as the mobile app) */}
       <div className={`mt-4 flex gap-2 overflow-x-auto pb-1 -mx-1 px-1 ${homeBuyer ? 'hidden' : ''}`} aria-label={L('Sections', 'حصے', 'الأقسام')}>
         {chips.map(b => (
@@ -175,7 +178,7 @@ export default function MarketHero({ locale, homeBuyer = false, greeting }: { lo
           <h3 className="text-lg font-extrabold text-[#0B2438]">{L('Start with what you need', 'جو چاہیے وہاں سے شروع کریں', 'ابدأ من الشيء الذي تحتاجه')}</h3>
           <p className="text-[13px] text-[#48596E]">{homeBuyer ? L('What a home usually needs comes first', 'گھر کو عموماً جو چاہیے وہ پہلے', 'ما يحتاجه البيت عادةً يظهر أولاً') : L('For your home, a renovation or a whole project', 'گھر، مرمت یا پورے پراجیکٹ کے لیے', 'للبيت أو التجديد أو مشروع كامل')}</p>
         </div>
-        <Link href="/contractor/rfq/quick?browse=1" className="text-sm font-bold text-[#8F6820] hover:underline whitespace-nowrap min-h-[44px] inline-flex items-center">{L('All categories', 'تمام زمرے', 'كل التصنيفات')} {fwd}</Link>
+        <Link href="/contractor/rfq/quick?browse=1" className="text-sm font-bold text-[#8F6820] hover:underline whitespace-nowrap min-h-[44px] inline-flex items-center">{L('All sections', 'تمام حصے', 'كل الأقسام')} {fwd}</Link>
       </div>
       <div className={`mt-3 grid gap-2 sm:gap-3 ${homeBuyer ? 'grid-cols-2 sm:grid-cols-4' : 'grid-cols-3 lg:grid-cols-9'}`}>
         {cats.map(c => (
@@ -208,10 +211,12 @@ export default function MarketHero({ locale, homeBuyer = false, greeting }: { lo
       <div className="mt-7">
         <h3 className="text-lg font-extrabold text-[#0B2438]">{homeBuyer ? L('Get your home ready', 'اپنا گھر تیار کریں', 'جهّز بيتك') : L('Ready material lists', 'سامان کی تیار فہرستیں', 'قوائم مواد جاهزة')}</h3>
         <p className="text-[13px] text-[#48596E]">{L('Pick a list, remove what you don’t need and set the quantities', 'فہرست چنیں، غیر ضروری ہٹائیں اور مقدار لکھیں', 'اختر قائمة، وأزل ما لا تحتاجه، وحدّد الكميات')}</p>
-        <div className="mt-2 flex gap-2.5 overflow-x-auto pb-1 -mx-1 px-1">
+        {/* round-7 UX-110: a grid on wider screens; on phones a horizontal row with a fade that shows there is more */}
+        <div className="relative">
+        <div className="mt-2 flex gap-2.5 overflow-x-auto pb-1 -mx-1 px-1 sm:mx-0 sm:px-0 sm:grid sm:grid-cols-4 lg:grid-cols-7 sm:overflow-visible">
           {(homeBuyer ? HOME_ROOM_PACKS : HOME_PACKS).map(p => (
             <Link key={p.id} href={`/contractor/rfq/quick?pack=${p.id}`}
-              className="shrink-0 w-36 sm:w-40 rounded-2xl border border-gray-200 bg-white overflow-hidden hover:border-[#D4A543] hover:shadow-md transition-all">
+              className="shrink-0 w-36 sm:w-auto rounded-2xl border border-gray-200 bg-white overflow-hidden hover:border-[#D4A543] hover:shadow-md transition-all">
               <span className="block aspect-[4/3] bg-gray-50">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img src={p.photo || productImageUrl(p.cover)} alt="" loading="lazy" className={p.photo ? 'w-full h-full object-cover' : 'w-full h-full object-contain p-2'} />
@@ -222,6 +227,8 @@ export default function MarketHero({ locale, homeBuyer = false, greeting }: { lo
               </span>
             </Link>
           ))}
+        </div>
+        <span aria-hidden className="sm:hidden pointer-events-none absolute inset-y-0 end-0 w-10 bg-gradient-to-r rtl:bg-gradient-to-l from-transparent to-white" />
         </div>
       </div>
     </div>

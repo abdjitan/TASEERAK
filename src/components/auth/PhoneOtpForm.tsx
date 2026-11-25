@@ -21,7 +21,7 @@ const TX = {
     resend: 'أعد إرسال الرمز', resendIn: 'إعادة الإرسال بعد', sec: 'ثانية', change: 'تغيير الرقم', resent: 'أرسلنا رمزاً جديداً إلى',
     emailAccount: 'هذا الرقم مسجّل لحساب يدخل بالبريد الإلكتروني ولم يُوثَّق جواله بعد. ادخل بالبريد الإلكتروني وكلمة المرور.', emailBtn: 'الدخول بالبريد الإلكتروني',
     rate: 'محاولات كثيرة. انتظر قليلاً ثم أعد المحاولة.', sendFail: 'تعذّر إرسال الرمز. تأكد من الرقم ثم أعد المحاولة.',
-    smsDown: 'تعذّر إرسال الرمز الآن. يمكنك إنشاء حسابك بالبريد الإلكتروني بدلاً من ذلك.', smsDownCreate: 'أنشئ حساباً بالبريد', smsDownLogin: 'لديك حساب؟ ادخل بالبريد',
+    smsDown: 'تعذّر إرسال رمز الجوال الآن. ادخل ببريدك الإلكتروني، أو أنشئ حساباً بالبريد.', smsOff: 'خدمة الرسائل النصية متوقفة مؤقتاً، فلا يصل رمز الجوال الآن. ادخل ببريدك الإلكتروني، أو أنشئ حساباً بالبريد.', smsDownCreate: 'أنشئ حساباً بالبريد', smsDownLogin: 'لديك حساب؟ ادخل ببريدك', smsDownNote: 'إن لم تعيّن كلمة مرور فاختر «نسيت كلمة المرور» واكتب بريدك.',
     newTitle: 'أهلاً بك في تسعيرك', newSub: 'هذا الرقم جديد. اكتب اسمك لإنشاء حساب مشتري.', name: 'الاسم', create: 'إنشاء الحساب والدخول',
     terms1: 'أوافق على', terms: 'الشروط والأحكام', and: 'و', privacy: 'سياسة الخصوصية', badName: 'اكتب اسمك.', needTerms: 'وافق على الشروط وسياسة الخصوصية للمتابعة.',
     useEmail: 'هذا الحساب يدخل بالبريد الإلكتروني وكلمة المرور.', failed: 'تعذّر الدخول. حاول مرة أخرى.',
@@ -33,7 +33,7 @@ const TX = {
     resend: 'Resend code', resendIn: 'Resend in', sec: 'seconds', change: 'Change number', resent: 'We sent a new code to',
     emailAccount: 'This number belongs to an account that signs in with email and has not verified its mobile yet. Sign in with your email and password.', emailBtn: 'Sign in with email',
     rate: 'Too many attempts. Wait a little and try again.', sendFail: 'Could not send the code. Check the number and try again.',
-    smsDown: 'We cannot send the code right now. You can create your account with your email instead.', smsDownCreate: 'Create an account with email', smsDownLogin: 'Have an account? Sign in with email',
+    smsDown: 'We cannot send the mobile code right now. Sign in with your email, or create an account with email.', smsOff: 'The text message service is temporarily down, so mobile codes cannot arrive now. Sign in with your email, or create an account with email.', smsDownCreate: 'Create an account with email', smsDownLogin: 'Have an account? Sign in with your email', smsDownNote: 'If you have not set a password, choose «Forgot password» and type your email.',
     newTitle: 'Welcome to Taseerak', newSub: 'This number is new. Write your name to create a buyer account.', name: 'Name', create: 'Create account and continue',
     terms1: 'I agree to the', terms: 'Terms', and: 'and', privacy: 'Privacy Policy', badName: 'Write your name.', needTerms: 'Accept the Terms and Privacy Policy to continue.',
     useEmail: 'This account signs in with email and password.', failed: 'Could not sign in. Try again.',
@@ -45,7 +45,7 @@ const TX = {
     resend: 'کوڈ دوبارہ بھیجیں', resendIn: 'دوبارہ بھیجیں', sec: 'سیکنڈ بعد', change: 'نمبر تبدیل کریں', resent: 'ہم نے نیا کوڈ بھیجا',
     emailAccount: 'یہ نمبر ایسے اکاؤنٹ کا ہے جو ای میل سے سائن اِن کرتا ہے اور جس کا موبائل ابھی تصدیق نہیں ہوا۔ اپنی ای میل اور پاسورڈ سے سائن اِن کریں۔', emailBtn: 'ای میل سے سائن اِن',
     rate: 'بہت زیادہ کوششیں۔ تھوڑا انتظار کریں، پھر دوبارہ کوشش کریں۔', sendFail: 'کوڈ نہیں بھیجا جا سکا۔ نمبر چیک کر کے دوبارہ کوشش کریں۔',
-    smsDown: 'ابھی کوڈ نہیں بھیجا جا سکتا۔ آپ اس کے بجائے ای میل سے اپنا اکاؤنٹ بنا سکتے ہیں۔', smsDownCreate: 'ای میل سے اکاؤنٹ بنائیں', smsDownLogin: 'اکاؤنٹ ہے؟ ای میل سے سائن اِن کریں',
+    smsDown: 'ابھی موبائل کوڈ نہیں بھیجا جا سکتا۔ اپنی ای میل سے سائن اِن کریں، یا ای میل سے اکاؤنٹ بنائیں۔', smsOff: 'ٹیکسٹ میسج سروس عارضی طور پر بند ہے، اس لیے ابھی موبائل کوڈ نہیں آ سکتا۔ اپنی ای میل سے سائن اِن کریں، یا ای میل سے اکاؤنٹ بنائیں۔', smsDownCreate: 'ای میل سے اکاؤنٹ بنائیں', smsDownLogin: 'اکاؤنٹ ہے؟ اپنی ای میل سے سائن اِن کریں', smsDownNote: 'اگر آپ نے پاسورڈ نہیں بنایا تو «پاسورڈ بھول گئے» منتخب کریں اور اپنی ای میل لکھیں۔',
     newTitle: 'تسعیرک میں خوش آمدید', newSub: 'یہ نمبر نیا ہے۔ خریدار اکاؤنٹ بنانے کے لیے اپنا نام لکھیں۔', name: 'نام', create: 'اکاؤنٹ بنائیں اور جاری رکھیں',
     terms1: 'میں متفق ہوں', terms: 'شرائط', and: 'اور', privacy: 'رازداری کی پالیسی', badName: 'اپنا نام لکھیں۔', needTerms: 'جاری رکھنے کے لیے شرائط اور رازداری کی پالیسی قبول کریں۔',
     useEmail: 'یہ اکاؤنٹ ای میل اور پاسورڈ سے سائن اِن کرتا ہے۔', failed: 'سائن اِن نہیں ہو سکا۔ دوبارہ کوشش کریں۔',
@@ -76,6 +76,14 @@ export default function PhoneOtpForm({ onSignedIn, onUseEmail, registerHref = '/
   // SMS cannot be sent for a reason that is not the user's (provider quota, billing, config): never blame
   // the number; offer an email account instead (UX-004)
   const [smsDown, setSmsDown] = useState(false)
+  // the admin switch (sms_is_down, migration 282) is read when the form opens, so nobody waits for a
+  // code that cannot arrive (round-7 UX-097)
+  const [smsOff, setSmsOff] = useState(false)
+  useEffect(() => {
+    let on = true
+    createClient().rpc('sms_is_down').then(({ data }: any) => { if (on && data === true) setSmsOff(true) }, () => {})
+    return () => { on = false }
+  }, [])
   const codeRef = useRef<HTMLInputElement>(null)
   const confirmRef = useRef<any>(null)
   const verifierRef = useRef<any>(null)
@@ -195,14 +203,16 @@ export default function PhoneOtpForm({ onSignedIn, onUseEmail, registerHref = '/
     </div>
   )
 
-  // amber, not red: nothing is wrong with what the visitor typed (UX-004)
-  const smsDownBox = smsDown && (
+  // amber, not red: nothing is wrong with what the visitor typed (UX-004). Signing in with the email is
+  // the main action: «create an account» fails for someone who already has one (round-7 UX-097).
+  const smsDownBox = (smsDown || smsOff) && (
     <div className="bg-warn-bg border border-warn-border text-warn-text text-sm rounded-xl p-3 space-y-2" role="alert">
-      <p>{t.smsDown}</p>
-      <a href={registerHref} className="w-full min-h-[44px] rounded-xl font-bold text-sm grid place-items-center" style={{ background: '#D4A543', color: '#071827' }}>{t.smsDownCreate}</a>
+      <p>{smsOff ? t.smsOff : t.smsDown}</p>
       {onUseEmail
-        ? <button type="button" onClick={onUseEmail} className="w-full min-h-[44px] rounded-xl font-bold text-sm border border-[#0B2438]/25 text-[#0B2438] bg-white">{t.smsDownLogin}</button>
-        : <a href="/login?m=email" className="w-full min-h-[44px] rounded-xl font-bold text-sm grid place-items-center border border-[#0B2438]/25 text-[#0B2438] bg-white">{t.smsDownLogin}</a>}
+        ? <button type="button" onClick={onUseEmail} className="btn-primary w-full">{t.smsDownLogin}</button>
+        : <a href="/login?m=email" className="btn-primary w-full">{t.smsDownLogin}</a>}
+      <p className="text-[12px]">{t.smsDownNote}</p>
+      <a href={registerHref} className="w-full min-h-[44px] rounded-xl font-bold text-sm grid place-items-center border border-[#0B2438]/25 text-[#0B2438] bg-white">{t.smsDownCreate}</a>
     </div>
   )
 
@@ -281,10 +291,10 @@ export default function PhoneOtpForm({ onSignedIn, onUseEmail, registerHref = '/
         <div className="border-t border-line pt-3 text-[13px] text-ink-2">
           <p className="font-bold text-navy">{locale === 'en' ? 'The code did not arrive?' : locale === 'ur' ? 'کوڈ نہیں ملا؟' : 'لم يصلك الرمز؟'}</p>
           <div className="flex flex-wrap gap-x-4">
-            <a href={registerHref} className="inline-flex items-center min-h-[44px] font-bold text-orange-dark hover:underline">{t.smsDownCreate}</a>
             {onUseEmail
               ? <button type="button" onClick={onUseEmail} className="inline-flex items-center min-h-[44px] font-bold text-orange-dark hover:underline">{t.smsDownLogin}</button>
               : <a href="/login?m=email" className="inline-flex items-center min-h-[44px] font-bold text-orange-dark hover:underline">{t.smsDownLogin}</a>}
+            <a href={registerHref} className="inline-flex items-center min-h-[44px] font-bold text-orange-dark hover:underline">{t.smsDownCreate}</a>
             {/* /support is public now, so a visitor without a code still reaches the team (round-6 UX-036) */}
             <a href="/support?topic=sms" className="inline-flex items-center min-h-[44px] font-bold text-orange-dark hover:underline">{locale === 'en' ? 'Contact support' : locale === 'ur' ? 'سپورٹ سے رابطہ کریں' : 'تواصل مع الدعم'}</a>
           </div>

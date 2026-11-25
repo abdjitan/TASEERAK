@@ -35,7 +35,7 @@ export default function SupplierDealsPage() {
   const { locale, dir } = useTranslation()
   const [deals, setDeals] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
-  const [filter, setFilter] = useState<'all' | 'active' | 'done' | 'disputed'>('all')
+  const [filter, setFilter] = useState<'all' | 'active' | 'done' | 'disputed' | 'closed'>('all')
   const [search, setSearch] = useState('')
   // round-2 UX-002: never fetch rfqs.title (the buyer's project name stays hidden from suppliers)
   // UX-119: a failed load is said as such (never «no deals yet»); with a cached list, say it may be old
@@ -118,6 +118,7 @@ export default function SupplierDealsPage() {
     if (filter === 'done' && !st.done) return false
     if (filter === 'active' && (st.done || st.key === 'disputed' || st.key === 'closed')) return false // UX-178: a cancelled deal is not active
     if (filter === 'disputed' && st.key !== 'disputed') return false
+    if (filter === 'closed' && st.key !== 'closed') return false
     if (search.trim()) {
       // UX-138: the search reads the names as shown in every language, the request number and the invoice, tolerant of spelling
       const names: string[] = [d.rfq?.product_name, ...(Array.isArray(d.rfq?.items) ? d.rfq.items.map((it: any) => it?.product_name) : [])].filter(Boolean)
@@ -148,10 +149,25 @@ export default function SupplierDealsPage() {
         <input value={search} onChange={(e: any) => setSearch(e.target.value)} aria-label={L('Search deals', 'ڈیلز تلاش کریں', 'ابحث في الصفقات')}
           className="input-field text-base sm:text-sm mb-3" placeholder={locale === 'en' ? 'Search deals (material, buyer, request or invoice no.)…' : locale === 'ur' ? 'ڈیلز تلاش کریں (مال، خریدار، انوائس نمبر)…' : 'ابحث في الصفقات (المادة، المشتري، رقم الطلب أو الفاتورة)…'} />
         <div className="flex items-center gap-2 mb-5 flex-wrap">
-          {[{ k: 'all', l: locale === 'en' ? 'All' : locale === 'ur' ? 'سب' : 'الكل' }, { k: 'active', l: locale === 'en' ? 'Active' : locale === 'ur' ? 'جاری' : 'جارية' }, { k: 'done', l: locale === 'en' ? 'Completed' : locale === 'ur' ? 'مکمل' : 'مكتملة' }, { k: 'disputed', l: locale === 'en' ? 'Problems' : locale === 'ur' ? 'مسائل' : 'مشكلات' }].map((f: any) => (
-            <button key={f.k} onClick={() => setFilter(f.k)} aria-pressed={filter === f.k}
-              className={`min-h-[44px] px-3 rounded-xl text-sm font-semibold border-2 transition-all ${filter === f.k ? 'border-[#D4A543] bg-[#D4A543]/10 text-[#071827]' : 'border-gray-200 text-gray-600 hover:border-gray-300'}`}>{f.l}</button>
-          ))}
+          {/* round-7 UX-156: counts on the chips (when above zero), and «ملغاة» when a deal was cancelled */}
+          {(() => {
+            const stages = deals.map((d: any) => dealStage(d, 'supplier', locale))
+            const n = {
+              all: deals.length,
+              active: stages.filter((st: any) => !st.done && st.key !== 'disputed' && st.key !== 'closed').length,
+              done: stages.filter((st: any) => st.done).length,
+              disputed: stages.filter((st: any) => st.key === 'disputed').length,
+              closed: stages.filter((st: any) => st.key === 'closed').length,
+            }
+            const chips: { k: 'all' | 'active' | 'done' | 'disputed' | 'closed'; l: string }[] = [
+              { k: 'all', l: L('All', 'سب', 'الكل') }, { k: 'active', l: L('Active', 'جاری', 'جارية') }, { k: 'done', l: L('Completed', 'مکمل', 'مكتملة') }, { k: 'disputed', l: L('Problems', 'مسائل', 'مشكلات') },
+              ...(n.closed > 0 ? [{ k: 'closed' as const, l: L('Cancelled', 'منسوخ', 'ملغاة') }] : []),
+            ]
+            return chips.map((f) => (
+              <button key={f.k} onClick={() => setFilter(f.k)} aria-pressed={filter === f.k}
+                className={`min-h-[44px] px-3 rounded-xl text-sm font-semibold border-2 transition-all ${filter === f.k ? 'border-[#D4A543] bg-[#D4A543]/10 text-[#071827]' : 'border-gray-200 text-gray-600 hover:border-gray-300'}`}>{f.l}{n[f.k] > 0 ? ` (${n[f.k]})` : ''}</button>
+            ))
+          })()}
           <span className="text-[13px] text-gray-600 ms-auto">{locale === 'en' ? `${shown.length} deals` : locale === 'ur' ? `${shown.length} ڈیلز` : shown.length === 0 ? 'لا توجد صفقات' : arCount(shown.length, 'صفقة واحدة', 'صفقتان', 'صفقات', 'صفقة')}</span>
         </div>
 

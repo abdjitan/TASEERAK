@@ -43,7 +43,7 @@ export default function SuppliersPublic({ ranked, listings }: { ranked: any[]; l
           <div className="text-4xl mb-3 text-[#0B2438]"><Glyph e="🏗" /></div>
           <p className="text-sm text-gray-600">{L('You can already send a price request: it reaches the suppliers who specialise in your materials.', 'آپ ابھی قیمت کی درخواست بھیج سکتے ہیں: یہ آپ کے سامان کے ماہر سپلائرز تک پہنچتی ہے۔', 'يمكنك الآن إرسال طلب تسعير، فيصل إلى الموردين المختصين بموادك.')}</p>
           <div className="mt-5 flex flex-wrap items-center justify-center gap-2">
-            <Link href="/contractor/rfq/quick" className="btn-orange text-sm">{L('Request a price', 'قیمت معلوم کریں', 'اطلب سعراً')}</Link>
+            <Link href="/contractor/rfq/quick" className="btn-orange text-sm">{L('Start now for free', 'ابھی مفت شروع کریں', 'ابدأ الآن مجاناً')}</Link>
             <Link href="/join" className="btn-ghost text-sm">{L('Sign up as a supplier', 'سپلائر کے طور پر رجسٹر کریں', 'سجّل كمورد')}</Link>
           </div>
         </div>

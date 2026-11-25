@@ -20,11 +20,15 @@ import { firebaseReady } from '@/lib/firebaseConfig'
 import { OPERATOR } from '@/lib/legal'
 
 const SUPPORT_WHATSAPP = '12135614366'
+const PHONE_FLAG_KEY = 'tsk_phone_login_on'
+const SMS_DOWN_KEY = 'tsk_sms_down'
+function smsDownCached(): boolean { try { return sessionStorage.getItem(SMS_DOWN_KEY) === '1' } catch { return false } }
+function askedPhone(): boolean { try { return new URLSearchParams(window.location.search).get('m') === 'phone' } catch { return false } }
 
 const txt = {
-  ar: { welcome:'أهلاً بعودتك', sub:'سجّل دخولك للمتابعة إلى حسابك', email:'البريد الإلكتروني', password:'كلمة المرور', login:'تسجيل الدخول', logging:'جارٍ الدخول...', noAccount:'ليس لديك حساب؟', register:'أنشئ حساباً جديداً', error:'البريد أو كلمة المرور غير صحيحة', copyright:'© 2026 تسعيرك · منصة التسعير والتوريد لمواد البناء', s_auth:'جارٍ تسجيل الدخول…', s_role:'الخطوة 2/3: جارٍ قراءة الصلاحية…', s_go:'جارٍ فتح حسابك…', err_timeout:'انتهت المهلة دون استجابة. قد يكون اتصالك بالإنترنت يحجب الخادم — جرّب شبكة أخرى (بيانات الجوال مثلاً) ثم أعد المحاولة.', brandH:'طلب تسعير واحد، ويتنافس عليه الموردون.', brandP:'سجّل دخولك وتابع طلباتك وعروضك في مكان واحد، من الطلب حتى الاستلام.', l1:'يظهر بجانب كل مورد توثيق سجلّه التجاري', l2:'قارن العروض واختر الأرخص لكل مادة', l3:'اكتب قائمة موادك أو صوّرها، ونرسلها إلى الموردين المناسبين', remember:'تذكّرني', forgot:'نسيت كلمة المرور؟', or:'أو', home:'الرئيسية', captchaErr:'يرجى إكمال خطوة التحقق (لستُ روبوتاً) ثم إعادة المحاولة.' },
-  en: { welcome:'Welcome back', sub:'Sign in to continue to your account', email:'Email Address', password:'Password', login:'Sign In', logging:'Signing in...', noAccount:"Don't have an account?", register:'Create a new account', error:'Invalid email or password', copyright:'© 2026 Taseerak · Procurement platform for construction materials', s_auth:'Signing in…', s_role:'Step 2/3: reading your role…', s_go:'Opening your account…', err_timeout:'Timed out with no response. Your network may be blocking the server — try another network (e.g. mobile data) and retry.', brandH:'One request, and suppliers compete for it.', brandP:'Sign in and track your requests and offers in one place, from request to delivery.', l1:'See whether each supplier’s commercial registration is verified', l2:'Compare offers and pick the cheapest per item', l3:'Write or photograph your materials list; we send it to the right suppliers', remember:'Remember me', forgot:'Forgot password?', or:'or', home:'Home', captchaErr:'Please complete the “I am human” check and try again.' },
-  ur: { welcome:'خوش آمدید', sub:'اپنے اکاؤنٹ تک جاری رکھنے کے لیے سائن ان کریں', email:'ای میل', password:'پاسورڈ', login:'سائن ان', logging:'سائن ان ہو رہا ہے...', noAccount:'اکاؤنٹ نہیں ہے؟', register:'نیا اکاؤنٹ بنائیں', error:'غلط ای میل یا پاسورڈ', copyright:'© ۲۰۲۶ تسعیرک · تعمیراتی سامان کا پلیٹ فارم', s_auth:'سائن ان ہو رہا ہے…', s_role:'مرحلہ 2/3: کردار پڑھا جا رہا ہے…', s_go:'آپ کا اکاؤنٹ کھل رہا ہے…', err_timeout:'کوئی جواب نہیں ملا۔ ہو سکتا ہے آپ کا نیٹ ورک سرور کو بلاک کر رہا ہو — دوسرا نیٹ ورک آزمائیں۔', brandH:'ایک درخواست، اور سپلائرز مقابلہ کرتے ہیں۔', brandP:'سائن ان کریں اور اپنی درخواستیں اور پیشکشیں ایک جگہ دیکھیں۔', l1:'دیکھیں کہ ہر سپلائر کا تجارتی رجسٹریشن تصدیق شدہ ہے یا نہیں', l2:'آفرز کا موازنہ کریں، ہر چیز کی سستی قیمت چنیں', l3:'اپنے سامان کی فہرست لکھیں یا تصویر لیں؛ ہم اسے صحیح سپلائرز تک بھیجتے ہیں', remember:'مجھے یاد رکھیں', forgot:'پاسورڈ بھول گئے؟', or:'یا', home:'ہوم', captchaErr:'براہ کرم تصدیق مکمل کریں (میں روبوٹ نہیں ہوں) اور دوبارہ کوشش کریں۔' },
+  ar: { welcome:'أهلاً بعودتك', sub:'سجّل دخولك للمتابعة إلى حسابك', email:'البريد الإلكتروني', password:'كلمة المرور', login:'تسجيل الدخول', logging:'جارٍ الدخول...', noAccount:'ليس لديك حساب؟', register:'أنشئ حساباً جديداً', error:'البريد أو كلمة المرور غير صحيحة', copyright:'© 2026 تسعيرك · منصة التسعير والتوريد لمواد البناء', s_auth:'جارٍ تسجيل الدخول…', s_role:'الخطوة 2/3: جارٍ قراءة الصلاحية…', s_go:'جارٍ فتح حسابك…', err_timeout:'انتهت المهلة دون استجابة. قد يكون اتصالك بالإنترنت يحجب الخادم — جرّب شبكة أخرى (بيانات الجوال مثلاً) ثم أعد المحاولة.', brandH:'طلب تسعير واحد، ويتنافس عليه الموردون.', brandP:'سجّل دخولك وتابع طلباتك وعروضك في مكان واحد، من الطلب حتى الاستلام.', l1:'يظهر بجانب كل مورد توثيق سجلّه التجاري', l2:'قارن العروض واختر الأنسب لكل مادة', l3:'اكتب قائمة موادك أو صوّرها، ونرسلها إلى الموردين المناسبين', remember:'تذكّرني', forgot:'نسيت كلمة المرور؟', or:'أو', home:'الرئيسية', captchaErr:'يرجى إكمال خطوة التحقق (لستُ روبوتاً) ثم إعادة المحاولة.' },
+  en: { welcome:'Welcome back', sub:'Sign in to continue to your account', email:'Email Address', password:'Password', login:'Sign In', logging:'Signing in...', noAccount:"Don't have an account?", register:'Create a new account', error:'Invalid email or password', copyright:'© 2026 Taseerak · Procurement platform for construction materials', s_auth:'Signing in…', s_role:'Step 2/3: reading your role…', s_go:'Opening your account…', err_timeout:'Timed out with no response. Your network may be blocking the server — try another network (e.g. mobile data) and retry.', brandH:'One request, and suppliers compete for it.', brandP:'Sign in and track your requests and offers in one place, from request to delivery.', l1:'See whether each supplier’s commercial registration is verified', l2:'Compare offers and choose the best one for each item', l3:'Write or photograph your materials list; we send it to the right suppliers', remember:'Remember me', forgot:'Forgot password?', or:'or', home:'Home', captchaErr:'Please complete the “I am human” check and try again.' },
+  ur: { welcome:'خوش آمدید', sub:'اپنے اکاؤنٹ تک جاری رکھنے کے لیے سائن ان کریں', email:'ای میل', password:'پاسورڈ', login:'سائن ان', logging:'سائن ان ہو رہا ہے...', noAccount:'اکاؤنٹ نہیں ہے؟', register:'نیا اکاؤنٹ بنائیں', error:'غلط ای میل یا پاسورڈ', copyright:'© ۲۰۲۶ تسعیرک · تعمیراتی سامان کا پلیٹ فارم', s_auth:'سائن ان ہو رہا ہے…', s_role:'مرحلہ 2/3: کردار پڑھا جا رہا ہے…', s_go:'آپ کا اکاؤنٹ کھل رہا ہے…', err_timeout:'کوئی جواب نہیں ملا۔ ہو سکتا ہے آپ کا نیٹ ورک سرور کو بلاک کر رہا ہو — دوسرا نیٹ ورک آزمائیں۔', brandH:'ایک درخواست، اور سپلائرز مقابلہ کرتے ہیں۔', brandP:'سائن ان کریں اور اپنی درخواستیں اور پیشکشیں ایک جگہ دیکھیں۔', l1:'دیکھیں کہ ہر سپلائر کا تجارتی رجسٹریشن تصدیق شدہ ہے یا نہیں', l2:'آفرز کا موازنہ کریں اور ہر چیز کے لیے سب سے موزوں چنیں', l3:'اپنے سامان کی فہرست لکھیں یا تصویر لیں؛ ہم اسے صحیح سپلائرز تک بھیجتے ہیں', remember:'مجھے یاد رکھیں', forgot:'پاسورڈ بھول گئے؟', or:'یا', home:'ہوم', captchaErr:'براہ کرم تصدیق مکمل کریں (میں روبوٹ نہیں ہوں) اور دوبارہ کوشش کریں۔' },
 }
 
 function LoginForm() {
@@ -34,10 +38,38 @@ function LoginForm() {
   const searchParams = useSearchParams()
   const PHONE_READY = PHONE_OTP_ENABLED && firebaseReady()
   const askedEmail = searchParams.get('m') === 'email'
+  // remote switches: app_flags (migration 228) turns buyer phone sign-in off; sms_is_down (migration 282)
+  // means codes cannot arrive, so the email tab opens first. Both are known BEFORE the form shows, so the
+  // page never jumps from the phone tab to the email form while someone types (round-7 UX-114).
+  const cachedFlag = (): boolean | null => {
+    if (!PHONE_READY) return false
+    try { const v = sessionStorage.getItem(PHONE_FLAG_KEY); return v === '1' ? true : v === '0' ? false : null } catch { return null }
+  }
+  const [phoneOn, setPhoneOn] = useState<boolean | null>(PHONE_READY ? null : false)
   const [mode, setMode] = useState<'email' | 'phone'>(PHONE_READY && !askedEmail ? 'phone' : 'email')
-  // remote switch (app_flags, migration 228): buyer phone sign-in can be turned off at once if SMS breaks
-  const [phoneOn, setPhoneOn] = useState(PHONE_READY)
-  useEffect(() => { createClient().rpc('app_flags').then(({ data }: any) => { if (data && data.buyer_phone_login === false) { setPhoneOn(false); setMode('email') } }, () => {}) }, [])
+  useEffect(() => {
+    if (!PHONE_READY) return
+    let done = false
+    const settle = (on: boolean, smsDown: boolean) => {
+      if (done) return
+      done = true
+      setPhoneOn(on)
+      if (!on || smsDown) setMode('email')
+    }
+    // this browser session already knows the switches: show the form at once, refresh quietly
+    const known = cachedFlag()
+    if (known !== null) settle(known, smsDownCached() && !askedPhone())
+    const timer = setTimeout(() => settle(cachedFlag() ?? true, smsDownCached()), 1500)
+    const sb = createClient()
+    Promise.all([sb.rpc('app_flags'), sb.rpc('sms_is_down')]).then(([f, d]: any[]) => {
+      const on = !(f?.data && f.data.buyer_phone_login === false)
+      const down = d?.data === true
+      try { sessionStorage.setItem(PHONE_FLAG_KEY, on ? '1' : '0'); sessionStorage.setItem(SMS_DOWN_KEY, down ? '1' : '0') } catch {}
+      clearTimeout(timer)
+      settle(on, down && !askedPhone())
+    }, () => { clearTimeout(timer); settle(cachedFlag() ?? true, smsDownCached()) })
+    return () => clearTimeout(timer)
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
   // Phone sign-in off and the visitor did not ask for the email sign-in: most arrive from «Start now», so
   // open on «start free» with a clear «create an account» button; the «welcome back» form is one tap away (UX-003)
   const [emailFormOpen, setEmailFormOpen] = useState(askedEmail)
@@ -204,6 +236,8 @@ function LoginForm() {
     }
   }
 
+  if (phoneOn === null) return <LoginSkeleton />
+
   return (
     <div className="auth-screen min-h-screen flex" dir={dir}>
       {/* ===== Brand panel (hidden on small screens) ===== */}
@@ -332,7 +366,7 @@ function LoginForm() {
                 <form onSubmit={handleLogin} className="space-y-5">
                   <div>
                     <label htmlFor="login-email" className="block text-[13px] font-bold text-ink-2 mb-1.5">{t.email}</label>
-                    <input id="login-email" type="email" inputMode="email" value={email} onChange={e => setEmail(e.target.value)} className="input-field" placeholder="name@company.com" autoComplete="username" required disabled={loading} />
+                    <input id="login-email" type="email" inputMode="email" value={email} onChange={e => setEmail(e.target.value)} className="input-field" placeholder="name@example.com" autoComplete="username" required disabled={loading} />
                   </div>
                   <div>
                     <label htmlFor="login-password" className="block text-[13px] font-bold text-ink-2 mb-1.5">{t.password}</label>

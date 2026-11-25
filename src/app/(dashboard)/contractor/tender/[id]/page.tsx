@@ -12,7 +12,7 @@ import { useTranslation } from '@/i18n'
 import AppShell from '@/components/shared/AppShell'
 import Glyph from '@/components/shared/Glyph'
 import { getNav } from '@/lib/nav'
-import { SECTOR_LABELS, SUB_CATEGORIES, SECTOR_PRODUCTS, UNIT_OPTIONS, getSubCategoryLabel, getUnitLabel, getProductLabel, detectSubCategory, missingSpecs, type Sector } from '@/types'
+import { SECTOR_LABELS, getSectorLabel, SUB_CATEGORIES, SECTOR_PRODUCTS, UNIT_OPTIONS, getSubCategoryLabel, getUnitLabel, getProductLabel, detectSubCategory, missingSpecs, type Sector } from '@/types'
 import ItemSpecFields from '@/components/tender/ItemSpecFields'
 import { useFocusTrap } from '@/components/shared/useFocusTrap'
 import { readProjectDraft, writeProjectDraft, fetchBoqServerDraft } from '@/lib/tender/projectDraft'
@@ -38,12 +38,8 @@ const validPair = (sector: string | null | undefined, sub: string | null | undef
 const subFor = (name: string, sector: string, current?: string | null) => (validPair(sector, current) ? String(current) : (name ? detectSubCategory(name, sector as Sector) || '' : ''))
 
 const PAGE = 150
-// sector names in the three languages (SECTOR_LABELS is Arabic only)
-const SECTOR_L: Record<string, [string, string]> = {
-  civil: ['Civil', 'سول'], architectural: ['Architectural', 'آرکیٹیکچرل'], electrical: ['Electrical', 'الیکٹریکل'],
-  mechanical: ['Mechanical', 'مکینیکل'], equipment: ['Machinery and equipment', 'مشینری اور آلات'], supply_store: ['Supply store', 'سپلائی اسٹور'],
-}
-const sectorName = (s: string, locale: string) => (locale === 'ar' ? (SECTOR_LABELS as any)[s] || s : (SECTOR_L[s]?.[locale === 'ur' ? 1 : 0] || s))
+// one sector name per language on every page (round-7 UX-141): no local name map
+const sectorName = (s: string, locale: string) => getSectorLabel(s, locale)
 // «١٢٫٥» / «12,500» / «١٢٬٥٠٠» → 12.5 / 12500 / 12500 (a comma is always a thousands separator: UX-002); '' → null; NaN → undefined (refused)
 function parseQty(v: string): number | null | undefined {
   const t = toLatinDigits(String(v || '')).replace(/٫/g, '.').replace(/[,،٬\s]/g, '').trim()
@@ -74,6 +70,7 @@ export default function TenderReviewPage() {
   const [edit, setEdit] = useState<any>(null)
   const [busy, setBusy] = useState(false)
   const [msg, setMsg] = useState('')
+  const [triedApprove, setTriedApprove] = useState(false) // round-7 UX-173: empty required specs show as errors after an approve attempt
   const [nameLocked, setNameLocked] = useState(true) // a catalog material's name is read-only until «تغيير المادة»
   // filters
   const [fSheet, setFSheet] = useState('')
@@ -195,7 +192,7 @@ export default function TenderReviewPage() {
     // a stored specialty that does not belong to the item's sector is cleared, never shown as chosen (UX-023)
     const sector0 = sel.sector || 'civil'
     setEdit({ product_name: sel.product_name || '', unit: sel.unit || '', qty: sel.qty == null ? '' : String(sel.qty), kind: sel.kind, specification: sel.specification || '', specs: sel.specs || {}, sector: sector0, sub_category: validPair(sector0, sel.sub_category) ? sel.sub_category : '' })
-    setNameLocked(true); setMsg('')
+    setNameLocked(true); setMsg(''); setTriedApprove(false)
   }, [selId]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── writes ───────────────────────────────────────────────────────────────────────────────
@@ -203,8 +200,12 @@ export default function TenderReviewPage() {
   // sent in part: some materials went to suppliers (a request is linked) while the tender is still open
   const partSent = !sent && (!!tender?.project_rfq_id || sentMaterials.length > 0)
   // the offers: straight to the request when known (round-5 UX-158), else the project page
-  const lastRfq = tender?.rfq_id || sentMaterials[sentMaterials.length - 1]?.sent_rfq_id || null
-  const offersHref = lastRfq ? `/contractor/rfq/${lastRfq}` : tender?.project_rfq_id ? `/contractor/project/${tender.project_rfq_id}` : null
+  // round-7 UX-078: every send is its own request (a «batch»); each keeps its own link to its offers
+  const batchMap = new Map<string, number>()
+  for (const r of sentMaterials) batchMap.set(String(r.sent_rfq_id), (batchMap.get(String(r.sent_rfq_id)) || 0) + 1)
+  const batches = Array.from(batchMap.entries()).map(([rfqId, n]) => ({ rfqId, n }))
+  const lastRfq = batches.length === 1 ? batches[0].rfqId : tender?.rfq_id || sentMaterials[sentMaterials.length - 1]?.sent_rfq_id || null
+  const offersHref = batches.length > 1 ? '#tender-batches' : lastRfq ? `/contractor/rfq/${lastRfq}` : tender?.project_rfq_id ? `/contractor/project/${tender.project_rfq_id}` : null
   const selSent = !!sel?.sent_rfq_id // this item was sent: it cannot change (the rest of the tender can)
   const locked = sent || selSent
   // the required specs (size, grade…) still empty for the item being edited (round-5 UX-091)
@@ -218,7 +219,7 @@ export default function TenderReviewPage() {
     // an approved item goes to suppliers: it needs a quantity (a lump sum counts as one) (UX-073)
     if (approve && !validPair(edit.sector, edit.sub_category)) { setMsg(L('Choose a specialty of this sector first: it routes the item to the right suppliers.', 'پہلے اس سیکٹر کا شعبہ منتخب کریں: یہی آئٹم کو صحیح سپلائرز تک پہنچاتا ہے۔', 'اختر تخصصاً من هذا القطاع أولاً، فهو ما يوصل البند إلى الموردين المختصين.')); return }
     if (approve && qty == null && !sel.lump_sum) { setMsg(L('Enter the quantity first: an item without a quantity cannot be priced.', 'پہلے مقدار لکھیں: بغیر مقدار آئٹم کی قیمت نہیں لگائی جا سکتی۔', 'أدخل الكمية أولاً، فلا يُسعَّر بند بلا كمية.')); return }
-    if (approve && editMissingSpecs.length) { setMsg(L('Complete the required specifications (size, grade…) so suppliers can price it.', 'ضروری تفصیلات (سائز، گریڈ…) مکمل کریں تاکہ سپلائرز قیمت دے سکیں۔', 'أكمل المواصفات المطلوبة (المقاس، الدرجة…) ليتمكن الموردون من التسعير.')); return }
+    if (approve && editMissingSpecs.length) { setTriedApprove(true); setMsg(L('Complete the required specifications (size, grade…) so suppliers can price it.', 'ضروری تفصیلات (سائز، گریڈ…) مکمل کریں تاکہ سپلائرز قیمت دے سکیں۔', 'أكمل المواصفات المطلوبة (المقاس، الدرجة…) ليتمكن الموردون من التسعير.')); return }
     setBusy(true); setMsg('')
     const supabase = createClient()
     const next: Record<string, any> = {
@@ -237,6 +238,11 @@ export default function TenderReviewPage() {
     }
     const patch: Record<string, any> = { ...next, edited, specs: specsClean }
     if (approve !== undefined) { patch.approved = approve; patch.approved_at = approve ? new Date().toISOString() : null }
+    // round-7 UX-143: «حفظ» on an approved item that can no longer be approved (no specialty, no quantity, missing
+    // specs, or no longer a material) saves it AND removes the approval, so it never goes to suppliers incomplete
+    const lostApproval = approve === undefined && !!sel.approved &&
+      (edit.kind !== 'material' || !validPair(edit.sector, edit.sub_category) || (qty == null && !sel.lump_sum) || editMissingSpecs.length > 0)
+    if (lostApproval) { patch.approved = false; patch.approved_at = null }
     const updatedRow = { ...sel, ...patch }
     const fl = runChecks({ items: [rowToItem(updatedRow)], drawings }).byItem[sel.item_key] || []
     patch.flags = slimFlags([...fl, ...(specRes.flags.filter(f => f.item_key === sel.item_key))])
@@ -251,6 +257,7 @@ export default function TenderReviewPage() {
       const next = filtered.slice(at + 1).find(open) || filtered.find(r => r.id !== sel.id && open(r))
       if (next) { setSelId(next.id); setTimeout(() => setMsg(L('Approved. This is the next item.', 'منظور۔ یہ اگلا آئٹم ہے۔', 'اعتُمد البند، وهذا البند التالي.')), 0); return }
     }
+    if (lostApproval) { setMsg(L('Saved, and the approval was removed: the item needs a specialty, a quantity and complete specifications.', 'محفوظ کر لیا گیا اور منظوری ہٹا دی گئی، کیونکہ آئٹم کو شعبہ، مقدار اور مکمل تفصیلات درکار ہیں۔', 'حُفظ وأُلغي الاعتماد لأن البند يحتاج تخصصاً وكمية ومواصفات مكتملة.')); return }
     setMsg(approve ? L('Approved.', 'منظور۔', 'اعتُمد البند.') : approve === false ? L('Approval removed.', 'منظوری ہٹا دی۔', 'أُلغي الاعتماد.') : L('Saved.', 'محفوظ۔', 'حُفظ.'))
   }
 
@@ -467,7 +474,9 @@ export default function TenderReviewPage() {
                 : L('Partly sent', 'جزوی طور پر بھیجا گیا', 'أُرسل جزء منها')}</span>}
               {(sent || partSent) && offersHref && (
                 <Link href={offersHref} className={`min-h-11 inline-flex items-center px-4 py-2.5 rounded-xl text-sm font-bold ${sent ? 'text-[#071827]' : 'border border-[#0B2438] text-[#0B2438]'}`} style={sent ? { background: 'linear-gradient(135deg,#F5C55B,#D4A543)' } : undefined}>
-                  {L('View the offers received →', 'موصول آفرز دیکھیں ←', 'عرض العروض الواردة ←')}
+                  {batches.length > 1
+                    ? L(`View the offers (${batches.length} batches)`, `آفرز دیکھیں (${batches.length} کھیپیں)`, `عرض العروض (${arCount(batches.length, 'دفعة واحدة', 'دفعتان', 'دفعات', 'دفعة')})`)
+                    : L('View the offers received →', 'موصول آفرز دیکھیں ←', 'عرض العروض الواردة ←')}
                 </Link>
               )}
               {!sent && (<>
@@ -482,6 +491,22 @@ export default function TenderReviewPage() {
               </>)}
             </div>
           </div>
+          {/* round-7 UX-078: a tender sent in several batches lists each one with the way to its offers */}
+          {batches.length > 1 && (
+            <div id="tender-batches" className="bg-white rounded-2xl border border-gray-200 p-3 scroll-mt-24">
+              <div className="text-sm font-bold text-[#0B2438] mb-1">{L('Sent in batches', 'کھیپوں میں بھیجا گیا', 'أُرسلت على دفعات')}</div>
+              <ul className="divide-y divide-gray-100">
+                {batches.map((b, k) => (
+                  <li key={b.rfqId}>
+                    <Link href={`/contractor/rfq/${b.rfqId}`} className="flex items-center justify-between gap-2 min-h-11 text-sm text-[#0B2438] hover:underline">
+                      <span>{L(`Batch ${k + 1} · ${b.n} materials`, `کھیپ ${k + 1} · ${b.n} مواد`, `الدفعة ${k + 1} · ${arMaterials(b.n)}`)}</span>
+                      <span className="font-bold text-[#8F6820] shrink-0">{L('View the offers →', 'آفرز دیکھیں ←', 'عرض العروض ←')}</span>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
           {/* a disabled button always says why (UX-142) */}
           {!sent && !approvedMaterials.length && (
             <p id="tender-send-why" className="text-xs text-gray-600 -mt-2">{partSent
@@ -841,7 +866,7 @@ export default function TenderReviewPage() {
                       <textarea value={edit.specification} disabled={locked} onChange={(e: any) => setEdit((d: any) => ({ ...d, specification: e.target.value }))} rows={3} className="input-field text-sm" dir="auto" />
                     </label>
                     {edit.kind === 'material' && edit.product_name && (
-                      <ItemSpecFields name={edit.product_name} sector={edit.sector || 'civil'} specs={edit.specs} locale={locale} disabled={locked} onChange={(v: Record<string, string>) => setEdit((d: any) => ({ ...d, specs: v }))} />
+                      <ItemSpecFields name={edit.product_name} sector={edit.sector || 'civil'} specs={edit.specs} locale={locale} showErrors={triedApprove} disabled={locked} onChange={(v: Record<string, string>) => setEdit((d: any) => ({ ...d, specs: v }))} />
                     )}
                   </section>
                   {/* the confirmation and the actions stay in view: pinned to the bottom of the sheet, above the safe area */}

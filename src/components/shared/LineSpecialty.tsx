@@ -107,7 +107,10 @@ export default function LineSpecialty({ name, sector, value, onChange, locale, s
       {section && (
         <button type="button" onClick={() => choose({ sector: subs[0]?.sector || current.sector, sub: null, section })}
           className="w-full min-h-[44px] px-3 py-2.5 rounded-xl border border-dashed border-gray-300 text-sm font-bold text-gray-700 hover:bg-gray-50">
-          {L(`I don't know the specialty: send it to all suppliers of «${sectionName(section)}»`, `شعبہ معلوم نہیں: «${sectionName(section)}» کے سب سپلائرز کو بھیجیں`, `لا أعرف التخصص: أرسلها إلى كل موردي «${sectionName(section)}»`)}
+          {/* round-7 UX-121: no «التخصص» (a trade word) for a home buyer */}
+          {simple
+            ? L(`I don't know its type: send it to all suppliers of «${sectionName(section)}»`, `قسم معلوم نہیں: «${sectionName(section)}» کے سب سپلائرز کو بھیجیں`, `لا أعرف نوعها: أرسلها إلى كل موردي «${sectionName(section)}»`)
+            : L(`I don't know the specialty: send it to all suppliers of «${sectionName(section)}»`, `شعبہ معلوم نہیں: «${sectionName(section)}» کے سب سپلائرز کو بھیجیں`, `لا أعرف التخصص: أرسلها إلى كل موردي «${sectionName(section)}»`)}
         </button>
       )}
     </div>

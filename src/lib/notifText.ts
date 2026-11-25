@@ -137,7 +137,7 @@ const TITLES: Record<string, Tri> = {
   deadline_extended: { ar: 'مُدّدت مهلة التسعير', en: 'The pricing deadline was extended', ur: 'قیمت دینے کی مدت بڑھا دی گئی' },
   rfq_expired: { ar: 'انتهى الطلب دون اختيار', en: 'The request ended without a choice', ur: 'درخواست کسی انتخاب کے بغیر ختم ہو گئی' },
   uncovered: { ar: 'طلب بلا مورد مطابق', en: 'A request with no matching supplier', ur: 'ایسی درخواست جس کا کوئی مطابق سپلائر نہیں' },
-  deal_closed: { ar: 'أُلغيت الصفقة بقرار الإدارة', en: 'The deal was cancelled by the Taseerak team', ur: 'تسعیرک ٹیم نے ڈیل منسوخ کر دی' },
+  deal_closed: { ar: 'أُلغيت الصفقة بقرار فريق تسعيرك', en: 'The deal was cancelled by the Taseerak team', ur: 'تسعیرک ٹیم نے ڈیل منسوخ کر دی' },
   dispute_opened: { ar: 'بلاغ عن مشكلة في صفقة', en: 'A problem was reported in a deal', ur: 'ڈیل میں مسئلے کی اطلاع' },
 }
 
@@ -285,9 +285,10 @@ function body(key: string, d: any, l: NotifLocale): string | null {
       const n = num(d?.offer_count)
       if (!L || n === null) return null
       if (n === 0) return pick({
-        ar: `لم يصل أي عرض على ${L}. مدّد المهلة من صفحة الطلب، وسنرسل طلبك إلى موردين آخرين.`,
-        en: `No offer arrived on ${L}. Extend the deadline from the request page and we will send your request to more suppliers.`,
-        ur: `${L} پر کوئی آفر نہیں آئی۔ درخواست کے صفحے سے مدت بڑھائیں، ہم آپ کی درخواست مزید سپلائرز کو بھیجیں گے۔`,
+        // round-7 UX-087: no promise of «other suppliers» (that does not happen); the same text in the 3 languages
+        ar: `لم يصل أي عرض على ${L}. مدّد المهلة من صفحة الطلب ليحصل الموردون على وقت أطول للتسعير.`,
+        en: `No offer arrived on ${L}. Extend the deadline from the request page to give suppliers more time to price.`,
+        ur: `${L} پر کوئی آفر نہیں آئی۔ درخواست کے صفحے سے مدت بڑھائیں تاکہ سپلائرز کو قیمت دینے کے لیے زیادہ وقت ملے۔`,
       })
       const minN = buyerAmount(num(d?.min_amount), d)
       if (minN !== null) {
@@ -325,9 +326,13 @@ function body(key: string, d: any, l: NotifLocale): string | null {
       return pick({ ar: `انتهى ${L} دون أن يختار المشتري عرضاً.`, en: `${L} ended without the buyer choosing an offer.`, ur: `${L} خریدار کے کسی آفر کو منتخب کیے بغیر ختم ہو گئی۔` })
     case 'deal_closed': {
       // migration 285 admin_close_deal; the reason is read from data.reason when the server adds it
-      const reason = str(d?.reason)
+      // round-7 UX-089: the reason's own final punctuation is dropped (no «..»), and the supplier keeps the
+      // «do not deliver» line the Arabic text has. UX-217: «فريق تسعيرك», not «الإدارة» (a buyer's company).
+      const reason = (str(d?.reason) || '').replace(/[\s.。۔!؟?،,;:]+$/u, '')
       if (!L || !reason) return null
-      return pick({ ar: `أُلغيت صفقة ${L} بقرار الإدارة: ${reason}.`, en: `The deal ${L} was cancelled by the Taseerak team: ${reason}.`, ur: `تسعیرک ٹیم نے ڈیل ${L} منسوخ کر دی: ${reason}۔` })
+      const toSupplier = String(d?.url || '').startsWith('/supplier')
+      const tail = toSupplier ? pick({ ar: ' لا تسلّم بضاعة هذه الصفقة.', en: ' Do not deliver the goods for this deal.', ur: ' اس ڈیل کا سامان نہ بھیجیں۔' }) : ''
+      return pick({ ar: `أُلغيت صفقة ${L} بقرار فريق تسعيرك: ${reason}.`, en: `The deal ${L} was cancelled by the Taseerak team: ${reason}.`, ur: `تسعیرک ٹیم نے ڈیل ${L} منسوخ کر دی: ${reason}۔` }) + tail
     }
     case 'dispute_opened': {
       const by = str(d?.by)

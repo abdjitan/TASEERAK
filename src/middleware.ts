@@ -232,7 +232,10 @@ export async function middleware(request: NextRequest) {
   // ── Rule 2.1: verify the mobile and the email before anything else (not admins) ──
   if (user && PROTECTED.some(matches) && !matches('/verify') && !matches('/support') && !matches('/banned') && !ADMIN_ONLY.some(matches)) {
     const st = await verifiedOf(user.id)
-    if (st === 'banned') return redirectTo(new URL('/banned', request.url))
+    // a suspended account may still READ its deals and invoices (the database refuses any write), so the
+    // records the /banned page calls «kept» can be opened (round-7 UX-096)
+    const readOnlyDealPage = matches('/contractor/orders') || matches('/supplier/deals')
+    if (st === 'banned' && !readOnlyDealPage) return redirectTo(new URL('/banned', request.url))
     if (st === 'verify') {
       const v = new URL('/verify', request.url)
       v.searchParams.set('next', fullPath)

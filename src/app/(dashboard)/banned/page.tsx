@@ -73,7 +73,7 @@ export default function BannedPage() {
         <h1 className="text-xl font-bold text-red-800">{L('Your account is suspended', 'آپ کا اکاؤنٹ معطل ہے', 'حسابك موقوف')}</h1>
         <p className="text-sm text-red-900 mt-2">
           {ban.permanent
-            ? L('The suspension has no end date until the administration reviews it.', 'معطلی کی کوئی آخری تاریخ نہیں، جب تک انتظامیہ اس کا جائزہ نہ لے۔', 'الإيقاف مفتوح المدة إلى أن تراجعه الإدارة.')
+            ? L('The suspension has no end date until the Taseerak team reviews it.', 'معطلی کی کوئی آخری تاریخ نہیں، جب تک تسعیرک ٹیم اس کا جائزہ نہ لے۔', 'الإيقاف مفتوح المدة إلى أن يراجعه فريق تسعيرك.')
             : L(`The suspension ends on ${until}.`, `معطلی ${until} کو ختم ہوگی۔`, `ينتهي الإيقاف في ${until}.`)}
         </p>
         {/* what a suspension means (UX-117) */}
@@ -86,14 +86,17 @@ export default function BannedPage() {
         </>)}
         {ban.reason && (
           <div className="mt-4 rounded-xl bg-white border border-red-100 p-3 text-sm text-gray-800">
-            <div className="text-xs font-bold text-gray-600 mb-1">{L('Message from the administration', 'انتظامیہ کا پیغام', 'رسالة الإدارة')}</div>
-            {ban.reason}
+            <div className="text-xs font-bold text-gray-600 mb-1">{L('Message from the Taseerak team', 'تسعیرک ٹیم کا پیغام', 'رسالة فريق تسعيرك')}</div>
+            {/* a long message keeps its line breaks and never overflows (round-7 UX-223) */}
+            <div className="whitespace-pre-line [overflow-wrap:anywhere]">{ban.reason}</div>
           </div>
         )}
         <div className="mt-4 flex flex-wrap items-center gap-3">
           {activeDeals > 0
             ? <Link href="/support?topic=deal" className="btn-orange text-sm">{buyer ? L(`Contact support about a purchase (${activeDeals})`, `خریداری کے بارے میں سپورٹ سے رابطہ (${activeDeals})`, `تواصل مع الدعم بخصوص شراء قائم (${activeDeals})`) : L(`Contact support about a deal (${activeDeals})`, `سودے کے بارے میں سپورٹ سے رابطہ (${activeDeals})`, `تواصل مع الدعم بخصوص صفقة (${activeDeals})`)}</Link>
             : <Link href="/support" className="btn-orange text-sm">{L('Contact support', 'سپورٹ سے رابطہ', 'تواصل مع الدعم')}</Link>}
+          {/* the kept records can be opened read-only (round-7 UX-096; the middleware lets these pages through) */}
+          {activeDeals > 0 && <Link href={buyer ? '/contractor/orders' : '/supplier/deals'} className="inline-flex items-center min-h-[44px] px-2 text-sm font-bold text-[#0B2438] underline underline-offset-2">{buyer ? L('View my purchases and invoices', 'میری خریداریاں اور انوائسیں دیکھیں', 'عرض مشترياتي وفواتيرها') : L('View my deals and invoices', 'میرے سودے اور انوائسیں دیکھیں', 'عرض صفقاتي وفواتيرها')}</Link>}
           {/* deleting the account is a right (PDPL) and a store requirement, also while suspended (UX-024) */}
           <a href="/account/delete" className="inline-flex items-center min-h-[44px] px-2 text-sm font-bold text-red-800 underline underline-offset-2">{L('Delete my account', 'میرا اکاؤنٹ حذف کریں', 'حذف حسابي')}</a>
         </div>

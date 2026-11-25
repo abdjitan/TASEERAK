@@ -56,6 +56,9 @@ function Messages() {
   const [activeId, setActiveId] = useState(sp.get('c') || '')
   const [msgs, setMsgs] = useState<any[]>([])
   const [msgsLoading, setMsgsLoading] = useState(false)
+  // a failed read of the messages is said as such, never shown as an empty chat (round-7 UX-033)
+  const [msgsFailed, setMsgsFailed] = useState(false)
+  const [msgsRetry, setMsgsRetry] = useState(0)
   const [body, setBody] = useState(sp.get('msg')?.slice(0, 500) || '') // ?msg= pre-fills a question (e.g. «ask the buyer» on a request)
   const [loading, setLoading] = useState(true)
   const [convosFailed, setConvosFailed] = useState(false)
@@ -166,16 +169,17 @@ function Messages() {
     let cancelled = false
     let ch: any
     // switching: never show the previous chat's messages under the new person (UX-102)
-    setMsgs([]); setMsgsLoading(true); setDealId(null); setAwarded(true); setAwardChecked(false); setBstate(null)
+    setMsgs([]); setMsgsLoading(true); setMsgsFailed(false); setDealId(null); setAwarded(true); setAwardChecked(false); setBstate(null)
     ;(async () => {
       // Fetch the conversation directly — do NOT read the possibly-stale `convos` closure,
       // which made an awarded chat wrongly show the "20-message limit" lock (B9).
       // conversation + its latest 200 messages together, then the award check in one round (perf audit)
-      const [{ data: conv }, { data }] = await Promise.all([
+      const [{ data: conv }, { data, error: msgsErr }] = await Promise.all([
         supabase.from('conversations').select('rfq_id, supplier_id').eq('id', activeId).single(),
         supabase.from('messages').select('*').eq('conversation_id', activeId).order('created_at', { ascending: false }).limit(200),
       ])
       if (cancelled) return // guard against out-of-order resolution → no cross-conversation bleed
+      if (msgsErr) { setMsgsFailed(true); setMsgsLoading(false); return }
       setMsgs((data || []).slice().reverse())
       setMsgsLoading(false)
       let aw = false
@@ -215,7 +219,7 @@ function Messages() {
         .subscribe()
     })()
     return () => { cancelled = true; if (ch) supabase.removeChannel(ch) }
-  }, [activeId, me])
+  }, [activeId, me, msgsRetry])
 
   useEffect(() => { endRef.current?.scrollIntoView({ behavior: 'smooth' }) }, [msgs])
 
@@ -352,7 +356,7 @@ function Messages() {
   const backHref = role === 'supplier' ? '/supplier/dashboard' : role === 'admin' ? '/admin' : '/contractor'
   const BACK = dir === 'rtl' ? '→' : '←'
 
-  if (loading) return <PageLoader />
+  if (loading) return <PageLoader variant="thread" />
 
   return (
     <AppShell title={L('Messages', 'پیغامات', 'الرسائل')} nav={getNav(role, locale, '/messages')} dir={dir}>
@@ -413,7 +417,17 @@ function Messages() {
 
         {/* المحادثة */}
         <section className={`lg:col-span-2 min-h-0 bg-white rounded-2xl border border-gray-100 shadow-sm flex flex-col ${activeId ? '' : 'hidden lg:flex'}`}>
-          {!active && activeId && !convosFailed ? (
+          {!active && activeId && convosFailed ? (
+            // opened from a link and the list did not load: a retry and a way back (round-7 UX-033)
+            <div className="flex-1 grid place-items-center p-6 text-center">
+              <div className="w-full max-w-sm">
+                <LoadError onRetry={retryConvos} className="!p-5 !shadow-none" />
+                <button type="button" onClick={() => openConvo('')} className="mt-3 inline-flex items-center justify-center min-h-[44px] px-5 rounded-xl text-sm font-bold border border-gray-200 text-[#0B2438] bg-white">
+                  <span aria-hidden="true">{BACK}</span>&nbsp;{L('Back to conversations', 'گفتگو کی فہرست پر واپس', 'رجوع إلى المحادثات')}
+                </button>
+              </div>
+            </div>
+          ) : !active && activeId && !convosFailed ? (
             <div className="flex-1 grid place-items-center p-6 text-center">
               <div>
                 <div className="text-3xl mb-2 text-[#0B2438]"><Glyph e="🔎" /></div>
@@ -424,7 +438,7 @@ function Messages() {
               </div>
             </div>
           ) : !active ? (
-            <div className="flex-1 grid place-items-center text-sm text-gray-500">{L('Select a conversation', 'کوئی گفتگو منتخب کریں', 'اختر محادثة')}</div>
+            <div className="flex-1 hidden lg:grid place-items-center text-sm text-gray-500">{L('Select a conversation', 'کوئی گفتگو منتخب کریں', 'اختر محادثة')}</div>
           ) : (
             <>
               <div className="px-2 py-1.5 border-b border-gray-100 flex items-center gap-1">
@@ -472,6 +486,13 @@ function Messages() {
               <div className="flex-1 min-h-0 overflow-y-auto p-4 space-y-2" style={{ background: '#f7f8fa' }}>
                 {msgsLoading ? (
                   <div className="h-full grid place-items-center text-sm text-gray-500" role="status">{L('Loading messages…', 'پیغامات لوڈ ہو رہے ہیں…', 'جارٍ تحميل الرسائل…')}</div>
+                ) : msgsFailed ? (
+                  <div className="h-full grid place-items-center text-center px-4" role="alert">
+                    <div>
+                      <p className="text-sm font-semibold text-gray-700">{L('Could not load the messages. Check the connection.', 'پیغامات لوڈ نہیں ہو سکے۔ کنکشن چیک کریں۔', 'تعذّر تحميل الرسائل. تحقّق من الاتصال.')}</p>
+                      <button type="button" onClick={() => setMsgsRetry(k => k + 1)} className="btn-primary mt-3">{L('Try again', 'دوبارہ کوشش کریں', 'حاول مرة أخرى')}</button>
+                    </div>
+                  </div>
                 ) : msgs.length === 0 ? (
                   <div className="h-full grid place-items-center text-sm text-gray-500 text-center px-4">{L('No messages yet. Write the first one below.', 'ابھی کوئی پیغام نہیں۔ نیچے پہلا پیغام لکھیں۔', 'لا توجد رسائل بعد. اكتب أول رسالة في الأسفل.')}</div>
                 ) : msgs.map((m, i) => {
@@ -484,7 +505,8 @@ function Messages() {
                         <span className="text-[12px] font-semibold text-gray-600 bg-white border border-gray-200 rounded-full px-3 py-0.5">{dayLabel(m.created_at, locale)}</span>
                       </div>
                     )}
-                    <div className={`flex ${mine ? 'justify-start' : 'justify-end'}`}>
+                    {/* my messages on the right in every language (round-7 UX-199) */}
+                    <div className={`flex ${mine === (dir === 'rtl') ? 'justify-start' : 'justify-end'}`}>
                       <div className={`max-w-[75%] rounded-2xl px-3.5 py-2 text-sm ${mine ? 'text-white' : 'bg-white border border-gray-100 text-gray-800'}`} style={mine ? { background: m._status === 'failed' ? '#B42318' : '#0B2438' } : {}}>
                         <div className="whitespace-pre-wrap break-words">{mine ? m.body : <AutoTr text={m.body} locale={locale} />}</div>
                         <div className={`text-xs mt-1 ${mine ? 'text-white/80' : 'text-gray-500'}`}>
@@ -512,7 +534,7 @@ function Messages() {
                     : L('You can no longer send messages in this conversation.', 'آپ اس گفتگو میں مزید پیغام نہیں بھیج سکتے۔', 'لم يعد بإمكانك إرسال رسائل في هذه المحادثة.')}
                 </div>
               )}
-              {!awarded && !chatBlocked && !msgsLoading && (
+              {!awarded && !chatBlocked && !msgsLoading && !msgsFailed && (
                 <div className={`px-3 pt-2 text-xs leading-relaxed ${limitReached ? 'text-red-700' : 'text-gray-600'}`}>
                   {limitReached
                     ? L('This conversation reached its message limit before an offer was chosen. Full contact opens once an offer is chosen.', 'آفر منتخب ہونے سے پہلے اس گفتگو کی پیغامات کی حد پوری ہو گئی۔ آفر منتخب ہونے کے بعد مکمل رابطہ کھل جائے گا۔', 'بلغت هذه المحادثة الحد الأقصى للرسائل قبل اختيار العرض. يكتمل التواصل بعد اختيار العرض.')
@@ -520,13 +542,20 @@ function Messages() {
                   {' '}{L('Phone numbers in messages are hidden until an offer is chosen.', 'آفر منتخب ہونے تک پیغامات میں فون نمبر چھپائے جاتے ہیں۔', 'تُخفى أرقام الهواتف في الرسائل قبل اختيار العرض.')}
                 </div>
               )}
-              {!blocked && !body.trim() && !msgsLoading && quick.length > 0 && (
+              {!blocked && !body.trim() && !msgsLoading && !msgsFailed && quick.length > 0 && (
                 <div className="px-3 pt-2 flex gap-2 overflow-x-auto" aria-label={L('Quick replies', 'فوری جوابات', 'ردود جاهزة')}>
                   {quick.map(t => (
                     <button key={t} type="button" onClick={() => setBody(t)}
                       className="shrink-0 min-h-[44px] px-3.5 rounded-full text-sm font-semibold border border-[#0B2438]/15 bg-white text-[#0B2438] hover:border-[#D4A543]">{t}</button>
                   ))}
                 </div>
+              )}
+              {/* a price lowered in the chat does not change the offer in the comparison (round-7 UX-137) */}
+              {!awarded && iAmBuyer(active) && /(lower the price|کم ہو سکتی|تخفيض السعر)/.test(body) && (
+                <p className="px-3 pt-2 text-[13px] text-gray-700">
+                  {L('To change the price officially in the comparison, use «Ask for a discount» on the offer page.', 'موازنے میں قیمت باضابطہ بدلنے کے لیے آفر کے صفحے پر «رعایت مانگیں» استعمال کریں۔', 'لتعديل السعر رسمياً في المقارنة استخدم «اطلب تخفيضاً» في صفحة العرض.')}
+                  {rfqHref(active) && <>{' '}<Link href={rfqHref(active)} className="inline-flex items-center min-h-[44px] font-bold text-[#8F6820] underline">{L('Open the request', 'درخواست کھولیں', 'افتح الطلب')}</Link></>}
+                </p>
               )}
               <form onSubmit={send} className="p-3 border-t border-gray-100 flex items-end gap-2 mt-2">
                 <textarea ref={boxRef} rows={1} value={body} onChange={e => setBody(e.target.value)} disabled={blocked} aria-label={L('Message', 'پیغام', 'نص الرسالة')}
@@ -549,5 +578,5 @@ function Messages() {
 }
 
 export default function MessagesPage() {
-  return <Suspense fallback={<PageLoader />}><Messages /></Suspense>
+  return <Suspense fallback={<PageLoader variant="thread" />}><Messages /></Suspense>
 }

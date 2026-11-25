@@ -17,7 +17,7 @@ export default function SupportThread({ userId, viewerRole, initialText }: { use
   const [loading, setLoading] = useState(true)
   const [sending, setSending] = useState(false)
   const [sendError, setSendError] = useState('')
-  const endRef = useRef<any>(null)
+  const listRef = useRef<HTMLDivElement | null>(null)
   const { locale, dir } = useTranslation()
   const L = (en: string, ur: string, ar: string) => (locale === 'en' ? en : locale === 'ur' ? ur : ar)
 
@@ -33,6 +33,8 @@ export default function SupportThread({ userId, viewerRole, initialText }: { use
     if (incoming.length) {
       const field = viewerRole === 'admin' ? 'read_by_admin' : 'read_by_user'
       await c.from('support_messages').update({ [field]: true }).in('id', incoming.map((m: any) => m.id))
+      // the «الدعم» menu badge clears at once (round-7 UX-244)
+      if (viewerRole === 'user') { try { window.dispatchEvent(new Event('tsk:support-read')) } catch {} }
     }
   }
 
@@ -47,7 +49,8 @@ export default function SupportThread({ userId, viewerRole, initialText }: { use
     return () => { c.removeChannel(ch) }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userId])
-  useEffect(() => { endRef.current?.scrollIntoView({ behavior: 'smooth' }) }, [messages])
+  // scroll the message list only, never the whole page (round-7 UX-159)
+  useEffect(() => { const el = listRef.current; if (el) el.scrollTop = el.scrollHeight }, [messages])
 
   async function send(e: any) {
     e?.preventDefault?.()
@@ -63,7 +66,7 @@ export default function SupportThread({ userId, viewerRole, initialText }: { use
 
   return (
     <div className="flex flex-col" dir={dir}>
-      <div className="space-y-2 max-h-80 overflow-y-auto p-1">
+      <div ref={listRef} className="space-y-2 max-h-80 overflow-y-auto p-1">
         {loading ? (
           <div className="text-sm text-gray-500 text-center py-6">{L('Loading…', 'لوڈ ہو رہا ہے…', 'جارٍ التحميل…')}</div>
         ) : messages.length === 0 ? (
@@ -74,9 +77,12 @@ export default function SupportThread({ userId, viewerRole, initialText }: { use
           </div>
         ) : messages.map((m: any) => {
           const mine = m.sender === viewerRole
+          // my messages sit on the right in every language, as in the chat (round-7 UX-199)
+          const right = dir === 'rtl' ? 'justify-start' : 'justify-end'
+          const left = dir === 'rtl' ? 'justify-end' : 'justify-start'
           return (
-            <div key={m.id} className={`flex ${mine ? 'justify-end' : 'justify-start'}`}>
-              <div className={`max-w-[78%] rounded-2xl px-3.5 py-2 text-sm ${mine ? 'text-white rounded-ee-sm' : 'bg-gray-100 text-gray-800 rounded-es-sm'}`}
+            <div key={m.id} className={`flex ${mine ? right : left}`}>
+              <div className={`max-w-[78%] rounded-2xl px-3.5 py-2 text-sm ${mine ? 'text-white rounded-br-sm' : 'bg-gray-100 text-gray-800 rounded-bl-sm'}`}
                 style={mine ? { background: '#0B2438' } : {}}>
                 <div className="text-[12px] opacity-75 mb-0.5">{mine ? L('You', 'آپ', 'أنت') : m.sender === 'admin' ? L('Taseerak team', 'تسعیرک ٹیم', 'فريق تسعيرك') : L('User', 'صارف', 'المستخدم')}</div>
                 <div className="whitespace-pre-wrap break-words leading-relaxed">{m.content}</div>
@@ -85,7 +91,6 @@ export default function SupportThread({ userId, viewerRole, initialText }: { use
             </div>
           )
         })}
-        <div ref={endRef} />
       </div>
 
       <form onSubmit={send} className="mt-3 pt-3 border-t border-gray-100 space-y-2">
@@ -94,7 +99,7 @@ export default function SupportThread({ userId, viewerRole, initialText }: { use
           className="input-field w-full text-base sm:text-sm leading-relaxed" placeholder={L('Write your message…', 'اپنا پیغام لکھیں…', 'اكتب رسالتك…')} />
         {sendError && <p className="text-sm text-red-600" role="alert">{sendError}</p>}
         <button type="submit" disabled={sending || !text.trim()}
-          className="w-full sm:w-auto min-h-11 px-6 rounded-xl font-bold text-[#071827] text-sm disabled:opacity-50 transition-all hover:shadow" style={{ background: '#D4A543' }}>
+          className="btn-primary w-full sm:w-auto">
           {sending ? L('Sending…', 'بھیجا جا رہا ہے…', 'جارٍ الإرسال…') : L('Send', 'بھیجیں', 'إرسال')}
         </button>
       </form>

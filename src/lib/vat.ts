@@ -56,7 +56,10 @@ export function vatTag(o: any, locale: string): string {
 
 // The label of an offer's grand total: «يشمل ضريبة القيمة المضافة 15%» only when the seller charges it.
 export function totalLabel(o: any, locale: string): string {
-  if (!showsVatBreakdown(o) && isIndependentOffer(o)) return locale === 'en' ? 'Total (final; invoice from the source shop)' : locale === 'ur' ? 'کل (حتمی؛ انوائس ماخذ دکان سے)' : 'الإجمالي (نهائي، والفاتورة من المحل المصدر)'
+  // round-7 UX-001: a pricing agent whose source shop is not VAT-registered adds no VAT and hands a sales invoice
+  if (!showsVatBreakdown(o) && isIndependentOffer(o)) return vatStatusOf(o) === 'not_registered'
+    ? (locale === 'en' ? 'Total (final, no VAT; the sales invoice from the source shop)' : locale === 'ur' ? 'کل (حتمی، VAT کے بغیر؛ سیلز انوائس ماخذ دکان سے)' : 'الإجمالي (نهائي بلا ضريبة، وفاتورة البيع من المحل المصدر)')
+    : (locale === 'en' ? 'Total (final; invoice from the source shop)' : locale === 'ur' ? 'کل (حتمی؛ انوائس ماخذ دکان سے)' : 'الإجمالي (نهائي، والفاتورة من المحل المصدر)')
   if (!showsVatBreakdown(o)) return locale === 'en' ? 'Total (final, no VAT)' : locale === 'ur' ? 'کل (حتمی، VAT کے بغیر)' : 'الإجمالي (نهائي، دون ضريبة القيمة المضافة)'
   return locale === 'en' ? 'Total incl. 15% VAT' : locale === 'ur' ? 'کل رقم (15% VAT سمیت)' : 'الإجمالي (يشمل ضريبة القيمة المضافة 15%)'
 }
@@ -110,4 +113,23 @@ export const buyerLinePrice = (amount: any, o: any, _home?: boolean): number => 
 // Retired 2026-11-23 (a buyer never sees a price before VAT): always empty, kept for older callers.
 export function preVatNote(_o: any, _locale: string): string {
   return ''
+}
+
+// round-7 UX-005: has this offer's committed price expired (price_valid_until in the past)?
+export const offerPriceGone = (o: any): boolean => !!o?.price_valid_until && new Date(o.price_valid_until).getTime() < Date.now()
+
+// round-7 UX-005: the offers a buyer can still compare and choose on a request, ONE rule for the home
+// «أقل سعر», «طلباتي» and the request page: not declined/withdrawn/cancelled, price not expired, and on a
+// request that needs a tax invoice only offers that come with one (issuesTaxInvoice). The query must
+// select supplier(supplier_tier, provider_type) and vat_status for the tax-invoice rule to be exact.
+export function liveComparableOffers(offers: any[] | null | undefined, rfq: any): any[] {
+  return (Array.isArray(offers) ? offers : []).filter((o: any) =>
+    !!o && !['rejected', 'withdrawn', 'cancelled'].includes(o.status) && !offerPriceGone(o)
+    && (!rfq?.vat_invoice_required || issuesTaxInvoice(o)))
+}
+
+// The cheapest of the comparable offers (offerComparable basis), or null when none is left.
+export function cheapestLiveOffer(offers: any[] | null | undefined, rfq: any): any | null {
+  const live = liveComparableOffers(offers, rfq)
+  return live.length ? live.reduce((a: any, b: any) => (offerComparable(b) < offerComparable(a) ? b : a)) : null
 }

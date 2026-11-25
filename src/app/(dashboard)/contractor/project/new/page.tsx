@@ -13,7 +13,7 @@ import LanguageSwitcher from '@/components/shared/LanguageSwitcher'
 import AppShell from '@/components/shared/AppShell'
 import { getNav } from '@/lib/nav'
 import { TIERS, tierLabel, tierHint, normTier } from '@/lib/sellers'
-import { SECTOR_LABELS, SUB_CATEGORIES, GROUP_LABELS, UNIT_OPTIONS, REGIONS, CITIES_BY_REGION, detectSubCategory, getSubCategoryLabel, getProductLabel, getUnitLabel, getRegionLabel, SECTOR_PRODUCTS, unitChoicesFor, getDefaultUnit, specsRequired, missingSpecs, getProductSpecs, brandApplies, withBrand, type Sector } from '@/types'
+import { getSectorLabel, SUB_CATEGORIES, GROUP_LABELS, UNIT_OPTIONS, REGIONS, CITIES_BY_REGION, detectSubCategory, getSubCategoryLabel, getProductLabel, getUnitLabel, getRegionLabel, SECTOR_PRODUCTS, unitChoicesFor, getDefaultUnit, specsRequired, missingSpecs, getProductSpecs, brandApplies, withBrand, type Sector } from '@/types'
 import { productImageUrl, imgFallback } from '@/lib/productImage'
 import LineSpecialty, { choiceDone } from '@/components/shared/LineSpecialty'
 import CatalogPicker from '@/components/shared/CatalogPicker'
@@ -49,9 +49,10 @@ const normalizeLine = (it: any) => (it && it.sub_category && !validSub(it.sector
 const draftLine = (it: any) => ({ ...it, specFile: null, specFileName: it.specFile?.name || it.specFileName || undefined })
 
 // تجميع بنود الـ BOQ حسب المجموعة (مثل قوائم التسعير) — يحتفظ بالفهرس الأصلي لكل بند
-function getGroupedItems(items: any[], locale: string) {
+function getGroupedItems(items: any[], locale: string, only?: Set<string> | null) {
   const groups: Record<string, any> = {}
   items.forEach((item: any, i: number) => {
+    if (only && !only.has(item.id)) return // round-7 UX-080: a chip filter shows only the lines it counted
     const sub = item.sub_category
     const gkey = (sub && (SUB_CATEGORIES as any)[item.sector]?.[sub]?.group) || '_unclassified'
     if (!groups[gkey]) {
@@ -67,7 +68,7 @@ function getGroupedItems(items: any[], locale: string) {
     groups[gkey].entries.push({ item, i })
   })
   // open a group that still needs something: a specialty or a quantity (owner 2026-10-24)
-  for (const g of Object.values(groups)) if (g.entries.some((e: any) => !(parseFloat(e.item.quantity) > 0))) g.defaultOpen = true
+  for (const g of Object.values(groups)) if (only || g.entries.some((e: any) => !(parseFloat(e.item.quantity) > 0))) g.defaultOpen = true
   return Object.keys(groups).sort((a, b) => (a === '_unclassified' ? -1 : b === '_unclassified' ? 1 : 0)).map(k => groups[k])
 }
 
@@ -90,12 +91,8 @@ function boqFlagText(flags: any, L: (en: string, ur: string, ar: string) => stri
   return out
 }
 
-// sector names in the three languages (SECTOR_LABELS is Arabic only)
-const SECTOR_L: Record<string, [string, string]> = {
-  civil: ['Civil', 'سول'], architectural: ['Architectural', 'آرکیٹیکچرل'], electrical: ['Electrical', 'الیکٹریکل'],
-  mechanical: ['Mechanical', 'مکینیکل'], equipment: ['Machinery and equipment', 'مشینری اور آلات'], supply_store: ['Supply store', 'سپلائی اسٹور'],
-}
-const sectorName = (s: string, locale: string) => (locale === 'ar' ? (SECTOR_LABELS as any)[s] || s : (SECTOR_L[s]?.[locale === 'ur' ? 1 : 0] || s))
+// one sector name per language on every page (round-7 UX-141): no local name map
+const sectorName = (s: string, locale: string) => getSectorLabel(s, locale)
 const CATALOG_SET = new Set<string>(Object.values(SECTOR_PRODUCTS).flat())
 // an item that came from a file (the uploaded bill of quantities, or a list moved from a tender review), as opposed
 // to one the buyer added himself. Older drafts have no from_file flag: their file items have ids «item-<row>»
@@ -124,6 +121,8 @@ export default function NewProjectPage() {
   const [deliveryLocation, setDeliveryLocation] = useState('')
   const [geoMsg, setGeoMsg] = useState('')
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({})
+  const [viewFilter, setViewFilter] = useState<'all' | 'noqty' | 'nosub'>('all') // round-7 UX-080
+  const [viewIds, setViewIds] = useState<Set<string> | null>(null)
   const toggleGroup = (k: string) => setOpenGroups(o => ({ ...o, [k]: !(o[k] ?? (k === '_unclassified')) }))
   // fields of step 3, so a click on «إرسال» can take the buyer to the first missing one
   const titleRef = useRef<HTMLInputElement>(null)
@@ -227,6 +226,13 @@ export default function NewProjectPage() {
   // Items
   const [items, setItems] = useState<any[]>([])
   const [editingIndex, setEditingIndex] = useState<any>(null)
+  // a line added (by hand, from the catalog or a file) or a new list: back to «الكل», so nothing new is hidden
+  const itemCountRef = useRef(0)
+  useEffect(() => {
+    const n = items.length, before = itemCountRef.current
+    itemCountRef.current = n
+    if (viewIds && (n > before || n === 0)) { setViewFilter('all'); setViewIds(null) }
+  }, [items.length]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // استهداف نوع الموردين + الموثّقون فقط (يطبَّق على كل بنود المشروع)
   const [targetTiers, setTargetTiers] = useState<string[]>([])
@@ -246,16 +252,21 @@ export default function NewProjectPage() {
   // «سيصل طلبك إلى نحو N موردين» before sending (UX-072): optional, nothing is shown if the RPC is missing
   const [reach, setReach] = useState<{ reached: number; items: { name: string; suppliers: number }[] } | null>(null)
   const reachItems = items.filter((i: any) => i.selected && i.product_name && !i.needs_classification)
-  const reachKey = reachItems.map((i: any) => `${i.sector}|${i.sub_category || ''}|${i.product_name}`).join('~') + `#${region}#${city}#${nearbyOnly}`
+  // round-7 UX-019: «الموثّقون فقط» and the supplier type change who is reached, so they are in the key and the call
+  const reachKey = reachItems.map((i: any) => `${i.sector}|${i.sub_category || ''}|${i.product_name}`).join('~') + `#${region}#${city}#${nearbyOnly}#${verifiedOnly}#${targetTiers.join(',')}`
   useEffect(() => {
     if (!reachItems.length || !region) { setReach(null); return }
     let alive = true
     const t = setTimeout(async () => {
       try {
-        const { data, error } = await createClient().rpc('preview_rfq_reach', {
+        const sb = createClient()
+        const base = {
           p_items: reachItems.slice(0, 60).map((i: any) => ({ sector: i.sector, product_name: i.product_name, sub_category: i.sub_category || detectSubCategory(i.product_name, i.sector) || null })),
           p_region: region, p_city: city || null, p_geo: null, p_nearby: nearbyOnly,
-        })
+        }
+        // the same rules as routing (migration 288); the older signature only when the newer one is not deployed
+        let { data, error } = await sb.rpc('preview_rfq_reach', { ...base, p_verified_only: verifiedOnly, p_tiers: targetTiers.length ? targetTiers : null })
+        if (error) ({ data, error } = await sb.rpc('preview_rfq_reach', base))
         if (alive && !error && data && typeof data === 'object') setReach({ reached: Number((data as any).reached) || 0, items: Array.isArray((data as any).items) ? (data as any).items : [] })
       } catch { /* optional */ }
     }, 700)
@@ -298,11 +309,20 @@ export default function NewProjectPage() {
   const [restoredCount, setRestoredCount] = useState(0) // > 0: «استعدنا مسودتك» banner
   // files attached before the page was closed: a draft cannot keep them, so it keeps their names and asks again (UX-094)
   const [lostFiles, setLostFiles] = useState<{ boq?: string; specs?: string }>({})
-  const attachRef = useRef<any>(null) // re-attach the BOQ file without reading it again (the items are kept)
   // how many items the file gave, kept apart from the list (which grows with manual additions): UX-135
   const [extracted, setExtracted] = useState(0)
   // set when the draft came from «مسار العطاء»: the tender is marked sent and linked to this project
   const [tenderId, setTenderId] = useState<string | null>(null)
+  // round-7 UX-079: the tender's name in the header, and the upload area folded behind «إضافة مادة أخرى»
+  const [tenderTitle, setTenderTitle] = useState('')
+  const [showAddMore, setShowAddMore] = useState(false)
+  useEffect(() => {
+    if (!tenderId) { setTenderTitle(''); return }
+    let alive = true
+    createClient().from('tenders').select('title').eq('id', tenderId).maybeSingle()
+      .then(({ data }: any) => { if (alive) setTenderTitle(String(data?.title || '')) }, () => {})
+    return () => { alive = false }
+  }, [tenderId])
   // restored once the account is known: the browser copy of THIS account (UX-096), or the server copy when it is newer
   // or the browser has none (another device, the app: UX-089). «?draft=<id>» opens a given server copy.
   //
@@ -315,6 +335,10 @@ export default function NewProjectPage() {
     let wanted: string | null = null
     try { wanted = new URLSearchParams(window.location.search).get('draft') } catch {}
     const has = (x: any) => !!x && Array.isArray(x.items) && x.items.length > 0
+    // round-7 UX-140: «جارٍ استعادة مسودتك» and the pause on adding only when there is a draft to restore (a browser
+    // copy or «?draft=»). A first visit starts at once; a server copy from another device found later still replaces
+    // the list only while nothing was changed (dirtyRef), else it asks.
+    if (!wanted && !has(local)) setRestoring(false)
     // «?draft=<id>» asks for a given server copy: the browser copy (maybe another list) is not shown first
     if (!wanted) applyDraft(local)
     let applied = !wanted && has(local)
@@ -975,15 +999,35 @@ export default function NewProjectPage() {
   // ready / no quantity / no specialty: each chip takes you to the first item it counts (UX-073)
   // compact (the sticky bar on a phone, UX-076): chips with a zero count are hidden and the row never wraps.
   // «بلا تخصص» is not an error: gold, like «بلا كمية» (UX-136)
+  // round-7 UX-080: the chips are also FILTERS (الكل / بلا كمية / بلا تخصص). A filter keeps the lines it counted when
+  // it was chosen (a snapshot), so a line does not vanish while its quantity is being typed.
+  const chooseView = (v: 'all' | 'noqty' | 'nosub') => {
+    const list = v === 'noqty' ? noQtyItems : v === 'nosub' ? unclassifiedItems : []
+    setViewFilter(v); setViewIds(v === 'all' ? null : new Set(list.map((it: any) => String(it.id))))
+    if (list[0]) focusItem(list[0])
+  }
+  const chipCls = (on: boolean, n: number) => `inline-flex items-center min-h-11 px-3 rounded-full shrink-0 ${on ? 'bg-[#0B2438] text-white' : n ? 'bg-[#D4A543]/15 text-[#8F6820] underline underline-offset-2' : 'bg-gray-100 text-gray-500'}`
   const chipsRow = (compact: boolean) => (
     <div className={`flex gap-2 text-xs font-bold ${compact ? 'flex-nowrap whitespace-nowrap' : 'flex-wrap'}`}>
+      {!compact && <button type="button" onClick={() => chooseView('all')} aria-pressed={viewFilter === 'all'} className={chipCls(viewFilter === 'all', 1)}>{L(`All (${items.length})`, `سب (${items.length})`, `الكل (${items.length})`)}</button>}
       {(!compact || readyCount > 0) && <span className="inline-flex items-center gap-1 min-h-11 px-3 rounded-full shrink-0 bg-[#0F6E56]/10 text-[#0F6E56]"><Glyph e="✓" /> {L(`Ready: ${readyCount}`, `تیار: ${readyCount}`, `جاهز: ${readyCount}`)}</span>}
-      {(!compact || noQtyCount > 0) && <button type="button" disabled={!noQtyCount} onClick={() => focusItem(noQtyItems[0])}
-        className={`inline-flex items-center min-h-11 px-3 rounded-full shrink-0 ${noQtyCount ? 'bg-[#D4A543]/15 text-[#8F6820] underline underline-offset-2' : 'bg-gray-100 text-gray-500'}`}>{L(`No quantity: ${noQtyCount}`, `بغیر مقدار: ${noQtyCount}`, `بلا كمية: ${noQtyCount}`)}</button>}
-      {(!compact || unclassifiedCount > 0) && <button type="button" disabled={!unclassifiedCount} onClick={() => focusItem(unclassifiedItems[0])}
-        className={`inline-flex items-center min-h-11 px-3 rounded-full shrink-0 ${unclassifiedCount ? 'bg-[#D4A543]/15 text-[#8F6820] underline underline-offset-2' : 'bg-gray-100 text-gray-500'}`}>{L(`No specialty: ${unclassifiedCount}`, `بغیر شعبہ: ${unclassifiedCount}`, `بلا تخصص: ${unclassifiedCount}`)}</button>}
+      {(!compact || noQtyCount > 0) && <button type="button" disabled={!noQtyCount && viewFilter !== 'noqty'} onClick={() => chooseView('noqty')} aria-pressed={viewFilter === 'noqty'}
+        className={chipCls(viewFilter === 'noqty', noQtyCount)}>{L(`No quantity (${noQtyCount})`, `بغیر مقدار (${noQtyCount})`, `بلا كمية (${noQtyCount})`)}</button>}
+      {(!compact || unclassifiedCount > 0) && <button type="button" disabled={!unclassifiedCount && viewFilter !== 'nosub'} onClick={() => chooseView('nosub')} aria-pressed={viewFilter === 'nosub'}
+        className={chipCls(viewFilter === 'nosub', unclassifiedCount)}>{L(`No specialty (${unclassifiedCount})`, `بغیر شعبہ (${unclassifiedCount})`, `بلا تخصص (${unclassifiedCount})`)}</button>}
+      {viewFilter !== 'all' && <button type="button" onClick={() => chooseView('all')} className="inline-flex items-center min-h-11 px-3 rounded-full shrink-0 border border-[#0B2438]/30 bg-white text-[#0B2438]">{L('Show all', 'سب دکھائیں', 'عرض الكل')}</button>}
     </div>
   )
+  // after a quantity: the cursor moves to the next line that still has none (in the order shown)
+  function goNextMissing(fromId: string) {
+    const order = getGroupedItems(items, locale, viewIds).flatMap((g: any) => g.entries.map((e: any) => e.item))
+    const at = order.findIndex((it: any) => it.id === fromId)
+    const miss = (it: any) => it.id !== fromId && it.selected && it.product_name && !(parseFloat(it.quantity) > 0)
+    const next = order.slice(at + 1).find(miss) || order.find(miss)
+    if (!next) return
+    focusItem(next)
+    setTimeout(() => (document.getElementById(`boq-qty-${next.id}`) as HTMLInputElement | null)?.focus({ preventScroll: true }), 350)
+  }
   const statusChips = chipsRow(false)
   const unitOpt = (u: string) => <option key={u} value={u}>{getUnitLabel(u, locale)}</option>
   const unitsFor = (item: any) => Array.from(new Set([...(unitChoicesFor(item.product_name, item.sector) || UNIT_OPTIONS), ...(item.unit ? [item.unit] : [])])) as string[]
@@ -1004,7 +1048,8 @@ export default function NewProjectPage() {
         <div className="grid grid-cols-2 gap-2">
           <label className="block">
             <span className="block text-xs font-semibold text-gray-600 mb-0.5">{L('Quantity', 'مقدار', 'الكمية')}</span>
-            <input type="text" inputMode="decimal" value={item.quantity || ''} autoFocus={item.id === justAddedId}
+            <input id={`boq-qty-${item.id}`} type="text" inputMode="decimal" enterKeyHint="next" value={item.quantity || ''} autoFocus={item.id === justAddedId}
+              onKeyDown={(e: any) => { if (e.key === 'Enter' && parseFloat(item.quantity) > 0) { e.preventDefault(); goNextMissing(item.id) } }}
               onChange={(e: any) => updateItem(item.id, 'quantity', toQty(e.target.value))}
               className={`input-field text-sm ${parseFloat(item.quantity) > 0 ? '' : 'border-[#D4A543] bg-white'}`} placeholder={L('Quantity', 'مقدار', 'الكمية')} />
           </label>
@@ -1015,7 +1060,7 @@ export default function NewProjectPage() {
             </select>
           </label>
         </div>
-        <ItemSpecFields name={item.product_name} sector={item.sector} specs={item.specs} locale={locale} onChange={(v: any) => updateItem(item.id, 'specs', v)} />
+        <ItemSpecFields name={item.product_name} sector={item.sector} specs={item.specs} locale={locale} showErrors={highlightId === item.id} onChange={(v: any) => updateItem(item.id, 'specs', v)} />
         {brandApplies(item.product_name, item.sector) && (
           <input value={item.brand || ''} onChange={(e: any) => updateItem(item.id, 'brand', e.target.value.slice(0, 80))} className="input-field text-sm"
             aria-label={L('Brand or product name (optional)', 'برانڈ یا پروڈکٹ کا نام (اختیاری)', 'الماركة أو اسم المنتج (اختياري)')}
@@ -1024,7 +1069,7 @@ export default function NewProjectPage() {
         <input value={item.specification || ''} onChange={(e: any) => updateItem(item.id, 'specification', e.target.value)}
           aria-label={L('Specification', 'تفصیل', 'المواصفة')} className={`input-field text-sm ${needWritten ? 'border-[#D4A543] bg-white' : ''}`}
           placeholder={needWritten ? L('Size and specs (required): length, width, thickness, grade…', 'سائز اور تفصیل (ضروری): لمبائی، چوڑائی، موٹائی، گریڈ…', 'المقاس والمواصفات (مطلوب): الطول، العرض، السماكة، الدرجة…') : L('More specs for this item (optional)', 'اس آئٹم کی مزید تفصیل (اختیاری)', 'مواصفات إضافية لهذا البند (اختياري)')} />
-        <button type="button" disabled={!ok} onClick={() => updateItem(item.id, 'done', true)}
+        <button type="button" disabled={!ok} onClick={() => { updateItem(item.id, 'done', true); goNextMissing(item.id) }}
           className="w-full min-h-11 rounded-xl text-sm font-bold text-white disabled:opacity-40" style={{ background: '#0B2438' }}>
           {!(parseFloat(item.quantity) > 0) ? L('Enter the quantity', 'مقدار لکھیں', 'أدخل الكمية') : miss.length ? L('Enter the specs', 'تفصیل لکھیں', 'أدخل المواصفات') : <><Glyph e="✓" /> {L('Done', 'ہو گیا', 'تم')}</>}
         </button>
@@ -1037,7 +1082,7 @@ export default function NewProjectPage() {
   const extractedN = extracted || items.filter(isFileItem).length
 
   return (
-    <AppShell title={homeMode ? L('Company tools', 'کمپنی کے ٹولز', 'أدوات الشركات') : locale === 'en' ? 'Add a bill of quantities (BOQ)' : locale === 'ur' ? 'مقداروں کا جدول (BOQ) شامل کریں' : 'إضافة جدول الكميات (BOQ)'} nav={getNav('contractor', locale, '/contractor/project/new')} dir={dir}>
+    <AppShell title={homeMode ? L('Company tools', 'کمپنی کے ٹولز', 'أدوات الشركات') : tenderId ? L('Send the tender items for pricing', 'ٹینڈر کے آئٹمز قیمت کے لیے بھیجیں', 'إرسال بنود المناقصة للتسعير') : L('Bill of quantities', 'مقداروں کا جدول', 'جدول الكميات')}nav={getNav('contractor', locale, '/contractor/project/new')} dir={dir}>
       <div className="max-w-5xl mx-auto">
         {homeMode && <HomeModeNotice locale={locale} what="boq" />}
         {!homeMode && allowed === false && (
@@ -1116,16 +1161,23 @@ export default function NewProjectPage() {
         <div className="mb-6">
 
           <h1 className="text-xl sm:text-2xl font-bold" style={{ color: '#0B2438' }}>
-            {locale === 'en' ? 'Add a bill of quantities (BOQ)' : locale === 'ur' ? 'مقداروں کا جدول (BOQ) شامل کریں' : 'إضافة جدول الكميات (BOQ)'}
+            {tenderId ? L('Send the tender items for pricing', 'ٹینڈر کے آئٹمز قیمت کے لیے بھیجیں', 'إرسال بنود المناقصة للتسعير') : L('Bill of quantities', 'مقداروں کا جدول', 'جدول الكميات')}
           </h1>
+          {/* round-7 UX-079: from a tender this is a review-and-send page: its name, and the way back as a visible button */}
+          {tenderId && tenderTitle && <p className="text-sm font-bold text-[#8F6820] mt-0.5" dir="auto">{tenderTitle}</p>}
           <p className="text-sm text-gray-600 mt-1">
-            {L('Upload the bill of quantities or add the materials yourself: each material goes to the suppliers of its specialty.',
-              'مقداروں کا جدول اپلوڈ کریں یا مواد خود شامل کریں: ہر مواد اپنے شعبے کے سپلائرز کو جاتا ہے۔',
-              'ارفع جدول الكميات أو أضف المواد بنفسك، وتصل كل مادة إلى موردي تخصصها.')}
+            {tenderId
+              ? L('Review the approved tender items, complete the delivery details below and send: each material goes to the suppliers of its specialty.', 'ٹینڈر کے منظور آئٹمز دیکھیں، نیچے ڈیلیوری کی تفصیل مکمل کریں اور بھیجیں: ہر مواد اپنے شعبے کے سپلائرز کو جاتا ہے۔', 'راجع بنود المناقصة المعتمدة، وأكمل بيانات التوصيل بالأسفل ثم أرسل، وتصل كل مادة إلى موردي تخصصها.')
+              : L('Upload the bill of quantities or add the materials yourself: each material goes to the suppliers of its specialty.',
+                'مقداروں کا جدول اپلوڈ کریں یا مواد خود شامل کریں: ہر مواد اپنے شعبے کے سپلائرز کو جاتا ہے۔',
+                'ارفع جدول الكميات أو أضف المواد بنفسك، وتصل كل مادة إلى موردي تخصصها.')}
           </p>
           {tenderId ? (
-            <p className="mt-2 text-xs font-bold text-[#0B2438]"><Glyph e="📑" /> {L('These items come from your tender review (approved items only).', 'یہ آئٹمز آپ کے ٹینڈر جائزے سے ہیں (صرف منظور شدہ)۔', 'هذه البنود من مراجعة المناقصة (المعتمدة فقط).')} <Link href={`/contractor/tender/${tenderId}`} className="inline-flex items-center min-h-11 px-1 underline">{L('Back to the tender', 'ٹینڈر پر واپس', 'العودة إلى المناقصة')}</Link>
-              {' · '}<button type="button" onClick={cancelTenderList} className="inline-flex items-center min-h-11 px-1 underline text-red-700">{L('Cancel this list', 'یہ فہرست منسوخ کریں', 'إلغاء هذه القائمة')}</button></p>
+            <div className="mt-2 flex flex-wrap items-center gap-2">
+              <Link href={`/contractor/tender/${tenderId}`} className="inline-flex items-center min-h-11 px-4 rounded-xl border border-[#0B2438] bg-white text-sm font-bold text-[#0B2438]">{L('Back to the tender', 'ٹینڈر پر واپس', 'العودة إلى المناقصة')}</Link>
+              <button type="button" onClick={cancelTenderList} className="inline-flex items-center min-h-11 px-3 text-sm font-bold underline text-red-700">{L('Cancel this list', 'یہ فہرست منسوخ کریں', 'إلغاء هذه القائمة')}</button>
+              <span className="text-xs text-gray-600"><Glyph e="📑" /> {L('Approved items only.', 'صرف منظور شدہ آئٹمز۔', 'البنود المعتمدة فقط.')}</span>
+            </div>
           ) : (
             <Link href="/contractor/tender/new" className="mt-2 inline-block text-xs font-bold text-[#8F6820] hover:underline">
               <Glyph e="📑" /> {L('A full tender in Excel with drawings and specifications? Use «Tender pricing», which checks every number against its source', 'ڈرائنگز اور تفصیلات کے ساتھ Excel میں پورا ٹینڈر؟ «ٹینڈر کی قیمت» استعمال کریں، جو ہر عدد کو اس کے ماخذ سے ملاتا ہے', 'لديك مناقصة كاملة بصيغة Excel مع مخططات ومواصفات؟ استخدم «تسعير مناقصة» الذي يطابق كل رقم مع مصدره')}
@@ -1151,7 +1203,15 @@ export default function NewProjectPage() {
           </div>
         )}
 
-        {/* Step 1: add the materials */}
+        {/* Step 1: add the materials. From a tender (round-7 UX-079) it is folded behind «إضافة مادة أخرى» */}
+        {tenderId && hasItems && !showAddMore ? (
+          <div className="mb-5">
+            <button type="button" onClick={() => setShowAddMore(true)} disabled={restoring}
+              className="w-full min-h-11 py-3 rounded-xl border-2 border-dashed border-gray-200 bg-white text-sm font-semibold text-gray-700 hover:border-[#0B2438] hover:text-[#0B2438] disabled:opacity-50">
+              + {L('Add another material', 'ایک اور مواد شامل کریں', 'إضافة مادة أخرى')}
+            </button>
+          </div>
+        ) : (
         <div className="bg-white rounded-2xl p-5 sm:p-6 border border-gray-100 shadow-sm mb-5">
           <h2 className="font-bold mb-1" style={{ color: '#0B2438' }}>
             {L('1. Add the materials', '1. مواد شامل کریں', '1. أضف المواد')}
@@ -1203,7 +1263,7 @@ export default function NewProjectPage() {
                   {L('Drop the bill of quantities here, or tap to choose it', 'مقداروں کا جدول یہاں چھوڑیں، یا منتخب کرنے کے لیے دبائیں', 'اسحب ملف جدول الكميات هنا، أو اضغط لاختياره')}
                 </div>
                 <div className="text-xs text-gray-500 mt-1">Excel (.xlsx, .xls) · CSV · PDF · {L('photo', 'تصویر', 'صورة')}</div>
-                <div className="text-xs text-gray-500 mt-1">{L('Suppliers receive the items read from it; the file itself stays in your record only.', 'سپلائرز کو اس سے پڑھے گئے آئٹمز ملتے ہیں؛ فائل صرف آپ کے ریکارڈ میں رہتی ہے۔', 'تصل إلى الموردين البنود المقروءة منه، ويبقى الملف نفسه في سجلك فقط.')}</div>
+                <div className="text-xs text-gray-500 mt-1">{L('Suppliers receive the items read from it. The file is kept by Taseerak and is not sent to suppliers.', 'سپلائرز کو اس سے پڑھے گئے آئٹمز ملتے ہیں۔ فائل تسعیرک کے پاس محفوظ رہتی ہے اور سپلائرز کو نہیں بھیجی جاتی۔', 'تصل إلى الموردين البنود المقروءة منه، ويُحفظ الملف لدى تسعيرك ولا يُرسل إلى الموردين.')}</div>
               </div>
             )}
           </div>
@@ -1215,17 +1275,13 @@ export default function NewProjectPage() {
           {/* the BOQ file of a reopened draft: its items are kept, the file itself is not (UX-094) */}
           {!boqFile && !parsing && lostFiles.boq && hasItems && (
             <div className="rounded-xl border border-[#D4A543]/50 bg-[#D4A543]/[.06] p-3 mb-4 text-sm text-[#0B2438]" role="status">
-              <p><Glyph e="📎" /> {L(`The file «${lostFiles.boq}» is not attached after reopening. This file is kept in your request record only and is not sent to suppliers; the items are saved.`, `دوبارہ کھولنے کے بعد فائل «${lostFiles.boq}» منسلک نہیں۔ یہ فائل صرف آپ کی درخواست کے ریکارڈ میں رکھی جاتی ہے اور سپلائرز کو نہیں بھیجی جاتی؛ آئٹمز محفوظ ہیں۔`, `الملف «${lostFiles.boq}» غير مرفق بعد إعادة الفتح. يُحفظ هذا الملف في سجل طلبك فقط ولا يُرسل إلى الموردين، والبنود محفوظة.`)}</p>
+              {/* round-7 UX-077: no «إرفاقه بسجلي» (there is no screen that shows that record yet) */}
+              <p><Glyph e="📎" /> {L(`The file «${lostFiles.boq}» is not attached after reopening. Your items are saved, and suppliers receive only the items, never the file.`, `دوبارہ کھولنے کے بعد فائل «${lostFiles.boq}» منسلک نہیں۔ آپ کے آئٹمز محفوظ ہیں، اور سپلائرز کو صرف آئٹمز ملتے ہیں، فائل کبھی نہیں۔`, `الملف «${lostFiles.boq}» غير مرفق بعد إعادة الفتح. بنودك محفوظة، ولا تصل إلى الموردين إلا البنود، لا الملف.`)}</p>
               <div className="mt-2 flex flex-wrap gap-2">
-                <button type="button" onClick={() => attachRef.current?.click()} className="min-h-11 px-4 rounded-xl text-sm font-bold text-white" style={{ background: '#0B2438' }}>
-                  {L('Attach it to my record (optional)', 'اسے میرے ریکارڈ سے منسلک کریں (اختیاری)', 'إرفاقه بسجلي (اختياري)')}
-                </button>
                 <button type="button" onClick={() => setLostFiles(l => ({ ...l, boq: undefined }))} className="min-h-11 px-4 rounded-xl text-sm font-bold border border-[#0B2438]/30 text-[#0B2438] bg-white">
-                  {L('Continue without it', 'اس کے بغیر جاری رکھیں', 'متابعة دونه')}
+                  {L('OK', 'ٹھیک ہے', 'حسناً')}
                 </button>
               </div>
-              <input ref={attachRef} type="file" className="hidden" accept=".xlsx,.xls,.csv,.pdf,.jpg,.jpeg,.png,.webp"
-                onChange={(e: any) => { const f = e.target.files?.[0]; e.target.value = ''; if (f) { setBoqFile(f); setLostFiles(l => ({ ...l, boq: undefined })) } }} />
             </div>
           )}
 
@@ -1241,6 +1297,7 @@ export default function NewProjectPage() {
             + {L('Add a material', 'مواد شامل کریں', 'أضف مادة')}
           </button>)}
         </div>
+        )}
 
         {/* Step 2: review the items */}
         {hasItems && (
@@ -1344,7 +1401,7 @@ export default function NewProjectPage() {
 
             {/* Items — grouped by category (accordion, like the pricing lists) */}
             <div className="space-y-3">
-              {getGroupedItems(items, locale).map((g: any) => {
+              {getGroupedItems(items, locale, viewIds).map((g: any) => {
                 const open = openGroups[g.key] ?? g.defaultOpen
                 return (
                   <div key={g.key} className="border border-gray-100 rounded-xl bg-white overflow-hidden shadow-sm">
@@ -1410,7 +1467,7 @@ export default function NewProjectPage() {
                             </select>
                           </div>
                           <div className="sm:col-span-2">
-                            <ItemSpecFields name={item.product_name} sector={item.sector} specs={item.specs} locale={locale} onChange={(v: any) => updateItem(item.id, 'specs', v)} />
+                            <ItemSpecFields name={item.product_name} sector={item.sector} specs={item.specs} locale={locale} showErrors={highlightId === item.id} onChange={(v: any) => updateItem(item.id, 'specs', v)} />
                           </div>
                           <div className="sm:col-span-2">
                             <input value={item.specification || ''}
@@ -1723,7 +1780,7 @@ export default function NewProjectPage() {
               <div>
                 <div id="boq-need-q" className="text-sm font-bold text-[#0B2438] mb-2">{L('When do you need the materials on site?', 'سائٹ پر سامان کب چاہیے؟', 'متى تحتاج المواد في الموقع؟')}</div>
                 <div role="radiogroup" aria-labelledby="boq-need-q" className="flex flex-wrap gap-2">
-                  {([[1, L('Within a day', 'ایک دن میں', 'خلال يوم')], [3, L('Within 3 days', '3 دن میں', 'خلال 3 أيام')], [7, L('Within a week', 'ایک ہفتے میں', 'خلال أسبوع')], [null, L('Later', 'بعد میں', 'لاحقاً')]] as [number | null, string][]).map(([d, lab]) => (
+                  {([[1, L('Within a day', 'ایک دن میں', 'خلال يوم')], [3, L('Within 3 days', '3 دن میں', 'خلال 3 أيام')], [7, L('Within a week', 'ایک ہفتے میں', 'خلال أسبوع')], [null, L('Not urgent', 'جلدی نہیں', 'غير مستعجل')]] as [number | null, string][]).map(([d, lab]) => (
                     <button key={String(d)} type="button" role="radio" aria-checked={needDays === d} onClick={() => setNeedDays(d)}
                       className={`min-h-11 px-4 rounded-full border text-sm font-bold ${needDays === d ? 'bg-[#0B2438] text-white border-[#0B2438]' : 'bg-white text-gray-700 border-gray-200'}`}>{lab}</button>
                   ))}
@@ -1746,9 +1803,16 @@ export default function NewProjectPage() {
                 <Glyph e="🔒" /> {L('Your name and contact details are hidden from suppliers until you choose an offer.', 'آپ کا نام اور رابطے کی تفصیل آفر منتخب کرنے تک سپلائرز سے چھپی رہتی ہے۔', 'اسمك وبيانات تواصلك مخفية عن الموردين حتى تختار عرضاً.')}
               </p>
               <label className="flex items-center gap-2 min-h-11 text-sm text-gray-700 cursor-pointer select-none">
-                <input type="checkbox" checked={vatRequired} onChange={(e: any) => setVatRequired(e.target.checked)} className="w-5 h-5 accent-[#0B2438]" />
+                <input type="checkbox" checked={vatRequired} onChange={(e: any) => setVatRequired(e.target.checked)} aria-describedby={!vatRequired ? 'boq-vat-warn' : undefined} className="w-5 h-5 accent-[#0B2438]" />
                 {L('I need a VAT tax invoice', 'مجھے VAT ٹیکس انوائس چاہیے', 'أحتاج فاتورة ضريبية')}
               </label>
+              {/* round-7 UX-018: the same warning as the request page when the tax invoice is turned off (owner 2026-11-25) */}
+              {!vatRequired && (
+                <p id="boq-vat-warn" role="status" className="-mt-1 rounded-xl border border-[#D4A543]/50 bg-[#D4A543]/10 px-3 py-2 text-[13px] font-semibold text-[#6C531F] leading-relaxed">
+                  <Glyph e="⚠" /> {L('You may receive offers from suppliers without a VAT number, who do not issue a tax invoice.', 'آپ کو ایسے سپلائرز کی آفرز بھی مل سکتی ہیں جن کے پاس VAT نمبر نہیں، اس لیے وہ ٹیکس انوائس جاری نہیں کرتے۔', 'قد تصلك عروض من موردين ليس لديهم رقم ضريبي، فلا يُصدرون فاتورة ضريبية.')}
+                </p>
+              )}
+              <p className="text-xs text-gray-600">{L('Every price you receive includes VAT where the supplier charges it; a supplier not registered for VAT shows a final price.', 'آپ کو ملنے والی ہر قیمت میں VAT شامل ہوتا ہے جہاں سپلائر اسے لیتا ہے؛ VAT میں غیر رجسٹرڈ سپلائر حتمی قیمت دکھاتا ہے۔', 'كل سعر يصلك شامل ضريبة القيمة المضافة حين يفرضها المورد، والمورد غير المسجّل في الضريبة يعرض سعراً نهائياً.')}</p>
             </div>
 
             {/* the ONLY free text suppliers read (UX-002): visible, optional, never pre-filled */}
@@ -1784,6 +1848,20 @@ export default function NewProjectPage() {
             </div>
 
 
+            {/* round-7 UX-142: one summary line of the request options, right above the send button */}
+            {sendCount > 0 && (() => {
+              const deadline = new Date(Date.now() + hours * 3600 * 1000).toLocaleString(dateLocale(locale), { weekday: 'long', day: 'numeric', month: 'long', hour: 'numeric', minute: '2-digit', timeZone: 'Asia/Riyadh' })
+              const need = needDays === 1 ? L('within a day', 'ایک دن میں', 'خلال يوم') : needDays === 3 ? L('within 3 days', '3 دن میں', 'خلال 3 أيام') : needDays === 7 ? L('within a week', 'ایک ہفتے میں', 'خلال أسبوع') : L('not urgent', 'جلدی نہیں', 'غير مستعجل')
+              const parts = [
+                `${L('Pricing deadline', 'قیمت کی آخری تاریخ', 'آخر موعد للتسعير')}: ${deadline}`,
+                `${deliveryRequired ? L('Delivery', 'ڈیلیوری', 'التسليم') : L('Pickup', 'وصولی', 'الاستلام')}: ${need}`,
+                ...(vatRequired ? [L('Tax invoice', 'ٹیکس انوائس', 'فاتورة ضريبية')] : []),
+                ...(verifiedOnly ? [L('Verified suppliers only', 'صرف تصدیق شدہ سپلائرز', 'الموثّقون فقط')] : []),
+                ...(targetTiers.length === 1 ? [tierLabel(targetTiers[0] as any, locale, false)] : []),
+                ...(nearbyOnly ? [L('Nearby only', 'صرف قریب', 'القريبون فقط')] : []),
+              ]
+              return <p className="mb-3 rounded-xl bg-[#0B2438]/[.04] border border-[#0B2438]/10 px-3 py-2 text-[13px] text-[#0B2438] leading-relaxed" role="status">{parts.join(' · ')}</p>
+            })()}
             {/* what is still missing, each name takes you to its field (the button itself is never silently disabled) */}
             {missingFields.length > 0 && (
               <div className={`mb-3 rounded-xl border p-3 text-[13px] font-bold ${showMissing ? 'border-red-200 bg-red-50 text-red-700' : 'border-[#D4A543]/40 bg-[#D4A543]/[.06] text-[#0B2438]'}`}>

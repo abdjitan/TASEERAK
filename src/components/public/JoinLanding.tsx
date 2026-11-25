@@ -2,10 +2,10 @@
 
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import { INVITE_CODE_KEY } from '@/components/public/JoinSupplier'
+import { INVITE_CODE_KEY, JoinSteps } from '@/components/public/JoinSupplier'
 import Link from 'next/link'
 import { useTranslation } from '@/i18n'
-import LanguageSwitcher from '@/components/shared/LanguageSwitcher'
+import PublicTopBar from '@/components/public/PublicTopBar'
 import { SIGNUP_KIND_KEY } from '@/lib/sellers'
 import SellerIcon from '@/components/shared/SellerIcon'
 import { Check } from 'lucide-react'
@@ -55,24 +55,19 @@ export default function JoinLanding({ kind }: { kind: 'company' | 'independent' 
         [L('Quote from your phone in a minute', 'ایک منٹ میں فون سے قیمت', 'سعّر من جوالك خلال دقيقة'), L('Price each item from your phone in a minute, and set delivery as free or with a charge.', 'ہر آئٹم کی قیمت ایک منٹ میں اپنے فون سے دیں، اور ڈیلیوری مفت یا فیس کے ساتھ مقرر کریں۔', 'سعّر كل مادة من جوالك خلال دقيقة، وحدّد التوصيل مجاناً أو برسوم.')],
         [L('«Verified» badge', '«تصدیق شدہ» بیج', 'شارة «موثّق»'), L('Verify your commercial registration and your offers carry the «Verified» badge.', 'اپنی تجارتی رجسٹریشن کی تصدیق کریں اور آپ کی آفرز پر «تصدیق شدہ» بیج آئے گا۔', 'وثّق سجلك التجاري لتحمل عروضك شارة «موثّق».')],
         [L('Your team', 'آپ کی ٹیم', 'فريق مبيعاتك'), L('Add your sales staff so they quote on behalf of the company.', 'اپنے سیلز ملازمین شامل کریں تاکہ وہ کمپنی کی جانب سے قیمت دیں۔', 'أضف موظفي المبيعات ليقدّموا العروض باسم الشركة.')],
+        // round-7 UX-147: the VAT-invoice rule (same text as the seller dashboard, UX-036)
+        [L('VAT invoice', 'VAT انوائس', 'الفاتورة الضريبية'), L('Most requests from companies and contractors require a VAT invoice, and in them the offers that do not come with a VAT invoice are shown in a separate collapsed section. If your business is registered for VAT, add your VAT number; once our team verifies it, your offers carry the badge «Issues a VAT invoice».', 'کمپنیوں اور ٹھیکیداروں کی زیادہ تر درخواستوں میں VAT انوائس شرط ہوتی ہے، اور ان میں VAT انوائس جاری نہ کرنے والی آفرز ایک الگ بند حصے میں دکھائی جاتی ہیں۔ اگر آپ کا ادارہ VAT میں رجسٹرڈ ہے تو اپنا VAT نمبر شامل کریں؛ ہماری ٹیم کی تصدیق کے بعد آپ کی آفرز پر «VAT انوائس جاری کرتا ہے» کا نشان ظاہر ہوگا۔', 'أغلب طلبات الشركات والمقاولين تشترط فاتورة ضريبية، وتُعرض فيها العروض التي لا تُصدر فاتورة ضريبية في قسم منفصل مطويّ. إن كانت منشأتك مسجّلة في ضريبة القيمة المضافة فأضف رقمك الضريبي، وبعد أن يتحقق فريقنا منه تظهر على عروضك شارة «يُصدر فاتورة ضريبية».')],
       ]
     : [
-        [L('For those who know the market without a shop', 'جو مارکیٹ جانتے ہیں مگر دکان نہیں', 'لمن يعرف السوق ولا يملك محلاً'), L('Bring buyers the prices of shops and suppliers you know; the deal is done with the shop’s invoice in the buyer’s name.', 'جن دکانوں کو آپ جانتے ہیں ان کی قیمتیں خریداروں تک لائیں؛ سودا دکان کی خریدار کے نام انوائس سے ہوتا ہے۔', 'قدّم للمشترين أسعار المحلات والموردين الذين تعرفهم، وتتم الصفقة بفاتورة المحل باسم المشتري.')],
-        [L('Your sources are protected', 'آپ کے ذرائع محفوظ', 'مصادرك محفوظة'), L('Before the buyer chooses your offer, they see only the shop’s district; after it, the shop name (never its phone).', 'خریدار کے آپ کی آفر چننے سے پہلے وہ صرف دکان کا علاقہ دیکھتا ہے؛ بعد میں دکان کا نام (فون کبھی نہیں)۔', 'قبل أن يختار المشتري عرضك لا يرى إلا حي المحل، وبعده يرى اسم المحل دون رقم هاتفه.')],
+        [L('For those who know the market without a shop', 'جو مارکیٹ جانتے ہیں مگر دکان نہیں', 'لمن يعرف السوق ولا يملك محلاً'), L('Bring buyers the prices of shops and suppliers you know; the deal is done with the shop’s invoice in the buyer’s name, and in every offer you say whether the source shop is VAT-registered.', 'جن دکانوں کو آپ جانتے ہیں ان کی قیمتیں خریداروں تک لائیں؛ سودا دکان کی خریدار کے نام انوائس سے ہوتا ہے، اور ہر آفر میں آپ بتاتے ہیں کہ ماخذ دکان VAT میں رجسٹرڈ ہے یا نہیں۔', 'قدّم للمشترين أسعار المحلات والموردين الذين تعرفهم، وتتم الصفقة بفاتورة المحل باسم المشتري، وتذكر في كل عرض هل المحل المصدر مسجّل في ضريبة القيمة المضافة.')],
+        [L('Your sources are protected', 'آپ کے ذرائع محفوظ', 'مصادرك محفوظة'), L('Before the buyer chooses your offer, they see only the shop’s district and city; after it, the shop name (never its phone).', 'خریدار کے آپ کی آفر چننے سے پہلے وہ صرف دکان کا محلہ اور شہر دیکھتا ہے؛ بعد میں دکان کا نام (فون کبھی نہیں)۔', 'قبل أن يختار المشتري عرضك لا يرى إلا الحي والمدينة، وبعده يرى اسم المحل دون رقم هاتفه.')],
         [L('A deal limit that grows', 'بڑھتی ہوئی حد', 'حدّ صفقة يكبر معك'), L('Up to 15,000 SAR per deal at first, then 50,000 after successful deals, then no limit.', 'شروع میں فی سودا 15,000 ریال، کامیاب سودوں کے بعد 50,000، پھر کوئی حد نہیں۔', 'حتى 15,000 ر.س للصفقة في البداية، ثم 50,000 بعد صفقات ناجحة، ثم بلا حد.')],
       ]
 
   return (
     <div className="min-h-screen bg-canvas" dir={dir}>
-      <header className="bg-white border-b border-line">
-        <div className="max-w-3xl mx-auto px-4 h-16 flex items-center justify-between">
-          <Link href="/" className="flex items-center" aria-label={L('Taseerak home', 'تسعیرک مرکزی صفحہ', 'تسعيرك، الرئيسية')}>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/taseerak-metallic-logo.webp" alt="تسعيرك — Taseerak" className="h-11 w-auto" />
-          </Link>
-          <LanguageSwitcher variant="minimal" />
-        </div>
-      </header>
+      {/* round-7 UX-163: the shared public top bar */}
+      <PublicTopBar />
 
       <main className="max-w-3xl mx-auto px-4 py-8 sm:py-10">
         <div className="text-center mb-6">
@@ -111,6 +106,9 @@ export default function JoinLanding({ kind }: { kind: 'company' | 'independent' 
             : <Link href={`/join/company${carry ? "?" + carry : ""}`} className="inline-flex items-center min-h-[44px] font-bold text-[#8F6820] hover:underline">{L('Representing a company or shop? Join here', 'کمپنی یا دکان؟ یہاں شامل ہوں', 'تمثّل شركة أو محلاً؟ سجّل من هنا')}</Link>}
         </p>
         {company && <p className="text-center text-[13px] text-ink-2 mt-1"><Glyph e="👥" /> {teamInviteHintText(locale)}</p>}
+
+        {/* round-7 UX-147: the steps and the example, as on /join */}
+        <JoinSteps />
 
         {/* round-5 UX-162: a closing call to action, as on /join */}
         <div className="mt-8 rounded-2xl p-6 text-center text-white" style={{ background: 'linear-gradient(135deg,#071827,#102E45)' }}>

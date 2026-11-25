@@ -31,7 +31,8 @@ const MAP: Record<string, [any, string?]> = {
   '🧱': [BrickWall], '🏛': [Landmark], '🚜': [Tractor], '🏪': [Store],
   '✉': [Mail], '❔': [HelpCircle], '✨': [Sparkles, 'text-[#D4A543]'], '➕': [Plus], '✏': [Pencil],
   '⏱': [Timer], 'ℹ': [Info], '⬆': [Upload], '⬇': [Download], '▶': [Play], '⏸': [Pause], '↩': [Undo2], '⏺': [Mic], '🆕': [Sparkles], '🔧': [Wrench],
-  '🥇': [Medal, 'text-[#D4AF37]'], '🥈': [Medal, 'text-[#9CA3AF]'], '🥉': [Medal, 'text-[#CD7F32]'],
+  // brand gold, silver-grey and dark gold (round-7 UX-175)
+  '🥇': [Medal, 'text-[#D4A543]'], '🥈': [Medal, 'text-[#728196]'], '🥉': [Medal, 'text-[#9D7425]'],
   // text marks drawn in another font before (UX-158)
   '✓': [Check], '✔': [Check], '▾': [ChevronDown], '▴': [ChevronUp], '×': [X], '✕': [X], '✖': [X],
   '🔩': [Bolt], '🚪': [DoorOpen], '🚿': [ShowerHead], '🔌': [Plug], '🛟': [LifeBuoy], '🌍': [Globe2],

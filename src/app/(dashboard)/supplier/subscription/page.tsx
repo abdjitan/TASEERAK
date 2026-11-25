@@ -18,8 +18,9 @@ export default function SubscriptionPage() {
   const L = (en: string, ur: string, ar: string) => (locale === 'en' ? en : locale === 'ur' ? ur : ar)
   const FWD = dir === 'rtl' ? '←' : '→'
 
+  // round-7 UX-157: no plans while the subscription is off, so the title says the service is free
   return (
-    <AppShell title={L('Plans', 'پلان', 'الباقات')} nav={getNav('supplier', locale, '/supplier/subscription')} dir={dir}>
+    <AppShell title={FEATURES.subscription ? L('Plans', 'پلان', 'الباقات') : L('Free to use', 'استعمال مفت ہے', 'الاستخدام مجاني')} nav={getNav('supplier', locale, '/supplier/subscription')} dir={dir}>
       <div className="max-w-4xl mx-auto">
         <div className="rounded-2xl p-6 mb-6 bg-white border border-gray-100 shadow-sm text-center">
           <div className="text-4xl mb-2"><Glyph e="🎁" /></div>

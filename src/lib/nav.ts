@@ -37,15 +37,16 @@ export function getNav(role: string | undefined, locale: string, active: string)
   } else if (role === 'supplier') {
     const sec = L('Supplier', 'سپلائر', 'المورّد')
     items = [
-      { href: '/supplier/dashboard', icon: '🏠', label: L('Dashboard', 'ڈیش بورڈ', 'الرئيسية'), section: sec, mobile: 1 },
-      { href: '/supplier/deals', icon: '📦', label: L('My offers and deals', 'آفرز اور ڈیلز', 'عروضي وصفقاتي'), mobileLabel: L('My deals', 'میری ڈیلز', 'صفقاتي'), section: sec, mobile: 2 },
+      // the bottom bar uses the app's tab names: «الطلبات» and «عروضي» (round-7 UX-228)
+      { href: '/supplier/dashboard', icon: '🏠', label: L('Dashboard', 'ڈیش بورڈ', 'الرئيسية'), mobileLabel: L('Requests', 'درخواستیں', 'الطلبات'), section: sec, mobile: 1 },
+      { href: '/supplier/deals', icon: '📦', label: L('My offers and deals', 'آفرز اور ڈیلز', 'عروضي وصفقاتي'), mobileLabel: L('My offers', 'میری آفرز', 'عروضي'), section: sec, mobile: 2 },
       { href: '/supplier/specialties', icon: '🎯', label: L('My specialties', 'میرے تخصصات', 'تخصصاتي'), section: sec },
       // «أسعاري» is private since migration 160 and the only place to save pack prices: always in the menu (UX-031)
       { href: '/supplier/prices', icon: '📈', label: L('My prices', 'میری قیمتیں', 'أسعاري'), section: sec },
       { href: '/supplier/analytics', icon: '🏆', label: L('Performance', 'کارکردگی', 'أدائي'), section: sec, off: !FEATURES.analyticsNav },
       { href: '/supplier/branches', icon: '🏢', label: L('Branches', 'شاخیں', 'فروع الشركة'), section: sec, only: 'company' },
       { href: '/supplier/team', icon: '👥', label: L('Team', 'ٹیم', 'فريق العمل'), section: sec, only: 'company' },
-      { href: '/supplier/subscription', icon: '⭐', label: L('Subscription', 'سبسکرپشن', 'الاشتراك'), section: sec, off: !FEATURES.subscription },
+      { href: '/supplier/subscription', icon: '⭐', label: FEATURES.subscription ? L('Subscription', 'سبسکرپشن', 'الاشتراك') : L('Free to use', 'استعمال مفت ہے', 'الاستخدام مجاني'), section: sec, off: !FEATURES.subscription }, // round-7 UX-157
       { href: '/messages', icon: '💬', label: L('Messages', 'پیغامات', 'الرسائل'), section: sec, mobile: 4 },
       { href: '/market', icon: '📊', label: L('Price Index', 'انڈیکس', 'البورصة'), section: secTools, off: !FEATURES.priceBoard },
       { href: '/location', icon: '📍', label: L('Location', 'مقام', 'الموقع'), section: secTools, off: !FEATURES.locationNav },

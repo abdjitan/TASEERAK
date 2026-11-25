@@ -7,7 +7,9 @@ import { SPEC_UNSURE, specUnsureLabel, specsRequired, getProductSpecs, getOption
 // Urdu falls back to the Arabic catalog wording until the catalog carries Urdu labels
 export const specFieldLabel = (f: { ar: string; en: string; ur?: string }, locale: string) => (locale === 'en' ? f.en : locale === 'ur' ? (f.ur || f.ar) : f.ar)
 
-export default function ItemSpecFields({ name, sector, specs, onChange, locale, disabled }: { name: string; sector: string; specs?: Record<string, string>; onChange: (v: Record<string, string>) => void; locale: string; disabled?: boolean }) {
+// showErrors (round-7 UX-173): after a send or approve attempt, an empty required field is an error (aria-invalid, red),
+// not only the gold «still to fill» hint
+export default function ItemSpecFields({ name, sector, specs, onChange, locale, disabled, showErrors }: { name: string; sector: string; specs?: Record<string, string>; onChange: (v: Record<string, string>) => void; locale: string; disabled?: boolean; showErrors?: boolean }) {
   const L = (en: string, ur: string, ar: string) => (locale === 'en' ? en : locale === 'ur' ? ur : ar)
   const fields = getProductSpecs(name).filter(f => f.key !== 'unit')
   if (!fields.length) return null
@@ -20,18 +22,22 @@ export default function ItemSpecFields({ name, sector, specs, onChange, locale, 
           const v = specs?.[f.key] || ''
           const custom = !!v && !f.options.includes(v) && v !== SPEC_UNSURE
           const setV = (val: string) => onChange({ ...(specs || {}), [f.key]: val })
+          const missing = req && !v.trim()
+          const invalid = !!showErrors && missing
           return (
             <label key={f.key} className="block">
               <span className="block text-xs font-semibold text-gray-600 mb-0.5">{specFieldLabel(f, locale)}{req ? ' *' : ''}</span>
               <select value={custom ? '__other' : v} disabled={disabled} onChange={(e: any) => setV(e.target.value === '__other' ? ' ' : e.target.value)}
-                className={`input-field text-sm ${req && !v.trim() ? 'border-[#D4A543] bg-[#D4A543]/5' : ''}`}>
+                aria-required={req || undefined} aria-invalid={invalid || undefined}
+                className={`input-field text-sm ${invalid ? 'border-red-400 bg-red-50/40' : missing ? 'border-[#D4A543] bg-[#D4A543]/5' : ''}`}>
                 {/* «بلا تحديد» rather than a bare «أي» (round-5 UX-159) */}
                 <option value="">{req ? L('Choose', 'منتخب کریں', 'اختر') : L('Not specified', 'کوئی شرط نہیں', 'بلا تحديد')}</option>
                 {f.options.map(o => <option key={o} value={o}>{getOptionLabel(o, locale)}</option>)}
                 <option value={SPEC_UNSURE}>{specUnsureLabel(locale)}</option>
                 <option value="__other">{L('Other…', 'دیگر…', 'أخرى…')}</option>
               </select>
-              {custom && <input value={v.trim()} disabled={disabled} onChange={(e: any) => setV(e.target.value || ' ')} className="input-field text-sm mt-1" placeholder={L('Write it', 'لکھیں', 'اكتبها')} />}
+              {custom && <input value={v.trim()} disabled={disabled} onChange={(e: any) => setV(e.target.value || ' ')} aria-label={`${specFieldLabel(f, locale)}، ${L('other', 'دیگر', 'أخرى')}`}
+                aria-invalid={(!!showErrors && req && !v.trim()) || undefined} className="input-field text-sm mt-1" placeholder={L('Write it', 'لکھیں', 'اكتبها')} />}
             </label>
           )
         })}

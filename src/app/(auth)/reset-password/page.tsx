@@ -17,6 +17,7 @@ const txt = {
     toLogin: 'متابعة إلى حسابي',
     short: 'كلمة المرور يجب أن تكون 8 أحرف على الأقل',
     mismatch: 'كلمتا المرور غير متطابقتين',
+    match: 'كلمتا المرور متطابقتان', home: 'الرئيسية',
     invalid: 'تعذّر فتح الرابط. افتحه في المتصفح نفسه الذي طلبت منه الاستعادة، أو اطلب رابطاً جديداً.',
     expired: 'انتهت صلاحية هذا الرابط أو سبق استخدامه. اطلب رابطاً جديداً، فهو صالح لمدة ساعة واحدة.',
     requestNew: 'اطلب رابط استعادة جديد', err: 'تعذّر الحفظ، حاول مرة أخرى',
@@ -30,6 +31,7 @@ const txt = {
     toLogin: 'Continue to my account',
     short: 'Password must be at least 8 characters',
     mismatch: 'Passwords do not match',
+    match: 'The passwords match', home: 'Home',
     invalid: 'We could not open the link. Open it in the same browser you requested it from, or request a new link.',
     expired: 'This link has expired or was already used. Request a new link; it stays valid for one hour.',
     requestNew: 'Request a new reset link', err: 'Could not save, try again',
@@ -43,6 +45,7 @@ const txt = {
     toLogin: 'اپنے اکاؤنٹ پر جائیں',
     short: 'پاسورڈ کم از کم 8 حروف کا ہونا چاہیے',
     mismatch: 'پاسورڈ مماثل نہیں',
+    match: 'دونوں پاسورڈ مماثل ہیں', home: 'مرکزی صفحہ',
     invalid: 'لنک نہیں کھل سکا۔ اسے اسی براؤزر میں کھولیں جہاں سے آپ نے درخواست کی تھی، یا نیا لنک طلب کریں۔',
     expired: 'اس لنک کی مدت ختم ہو گئی یا یہ پہلے استعمال ہو چکا ہے۔ نیا لنک منگوائیں، یہ ایک گھنٹے تک کارآمد رہتا ہے۔',
     requestNew: 'نیا ری سیٹ لنک طلب کریں', err: 'محفوظ نہیں ہوا، دوبارہ کوشش کریں',
@@ -106,6 +109,10 @@ export default function ResetPasswordPage() {
     try {
       const supabase = createClient()
       const { error: err } = await supabase.auth.updateUser({ password })
+      // the recovery session ran out while the page was open: say so, with a new link (round-7 UX-164)
+      if (err && /session|jwt|not authenticated|expired/i.test(String((err as any).code || '') + ' ' + String(err.message || ''))) {
+        setExpired(true); setReady(false); setLoading(false); return
+      }
       if (err) { setError(passwordAuthError(err, locale)); setLoading(false); return }
       setDone(true)
     } catch { setError(t.err) }
@@ -116,6 +123,8 @@ export default function ResetPasswordPage() {
     <div className="min-h-screen flex flex-col items-center justify-center px-4 py-12 relative overflow-hidden" dir={dir}
       style={{ background: 'linear-gradient(135deg, #0B1D3A 0%, #0B2438 50%, #102E45 100%)' }}>
       <div className="absolute top-4 end-4 z-20"><LanguageSwitcher variant="minimal" /></div>
+      {/* a way out, as on the other sign-in pages (round-7 UX-164) */}
+      <a href="/" className="absolute top-4 start-4 z-20 min-h-[44px] inline-flex items-center text-sm font-medium text-white/80 hover:text-white transition-colors">{t.home}</a>
 
       <div className="relative z-10 w-full max-w-md">
         <div className="text-center mb-8">
@@ -131,7 +140,7 @@ export default function ResetPasswordPage() {
               <h2 className="text-xl font-bold text-[#0B2438] mb-2">{t.doneTitle}</h2>
               <p className="text-sm text-gray-600 mb-6" role="status">{t.doneSub}</p>
               {/* signed in already: /login forwards to the account's home */}
-              <a href="/login" className="inline-flex items-center justify-center w-full min-h-[48px] rounded-xl font-bold text-[#071827] text-sm" style={{ background: '#D4A543' }}>{t.toLogin}</a>
+              <a href="/login" className="btn-primary btn-lg w-full">{t.toLogin}</a>
             </div>
           ) : checking ? (
             <p className="text-center text-sm text-gray-600 py-6" role="status" aria-live="polite">{t.checking}</p>
@@ -139,7 +148,7 @@ export default function ResetPasswordPage() {
             <div className="text-center">
               <div className="text-4xl mb-3"><Glyph e="⚠" /></div>
               <p className="text-sm text-gray-700 mb-6" role="alert">{expired ? t.expired : t.invalid}</p>
-              <a href="/forgot-password" className="inline-flex items-center justify-center w-full min-h-[48px] rounded-xl font-bold text-[#071827] text-sm" style={{ background: '#D4A543' }}>{t.requestNew}</a>
+              <a href="/forgot-password" className="btn-primary btn-lg w-full">{t.requestNew}</a>
               <a href="/login" className="mt-3 inline-flex items-center justify-center w-full min-h-[48px] rounded-xl font-bold text-[#0B2438] text-sm border border-gray-200">{t.login}</a>
             </div>
           ) : (
@@ -175,11 +184,13 @@ export default function ResetPasswordPage() {
                       {showPw ? <EyeOff className="w-5 h-5" aria-hidden /> : <Eye className="w-5 h-5" aria-hidden />}
                     </button>
                     </div>
+                    {/* the match is shown while typing, not only on submit (round-7 UX-164) */}
+                    <p aria-live="polite" className={`mt-1.5 text-[13px] flex items-center gap-1.5 ${confirm && confirm === password ? 'text-emerald-700' : 'text-red-700'}`}>
+                      {confirm ? (confirm === password ? <><Check className="w-3.5 h-3.5" aria-hidden /> {t.match}</> : t.mismatch) : null}
+                    </p>
                   </div>
                 </div>
-                <button type="submit" disabled={loading}
-                  className="w-full py-3.5 rounded-xl font-bold text-[#071827] text-sm disabled:opacity-50 transition-all active:scale-[0.98] hover:shadow-lg"
-                  style={{ background: '#D4A543' }}>
+                <button type="submit" disabled={loading} className="btn-primary btn-lg w-full">
                   {loading ? t.saving : t.save}
                 </button>
               </form>

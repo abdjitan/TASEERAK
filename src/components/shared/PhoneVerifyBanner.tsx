@@ -16,10 +16,18 @@ export const VERIFY_BANNER_CACHE = 'tsk_pvb'
 const SNOOZE_KEY = 'tsk_email_snooze_until'
 const PHONE_SNOOZE_KEY = 'tsk_phone_snooze_until'
 
-type State = { uid: string; show: '' | 'phone' | 'email'; role: string }
+// 'sms': SMS is down (sms_is_down, migration 282) and the email is not verified yet: lead to the
+// email instead of a phone code that cannot arrive (round-7 UX-046).
+type State = { uid: string; show: '' | 'phone' | 'email' | 'sms'; role: string; at?: number }
+// short cache: the SMS switch can flip at any time (round-7 UX-046)
+const CACHE_MS = 5 * 60 * 1000
 
 function readCache(): State | null {
-  try { const v = sessionStorage.getItem(VERIFY_BANNER_CACHE); return v ? JSON.parse(v) : null } catch { return null }
+  try {
+    const v = sessionStorage.getItem(VERIFY_BANNER_CACHE)
+    const st: State | null = v ? JSON.parse(v) : null
+    return st && st.at && Date.now() - st.at < CACHE_MS ? st : null
+  } catch { return null }
 }
 function emailSnoozed(): boolean {
   try { return Number(localStorage.getItem(SNOOZE_KEY) || 0) > Date.now() } catch { return false }
@@ -52,13 +60,21 @@ export default function PhoneVerifyBanner() {
       if (!uid) return
       const cached = readCache()
       if (cached && cached.uid === uid) { if (on) setSt(cached); return }
-      const [{ data: req }, { data: p }] = await Promise.all([
+      const [{ data: req }, { data: p }, { data: down }] = await Promise.all([
         supabase.rpc('phone_verify_required'),
         supabase.from('profiles').select('role, phone_verified_at, email_verified_at').eq('id', uid).maybeSingle(),
+        supabase.rpc('sms_is_down'),
       ])
       if (!on || !p) return
-      // phone first (it gates quotes and deals), then the email (sellers: required; buyers: optional)
-      const next: State = { uid, role: p.role || '', show: p.role === 'admin' ? '' : req === true && !p.phone_verified_at ? 'phone' : !p.email_verified_at ? 'email' : '' }
+      // phone first (it gates quotes and deals), then the email (sellers: required; buyers: optional).
+      // While SMS is down a verified email is enough to act, so no phone banner then (UX-046).
+      const needPhone = req === true && !p.phone_verified_at
+      const smsDown = down === true
+      const show: State['show'] = p.role === 'admin' ? ''
+        : needPhone && smsDown ? (p.email_verified_at ? '' : 'sms')
+        : needPhone ? 'phone'
+        : !p.email_verified_at ? 'email' : ''
+      const next: State = { uid, role: p.role || '', show, at: Date.now() }
       try { sessionStorage.setItem(VERIFY_BANNER_CACHE, JSON.stringify(next)) } catch {}
       setSt(next)
     })()
@@ -68,6 +84,21 @@ export default function PhoneVerifyBanner() {
   const show = st?.show || ''
   if (!show || pathname.startsWith('/messages') || pathname.startsWith('/settings') || pathname.startsWith('/admin') || pathname.startsWith('/verify') || pathname.startsWith('/banned')) return null
   const isBuyer = st?.role === 'contractor'
+
+  if (show === 'sms') return (
+    <div className="ts-no-print print:hidden mb-4 rounded-2xl border border-[#D4A543]/50 bg-[#D4A543]/10 px-4 py-3 flex flex-wrap items-center justify-between gap-3">
+      <div className="text-sm min-w-0">
+        <div className="font-bold text-[#071827]">{L('Verify your email', 'اپنی ای میل تصدیق کریں', 'وثّق بريدك الإلكتروني')}</div>
+        <div className="text-[13px] text-gray-600 mt-0.5">{L(
+          'The text message service is temporarily down. Verify your email to continue now, and verify your mobile later.',
+          'ٹیکسٹ میسج سروس عارضی طور پر بند ہے۔ ابھی جاری رکھنے کے لیے اپنی ای میل تصدیق کریں، اور موبائل بعد میں تصدیق کریں۔',
+          'خدمة الرسائل النصية متوقفة مؤقتاً. وثّق بريدك الإلكتروني لتتابع الآن، ووثّق جوالك لاحقاً.')}</div>
+      </div>
+      <Link href="/verify" className="min-h-[44px] inline-flex items-center px-4 rounded-xl bg-[#D4A543] text-[#071827] text-sm font-bold whitespace-nowrap">
+        {L('Verify your email', 'ای میل تصدیق کریں', 'وثّق بريدك')}
+      </Link>
+    </div>
+  )
 
   if (show === 'email' && isBuyer) {
     // optional for buyers: home page only, and «Later» hides it for 30 days
