@@ -41,10 +41,14 @@ export const isIndependentOffer = (o: any) =>
 
 // Owner 2026-11-25: does this offer come with a tax invoice? A seller without a VAT number does not.
 // A pricing agent is invoiced by the source shop, which counts as issuing one (when we cannot tell: yes).
-export const issuesTaxInvoice = (o: any) => isIndependentOffer(o) || vatStatusOf(o) === 'registered'
+// round-7 UX-001: a pricing agent counts only when he said the source shop is VAT-registered (vat_status);
+// legacy agent offers ('supplier_invoice', before the question existed) still count
+export const issuesTaxInvoice = (o: any) => { const s = vatStatusOf(o); return s === 'registered' || s === 'supplier_invoice' }
 
 export function vatTag(o: any, locale: string): string {
-  if (!showsVatBreakdown(o) && isIndependentOffer(o)) return locale === 'en' ? 'Final price; the shop’s invoice in your name' : locale === 'ur' ? 'حتمی قیمت؛ دکان کی انوائس آپ کے نام' : 'سعر نهائي، وفاتورة المحل باسمك'
+  if (!showsVatBreakdown(o) && isIndependentOffer(o)) return vatStatusOf(o) === 'not_registered'
+    ? (locale === 'en' ? 'Final price (no VAT); a sales invoice from the shop in your name' : locale === 'ur' ? 'حتمی قیمت (VAT کے بغیر)؛ دکان کی سیلز انوائس آپ کے نام' : 'سعر نهائي (بلا ضريبة)، وفاتورة بيع من المحل باسمك')
+    : (locale === 'en' ? 'Final price; the shop’s invoice in your name' : locale === 'ur' ? 'حتمی قیمت؛ دکان کی انوائس آپ کے نام' : 'سعر نهائي، وفاتورة المحل باسمك')
   // owner 2026-11-25: every offer a buyer sees carries one of two labels, by the seller's VAT status
   if (!showsVatBreakdown(o)) return locale === 'en' ? 'Final price (no VAT)' : locale === 'ur' ? 'حتمی قیمت (VAT کے بغیر)' : 'سعر نهائي (بلا ضريبة)'
   return locale === 'en' ? 'incl. VAT' : locale === 'ur' ? 'VAT سمیت' : 'شامل الضريبة'
