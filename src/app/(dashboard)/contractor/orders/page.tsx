@@ -101,6 +101,14 @@ function ContractorDeals() {
   if (loading) return <PageLoader />
 
   const q = search.trim().toLowerCase()
+  const stageCounts = { active: 0, done: 0, disputed: 0, closed: 0 }
+  for (const d of deals) {
+    const k = dealStage(d, 'buyer', locale)
+    if (k.done) stageCounts.done++
+    else if (k.key === 'disputed') stageCounts.disputed++
+    else if (k.key === 'closed') stageCounts.closed++
+    else stageCounts.active++
+  }
   const shown = deals.filter((d: any) => {
     const st = dealStage(d, 'buyer', locale)
     if (filter === 'done' && !st.done) return false
@@ -133,10 +141,15 @@ function ContractorDeals() {
             ? L('Search by material, supplier or request number…', 'سامان، سپلائر یا درخواست نمبر سے تلاش کریں…', 'ابحث بالمادة أو المورد أو رقم الطلب…')
             : L('Search deals (material, supplier, request or statement no.)…', 'ڈیلز تلاش کریں (سامان، سپلائر، درخواست یا بیان نمبر)…', 'ابحث في الصفقات (مادة، مورد، رقم الطلب أو البيان)…')} />
         <div className="flex items-center gap-2 mb-5 overflow-x-auto pb-1">
-          {[{ k: 'all', l: L('All', 'سب', 'الكل') }, { k: 'active', l: L('Active', 'جاری', 'جارية') }, { k: 'done', l: L('Completed', 'مکمل', 'مكتملة') }, { k: 'disputed', l: L('Problems', 'مسائل', 'مشكلات') }, ...(deals.some((d: any) => !!d.deal_closed_at) ? [{ k: 'cancelled', l: L('Cancelled', 'منسوخ', 'ملغاة') }] : [])].map((f: any) => (
+          {/* round-6 UX-100: each tab carries its count; «مشكلات» and «ملغاة» show only when there are some (or the tab is open) */}
+          {[{ k: 'all', l: L('All', 'سب', 'الكل'), n: deals.length },
+            { k: 'active', l: L('Active', 'جاری', 'جارية'), n: stageCounts.active },
+            { k: 'done', l: L('Completed', 'مکمل', 'مكتملة'), n: stageCounts.done },
+            ...(stageCounts.disputed > 0 || filter === 'disputed' ? [{ k: 'disputed', l: L('Problems', 'مسائل', 'مشكلات'), n: stageCounts.disputed }] : []),
+            ...(stageCounts.closed > 0 || filter === 'cancelled' ? [{ k: 'cancelled', l: L('Cancelled', 'منسوخ', 'ملغاة'), n: stageCounts.closed }] : [])].map((f: any) => (
             <button key={f.k} onClick={() => setFilter(f.k)} aria-pressed={filter === f.k}
               className={`shrink-0 min-h-[44px] px-3.5 rounded-xl text-sm font-semibold border transition-all ${filter === f.k ? 'text-white border-transparent' : 'bg-white border-gray-200 text-gray-600 hover:border-gray-300'}`}
-              style={filter === f.k ? { background: f.k === 'disputed' ? '#B91C1C' : '#0B2438' } : {}}>{f.l}</button>
+              style={filter === f.k ? { background: f.k === 'disputed' ? '#B42318' : '#0B2438' } : {}}>{f.l} <span className="tabular-nums opacity-80">({f.n})</span></button>
           ))}
           {!loadFailed && <span className="shrink-0 text-xs text-gray-500 ms-auto">{countLabel(shown.length, locale, arDeals, 'deal', 'ڈیلز')}</span>}
         </div>

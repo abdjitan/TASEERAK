@@ -9,10 +9,25 @@ import { useTranslation } from '@/i18n'
 // UX-006: the bubble must never sit on a page's fixed action bar (send request / send offer / save):
 // a page with such a bar sets document.body.dataset.actionbar = '1' and the bubble hides while it is
 // there. It sits under dialogs and sheets (z-45), uses the navy + gold identity, and never prints.
+// the conversation survives page changes (the component remounts with each page): a module-level
+// store for this tab (round-6 UX-119)
+const store: { open: boolean; msgs: { role: string; content: string }[] } = { open: false, msgs: [] }
+
 export default function AiAssistant() {
   const { locale, dir } = useTranslation()
-  const [open, setOpen] = useState(false)
-  const [msgs, setMsgs] = useState<{ role: string; content: string }[]>([])
+  const [open, setOpenState] = useState(store.open)
+  const [msgs, setMsgsState] = useState<{ role: string; content: string }[]>(store.msgs)
+  const setMsgs = (m: { role: string; content: string }[]) => { store.msgs = m; setMsgsState(m) }
+  const setOpen = (v: boolean | ((o: boolean) => boolean)) => setOpenState(prev => { const n = typeof v === 'function' ? v(prev) : v; store.open = n; return n })
+  const inputRef = useRef<HTMLTextAreaElement>(null)
+  const btnRef = useRef<HTMLButtonElement>(null)
+  const wasOpen = useRef(open)
+  // focus goes to the message box on open and back to the button on close (round-6 UX-119)
+  useEffect(() => {
+    if (open && !wasOpen.current) setTimeout(() => inputRef.current?.focus(), 0)
+    if (!open && wasOpen.current) btnRef.current?.focus()
+    wasOpen.current = open
+  }, [open])
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
   const [actionBar, setActionBar] = useState(false)
@@ -43,10 +58,10 @@ export default function AiAssistant() {
   }, [open])
 
   const T = locale === 'en'
-    ? { title: 'Taseerak Assistant', ph: 'Ask me anything…', hi: isSupplier ? 'Hello! How can I help you price requests today?' : 'Hello! How can I help with your purchases today?', send: 'Send', close: 'Close' }
+    ? { title: 'Taseerak Assistant', ph: 'Ask me anything…', hi: isSupplier ? 'Hello! How can I help you price requests today?' : 'Hello! How can I help with your purchases today?', send: 'Send', close: 'Close', typing: 'Writing a reply…' }
     : locale === 'ur'
-    ? { title: 'تسعیرک اسسٹنٹ', ph: 'کچھ پوچھیں…', hi: isSupplier ? 'سلام! آج درخواستوں کی قیمت لگانے میں کیسے مدد کروں؟' : 'سلام! آج آپ کی خریداری میں کیسے مدد کروں؟', send: 'بھیجیں', close: 'بند کریں' }
-    : { title: 'مساعد تسعيرك', ph: 'اسألني أي شيء…', hi: isSupplier ? 'أهلاً! كيف يمكنني مساعدتك في تسعير الطلبات اليوم؟' : 'أهلاً! كيف يمكنني مساعدتك في مشترياتك اليوم؟', send: 'إرسال', close: 'إغلاق' }
+    ? { title: 'تسعیرک اسسٹنٹ', ph: 'کچھ پوچھیں…', hi: isSupplier ? 'سلام! آج درخواستوں کی قیمت لگانے میں کیسے مدد کروں؟' : 'سلام! آج آپ کی خریداری میں کیسے مدد کروں؟', send: 'بھیجیں', close: 'بند کریں', typing: 'جواب لکھا جا رہا ہے…' }
+    : { title: 'مساعد تسعيرك', ph: 'اسألني أي شيء…', hi: isSupplier ? 'أهلاً! كيف يمكنني مساعدتك في تسعير الطلبات اليوم؟' : 'أهلاً! كيف يمكنني مساعدتك في مشترياتك اليوم؟', send: 'إرسال', close: 'إغلاق', typing: 'جارٍ كتابة الرد…' }
 
   async function send() {
     const text = input.trim()
@@ -76,7 +91,7 @@ export default function AiAssistant() {
   return (
     <div className="print:hidden">
       {/* الزر العائم */}
-      <button type="button" onClick={() => setOpen(o => !o)} aria-label={open ? T.close : T.title} aria-expanded={open}
+      <button ref={btnRef} type="button" onClick={() => setOpen(o => !o)} aria-label={open ? T.close : T.title} aria-expanded={open}
         className="fixed z-[45] w-14 h-14 rounded-full grid place-items-center text-[#F5C55B] shadow-xl hover:scale-105 transition-transform bottom-[calc(84px+env(safe-area-inset-bottom))] lg:bottom-5 ring-2 ring-[#D4A543]/70 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#D4A543]"
         style={{ ...sideStyle, background: '#0B2438' }}>
         {open ? <X className="w-6 h-6" aria-hidden /> : <Sparkles className="w-6 h-6" aria-hidden />}
@@ -97,18 +112,19 @@ export default function AiAssistant() {
 
           {/* الرسائل */}
           <div className="flex-1 overflow-y-auto p-3 space-y-3 bg-gray-50" aria-live="polite">
-            <div className="flex">
+            <div className="flex justify-end">
               <div className="max-w-[85%] rounded-2xl px-3.5 py-2.5 text-sm bg-white border border-gray-100 text-gray-700 shadow-sm">{T.hi}</div>
             </div>
             {msgs.map((m, i) => (
-              <div key={i} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+              <div key={i} className={`flex ${m.role === 'user' ? 'justify-start' : 'justify-end'}`}>
                 <div className={`max-w-[85%] rounded-2xl px-3.5 py-2.5 text-sm whitespace-pre-line shadow-sm ${m.role === 'user' ? 'text-white' : 'bg-white border border-gray-100 text-gray-700'}`}
                   style={m.role === 'user' ? { background: '#0B2438' } : {}}>{m.content}</div>
               </div>
             ))}
             {loading && (
-              <div className="flex justify-start">
+              <div className="flex justify-end">
                 <div className="rounded-2xl px-4 py-3 bg-white border border-gray-100 shadow-sm">
+                  <span className="sr-only">{T.typing}</span>
                   <span className="inline-flex gap-1">
                     <span className="w-1.5 h-1.5 rounded-full bg-gray-300 animate-bounce" style={{ animationDelay: '0ms' }} />
                     <span className="w-1.5 h-1.5 rounded-full bg-gray-300 animate-bounce" style={{ animationDelay: '150ms' }} />
@@ -122,7 +138,7 @@ export default function AiAssistant() {
 
           {/* الإدخال */}
           <div className="p-2.5 border-t border-gray-100 flex items-end gap-2">
-            <textarea value={input} onChange={e => setInput(e.target.value)} rows={1}
+            <textarea ref={inputRef} value={input} onChange={e => setInput(e.target.value)} rows={1}
               onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send() } }}
               placeholder={T.ph} aria-label={T.ph}
               className="flex-1 resize-none rounded-xl border border-gray-200 px-3 py-2 text-[16px] sm:text-sm focus:outline-none focus:border-[#0B2438] focus:ring-2 focus:ring-[#D4A543]/40 max-h-28" />

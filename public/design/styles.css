@@ -575,3 +575,17 @@ ul { list-style: none; }
 @media (max-width: 480px) { .demo-row .badge { font-size: 12.5px; display: inline-block; margin-top: 4px; } }
 /* round-5 UX-128: the note under the WhatsApp footer link */
 .footer .foot-note { display: block; font-size: 12px; opacity: .7; margin-top: -4px; }
+
+/* round-6 UX-088: the landing page on a 375px phone. Key text at least 12px, every tap target 44px,
+   the floating chips sit in the flow (they covered the VAT line and the «5%»). */
+.offer .price .u { font-size: 12.5px; color: var(--ink-2); }
+.offer .sup .m { font-size: 12px; }
+.lc-foot .btn { min-height: 44px; display: inline-flex; align-items: center; }
+.foot-col a { min-height: 44px; display: flex; align-items: center; padding: 0; }
+.cta-wa-note { margin-top: 10px; font-size: 13px; color: rgba(255,255,255,.75); }
+@media (max-width: 640px) {
+  #taseerak-landing .hero-visual .float-chip,
+  #taseerak-landing .hero-visual .float-chip.c1,
+  #taseerak-landing .hero-visual .float-chip.c2 { position: static !important; inset: auto !important; animation: none !important; margin: 0 0 10px; display: inline-flex; }
+  .lc-foot { flex-wrap: wrap; gap: 10px; }
+}

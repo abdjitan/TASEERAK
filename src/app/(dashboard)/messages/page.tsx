@@ -67,6 +67,18 @@ function Messages() {
   // report / block (migration 201): {other_id, i_blocked, blocked_me}
   const [bstate, setBstate] = useState<any>(null)
   const [menuOpen, setMenuOpen] = useState(false)
+  // the award check of the open conversation is done: quick replies wait for it, so the previous
+  // conversation's replies never flash under the new one (round-6 UX-101)
+  const [awardChecked, setAwardChecked] = useState(false)
+  const menuRef = useRef<HTMLDivElement>(null)
+  // the ⋮ menu closes on a tap outside it and on Escape (round-6 UX-101)
+  useEffect(() => {
+    if (!menuOpen) return
+    const onDown = (e: MouseEvent | TouchEvent) => { if (menuRef.current && !menuRef.current.contains(e.target as Node)) setMenuOpen(false) }
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setMenuOpen(false) }
+    document.addEventListener('mousedown', onDown); document.addEventListener('touchstart', onDown); window.addEventListener('keydown', onKey)
+    return () => { document.removeEventListener('mousedown', onDown); document.removeEventListener('touchstart', onDown); window.removeEventListener('keydown', onKey) }
+  }, [menuOpen])
   const [reportOpen, setReportOpen] = useState(false)
   const [reason, setReason] = useState('spam')
   const [details, setDetails] = useState('')
@@ -154,7 +166,7 @@ function Messages() {
     let cancelled = false
     let ch: any
     // switching: never show the previous chat's messages under the new person (UX-102)
-    setMsgs([]); setMsgsLoading(true); setDealId(null)
+    setMsgs([]); setMsgsLoading(true); setDealId(null); setAwarded(true); setAwardChecked(false); setBstate(null)
     ;(async () => {
       // Fetch the conversation directly — do NOT read the possibly-stale `convos` closure,
       // which made an awarded chat wrongly show the "20-message limit" lock (B9).
@@ -176,7 +188,7 @@ function Messages() {
         if (!cancelled) setDealId((ofs && ofs[0]?.id) || null)
       }
       if (cancelled) return
-      setAwarded(aw)
+      setAwarded(aw); setAwardChecked(true)
       const { data: bs } = await supabase.rpc('conversation_block_state', { p_conversation: activeId })
       if (cancelled) return
       setBstate(bs || null)
@@ -284,7 +296,7 @@ function Messages() {
     const supabase = createClient()
     const { error } = await supabase.rpc('report_user', { p_user: bstate.other_id, p_conversation: activeId, p_reason: reason, p_message_id: reportMsgId, p_details: details || null })
     setBusy(false)
-    if (error) { setNotice(error.message?.includes('الحد اليومي') ? error.message : L('Could not send the report, try again.', 'رپورٹ نہیں بھیجی جا سکی، دوبارہ کوشش کریں۔', 'تعذّر إرسال البلاغ، حاول مرة أخرى.')); return }
+    if (error) { setNotice(error.message?.includes('الحد اليومي') ? L('You reached the daily limit for reports. Try again tomorrow.', 'آپ رپورٹس کی روزانہ حد تک پہنچ گئے ہیں۔ کل دوبارہ کوشش کریں۔', 'بلغتَ الحد اليومي للبلاغات. حاول مرة أخرى غداً.') : L('Could not send the report, try again.', 'رپورٹ نہیں بھیجی جا سکی، دوبارہ کوشش کریں۔', 'تعذّر إرسال البلاغ، حاول مرة أخرى.')); return }
     setReportOpen(false)
     setNotice(L('Report sent. Our team will review it. You can also block this user from the menu.', 'رپورٹ بھیج دی گئی۔ ہماری ٹیم اس کا جائزہ لے گی۔ آپ مینو سے صارف کو بلاک بھی کر سکتے ہیں۔', 'أُرسل البلاغ وسيراجعه فريقنا. يمكنك أيضاً حظر هذا المستخدم من القائمة.'))
   }
@@ -309,7 +321,7 @@ function Messages() {
   // ready-made replies (the app's chips, UX-192): a tap writes the text into the box, the user sends it
   // after the choice they are about the delivery, before it about the offer (UX-057); a photo cannot
   // be sent in a chat, so no reply asks for one
-  const quick: string[] = !active ? [] : awarded && iAmBuyer(active) ? [
+  const quick: string[] = !active || !awardChecked ? [] : awarded && iAmBuyer(active) ? [
     L('When will the order arrive?', 'آرڈر کب پہنچے گا؟', 'متى يصل الطلب؟'),
     L('I will send you the delivery location.', 'میں آپ کو ڈیلیوری کی جگہ بھیجتا ہوں۔', 'سأرسل لك موقع التسليم.'),
     L('Please call me before you arrive.', 'پہنچنے سے پہلے مجھے کال کریں۔', 'اتصل بي قبل الوصول من فضلك.'),
@@ -429,7 +441,7 @@ function Messages() {
                   </Link>
                 )}
                 {bstate?.other_id && (
-                  <div className={`relative ${dealId ? '' : 'ms-auto'}`}>
+                  <div ref={menuRef} className={`relative ${dealId ? '' : 'ms-auto'}`}>
                     <button type="button" onClick={() => setMenuOpen(o => !o)} disabled={busy} aria-label={L('More options', 'مزید اختیارات', 'خيارات أخرى')} aria-expanded={menuOpen}
                       className="min-w-[44px] min-h-[44px] grid place-items-center rounded-lg hover:bg-gray-100 text-gray-600 text-lg leading-none">⋮</button>
                     {menuOpen && (
@@ -443,7 +455,7 @@ function Messages() {
                   </div>
                 )}
               </div>
-              {notice && <div className="px-3 py-1 text-sm bg-amber-50 text-amber-900 border-b border-amber-100 flex items-center justify-between gap-2"><span>{notice}</span><button type="button" onClick={() => setNotice('')} aria-label={L('Close', 'بند کریں', 'إغلاق')} className="min-w-[44px] min-h-[44px] grid place-items-center text-amber-700"><Glyph e="✕" /></button></div>}
+              {notice && <div role="status" className="px-3 py-1 text-sm bg-warn-bg text-warn-text border-b border-warn-border flex items-center justify-between gap-2"><span>{notice}</span><button type="button" onClick={() => setNotice('')} aria-label={L('Close', 'بند کریں', 'إغلاق')} className="min-w-[44px] min-h-[44px] grid place-items-center text-warn-text"><Glyph e="✕" /></button></div>}
               {reportOpen && (
                 <form onSubmit={submitReport} className="p-3 border-b border-gray-100 bg-gray-50 space-y-1 text-sm">
                   <div className="font-bold" style={{ color: '#0B2438' }}>{reportMsgId ? L('Report this message', 'اس پیغام کی رپورٹ کریں', 'الإبلاغ عن هذه الرسالة') : L('Report user', 'صارف کی رپورٹ کریں', 'الإبلاغ عن المستخدم')}</div>

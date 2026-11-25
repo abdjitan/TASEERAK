@@ -17,11 +17,11 @@
 //   rfq_ref      request number (rfqs.ref_no)               item_name   first material (clean Arabic name)
 //   item_count   number of materials in the request          rfq_label   ready label (fallback, Arabic)
 //   amount       SAR amount shown to the reader (already VAT-adjusted for him)
-//   vat          'incl' | 'excl'  basis of `amount`          until       ISO timestamp (deadline / validity)
+//   vat          'incl' | 'excl' | 'final'  basis of `amount` (final = seller not VAT-registered)          until       ISO timestamp (deadline / validity)
 //   city         request city (Arabic)                       offer_count offers received (rfq_deadline)
 //   min_amount   cheapest full offer (rfq_deadline; key present with null = no full offer)
 //   covered      materials an offer covers (also priced_count)  won / priced  materials won of those priced
-//   note         the buyer's note (reduction request)        by          'buyer' | 'supplier' (dispute)
+//   note         the buyer's note (reduction request)        by          'buyer' | 'supplier' (dispute, payment_confirmed)
 //   sender_name  who sent a message / question               source_invoice  true = agent's source-shop invoice
 //   only_new     true = materials added to a request the supplier already had (new_rfq)
 
@@ -55,9 +55,11 @@ function money(v: number, l: NotifLocale): string {
 }
 // Owner 2026-11-23: a buyer never sees an amount before VAT. An older notice that carried a before-VAT
 // amount (vat = 'excl', a VAT-registered seller) is shown with the 15% added, as «شامل الضريبة».
+// A seller who is not VAT-registered (vat = 'final') shows «سعر نهائي» (round-6 UX-071).
 function vatTag(d: any, l: NotifLocale): string {
   const v = str(d?.vat)
   if (v === 'incl' || v === 'excl') return l === 'en' ? ' (incl. VAT)' : l === 'ur' ? ' (VAT سمیت)' : ' (شامل الضريبة)'
+  if (v === 'final') return l === 'en' ? ' (final price)' : l === 'ur' ? ' (حتمی قیمت)' : ' (سعر نهائي)'
   return ''
 }
 const buyerAmount = (v: number | null, d: any): number | null => (v !== null && str(d?.vat) === 'excl' ? v * 1.15 : v)
@@ -119,7 +121,7 @@ const TITLES: Record<string, Tri> = {
   info_request: { ar: 'طلب معلومات إضافية', en: 'More information requested', ur: 'مزید معلومات کی درخواست' },
   info_response: { ar: 'ردّ على طلب المعلومات', en: 'Reply to your information request', ur: 'معلومات کی درخواست کا جواب' },
   award: { ar: 'اختار المشتري عرضك', en: 'The buyer chose your offer', ur: 'خریدار نے آپ کی آفر منتخب کی' },
-  not_selected: { ar: 'لم يُختر عرضك', en: 'Your offer was not chosen', ur: 'آپ کی آفر منتخب نہیں ہوئی' },
+  not_selected: { ar: 'لم يُختر عرضك هذه المرة', en: 'Your offer was not chosen this time', ur: 'اس بار آپ کی آفر منتخب نہیں ہوئی' },
   rfq_cancelled: { ar: 'أُلغي طلب التسعير', en: 'The price request was cancelled', ur: 'قیمت کی درخواست منسوخ ہو گئی' },
   extras_confirm: { ar: 'أكّد رسوم التوصيل للمواد التي فزت بها', en: 'Confirm delivery fees for the materials you won', ur: 'جیتی ہوئی اشیاء کی ڈیلیوری فیس کی تصدیق کریں' },
   extras_confirmed: { ar: 'أكّد المورد رسوم التوصيل', en: 'The supplier confirmed the delivery fees', ur: 'سپلائر نے ڈیلیوری فیس کی تصدیق کر دی' },
@@ -128,12 +130,14 @@ const TITLES: Record<string, Tri> = {
   receipt_confirmed: { ar: 'أكّد المشتري الاستلام', en: 'The buyer confirmed receipt', ur: 'خریدار نے وصولی کی تصدیق کر دی' },
   paid: { ar: 'أكّد المشتري الدفع', en: 'The buyer confirmed payment', ur: 'خریدار نے ادائیگی کی تصدیق کر دی' },
   payment_confirmed: { ar: 'أكّد المورد استلام الدفعة', en: 'The supplier confirmed receiving the payment', ur: 'سپلائر نے ادائیگی وصول ہونے کی تصدیق کر دی' },
-  rfq_deadline: { ar: 'انتهت مهلة التسعير', en: 'The pricing window has closed', ur: 'قیمت دینے کی مدت ختم ہو گئی' },
+  rfq_deadline: { ar: 'انتهت مهلة العروض', en: 'The offers window has closed', ur: 'آفرز کی مدت ختم ہو گئی' },
   price_expiring: { ar: 'سعر أحد العروض ينتهي قريباً', en: 'An offer’s price expires soon', ur: 'ایک آفر کی قیمت جلد ختم ہو رہی ہے' },
-  price_expiring_supplier: { ar: 'ينتهي التزامك بسعرك قريباً', en: 'Your price commitment ends soon', ur: 'آپ کی قیمت کی پابندی جلد ختم ہو رہی ہے' },
+  price_expiring_supplier: { ar: 'تنتهي صلاحية سعرك قريباً', en: 'Your price validity ends soon', ur: 'آپ کی قیمت کی مدت جلد ختم ہو رہی ہے' },
   rfq_changed: { ar: 'عدّل المشتري طلبه', en: 'The buyer changed the request', ur: 'خریدار نے درخواست میں تبدیلی کی' },
   deadline_extended: { ar: 'مُدّدت مهلة التسعير', en: 'The pricing deadline was extended', ur: 'قیمت دینے کی مدت بڑھا دی گئی' },
   rfq_expired: { ar: 'انتهى الطلب دون اختيار', en: 'The request ended without a choice', ur: 'درخواست کسی انتخاب کے بغیر ختم ہو گئی' },
+  uncovered: { ar: 'طلب بلا مورد مطابق', en: 'A request with no matching supplier', ur: 'ایسی درخواست جس کا کوئی مطابق سپلائر نہیں' },
+  deal_closed: { ar: 'أُلغيت الصفقة بقرار الإدارة', en: 'The deal was cancelled by the Taseerak team', ur: 'تسعیرک ٹیم نے ڈیل منسوخ کر دی' },
   dispute_opened: { ar: 'بلاغ عن مشكلة في صفقة', en: 'A problem was reported in a deal', ur: 'ڈیل میں مسئلے کی اطلاع' },
 }
 
@@ -155,6 +159,7 @@ const OLD_TITLES: Record<string, string> = {
   'اختار المشتري عرضك': 'award',
   'لم يُقبل عرضك': 'not_selected',
   'لم يُختر عرضك': 'not_selected',
+  'لم يُختر عرضك هذه المرة': 'not_selected',
   'أُلغي طلب التسعير': 'rfq_cancelled',
   'أكّد المورد رسوم التوصيل': 'extras_confirmed',
   'أرفق المورد فاتورته': 'invoice_attached',
@@ -233,7 +238,7 @@ function body(key: string, d: any, l: NotifLocale): string | null {
       return pick({ ar: `اختار المشتري مواد من عرضك على ${L}. راجع الصفقة ونسّق التسليم معه.`, en: `The buyer chose materials from your offer on ${L}. Review the deal and arrange delivery.`, ur: `خریدار نے ${L} پر آپ کی آفر سے اشیاء منتخب کیں۔ ڈیل دیکھیں اور ڈیلیوری طے کریں۔` })
     case 'not_selected':
       if (!L) return null
-      return pick({ ar: `اختار المشتري مورداً آخر في ${L}.`, en: `The buyer chose another supplier for ${L}.`, ur: `خریدار نے ${L} کے لیے دوسرا سپلائر منتخب کیا۔` })
+      return pick({ ar: `اختار المشتري مورداً آخر في ${L}. افتح الطلب لترى الفرق عن السعر المختار.`, en: `The buyer chose another supplier for ${L}. Open the request to see how your price compares with the chosen one.`, ur: `خریدار نے ${L} کے لیے دوسرا سپلائر منتخب کیا۔ منتخب قیمت سے اپنا فرق دیکھنے کے لیے درخواست کھولیں۔` })
     case 'rfq_cancelled':
       if (!L) return null
       return pick({ ar: `ألغى المشتري ${L}، فأُغلق عرضك عليه.`, en: `The buyer cancelled ${L}, so your offer on it was closed.`, ur: `خریدار نے ${L} منسوخ کر دی، اس لیے آپ کی آفر بند ہو گئی۔` })
@@ -263,20 +268,26 @@ function body(key: string, d: any, l: NotifLocale): string | null {
       return pick({ ar: `أكّد المورد توصيل ${L}. يرجى تأكيد الاستلام أو الإبلاغ عن مشكلة.`, en: `The supplier confirmed delivering ${L}. Please confirm receipt or report a problem.`, ur: `سپلائر نے ${L} کی ڈیلیوری کی تصدیق کی۔ براہ کرم وصولی کی تصدیق کریں یا مسئلہ رپورٹ کریں۔` })
     case 'receipt_confirmed':
       if (!L) return null
-      return pick({ ar: `أكّد المشتري استلام ${L}. شكراً لإتمام الصفقة عبر تسعيرك.`, en: `The buyer confirmed receiving ${L}. Thank you for completing the deal on Taseerak.`, ur: `خریدار نے ${L} کی وصولی کی تصدیق کی۔ تسعیرک پر ڈیل مکمل کرنے کا شکریہ۔` })
+      return pick({ ar: `أكّد المشتري استلام ${L}. الخطوة التالية: الدفع، فأكّد استلام المبلغ من صفحة الصفقة عند وصوله.`, en: `The buyer confirmed receiving ${L}. Next step: payment. Confirm receiving the amount on the deal page when it arrives.`, ur: `خریدار نے ${L} کی وصولی کی تصدیق کی۔ اگلا قدم: ادائیگی۔ رقم پہنچنے پر ڈیل کے صفحے پر اس کی وصولی کی تصدیق کریں۔` })
     case 'paid':
       if (!L) return null
       return pick({ ar: `أكّد المشتري دفع مبلغ صفقة ${L}. أكّد استلام الدفعة من صفحة الصفقة.`, en: `The buyer confirmed paying for ${L}. Confirm you received the payment on the deal page.`, ur: `خریدار نے ${L} کی ادائیگی کی تصدیق کی۔ ڈیل کے صفحے پر ادائیگی وصول ہونے کی تصدیق کریں۔` })
     case 'payment_confirmed':
       if (!L) return null
+      // the supplier recorded the cash himself: the buyer may not have paid yet, so no «complete» (round-6 UX-006)
+      if (str(d?.by) === 'supplier') return pick({
+        ar: `سجّل المورد أنه استلم مبلغ صفقة ${L}. إن لم تدفع بعد، تواصل مع المورد أو أبلغ عن مشكلة من صفحة الصفقة.`,
+        en: `The supplier recorded receiving the payment for ${L}. If you have not paid yet, contact the supplier or report a problem from the deal page.`,
+        ur: `سپلائر نے درج کیا کہ اسے ${L} کی رقم مل گئی ہے۔ اگر آپ نے ابھی ادائیگی نہیں کی تو سپلائر سے رابطہ کریں یا ڈیل کے صفحے سے مسئلہ رپورٹ کریں۔`,
+      })
       return pick({ ar: `اكتملت صفقة ${L}. شكراً لاستخدامك تسعيرك.`, en: `The deal ${L} is complete. Thank you for using Taseerak.`, ur: `ڈیل ${L} مکمل ہو گئی۔ تسعیرک استعمال کرنے کا شکریہ۔` })
     case 'rfq_deadline': {
       const n = num(d?.offer_count)
       if (!L || n === null) return null
       if (n === 0) return pick({
-        ar: `لم يصل أي عرض على ${L}. يمكنك تمديد المهلة أو البحث عن موردين آخرين من صفحة الطلب.`,
-        en: `No offer arrived on ${L}. You can extend the deadline or look for other suppliers from the request page.`,
-        ur: `${L} پر کوئی آفر نہیں آئی۔ آپ درخواست کے صفحے سے مدت بڑھا سکتے ہیں یا دوسرے سپلائر تلاش کر سکتے ہیں۔`,
+        ar: `لم يصل أي عرض على ${L}. مدّد المهلة من صفحة الطلب، وسنرسل طلبك إلى موردين آخرين.`,
+        en: `No offer arrived on ${L}. Extend the deadline from the request page and we will send your request to more suppliers.`,
+        ur: `${L} پر کوئی آفر نہیں آئی۔ درخواست کے صفحے سے مدت بڑھائیں، ہم آپ کی درخواست مزید سپلائرز کو بھیجیں گے۔`,
       })
       const minN = buyerAmount(num(d?.min_amount), d)
       if (minN !== null) {
@@ -302,7 +313,7 @@ function body(key: string, d: any, l: NotifLocale): string | null {
         : pick({ ar: `ينتهي التزام المورد بسعر عرضه على ${L} خلال ساعات. اختر قبل أن يتغيّر السعر.`, en: `The supplier’s price on ${L} expires within hours. Choose before it changes.`, ur: `${L} پر سپلائر کی قیمت چند گھنٹوں میں ختم ہو رہی ہے۔ قیمت بدلنے سے پہلے منتخب کریں۔` })
     case 'price_expiring_supplier':
       if (!L || !until) return null
-      return pick({ ar: `ينتهي التزامك بسعرك على ${L} في ${until}. جدّد السعر ليبقى عرضك قابلاً للاختيار.`, en: `Your price commitment on ${L} ends ${until}. Renew it so your offer can still be chosen.`, ur: `${L} پر آپ کی قیمت کی پابندی ${until} کو ختم ہو رہی ہے۔ قیمت کی تجدید کریں تاکہ آپ کی آفر منتخب ہو سکے۔` })
+      return pick({ ar: `تنتهي صلاحية سعرك على ${L} في ${until}. جدّد السعر ليبقى عرضك قابلاً للاختيار.`, en: `Your price on ${L} is valid until ${until}. Renew it so your offer can still be chosen.`, ur: `${L} پر آپ کی قیمت کی مدت ${until} کو ختم ہو رہی ہے۔ قیمت کی تجدید کریں تاکہ آپ کی آفر منتخب ہو سکے۔` })
     case 'rfq_changed':
       if (!L) return null
       return pick({ ar: `عدّل المشتري طلبه، فسعّره من جديد: ${L}. تغيّرت المواد أو الكميات فأُلغي عرضك السابق.`, en: `The buyer changed the request, so price it again: ${L}. The materials or quantities changed, so your previous offer was cancelled.`, ur: `خریدار نے درخواست بدل دی، دوبارہ قیمت دیں: ${L}۔ اشیاء یا مقدار بدلنے سے آپ کی پچھلی آفر منسوخ ہو گئی۔` })
@@ -312,6 +323,12 @@ function body(key: string, d: any, l: NotifLocale): string | null {
     case 'rfq_expired':
       if (!L) return null
       return pick({ ar: `انتهى ${L} دون أن يختار المشتري عرضاً.`, en: `${L} ended without the buyer choosing an offer.`, ur: `${L} خریدار کے کسی آفر کو منتخب کیے بغیر ختم ہو گئی۔` })
+    case 'deal_closed': {
+      // migration 285 admin_close_deal; the reason is read from data.reason when the server adds it
+      const reason = str(d?.reason)
+      if (!L || !reason) return null
+      return pick({ ar: `أُلغيت صفقة ${L} بقرار الإدارة: ${reason}.`, en: `The deal ${L} was cancelled by the Taseerak team: ${reason}.`, ur: `تسعیرک ٹیم نے ڈیل ${L} منسوخ کر دی: ${reason}۔` })
+    }
     case 'dispute_opened': {
       const by = str(d?.by)
       if (!L || (by !== 'buyer' && by !== 'supplier')) return null
@@ -327,11 +344,16 @@ function body(key: string, d: any, l: NotifLocale): string | null {
 function title(key: string, d: any, l: NotifLocale): string | null {
   if (key === 'new_rfq' && (d?.only_new === true || d?.only_new === 'true'))
     return { ar: 'أُضيفت مواد تناسبك إلى طلب تسعير', en: 'Materials in your specialty were added to a request', ur: 'درخواست میں آپ کے شعبے کی اشیاء شامل کی گئیں' }[l]
+  if (key === 'payment_confirmed' && str(d?.by) === 'supplier')
+    return { ar: 'سجّل المورد استلام المبلغ', en: 'The supplier recorded receiving the payment', ur: 'سپلائر نے رقم کی وصولی درج کی' }[l]
   if (key === 'team_question' || key === 'new_message') {
     const who = str(d?.sender_name)
     if (!who) return null
+    // which request the message is about (round-6 UX-123)
+    const ref = str(d?.rfq_ref ?? d?.ref_no)
+    const about = ref ? { ar: ` · طلب رقم ${ref}`, en: ` · Request #${ref}`, ur: ` · درخواست نمبر ${ref}` }[l] : ''
     return key === 'new_message'
-      ? { ar: `رسالة جديدة من ${who}`, en: `New message from ${who}`, ur: `${who} کا نیا پیغام` }[l]
+      ? { ar: `رسالة جديدة من ${who}${about}`, en: `New message from ${who}${about}`, ur: `${who} کا نیا پیغام${about}` }[l]
       : { ar: `سؤال من ${who}`, en: `Question from ${who}`, ur: `${who} کا سوال` }[l]
   }
   const t = TITLES[key]
@@ -370,6 +392,20 @@ function observer(key: string, type: string, d: any, l: NotifLocale): { title: s
         body: L
           ? pick({ ar: `اختار المشتري مواد من عرض الشركة على ${L}. يتابع صاحب الحساب الصفقة والتسليم.`, en: `The buyer chose materials from the company’s offer on ${L}. The account owner handles the deal and delivery.`, ur: `خریدار نے ${L} پر کمپنی کی آفر سے اشیاء منتخب کیں۔ اکاؤنٹ کے مالک ڈیل اور ڈیلیوری سنبھالیں گے۔` })
           : pick({ ar: 'اختار المشتري مواد من عرض الشركة. يتابع صاحب الحساب الصفقة والتسليم.', en: 'The buyer chose materials from the company’s offer. The account owner handles the deal and delivery.', ur: 'خریدار نے کمپنی کی آفر سے اشیاء منتخب کیں۔ اکاؤنٹ کے مالک ڈیل اور ڈیلیوری سنبھالیں گے۔' }),
+      }
+    case 'not_selected':
+      return {
+        title: pick({ ar: 'لم يُختر عرض الشركة هذه المرة', en: 'The company’s offer was not chosen this time', ur: 'اس بار کمپنی کی آفر منتخب نہیں ہوئی' }),
+        body: L
+          ? pick({ ar: `اختار المشتري مورداً آخر في ${L}. افتح الطلب لترى الفرق عن السعر المختار.`, en: `The buyer chose another supplier for ${L}. Open the request to compare with the chosen price.`, ur: `خریدار نے ${L} کے لیے دوسرا سپلائر منتخب کیا۔ منتخب قیمت سے موازنہ کے لیے درخواست کھولیں۔` })
+          : pick({ ar: 'اختار المشتري مورداً آخر في أحد طلبات الشركة.', en: 'The buyer chose another supplier on one of the company’s requests.', ur: 'خریدار نے کمپنی کی ایک درخواست پر دوسرا سپلائر منتخب کیا۔' }),
+      }
+    case 'price_expiring_supplier':
+      return {
+        title: pick({ ar: 'تنتهي صلاحية سعر الشركة قريباً', en: 'The company’s price validity ends soon', ur: 'کمپنی کی قیمت کی مدت جلد ختم ہو رہی ہے' }),
+        body: L
+          ? pick({ ar: `تنتهي قريباً صلاحية سعر عرض الشركة على ${L}. يمكن تجديده من صفحة الطلب.`, en: `The company’s offer price on ${L} expires soon. It can be renewed from the request page.`, ur: `${L} پر کمپنی کی آفر کی قیمت جلد ختم ہو رہی ہے۔ اسے درخواست کے صفحے سے تجدید کیا جا سکتا ہے۔` })
+          : pick({ ar: 'تنتهي قريباً صلاحية سعر أحد عروض الشركة.', en: 'One of the company’s offer prices expires soon.', ur: 'کمپنی کی ایک آفر کی قیمت جلد ختم ہو رہی ہے۔' }),
       }
     case 'reminder_deliver':
       return {

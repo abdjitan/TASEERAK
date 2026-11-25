@@ -4,8 +4,7 @@ import Link from 'next/link'
 import PublicFooter from '@/components/public/PublicFooter'
 import { useTranslation } from '@/i18n'
 import Logo from '@/components/shared/Logo'
-import LanguageSwitcher from '@/components/shared/LanguageSwitcher'
-import HomeOrAccountLink from '@/components/public/HomeOrAccountLink'
+import PublicTopBar from '@/components/public/PublicTopBar'
 import Glyph from '@/components/shared/Glyph'
 import LinkEmails from '@/components/shared/LinkEmails'
 import { TERMS_VERSION, OPERATOR } from '@/lib/legal'
@@ -99,15 +98,8 @@ export default function TermsPage() {
 
   return (
     <div className="min-h-screen bg-slate-50" dir={dir}>
-      <nav className="bg-white/90 backdrop-blur sticky top-0 z-50 border-b border-gray-100">
-        <div className="max-w-3xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between">
-          <a href="/" className="shrink-0" aria-label="تسعيرك">{/* eslint-disable-next-line @next/next/no-img-element */}<img src="/taseerak-metallic-logo.webp" alt="تسعيرك" className="h-14 w-auto" /></a>
-          <div className="flex items-center gap-2">
-            <LanguageSwitcher variant="minimal" />
-            <HomeOrAccountLink homeLabel={t.home} />
-          </div>
-        </div>
-      </nav>
+      {/* one top bar for the trust and legal pages (round-6 UX-116) */}
+      <PublicTopBar />
 
       <div className="max-w-3xl mx-auto px-4 sm:px-6 py-8">
         <h1 className="text-2xl font-bold mb-1" style={{ color: '#0B2438' }}>{t.title}</h1>
@@ -134,9 +126,6 @@ export default function TermsPage() {
 
         <p className="text-center text-sm text-gray-600 mt-10">
           <a href={`mailto:${OPERATOR.email}`} dir="ltr" className="inline-flex items-center min-h-[44px] font-semibold text-[#8F6820] hover:underline">{OPERATOR.email}</a>
-        </p>
-        <p className="text-center text-[12px] text-gray-600">
-          <Link href="/privacy" className="inline-flex items-center min-h-[44px] hover:underline">{t.privacyLink}</Link> · <Link href="/deal-protection" className="inline-flex items-center min-h-[44px] hover:underline">{locale === 'en' ? 'How we protect your deal' : locale === 'ur' ? 'سودے کا تحفظ' : 'كيف نحمي صفقتك'}</Link> · © 2026 تسعيرك — Taseerak
         </p>
       </div>
       <PublicFooter />

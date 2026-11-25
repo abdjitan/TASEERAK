@@ -7,7 +7,7 @@ import { useTranslation } from '@/i18n'
 import AppShell from '@/components/shared/AppShell'
 import PageLoader from '@/components/shared/PageLoader'
 import { getNav } from '@/lib/nav'
-import { dealStage } from '@/lib/dealStage'
+import { dealStage, expectedDeliveryDate, deliveryLate } from '@/lib/dealStage'
 import { rfqDisplayName } from '@/lib/rfqName'
 import Glyph from '@/components/shared/Glyph'
 import { arCount } from '@/lib/text'
@@ -25,15 +25,9 @@ function dealNeedsMe(d: any): boolean {
   const st = dealStage(d)
   return st.key === 'accepted' || (st.key === 'paid' && !st.done)
 }
-// round-5 UX-057: the agreed delivery day (accepted + delivery_days), the same rule as DealProtection
-function deliveryDue(d: any): Date | null {
-  const days = Number(d?.delivery_days)
-  return days > 0 && d?.accepted_at ? new Date(new Date(d.accepted_at).getTime() + days * 86400000) : null
-}
-function deliveryLate(d: any, now: number = Date.now()): boolean {
-  const due = deliveryDue(d)
-  return !!due && !d.deal_closed_at && !d.supplier_delivered_at && !d.received_at && due.getTime() < now
-}
+// round-6 UX-001/UX-113: the expected delivery day and the «late» check come from one shared rule
+// (working days in Riyadh, Fridays skipped; late only after that whole day, never after delivery or receipt)
+const deliveryDue = (d: any): Date | null => expectedDeliveryDate(d)
 // round-5 UX-178: the statement number the deal page prints («ST-…»), one form everywhere
 const statementNo = (d: any) => (d?.invoice_number || '').replace(/^INV-/, 'ST-') || (d?.id ? `ST-${String(d.id).slice(0, 8).toUpperCase()}` : '')
 
@@ -197,7 +191,7 @@ export default function SupplierDealsPage() {
                       {isMember ? memberLabel(d, st) : st.label}
                     </div>
                     {late ? (
-                      <div className="mt-1 inline-flex items-center gap-1 text-[12px] font-bold text-[#B91C1C]"><Glyph e="⚠" /> {L('Past the delivery date', 'ڈیلیوری کی تاریخ گزر گئی', 'متأخر عن موعد التوصيل')}{due ? ` · ${due.toLocaleDateString(dloc, { day: 'numeric', month: 'long', timeZone: 'Asia/Riyadh' })}` : ''}</div>
+                      <div className="mt-1 inline-flex items-center gap-1 text-[12px] font-bold text-warn-text bg-warn-bg border border-warn-border rounded-full px-2 py-0.5"><Glyph e="⚠" /> {L('Past the delivery date', 'ڈیلیوری کی تاریخ گزر گئی', 'متأخر عن موعد التوصيل')}{due ? ` · ${due.toLocaleDateString(dloc, { day: 'numeric', month: 'long', timeZone: 'Asia/Riyadh' })}` : ''}</div>
                     ) : due && !d.supplier_delivered_at && !d.received_at ? (
                       <div className="mt-1 text-[12px] text-gray-600">{L('Delivery date:', 'ڈیلیوری کی تاریخ:', 'موعد التوصيل:')} {due.toLocaleDateString(dloc, { weekday: 'long', day: 'numeric', month: 'long', timeZone: 'Asia/Riyadh' })}</div>
                     ) : null}

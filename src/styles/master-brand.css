@@ -186,8 +186,9 @@ a { text-decoration: none; }
 .ts-sidebar-link.is-active {
   border-color: rgba(245,197,91,.18);
   background: linear-gradient(105deg, rgba(212,165,67,.19), rgba(255,255,255,.075)) !important;
-  box-shadow: inset 0 1px rgba(255,255,255,.055), 0 8px 20px rgba(0,0,0,.12) !important;
+  box-shadow: inset 3px 0 #F5C55B, inset 0 1px rgba(255,255,255,.08), 0 8px 20px rgba(0,0,0,.14) !important;
 }
+[dir="ltr"] .ts-sidebar-link.is-active { box-shadow: inset -3px 0 #F5C55B, inset 0 1px rgba(255,255,255,.08), 0 8px 20px rgba(0,0,0,.14) !important; }
 .ts-sidebar-icon {
   flex: none;
   width: 31px !important;
@@ -224,10 +225,14 @@ a { text-decoration: none; }
 /* Card border is a default only (round-4 UX-102): zero specificity, so any border-[…] / border-red / border-green
    class and hover:border-… on the element win. */
 :where(.ts-dashboard main .bg-white) { border-color: #D9E0E4; }
+/* card shadows: the one rule (round-6 UX-120 merged three rules that overrode each other) */
 .ts-dashboard main .bg-white.rounded-xl,
-.ts-dashboard main .bg-white.rounded-2xl,
+.ts-dashboard main .bg-white.rounded-2xl {
+  box-shadow: 0 8px 24px rgba(7,24,39,.042), 0 1px 2px rgba(7,24,39,.025);
+  transition: box-shadow .2s ease, border-color .2s ease, transform .2s ease;
+}
 .ts-dashboard main .bg-white.rounded-3xl {
-  box-shadow: 0 9px 28px rgba(7,24,39,.055), 0 1px 2px rgba(7,24,39,.03);
+  box-shadow: 0 13px 34px rgba(7,24,39,.085), inset 0 2px rgba(212,165,67,.28), inset 0 1px rgba(255,255,255,.92);
   transition: box-shadow .2s ease, border-color .2s ease, transform .2s ease;
 }
 .ts-dashboard main a.bg-white.rounded-xl:hover,
@@ -398,11 +403,6 @@ input[type="checkbox"]:focus-visible, input[type="radio"]:focus-visible { outlin
     radial-gradient(ellipse at 54% 0%, rgba(255,255,255,.68), transparent 53%),
     linear-gradient(180deg, rgba(255,255,255,.14), transparent 42%);
 }
-.ts-dashboard main .bg-white.rounded-xl,
-.ts-dashboard main .bg-white.rounded-2xl,
-.ts-dashboard main .bg-white.rounded-3xl {
-  box-shadow: 0 13px 34px rgba(7,24,39,.085), inset 0 2px rgba(212,165,67,.28), inset 0 1px rgba(255,255,255,.92);
-}
 /* No hover lift on every card (round-5 UX-195): only links and buttons react to the pointer (rule above). */
 :where(.ts-dashboard main) .bg-gray-50 { background-color: #F0F2F2; }
 :where(.ts-dashboard main) .bg-gray-100 { background-color: #E4E9EC; }
@@ -426,8 +426,6 @@ input[type="checkbox"]:focus-visible, input[type="radio"]:focus-visible { outlin
 :is(input, select, textarea)[aria-invalid="true"]:focus { border-color: #B42318 !important; box-shadow: 0 0 0 4px rgba(180,35,24,.16) !important; }
 .ts-dashboard-sidebar { border-inline-start: 1px solid rgba(245,197,91,.28); }
 .ts-dashboard-brand img { filter: drop-shadow(0 8px 20px rgba(245,197,91,.18)); }
-.ts-sidebar-link.is-active { box-shadow: inset 3px 0 #F5C55B, 0 8px 20px rgba(0,0,0,.16) !important; }
-[dir="ltr"] .ts-sidebar-link.is-active { box-shadow: inset -3px 0 #F5C55B, 0 8px 20px rgba(0,0,0,.16) !important; }
 .ts-company-card { background: linear-gradient(120deg, rgba(245,197,91,.13), rgba(255,255,255,.045)) !important; }
 .ts-mobile-nav {
   color: #fff;
@@ -490,10 +488,6 @@ input[type="checkbox"]:focus-visible, input[type="radio"]:focus-visible { outlin
 .ts-dashboard-topbar :is(.ts-notif-panel, [role="dialog"]) p { color: #526579 !important; }
 .ts-dashboard-main { padding-inline: clamp(18px, 2.6vw, 42px); }
 
-.ts-dashboard main .bg-white.rounded-2xl,
-.ts-dashboard main .bg-white.rounded-xl {
-  box-shadow: 0 8px 24px rgba(7,24,39,.042), 0 1px 2px rgba(7,24,39,.025);
-}
 .ts-dashboard main table tbody tr { transition: background-color .15s ease; }
 .ts-dashboard main table tbody tr:hover { background-color: rgba(212,165,67,.065); }
 .ts-dashboard main input::placeholder, .ts-dashboard main textarea::placeholder { color: #8894A0; }
@@ -501,7 +495,6 @@ input[type="checkbox"]:focus-visible, input[type="radio"]:focus-visible { outlin
 /* a field inside a label keeps a regular weight: the value typed is not bold (round-5 UX-195) */
 .ts-dashboard main label :where(input, select, textarea):not([class*="font-bold"]):not([class*="font-semibold"]) { font-weight: 400; }
 .ts-dashboard .ts-sidebar-link { border-radius: 13px; }
-.ts-dashboard .ts-sidebar-link.is-active { box-shadow: inset 0 1px rgba(255,255,255,.08), 0 7px 18px rgba(0,0,0,.12) !important; }
 
 /* Buyer home hero (approved marketplace-home design): city photo under a controlled navy overlay */
 .market-hero {

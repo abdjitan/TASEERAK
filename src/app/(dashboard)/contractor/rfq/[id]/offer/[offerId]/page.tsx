@@ -25,7 +25,7 @@ import { useEnsureVerified } from '@/components/shared/VerifyGate'
 import { askConfirm } from '@/lib/askConfirm'
 import { useHomeBuyer } from '@/components/buyer/useHomeBuyer'
 import { cleanArName, getPlaceLabel } from '@/lib/displayName'
-import { daysText, arCount } from '@/lib/text'
+import { daysText, arCount, arMaterials } from '@/lib/text'
 import { useFocusTrap } from '@/components/shared/useFocusTrap'
 import { isExpired } from '@/lib/deadline'
 import { dealStage } from '@/lib/dealStage'
@@ -63,6 +63,7 @@ export default function OfferDetailPage() {
   const [infoOpen, setInfoOpen] = useState(false)
   const [infoText, setInfoText] = useState('')
   const [infoBusy, setInfoBusy] = useState(false)
+  const [taxVerified, setTaxVerified] = useState(false) // owner 2026-11-25: «يُصدر فاتورة ضريبية» (profiles.vat_verified_at, 286)
   const [chosenId, setChosenId] = useState<string | null>(null) // another offer on this request is the deal (round-5 UX-041)
   // the two dialogs keep focus inside, close with Escape and give focus back (round-5 UX-141)
   const reqRef = useRef<HTMLDivElement>(null)
@@ -137,6 +138,13 @@ export default function OfferDetailPage() {
         if (contact) full = { ...offerData, supplier: { ...offerData.supplier, ...contact } }
       }
       setOffer(full)
+      // read apart: the offer query must not fail while profiles_public lacks the column
+      if (offerData?.supplier_id) {
+        try {
+          const { data: vv, error: vvErr } = await supabase.from('profiles_public').select('vat_verified_at').eq('id', offerData.supplier_id).maybeSingle()
+          if (!vvErr) setTaxVerified(!!(vv as any)?.vat_verified_at)
+        } catch { /* optional */ }
+      }
       if (offerData && offerData.status !== 'accepted') {
         const { data: acc } = await supabase.from('offers').select('id').eq('rfq_id', id).eq('status', 'accepted').limit(1)
         setChosenId(acc?.[0]?.id || null)
@@ -181,7 +189,7 @@ export default function OfferDetailPage() {
     // rejecting also removes any material you selected from this supplier (DB trigger, migration 183)
     // one name for the action: «لا يناسبني» (round-5 UX-146)
     const who = offer?.supplier?.company_name_ar || L('this supplier', 'اس سپلائر', 'هذا المورد')
-    if (!(await askConfirm(L(`Is the offer from ${who} not right for you? The offer will be declined and the supplier told it was not accepted. This cannot be undone.`, `${who} کی آفر آپ کے لیے مناسب نہیں؟ آفر رد ہو جائے گی اور سپلائر کو بتا دیا جائے گا کہ اس کی آفر قبول نہیں ہوئی۔ یہ واپس نہیں ہو سکتا۔`, `عرض ${who} لا يناسبك؟ سيُرفض العرض ويُبلَّغ المورد بأن عرضه لم يُقبل، ولا يمكن التراجع عن ذلك.`), { danger: true, okLabel: L('Yes, not right for me', 'ہاں، مناسب نہیں', 'نعم، لا يناسبني'), cancelLabel: L('Go back', 'واپس', 'تراجع') }))) return
+    if (!(await askConfirm(L(`Is the offer from ${who} not right for you? The offer will be declined and the supplier told it was not accepted. This cannot be undone.${isMulti ? ' Any material you chose from this supplier will be unselected.' : ''}`, `${who} کی آفر آپ کے لیے مناسب نہیں؟ آفر رد ہو جائے گی اور سپلائر کو بتا دیا جائے گا کہ اس کی آفر قبول نہیں ہوئی۔ یہ واپس نہیں ہو سکتا۔${isMulti ? ' اس سپلائر سے منتخب کیا گیا کوئی بھی سامان غیر منتخب ہو جائے گا۔' : ''}`, `عرض ${who} لا يناسبك؟ سيُرفض العرض ويُبلَّغ المورد بأن عرضه لم يُقبل، ولا يمكن التراجع عن ذلك.${isMulti ? ' وسيُلغى اختيار أي مادة اخترتها من هذا المورد.' : ''}`), { danger: true, okLabel: L('Yes, not right for me', 'ہاں، مناسب نہیں', 'نعم، لا يناسبني'), cancelLabel: L('Go back', 'واپس', 'تراجع') }))) return
     setActing(true)
     const supabase = createClient()
     const { error } = await supabase.from('offers').update({ status: 'rejected' }).eq('id', offerId)
@@ -226,9 +234,10 @@ export default function OfferDetailPage() {
   const mapsUrl = (!independentSeller && s.latitude && s.longitude) ? `https://www.google.com/maps?q=${s.latitude},${s.longitude}` : null
   const what = isMulti ? rfqDesc(rfq, locale) : pname(rfq.product_name)
   const wa = (accepted && contactNum) ? waLink(contactNum, L(`Hello, regarding your offer on «${what}» on Taseerak`, `السلام علیکم، تسعیرک پر «${what}» کے لیے آپ کی آفر کے بارے میں`, `السلام عليكم، بخصوص عرضكم على «${what}» في منصة تسعيرك`)) : ''
-  const statusBadge = offer.status === 'accepted' ? { t: L('Chosen', 'منتخب', 'تم اختياره'), c: 'bg-emerald-100 text-emerald-800' }
-    : offer.status === 'rejected' ? { t: L('Declined', 'رد شدہ', 'مرفوض'), c: 'bg-gray-100 text-gray-600' }
-    : { t: L('Waiting for your decision', 'آپ کے فیصلے کا انتظار', 'بانتظار قرارك'), c: 'bg-amber-100 text-amber-800' }
+  const statusBadge = offer.status === 'accepted' ? { t: L('Chosen', 'منتخب', 'تم اختياره'), c: 'bg-[#E1F5EE] text-[#0F6E56]' }
+    // round-6 UX-076: an offer closed by another choice was «not chosen», not declined by the buyer
+    : offer.status === 'rejected' ? (chosenId ? { t: L('Not chosen', 'منتخب نہیں ہوئی', 'لم يُختر'), c: 'bg-gray-100 text-gray-600' } : { t: L('Declined', 'رد شدہ', 'مرفوض'), c: 'bg-gray-100 text-gray-600' })
+    : { t: L('Waiting for your decision', 'آپ کے فیصلے کا انتظار', 'بانتظار قرارك'), c: 'bg-warn-bg text-warn-text' }
   const fmt = (n: any) => (+Number(n).toFixed(2)).toLocaleString('en-US')
   // the reply deadline passed without a new price (round-5 UX-030): the request is over
   const reductionLive = reqDone || (!!offer.reduction_deadline && new Date(offer.reduction_deadline).getTime() > Date.now())
@@ -270,12 +279,12 @@ export default function OfferDetailPage() {
         {/* a priced subset of the request: say so, so it never looks cheaper than complete offers (round-4 UX-031) */}
         {isMulti && partial && (
           <div className="rounded-xl border-2 border-[#D4A543] bg-[#D4A543]/10 px-4 py-2.5 text-sm font-semibold text-[#0B2438]">
-            <Glyph e="⚠" /> {L(`This offer prices ${pricedN} of ${allN} items. Not priced: ${missingNames}.`, `یہ آفر ${allN} میں سے ${pricedN} اشیاء کی قیمت دیتی ہے۔ قیمت نہیں دی: ${missingNames}۔`, `يسعّر هذا العرض ${pricedN} من ${allN} مواد. لم يسعّر: ${missingNames}.`)}
+            <Glyph e="⚠" /> {L(`This offer prices ${pricedN} of ${allN} items. Not priced: ${missingNames}.`, `یہ آفر ${allN} میں سے ${pricedN} اشیاء کی قیمت دیتی ہے۔ قیمت نہیں دی: ${missingNames}۔`, `يسعّر هذا العرض ${pricedN} من ${arMaterials(allN, 'obl')}. لم يسعّر: ${missingNames}.`)}
           </div>
         )}
         {offer.status === 'pending' && offer.price_valid_until && (
           new Date(offer.price_valid_until) < new Date()
-            ? <div className="bg-amber-50 border border-amber-200 text-amber-800 text-sm rounded-xl px-4 py-2.5 font-semibold"><Glyph e="⏱" /> {L('This offer price has expired. Confirm the price with the supplier in messages before choosing it.', 'اس آفر کی قیمت کی مدت ختم ہو گئی۔ منتخب کرنے سے پہلے پیغامات میں سپلائر سے قیمت کنفرم کریں۔', 'انتهت صلاحية سعر هذا العرض. تأكّد من السعر مع المورد عبر الرسائل قبل اختياره.')}</div>
+            ? <div className="bg-warn-bg border border-warn-border text-warn-text text-sm rounded-xl px-4 py-2.5 font-semibold"><Glyph e="⏱" /> {L('This offer price has expired. Confirm the price with the supplier in messages before choosing it.', 'اس آفر کی قیمت کی مدت ختم ہو گئی۔ منتخب کرنے سے پہلے پیغامات میں سپلائر سے قیمت کنفرم کریں۔', 'انتهت صلاحية سعر هذا العرض. تأكّد من السعر مع المورد عبر الرسائل قبل اختياره.')}</div>
             : <div className="bg-[#0B2438]/5 border border-[#0B2438]/15 text-[#0B2438] text-sm rounded-xl px-4 py-2.5"><Glyph e="⏱" /> {L('The supplier committed to this price until', 'سپلائر نے اس قیمت کا وعدہ اس تاریخ تک کیا ہے:', 'التزم المورد بهذا السعر حتى')} {new Date(offer.price_valid_until).toLocaleDateString(dloc, { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'Asia/Riyadh' })}.</div>
         )}
 
@@ -324,6 +333,7 @@ export default function OfferDetailPage() {
           <h2 className="font-bold text-sm mb-3" style={{ color: '#0B2438' }}><Glyph e="🏪" /> {L('Supplier', 'سپلائر', 'المورد')}</h2>
           <div className="flex items-center gap-2 flex-wrap mb-2">
             <span className="font-bold text-gray-900">{s.company_name_ar || L('Supplier', 'سپلائر', 'مورد')}</span>
+            {taxVerified && <span className="text-xs font-bold px-1.5 py-0.5 rounded-full bg-[#0B2438]/10 text-[#0B2438]"><Glyph e="🧾" /> {L('Issues a tax invoice', 'ٹیکس انوائس جاری کرتا ہے', 'يُصدر فاتورة ضريبية')}</span>}
             {s.supplier_tier && <span className="badge text-xs bg-[#D4A543]/10 text-[#8F6820]"><SellerIcon name={tierIcon(s.supplier_tier)} /> {tierText}</span>}
             {s.verification_status === 'verified' && (
               <span className="badge text-xs" style={s.cr_verification_source === 'wathq' ? { background: '#0F6E56', color: '#fff' } : { background: '#E1F5EE', color: '#0F6E56' }}>
@@ -334,7 +344,7 @@ export default function OfferDetailPage() {
               <span className="badge text-xs bg-gray-100 text-gray-600">{L('Not verified yet', 'ابھی تصدیق نہیں ہوئی', 'غير موثّق بعد')}</span>
             )}
             {offer.source_type && (
-              <span className={`badge text-xs ${isDirectSource(offer.source_type) ? 'bg-emerald-50 text-emerald-800' : 'bg-amber-50 text-amber-800'}`}>
+              <span className={`badge text-xs ${isDirectSource(offer.source_type) ? 'bg-[#E1F5EE] text-[#0F6E56]' : 'bg-warn-bg text-warn-text'}`}>
                 {isDirectSource(offer.source_type) ? <><SellerIcon name="check" /> {L('Direct price from the supplier', 'سپلائر سے براہ راست قیمت', 'سعر مباشر من المورد')}</> : <><SellerIcon name={sourceIcon(offer.source_type)} /> {L(`Goods source: ${sourceLabel(offer.source_type, locale)}`, `سامان کا ماخذ: ${sourceLabel(offer.source_type, locale)}`, `مصدر البضاعة: ${sourceLabel(offer.source_type, locale)}`)}</>}
               </span>
             )}
@@ -409,7 +419,7 @@ export default function OfferDetailPage() {
           )}
 
           {/* the totals: one number for a home buyer; for a business the lines, the VAT-inclusive total and the VAT in it (UX-019) */}
-          <div className="bg-amber-50 border border-amber-100 rounded-xl p-3 my-3 text-sm">
+          <div className="bg-warn-bg border border-warn-border rounded-xl p-3 my-3 text-sm">
             {home ? (
               <>
                 <div className="flex justify-between items-baseline gap-3 font-extrabold text-gray-900"><span>{partial ? L('The amount for what the supplier priced', 'سپلائر کی قیمت دی گئی اشیاء کی رقم', 'المبلغ لما سعّره المورد') : L('The amount you pay', 'آپ کی ادا کردہ رقم', 'المبلغ الذي تدفعه')}</span><span className="text-lg">{fmt(offerComparable(offer))} {SAR}</span></div>
@@ -418,18 +428,18 @@ export default function OfferDetailPage() {
             ) : (<>
               {/* owner 2026-11-23: every amount as the buyer pays it (with VAT, or the final price of a seller
                   without a VAT number), so the lines add up to the total; the net/VAT split is on the tax invoice */}
-              <div className="flex justify-between text-gray-600"><span>{ip.length > 0 ? L('Goods total', 'مال کا کل', 'إجمالي البضاعة') : L('Goods', 'مال', 'البضاعة')}</span><span>{fmt(lineComparable(goods, offer))} {SAR}</span></div>
+              <div className="flex justify-between text-gray-600"><span>{isMulti && partial ? L(`Total for what the supplier priced (${pricedN} of ${allN})`, `سپلائر کی قیمت دی گئی اشیاء کا کل (${allN} میں سے ${pricedN})`, `الإجمالي لما سعّره المورد (${pricedN} من ${allN})`) : ip.length > 0 ? L('Goods total', 'مال کا کل', 'إجمالي البضاعة') : L('Goods', 'مال', 'البضاعة')}</span><span>{fmt(lineComparable(goods, offer))} {SAR}</span></div>
               {exList.map((e: any, i: any) => (
-                <div key={i} className="flex justify-between text-amber-800"><span>+ {e.label}</span><span>{fmt(lineComparable(e.amount, offer))} {SAR}</span></div>
+                <div key={i} className="flex justify-between text-warn-text"><span>+ {e.label}</span><span>{fmt(lineComparable(e.amount, offer))} {SAR}</span></div>
               ))}
               {(() => {
                 const total = offerComparable(offer)
                 // a seller without a VAT number: one final amount, no VAT line (Saudi VAT rules)
                 if (vatStatusOf(offer) !== 'registered') return (
-                  <div className="flex justify-between font-bold text-gray-900 border-t border-amber-200 mt-1.5 pt-1.5"><span>{totalLabel(offer, locale)}</span><span>{fmt(total)} {SAR}</span></div>
+                  <div className="flex justify-between font-bold text-gray-900 border-t border-warn-border mt-1.5 pt-1.5"><span>{totalLabel(offer, locale)}</span><span>{fmt(total)} {SAR}</span></div>
                 )
                 return (<>
-                  <div className="flex justify-between font-bold text-gray-900 border-t border-amber-200 mt-1.5 pt-1.5"><span>{totalLabel(offer, locale)}</span><span>{fmt(total)} {SAR}</span></div>
+                  <div className="flex justify-between font-bold text-gray-900 border-t border-warn-border mt-1.5 pt-1.5"><span>{totalLabel(offer, locale)}</span><span>{fmt(total)} {SAR}</span></div>
                   <div className="flex justify-between text-xs text-gray-600"><span>{L('of which VAT 15%', 'جس میں VAT 15%', 'منها ضريبة القيمة المضافة 15%')}</span><span>{fmt(total - total / 1.15)} {SAR}</span></div>
                 </>)
               })()}
@@ -485,8 +495,8 @@ export default function OfferDetailPage() {
             <div className="space-y-2">
               <div className="bg-gray-50 rounded-lg p-2.5 text-sm"><span className="text-gray-500 text-xs">{L('Your question:', 'آپ کا سوال:', 'سؤالك:')}</span><div>{offer.info_request}</div></div>
               {offer.info_response
-                ? <div className="bg-emerald-50 rounded-lg p-2.5 text-sm"><span className="text-emerald-700 text-xs">{L('Supplier reply:', 'سپلائر کا جواب:', 'رد المورد:')}</span><div>{offer.info_response}</div></div>
-                : <div className="text-xs text-amber-700"><Glyph e="⏳" /> {L('Waiting for the supplier reply…', 'سپلائر کے جواب کا انتظار ہے…', 'بانتظار رد المورد…')}</div>}
+                ? <div className="bg-[#E1F5EE] rounded-lg p-2.5 text-sm"><span className="text-[#0F6E56] text-xs">{L('Supplier reply:', 'سپلائر کا جواب:', 'رد المورد:')}</span><div>{offer.info_response}</div></div>
+                : <div className="text-xs text-warn-text"><Glyph e="⏳" /> {L('Waiting for the supplier reply…', 'سپلائر کے جواب کا انتظار ہے…', 'بانتظار رد المورد…')}</div>}
             </div>
           ) : (
             <p className="text-xs text-gray-600">{L('Ask the supplier for more product details (type, specs, origin, warranty…).', 'سپلائر سے پروڈکٹ کی مزید تفصیل مانگیں (قسم، اسپیسیفکیشن، کہاں کا بنا ہے، وارنٹی…)۔', 'اطلب من المورد تفاصيل إضافية عن المنتج (النوع، المواصفات، المنشأ، الضمان…).')}</p>
@@ -512,7 +522,7 @@ export default function OfferDetailPage() {
         {/* actions: sticky above the phone's bottom bar (UX-023) */}
         {showBar && (
           <div className="bg-white rounded-2xl p-3 sm:p-4 border border-gray-200 shadow-lg sticky bottom-[calc(4.75rem+env(safe-area-inset-bottom))] lg:bottom-3 z-30">
-            {pastDeadline && <p className="text-xs font-semibold text-amber-900 mb-2"><Glyph e="⏱" /> {L('The offer window ended, and you can still choose this offer.', 'آفرز کی مہلت ختم ہو گئی، اور آپ اب بھی یہ آفر منتخب کر سکتے ہیں۔', 'انتهت مهلة العروض، وما زال بإمكانك اختيار هذا العرض.')}</p>}
+            {pastDeadline && <p className="text-xs font-semibold text-warn-text mb-2"><Glyph e="⏱" /> {L('The offer window ended, and you can still choose this offer.', 'آفرز کی مہلت ختم ہو گئی، اور آپ اب بھی یہ آفر منتخب کر سکتے ہیں۔', 'انتهت مهلة العروض، وما زال بإمكانك اختيار هذا العرض.')}</p>}
             <div className="flex flex-wrap gap-2">
               {/* a multi-item request is chosen per item on the request page (177: accept_offer refuses it) */}
               {isMulti ? (

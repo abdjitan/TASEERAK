@@ -7,6 +7,7 @@ import CatIcon from './CatIcon'
 import Glyph from './Glyph'
 import { Check, ChevronDown } from 'lucide-react'
 import { productImageUrl, specialtyImageUrl, groupImageUrl } from '@/lib/productImage'
+import { sectorName } from '@/lib/sellers'
 
 // منتقي القطاعات/التخصصات الموحّد — يُستخدم في «أكمل ملفك» وصفحة «تخصصاتي» معاً حتى تكون
 // التجربة والأيقونات واحدة. يُرطّب التصنيفات من قاعدة البيانات (get_taxonomy) ويُعيد الرسم،
@@ -14,11 +15,6 @@ import { productImageUrl, specialtyImageUrl, groupImageUrl } from '@/lib/product
 // Selected = gold border, 10% gold background, navy text and a check (brand; no per-sector colours).
 const GOLD = '#D4A543'
 const NAVY = '#071827'
-const SECTOR_TR: Record<string, any> = {
-  civil: { en: 'Civil', ur: 'سول' }, architectural: { en: 'Architectural', ur: 'تعمیراتی' },
-  electrical: { en: 'Electrical', ur: 'برقی' }, mechanical: { en: 'Mechanical', ur: 'مکینیکل' },
-  equipment: { en: 'Machinery', ur: 'مشینری' }, supply_store: { en: 'Supply Store', ur: 'سپلائی اسٹور' },
-}
 
 // اسم منتج مرشّح لصورة الكتالوج: نجرّد الوصف بين الأقواس ونأخذ أول جزء قبل «/».
 // (صور الكتالوج مولّدة على أسماء المنتجات، والتخصص فئة أوسع — لذا هذه أفضل محاولة، وإلا الإيموجي.)
@@ -69,7 +65,7 @@ export default function SpecialtyPicker({
     return m
   }, [ver])
 
-  const sl = (s: string) => locale === 'ar' ? (SECTOR_LABELS as any)[s] : (SECTOR_TR[s]?.[locale] || (SECTOR_LABELS as any)[s])
+  const sl = (s: string) => sectorName(s, locale) || s // round-6 UX-106: one sector name everywhere
   const rm = removeLabel || (locale === 'en' ? 'Remove' : locale === 'ur' ? 'ہٹائیں' : 'إزالة')
 
   return (

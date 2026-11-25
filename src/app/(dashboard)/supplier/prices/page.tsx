@@ -22,38 +22,35 @@ const latinNum = (v: string) => String(v ?? '').replace(/[٠-٩]/g, d => String(
 
 const txt = {
   ar: {
-    title: 'أسعاري', sub: 'أسعارك المحفوظة خاصة بك — لا يراها المشترون ولا المنافسون، وتُعبَّأ تلقائياً عند تسعير الطلبات',
+    title: 'أسعاري', sub: 'أسعارك المحفوظة خاصة بك، لا يراها المشترون ولا المنافسون، وتُعبَّأ عند تسعير المادة نفسها أو فئتها بالوحدة نفسها',
     back: '→ رجوع', addPrice: '+ إضافة مادة', myPrices: 'أسعاري المحفوظة',
     product: 'اسم المادة', sector: 'القسم', unit: 'الوحدة', price: 'السعر شامل ضريبة القيمة المضافة (ر.س)',
     region: 'المنطقة', selectSector: 'اختر القسم', selectUnit: 'الوحدة', selectRegion: 'كل المناطق',
     save: 'حفظ السعر', saving: 'جارٍ الحفظ...', update: 'تحديث', updated: 'تم التحديث',
-    noPrices: 'لم تحفظ أي أسعار بعد', noPricesSub: 'احفظ أسعار ما تبيعه لتُعبَّأ تلقائياً في عروضك',
+    noPrices: 'لم تحفظ أي أسعار بعد', noPricesSub: 'احفظ أسعار ما تبيعه لتُعبَّأ في عروضك عند تسعير المادة نفسها أو فئتها بالوحدة نفسها',
     lastUpdate: 'آخر تحديث', delete: 'حذف', edit: 'تعديل', loading: 'جارٍ التحميل...',
-    hint: 'أضف أسعار المواد التي تبيعها هنا، فتبقى خاصة بك وتُعبَّأ تلقائياً عند تسعير طلبات المشترين.',
     justNow: 'الآن', minsAgo: 'دقيقة', hoursAgo: 'ساعة', daysAgo: 'يوم', ago: 'قبل',
     confirmDelete: 'حذف سعر هذه المادة؟',
   },
   en: {
-    title: 'My prices', sub: 'Your saved prices are private — buyers and competitors never see them; they prefill your offers',
+    title: 'My prices', sub: 'Your saved prices are private: buyers and competitors never see them. They fill in when you price the same material or its category in the same unit',
     back: '← Back', addPrice: '+ Add a material', myPrices: 'My saved prices',
     product: 'Material', sector: 'Section', unit: 'Unit', price: 'Price incl. VAT (SAR)',
     region: 'Region', selectSector: 'Select a section', selectUnit: 'Unit', selectRegion: 'All regions',
     save: 'Save price', saving: 'Saving...', update: 'Update', updated: 'Updated',
-    noPrices: 'No saved prices yet', noPricesSub: 'Save the prices of what you sell to prefill your offers',
+    noPrices: 'No saved prices yet', noPricesSub: 'Save the prices of what you sell; they fill in when you price the same material or its category in the same unit',
     lastUpdate: 'Last update', delete: 'Delete', edit: 'Edit', loading: 'Loading...',
-    hint: 'Add your product prices here — they stay private and prefill your offers (saves time)',
     justNow: 'now', minsAgo: 'min', hoursAgo: 'h', daysAgo: 'd', ago: '',
     confirmDelete: 'Delete the price of this material?',
   },
   ur: {
-    title: 'میری قیمتیں', sub: 'آپ کی محفوظ قیمتیں نجی ہیں — خریدار اور حریف نہیں دیکھتے؛ یہ آفر میں خود بھر جاتی ہیں',
+    title: 'میری قیمتیں', sub: 'آپ کی محفوظ قیمتیں نجی ہیں: خریدار اور حریف نہیں دیکھتے۔ یہ اسی مال یا اس کے زمرے کی اسی یونٹ میں قیمت دیتے وقت بھر جاتی ہیں',
     back: '→ واپس', addPrice: '+ آئٹم شامل کریں', myPrices: 'میری محفوظ قیمتیں',
     product: 'مال', sector: 'سیکشن', unit: 'یونٹ', price: 'قیمت VAT سمیت (ریال)',
     region: 'علاقہ', selectSector: 'سیکشن منتخب کریں', selectUnit: 'یونٹ', selectRegion: 'تمام علاقے',
     save: 'قیمت محفوظ کریں', saving: 'محفوظ ہو رہا ہے...', update: 'اپ ڈیٹ', updated: 'اپ ڈیٹ ہو گیا',
-    noPrices: 'ابھی کوئی محفوظ قیمت نہیں', noPricesSub: 'جو بیچتے ہیں اس کی قیمتیں محفوظ کریں تاکہ آفر خود بھر جائے',
+    noPrices: 'ابھی کوئی محفوظ قیمت نہیں', noPricesSub: 'جو بیچتے ہیں اس کی قیمتیں محفوظ کریں؛ یہ اسی مال یا زمرے کی اسی یونٹ میں قیمت دیتے وقت بھر جائیں گی',
     lastUpdate: 'آخری اپ ڈیٹ', delete: 'حذف', edit: 'ترمیم', loading: 'لوڈ ہو رہا ہے...',
-    hint: 'اپنی چیزوں کی قیمتیں یہاں شامل کریں — یہ نجی رہتی ہیں اور آفر میں خود بھر جاتی ہیں',
     justNow: 'ابھی', minsAgo: 'منٹ', hoursAgo: 'گھنٹہ', daysAgo: 'دن', ago: 'پہلے',
     confirmDelete: 'یہ آئٹم حذف کریں؟',
   },
@@ -164,7 +161,9 @@ export default function SupplierPricesPage() {
     if (error) { console.error('live_prices save', error); failMsg(); return }
     setProduct(''); setSector(''); setUnit(''); setPrice(''); setRegion(''); setPgroup(''); setPsearch(''); setPsection(''); setProductOther(false); setManualSection('')
     setShowForm(false)
-    setMsg({ ok: true, text: dup ? L('The current price was updated.', 'موجودہ قیمت اپ ڈیٹ ہو گئی۔', 'حُدّث السعر الحالي.') : L('Price saved. It will fill in automatically when you price a matching request.', 'قیمت محفوظ ہو گئی۔ مماثل درخواست کی قیمت دیتے وقت یہ خود بھر جائے گی۔', 'حُفظ السعر، وسيُعبَّأ تلقائياً عند تسعير طلب مطابق.') })
+    setMsg({ ok: true, text: dup ? L('The current price was updated.', 'موجودہ قیمت اپ ڈیٹ ہو گئی۔', 'حُدّث السعر الحالي.') : (productOther
+      ? L('Price saved. A typed name fills in only when it matches the material name in the request exactly.', 'قیمت محفوظ ہو گئی۔ ہاتھ سے لکھا نام صرف تب بھرتا ہے جب وہ درخواست میں مال کے نام سے بالکل ملے۔', 'حُفظ السعر. الاسم المكتوب يدوياً لا يُعبَّأ إلا إذا طابق اسم المادة في الطلب تماماً.')
+      : L('Price saved. It fills in when you price this material or its category in the same unit.', 'قیمت محفوظ ہو گئی۔ یہ اس مال یا اس کے زمرے کی اسی یونٹ میں قیمت دیتے وقت بھر جائے گی۔', 'حُفظ السعر، ويُعبَّأ عند تسعير هذه المادة أو فئتها بالوحدة نفسها.')) })
     load()
   }
 
@@ -207,7 +206,6 @@ export default function SupplierPricesPage() {
           </div>
         </div>
 
-        {prices.length > 0 && <div className="bg-[#0B2438]/5 border border-[#0B2438]/15 rounded-xl p-3 mb-5 text-sm text-[#0B2438]">{T.hint}</div>}
         {msg && <div role={msg.ok ? 'status' : 'alert'} className={`rounded-xl p-3 mb-4 text-sm font-semibold border ${msg.ok ? 'bg-emerald-50 border-emerald-200 text-emerald-800' : 'bg-red-50 border-red-200 text-red-700'}`}>{msg.text}</div>}
 
         {/* round-5 UX-173: the main action is gold; on a first visit the empty card carries it instead */}
@@ -233,6 +231,7 @@ export default function SupplierPricesPage() {
                         placeholder={L('Material name', 'مال کا نام', 'اسم المادة')} required />
                       <button type="button" onClick={() => { setProductOther(false); setProduct(''); setManualSection('') }} className="inline-flex items-center min-h-[44px] text-xs text-gray-600 whitespace-nowrap px-3"><Glyph e="↩" /> {L('List', 'فہرست', 'القائمة')}</button>
                     </div>
+                    <p className="text-[12px] text-gray-600 leading-relaxed">{L('A price with a typed name is saved for you, but it fills in only when the name matches the material name in the request exactly.', 'ہاتھ سے لکھے نام والی قیمت آپ کے لیے محفوظ ہو جاتی ہے، لیکن یہ صرف تب بھرتی ہے جب نام درخواست میں مال کے نام سے بالکل ملے۔', 'السعر المكتوب يدوياً يُحفظ لك، لكنه لا يُعبَّأ تلقائياً إلا إذا طابق الاسم اسم المادة في الطلب تماماً.')}</p>
                     <div className="block text-xs font-bold text-gray-600" id="lp-sector-label">{T.sector}</div>
                     <div className="flex flex-wrap gap-2" role="radiogroup" aria-labelledby="lp-sector-label">
                       {BROWSE_SECTIONS.map(sec => {

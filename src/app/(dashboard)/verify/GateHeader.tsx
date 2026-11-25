@@ -15,7 +15,7 @@ export async function gateSignOut() {
   window.location.href = '/login'
 }
 
-export default function GateHeader({ back }: { back?: { href: string; label: string } }) {
+export default function GateHeader({ back, signedOut }: { back?: { href: string; label: string }; signedOut?: boolean }) {
   const { locale } = useTranslation()
   const L = (en: string, ur: string, ar: string) => (locale === 'en' ? en : locale === 'ur' ? ur : ar)
   return (
@@ -31,9 +31,9 @@ export default function GateHeader({ back }: { back?: { href: string; label: str
         <div className="flex items-center gap-1">
           <div className="ts-gate-lang"><LanguageSwitcher variant="nav" compact /></div>
           {/* a phone shows the icon only (the bar has no room for the words); the name stays for screen readers (UX-160) */}
-          <button type="button" onClick={gateSignOut} aria-label={L('Log out', 'لاگ آؤٹ', 'تسجيل الخروج')} className="min-h-[44px] min-w-[44px] justify-center inline-flex items-center gap-1.5 px-3 rounded-lg text-sm font-bold text-[#E8EDF2] hover:bg-white/10">
+          {!signedOut && <button type="button" onClick={gateSignOut} aria-label={L('Log out', 'لاگ آؤٹ', 'تسجيل الخروج')} className="min-h-[44px] min-w-[44px] justify-center inline-flex items-center gap-1.5 px-3 rounded-lg text-sm font-bold text-[#E8EDF2] hover:bg-white/10">
             <LogOut className="w-4 h-4" aria-hidden /><span className="hidden sm:inline">{L('Log out', 'لاگ آؤٹ', 'تسجيل الخروج')}</span>
-          </button>
+          </button>}
         </div>
       </div>
     </header>

@@ -144,12 +144,13 @@ export default function SuppliersDirectory({ suppliers }: { suppliers: any[] }) 
                   <div className="shrink-0 text-center">
                     <span className="inline-flex items-center rounded-full px-3 min-h-[32px] text-[12px] font-bold" style={{ background: '#EEF2F6', color: '#0B2438' }}>{L('New on the platform', 'پلیٹ فارم پر نیا', 'جديد على المنصة')}</span>
                   </div>
-                ) : (
+                ) : FEATURES.gamification ? (
+                /* the score out of 100 shows only with the leaderboard (off at launch, round-6 UX-079) */
                 <div className="shrink-0 text-center">
                   <div className="w-14 h-14 grid place-items-center rounded-full font-extrabold text-lg" style={{ background: scoreColor(r.score), color: scoreText(r.score) }}>{r.score}</div>
                   <div className="text-[12px] text-gray-600 mt-1">{L('Reliability / 100', 'اعتماد / 100', 'الموثوقية من 100')}</div>
                 </div>
-                )}
+                ) : null}
               </Link>
             )
           })}

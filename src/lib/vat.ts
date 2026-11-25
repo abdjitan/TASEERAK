@@ -39,10 +39,15 @@ const INDEPENDENT_TYPES = ['individual', 'broker', 'price_agent']
 export const isIndependentOffer = (o: any) =>
   o?.supplier?.supplier_tier === 'independent' || INDEPENDENT_TYPES.includes(o?.supplier?.provider_type)
 
+// Owner 2026-11-25: does this offer come with a tax invoice? A seller without a VAT number does not.
+// A pricing agent is invoiced by the source shop, which counts as issuing one (when we cannot tell: yes).
+export const issuesTaxInvoice = (o: any) => isIndependentOffer(o) || vatStatusOf(o) === 'registered'
+
 export function vatTag(o: any, locale: string): string {
   if (!showsVatBreakdown(o) && isIndependentOffer(o)) return locale === 'en' ? 'Final price; the shop’s invoice in your name' : locale === 'ur' ? 'حتمی قیمت؛ دکان کی انوائس آپ کے نام' : 'سعر نهائي، وفاتورة المحل باسمك'
-  if (!showsVatBreakdown(o)) return locale === 'en' ? 'Final price, no VAT added' : locale === 'ur' ? 'حتمی قیمت، اس پر VAT شامل نہیں کیا جاتا' : 'سعر نهائي، لا تُضاف إليه ضريبة القيمة المضافة'
-  return locale === 'en' ? 'incl. 15% VAT' : locale === 'ur' ? '15% VAT سمیت' : 'يشمل ضريبة القيمة المضافة 15%'
+  // owner 2026-11-25: every offer a buyer sees carries one of two labels, by the seller's VAT status
+  if (!showsVatBreakdown(o)) return locale === 'en' ? 'Final price (no VAT)' : locale === 'ur' ? 'حتمی قیمت (VAT کے بغیر)' : 'سعر نهائي (بلا ضريبة)'
+  return locale === 'en' ? 'incl. VAT' : locale === 'ur' ? 'VAT سمیت' : 'شامل الضريبة'
 }
 
 // The label of an offer's grand total: «يشمل ضريبة القيمة المضافة 15%» only when the seller charges it.
@@ -65,7 +70,8 @@ export function priceBasisLabel(o: any, locale: string): string {
 
 // The short basis tag after a buyer-facing amount: «شامل الضريبة», or «سعر نهائي» (no VAT number, no VAT added).
 export function buyerBasisTag(o: any, locale: string): string {
-  if (!showsVatBreakdown(o)) return locale === 'en' ? 'final price' : locale === 'ur' ? 'حتمی قیمت' : 'سعر نهائي'
+  if (!showsVatBreakdown(o) && isIndependentOffer(o)) return locale === 'en' ? 'final price' : locale === 'ur' ? 'حتمی قیمت' : 'سعر نهائي'
+  if (!showsVatBreakdown(o)) return locale === 'en' ? 'final price (no VAT)' : locale === 'ur' ? 'حتمی قیمت (VAT کے بغیر)' : 'سعر نهائي (بلا ضريبة)'
   return locale === 'en' ? 'incl. VAT' : locale === 'ur' ? 'VAT سمیت' : 'شامل الضريبة'
 }
 

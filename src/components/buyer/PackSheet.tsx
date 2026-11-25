@@ -8,11 +8,14 @@ import { getUnitLabelLong, getDefaultUnit } from '@/types'
 import { productImageUrl } from '@/lib/productImage'
 import { homeName, packUnitMismatches, deriveQty, type HomePack } from '@/lib/homePacks'
 import { askConfirm } from '@/lib/askConfirm'
+import { arMaterials } from '@/lib/text'
 import type { Sector } from '@/types'
 
 import { toLatinNumber } from '@/lib/number' // «2,500» = 2500: commas are thousands separators (round-4 UX-002)
 
-export type PackLine = { name: string; sector: Sector; quantity: string; unit: string }
+export type PackLine = { name: string; sector: Sector; quantity: string; unit: string; with_install?: boolean }
+// round-6 UX-084: these packs are usually bought with the installation: the price is asked with it by default
+const INSTALL_PACKS = ['ac', 'heater']
 
 // development check (UX-005): every measured item's hint must speak about the unit it is ordered in
 if (process.env.NODE_ENV !== 'production') {
@@ -32,6 +35,7 @@ export default function PackSheet({ pack, locale, onAdd, onClose }: {
     ...it, on: it.on !== false, quantity: it.qty != null ? String(it.qty) : '', unit: it.unit || getDefaultUnit(it.name, it.sector) || 'حبة', edited: false,
   })))
   const [dirty, setDirty] = useState(false) // something changed: closing asks first (round-4 UX-025)
+  const [withInstall, setWithInstall] = useState(INSTALL_PACKS.includes(pack.id))
   const chosen = rows.filter(r => r.on)
   // a derived row (tile adhesive) follows its source rows until the buyer edits it (round-4 UX-185)
   const set = (i: number, patch: Partial<(typeof rows)[number]>) => {
@@ -139,11 +143,18 @@ export default function PackSheet({ pack, locale, onAdd, onClose }: {
             <p className="text-[13px] font-bold text-[#8F6820] mb-1.5" role="status">{L(
               `${noQty} item${noQty === 1 ? '' : 's'} without a quantity; you can complete ${noQty === 1 ? 'it' : 'them'} in your request.`,
               `${noQty} اشیاء بغیر مقدار؛ آپ انہیں درخواست میں مکمل کر سکتے ہیں۔`,
-              `${noQty === 1 ? 'مادة واحدة بلا كمية' : noQty === 2 ? 'مادتان بلا كمية' : `${noQty} مواد بلا كمية`}، يمكنك إكمالها في طلبك.`)}</p>
+              `${arMaterials(noQty)} بلا كمية، يمكنك إكمالها في طلبك.`)}</p>
           )}
+          <label className="flex items-start gap-2 min-h-[44px] mb-1.5 cursor-pointer select-none">
+            <input type="checkbox" checked={withInstall} onChange={e => setWithInstall(e.target.checked)} className="w-5 h-5 mt-0.5 accent-[#0B2438] shrink-0" />
+            <span>
+              <span className="block text-sm font-bold text-[#0B2438]">{L('Ask for the price with installation', 'تنصیب سمیت قیمت مانگیں', 'اطلب السعر مع التركيب')}</span>
+              <span className="block text-[12px] text-gray-600">{L('The supplier gives the installation price separately in the offer.', 'سپلائر آفر میں تنصیب کی قیمت الگ بتاتا ہے۔', 'يذكر المورد سعر التركيب منفصلاً في عرضه.')}</span>
+            </span>
+          </label>
           <p className="text-[12px] text-gray-600 mb-2">{L('Each material goes to the suppliers who sell it. You can still edit everything in your request.', 'ہر چیز اس کے سپلائرز تک جاتی ہے۔ درخواست میں سب بدل سکتے ہیں۔', 'تصل كل مادة إلى الموردين المختصين بها، ويمكنك تعديل كل شيء في طلبك.')}</p>
           <button type="button" disabled={!chosen.length}
-            onClick={() => onAdd(chosen.map(r => ({ name: r.name, sector: r.sector, quantity: r.quantity, unit: r.unit })))}
+            onClick={() => onAdd(chosen.map(r => ({ name: r.name, sector: r.sector, quantity: r.quantity, unit: r.unit, ...(withInstall ? { with_install: true } : {}) })))}
             className="w-full min-h-12 rounded-xl font-extrabold text-sm disabled:opacity-40" style={{ background: 'linear-gradient(135deg,#F5C55B,#D4A543)', color: '#071827' }}>
             {noQty > 0
               ? L(`Add to my request (${ready} ready, ${noQty} without quantity)`, `میری درخواست میں شامل کریں (${ready} تیار، ${noQty} بغیر مقدار)`, `أضف إلى طلبي (${ready} جاهزة، ${noQty} بلا كمية)`)

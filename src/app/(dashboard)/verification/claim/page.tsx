@@ -69,6 +69,13 @@ export default function CrClaimPage() {
           <p className="text-sm text-gray-600 mb-4 leading-relaxed">
             {crTakenText(locale).msg} {L('The support team checks the documents with you and transfers the registration when it is yours.', 'سپورٹ ٹیم آپ کے ساتھ دستاویزات کی جانچ کرتی ہے اور آپ کی ہونے پر رجسٹریشن منتقل کرتی ہے۔', 'يراجع فريق الدعم المستندات معك، وينقل السجل إلى حسابك إن ثبت أنه لك.')}
           </p>
+          {/* round-6 UX-108: which registration this is about, with a way to correct a mistyped number */}
+          {cr && (
+            <div className="mb-4 flex flex-wrap items-center justify-between gap-2 rounded-xl bg-[#f4f6f9] px-3 py-2 text-sm">
+              <span className="text-gray-700">{L('Commercial registration: ', 'تجارتی رجسٹریشن: ', 'السجل التجاري: ')}<b className="text-[#0B2438]" dir="ltr">{cr}</b></span>
+              <a href={role === 'supplier' ? '/settings?tab=docs' : '/settings'} className="inline-flex items-center min-h-[44px] px-1 font-bold text-[#8F6820] underline underline-offset-2">{L('Correct the number', 'نمبر درست کریں', 'تصحيح الرقم')}</a>
+            </div>
+          )}
           <a href={crSupportHref(cr, { signedIn: true })} className="inline-flex items-center justify-center min-h-[44px] px-6 rounded-xl font-extrabold text-sm" style={{ background: '#D4A543', color: '#071827' }}>
             {crTakenText(locale).cta}
           </a>

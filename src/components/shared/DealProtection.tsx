@@ -14,7 +14,8 @@ import { storedBuyerType } from '@/lib/buyerType'
 import { paymentTermsLabel } from '@/lib/paymentTerms'
 import { offerComparable, sellerInvoiceLabel, invoiceGateText, isIndependentOffer, sarLabel, buyerBasisTag } from '@/lib/vat'
 import { buttonClass } from '@/components/shared/Button'
-import { payDueAt, payDueSoon } from '@/lib/dealStage'
+import { agentCapText } from '@/lib/sellers'
+import { payDueAt, payDueSoon, expectedDeliveryDate, deliveryLate, deliveryDueAhead, deliveryDueToday } from '@/lib/dealStage'
 
 // حماية الصفقة: محضر استلام + تأكيد دفع + نزاع (للطرفين).
 // مكوّن مشترك يُعرض في صفحة الصفقة لكلٍّ من المشتري والمورد (كلٌّ يرى أزراره).
@@ -97,6 +98,15 @@ export default function DealProtection({
     : sellerTier ? { ...offer, supplier: { supplier_tier: sellerTier } }
     : isContractor && otherParty ? { ...offer, supplier: otherParty } : offer
 
+  // round-6 UX-145: a pricing agent's successful deal (receipt confirmed, no open problem) shows its
+  // progress towards a higher deal cap (migration 214, my_agent_deal_cap)
+  const agentSuccess = isSupplier && !managedByOwner && !offer.deal_closed_at && isIndependentOffer(vo) && !!offer.received_at && offer.dispute_status !== 'open'
+  const [agentCap, setAgentCap] = useState<any>(null)
+  useEffect(() => {
+    if (!agentSuccess) return
+    createClient().rpc('my_agent_deal_cap').then(({ data }: any) => setAgentCap(data || null))
+  }, [agentSuccess])
+
   // The seller uploads its invoice (its own, or the source shop's for a pricing agent); it is attached to the deal.
   async function uploadInvoice(file: File | null | undefined) {
     if (!file) return
@@ -144,13 +154,29 @@ export default function DealProtection({
   const w = waLink(otherParty?.contact_phone || otherParty?.phone, waText)
 
   // Late stages: a visual alert on top of the hourly bell reminders. No agreed delivery time → no
-  // «late» accusation, an amber note instead (UX-095).
+  // «late» accusation, a dark-gold note instead (UX-095).
   const hasDays = Number(offer.delivery_days) > 0
-  const deliverOverdue = !closed && hasDays && !offer.supplier_delivered_at && !offer.received_at && !!offer.accepted_at && (new Date(offer.accepted_at).getTime() + Number(offer.delivery_days) * 86400000 < Date.now())
-  // the expected delivery day, shown before any delay (UX-145)
-  const dueAt = hasDays && offer.accepted_at ? new Date(new Date(offer.accepted_at).getTime() + Number(offer.delivery_days) * 86400000) : null
-  const dueToday = !!dueAt && new Date().toDateString() === dueAt.toDateString()
+  // round-6 UX-001: one rule for the date and the «late» check (working days in Riyadh, Fridays skipped)
+  const deliverOverdue = !closed && deliveryLate(offer)
+  // the expected delivery day, shown until delivery/receipt/cancellation or until the day has passed (UX-145)
+  const dueAt = expectedDeliveryDate(offer)
+  const dueToday = deliveryDueToday(offer)
   const dueText = dueAt ? dueAt.toLocaleDateString(dloc, { weekday: 'long', day: 'numeric', month: 'long', timeZone: 'Asia/Riyadh' }) : ''
+  const showDue = !closed && !!dueAt && deliveryDueAhead(offer) && !offer.supplier_delivered_at && !offer.received_at
+  const noFridays = L('(Fridays not counted)', '(جمعہ شامل نہیں)', '(دون احتساب أيام الجمعة)')
+  // «أضف إلى التقويم»: an all-day event on the expected day, UTF-8 with a BOM so Arabic titles open right (UX-099)
+  function downloadIcs() {
+    if (!dueAt) return
+    const ymd = dueAt.toLocaleDateString('en-CA', { timeZone: 'Asia/Riyadh' }).replace(/-/g, '')
+    const next = new Date(dueAt.getTime() + 86400000).toLocaleDateString('en-CA', { timeZone: 'Asia/Riyadh' }).replace(/-/g, '')
+    const title = isSupplier
+      ? (pickup ? L('Have the order ready (Taseerak)', 'آرڈر تیار رکھیں (تسعیرک)', 'تجهيز الطلب (تسعيرك)') : L('Deliver the order (Taseerak)', 'آرڈر پہنچائیں (تسعیرک)', 'توصيل الطلب (تسعيرك)'))
+      : (pickup ? L('Pick up my order (Taseerak)', 'میرا آرڈر وصول کریں (تسعیرک)', 'استلام طلبي (تسعيرك)') : L('My order arrives (Taseerak)', 'میرا آرڈر پہنچے گا (تسعیرک)', 'وصول طلبي (تسعيرك)'))
+    const ics = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//Taseerak//Deal//AR', 'BEGIN:VEVENT', `UID:${offer.id}@taseerak`, `DTSTAMP:${new Date().toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '')}`, `DTSTART;VALUE=DATE:${ymd}`, `DTEND;VALUE=DATE:${next}`, `SUMMARY:${title}`, 'END:VEVENT', 'END:VCALENDAR'].join('\r\n')
+    const url = URL.createObjectURL(new Blob(['﻿' + ics], { type: 'text/calendar;charset=utf-8' }))
+    const a = document.createElement('a'); a.href = url; a.download = 'taseerak-delivery.ics'; a.click()
+    setTimeout(() => URL.revokeObjectURL(url), 1000)
+  }
   const receiptOverdue = !closed && !!offer.supplier_delivered_at && !offer.received_at && (new Date(offer.supplier_delivered_at).getTime() + 48 * 3600000 < Date.now())
   const paid = offer.payment_status === 'paid'
   // payment terms (round-4 UX-034): «دفع مقدّم» is paid before delivery; «آجل» is due 30/60 days after receipt
@@ -237,7 +263,7 @@ export default function DealProtection({
           {otherParty?.vat_number ? <> · {L('VAT number: ', 'VAT نمبر: ', 'الرقم الضريبي: ')}<b dir="ltr">{otherParty.vat_number}</b></> : null}
         </div>
       )}
-      {invErr && <p className="text-xs text-red-600 basis-full" role="alert">{invErr}</p>}
+      {invErr && <p className="text-xs text-[#B42318] basis-full" role="alert">{invErr}</p>}
     </div>
   )
 
@@ -300,7 +326,7 @@ export default function DealProtection({
           </button>
           {offer.dispute_status !== 'open' && (offer.supplier_delivered_at || deliverOverdue) && (
             <button type="button" onClick={() => openDispute(L('The goods were not delivered or do not match the order', 'مال ڈیلیور نہیں ہوا یا آرڈر کے مطابق نہیں ہے', 'البضاعة لم تُسلَّم أو لم تتطابق مع المطلوب'))}
-              className={`${BTN} border border-red-300 text-red-700 bg-white hover:bg-red-50`}>
+              className={`${BTN} border border-red-300 text-[#B42318] bg-white hover:bg-red-50`}>
               {L('Not received', 'وصول نہیں ہوا', 'لم يتم الاستلام')}
             </button>
           )}
@@ -397,33 +423,42 @@ export default function DealProtection({
             : L('The buyer collects the goods from the supplier’s shop.', 'خریدار سامان سپلائر کی دکان سے لے گا۔', 'يستلم المشتري البضاعة من محل المورد.')}
         </div>
       )}
-      {!closed && dueAt && !deliverOverdue && !offer.supplier_delivered_at && !offer.received_at && (
+      {/* round-6 UX-001: the expected day shows once, here, with «أضف إلى التقويم»; the terms card keeps only the duration */}
+      {showDue && (
         <div className="mb-4 rounded-xl bg-[#0B2438]/5 border border-[#0B2438]/15 text-[#0B2438] text-xs font-semibold px-3 py-2 leading-relaxed">
-          <Glyph e="📅" /> {isSupplier
-            ? (observer ? L(`The committed delivery date: ${dueText}`, `طے شدہ ڈیلیوری کی تاریخ: ${dueText}`, `موعد التوصيل الملتزَم به: ${dueText}`) : pickup ? L(`The date you committed to have the order ready: ${dueText}`, `آرڈر تیار کرنے کی طے کردہ تاریخ: ${dueText}`, `موعد تجهيز الطلب الذي التزمتَ به: ${dueText}`) : L(`The delivery date you committed to: ${dueText}`, `آپ کی طے کردہ ڈیلیوری کی تاریخ: ${dueText}`, `موعد التوصيل الذي التزمتَ به: ${dueText}`))
-            : pickup
-              ? L(`The order is expected to be ready: ${dueText}`, `آرڈر کی تیاری کی متوقع تاریخ: ${dueText}`, `موعد تجهيز الطلب المتوقَّع: ${dueText}`)
-              : dueToday
-                ? L('Your order is expected to arrive today, by the supplier’s date.', 'سپلائر کی تاریخ کے مطابق آپ کا آرڈر آج پہنچنے کی توقع ہے۔', 'يُتوقَّع وصول طلبك اليوم بحسب موعد المورد.')
-                : L(`Expected delivery date: ${dueText}`, `متوقع ڈیلیوری کی تاریخ: ${dueText}`, `موعد التوصيل المتوقَّع: ${dueText}`)}
+          <div>
+            <Glyph e="📅" /> {isSupplier
+              ? (observer ? L(`The committed delivery date: ${dueText}`, `طے شدہ ڈیلیوری کی تاریخ: ${dueText}`, `موعد التوصيل الملتزَم به: ${dueText}`) : pickup ? L(`The date you committed to have the order ready: ${dueText}`, `آرڈر تیار کرنے کی طے کردہ تاریخ: ${dueText}`, `موعد تجهيز الطلب الذي التزمتَ به: ${dueText}`) : L(`The delivery date you committed to: ${dueText}`, `آپ کی طے کردہ ڈیلیوری کی تاریخ: ${dueText}`, `موعد التوصيل الذي التزمتَ به: ${dueText}`))
+              : pickup
+                ? L(`The order is expected to be ready: ${dueText}`, `آرڈر کی تیاری کی متوقع تاریخ: ${dueText}`, `موعد تجهيز الطلب المتوقَّع: ${dueText}`)
+                : dueToday
+                  ? L('Your order is expected to arrive today, by the supplier’s date.', 'سپلائر کی تاریخ کے مطابق آپ کا آرڈر آج پہنچنے کی توقع ہے۔', 'يُتوقَّع وصول طلبك اليوم بحسب موعد المورد.')
+                  : L(`Expected delivery date: ${dueText}`, `متوقع ڈیلیوری کی تاریخ: ${dueText}`, `موعد التوصيل المتوقَّع: ${dueText}`)}
+            {' '}<span className="font-normal text-gray-600">{noFridays}</span>
+          </div>
+          {!observer && (
+            <button type="button" onClick={downloadIcs} className="mt-1 inline-flex items-center gap-1 min-h-11 text-sm font-bold text-[#8F6820] hover:underline">
+              <Glyph e="📅" /> {L('Add to calendar', 'کیلنڈر میں شامل کریں', 'أضف إلى التقويم')}
+            </button>
+          )}
         </div>
       )}
       {deliverOverdue && !pickup && (
-        <div className="mb-4 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-xs font-semibold px-3 py-2 leading-relaxed">
+        <div className="mb-4 rounded-xl bg-warn-bg border border-warn-border text-warn-text text-xs font-semibold px-3 py-2 leading-relaxed">
           <Glyph e="⏰" /> {isSupplier
             ? (observer ? L('The agreed delivery date has passed; the account owner follows it up.', 'طے شدہ ڈیلیوری کی تاریخ گزر گئی؛ اکاؤنٹ کا مالک اسے دیکھ رہا ہے۔', 'تجاوز موعد التوصيل المتّفق عليه، ويتابعه صاحب الحساب.') : L('You are past the agreed delivery date. Please confirm delivery or contact the buyer.', 'آپ طے شدہ ڈیلیوری کی تاریخ سے لیٹ ہیں۔ براہ کرم ڈیلیوری کنفرم کریں یا خریدار سے رابطہ کریں۔', 'تأخّرت عن موعد التوصيل المتّفق عليه. يُرجى تأكيد التسليم أو التواصل مع المشتري.'))
             : L('The supplier is past the agreed delivery date. Follow up with them, or report a problem below.', 'سپلائر طے شدہ ڈیلیوری کی تاریخ سے لیٹ ہے۔ اس سے رابطہ کریں یا نیچے مسئلہ بتائیں۔', 'تأخّر المورد عن موعد التوصيل المتّفق عليه. تابع معه، أو أبلغ عن مشكلة أدناه.')}
         </div>
       )}
       {!closed && !hasDays && !offer.supplier_delivered_at && !offer.received_at && !pickup && (
-        <div className="mb-4 rounded-xl bg-amber-50 border border-amber-200 text-amber-800 text-xs font-semibold px-3 py-2 leading-relaxed">
+        <div className="mb-4 rounded-xl bg-warn-bg border border-warn-border text-warn-text text-xs font-semibold px-3 py-2 leading-relaxed">
           <Glyph e="⏱" /> {isSupplier
             ? (observer ? L('The offer gave no delivery time; the account owner agrees on a date with the buyer.', 'آفر میں ڈیلیوری کا وقت نہیں تھا؛ اکاؤنٹ کا مالک خریدار سے تاریخ طے کرے گا۔', 'لم يحدّد العرض مدة التوصيل، ويتفق صاحب الحساب مع المشتري على الموعد.') : L('Your offer gave no delivery time. Agree on a delivery date with the buyer in messages.', 'آپ کی آفر میں ڈیلیوری کا وقت نہیں تھا۔ پیغامات میں خریدار سے تاریخ طے کریں۔', 'لم تحدّد مدة التوصيل في عرضك. اتفق مع المشتري على موعد التسليم عبر الرسائل.'))
             : L('The supplier gave no delivery time. Agree on a delivery date with them in messages.', 'سپلائر نے ڈیلیوری کا وقت نہیں بتایا۔ پیغامات میں ان سے تاریخ طے کریں۔', 'لم يحدّد المورد مدة التوصيل. اتفق معه على موعد التسليم عبر الرسائل.')}
         </div>
       )}
       {receiptOverdue && (
-        <div className="mb-4 rounded-xl bg-amber-50 border border-amber-200 text-amber-800 text-xs font-semibold px-3 py-2 leading-relaxed">
+        <div className="mb-4 rounded-xl bg-warn-bg border border-warn-border text-warn-text text-xs font-semibold px-3 py-2 leading-relaxed">
           <Glyph e="⏰" /> {isContractor ? L('More than 48 hours since delivery was confirmed. Please confirm receipt or report a problem.', 'ڈیلیوری کنفرم ہوئے 48 گھنٹے سے زیادہ ہو گئے۔ براہ کرم وصولی کنفرم کریں یا مسئلہ بتائیں۔', 'مضى أكثر من 48 ساعة على تأكيد التسليم. يُرجى تأكيد الاستلام أو الإبلاغ عن مشكلة.') : (observer ? L('Waiting for the buyer to confirm receipt of the goods.', 'خریدار کی طرف سے مال کی وصولی کی تصدیق کا انتظار ہے۔', 'بانتظار تأكيد المشتري لاستلام البضاعة.')
             : <>{L('More than 48 hours since you delivered. Remind the buyer to confirm receipt.', 'آپ کی ڈیلیوری کو 48 گھنٹے سے زیادہ ہو گئے۔ خریدار کو وصولی کی تصدیق یاد دلائیں۔', 'مضى أكثر من 48 ساعة على تسليمك. ذكّر المشتري بتأكيد الاستلام.')}
               <button type="button" onClick={messageOtherSide} className={`${OUTLINE} mt-2 flex`}><Glyph e="💬" /> {L('Message the buyer', 'خریدار کو پیغام بھیجیں', 'راسل المشتري')}</button></>)}
@@ -453,41 +488,49 @@ export default function DealProtection({
         })}
       </ol>
 
-      {actErr && <p role="alert" className="mb-3 rounded-xl bg-red-50 border border-red-200 text-red-700 text-xs font-semibold px-3 py-2">{actErr}</p>}
+      {actErr && <p role="alert" className="mb-3 rounded-xl bg-red-50 border border-red-200 text-[#B42318] text-xs font-semibold px-3 py-2">{actErr}</p>}
       {notice && <p role="status" className="mb-3 rounded-xl bg-[#E1F5EE] border border-[#0F6E56]/30 text-[#0F6E56] text-xs font-semibold px-3 py-2">{notice}</p>}
+
+      {agentSuccess && agentCap && (
+        <p role="status" className="mb-3 rounded-xl bg-[#E1F5EE] border border-[#0F6E56]/30 text-[#0B2438] text-xs font-semibold px-3 py-2 leading-relaxed">
+          <b className="text-[#0F6E56]">{L('A successful deal.', 'کامیاب سودا۔', 'صفقة ناجحة.')}</b> {agentCapText(agentCap, locale as any, sarLabel(locale))}
+        </p>
+      )}
 
       <div className="space-y-3">{sections}</div>
 
       {/* Dispute */}
       <div id="deal-dispute" className="mt-4 pt-4 border-t border-gray-100 scroll-mt-24">
         <a href="/deal-protection" target="_blank" rel="noopener noreferrer" className="inline-flex items-center min-h-11 text-xs font-bold text-[#8F6820] hover:underline mb-1"><Glyph e="🛡" /> {L('How we protect your deal', 'ہم سودے کی حفاظت کیسے کرتے ہیں', 'كيف نحمي صفقتك؟')}</a>
-        {offer.dispute_status === 'open' ? (
+        {/* round-6 UX-003: a deal the admins cancelled shows only the grey note above, never «تم حل المشكلة» */}
+        {closed ? null : offer.dispute_status === 'open' ? (
           <div className="bg-red-50 border border-red-200 rounded-xl p-3 text-sm">
-            <div className="font-bold text-red-700"><Glyph e="⚠" /> {L('Problem reported', 'مسئلہ رپورٹ ہوا', 'بلاغ عن مشكلة قيد المعالجة')}</div>
+            <div className="font-bold text-[#B42318]"><Glyph e="⚠" /> {L('Problem reported', 'مسئلہ رپورٹ ہوا', 'بلاغ عن مشكلة قيد المعالجة')}</div>
             {isSupplier && !reportedBySupplier ? (<>
               <div className="text-xs text-gray-800 mt-1 leading-relaxed">
-                {L('The buyer reported a problem with this deal: ', 'خریدار نے اس ڈیل میں ایک مسئلہ رپورٹ کیا: ', 'أبلغ المشتري عن مشكلة في هذه الصفقة: ')}<b className="text-red-700" dir="auto">{offer.dispute_reason}</b>
+                {L('The buyer reported a problem with this deal: ', 'خریدار نے اس ڈیل میں ایک مسئلہ رپورٹ کیا: ', 'أبلغ المشتري عن مشكلة في هذه الصفقة: ')}<b className="text-[#B42318]" dir="auto">{offer.dispute_reason}</b>
               </div>
               <div className="text-xs text-gray-600 mt-1 leading-relaxed">{observer
                 ? L('The Taseerak team will contact the account owner.', 'تسعیرک کی ٹیم اکاؤنٹ کے مالک سے رابطہ کرے گی۔', 'سيتواصل فريق تسعيرك مع صاحب الحساب.')
-                : L('The Taseerak team will contact you. You can explain your side to the buyer in messages and send the delivery photo there, and attach the invoice in the invoice step above.', 'تسعیرک کی ٹیم آپ سے رابطہ کرے گی۔ آپ پیغامات میں خریدار کو اپنا موقف سمجھا سکتے ہیں اور وہیں ڈیلیوری کی تصویر بھیج سکتے ہیں، اور انوائس اوپر انوائس کے مرحلے میں منسلک کریں۔', 'سيتواصل معك فريق تسعيرك. يمكنك توضيح موقفك للمشتري في الرسائل وإرسال صورة التسليم فيها، وإرفاق الفاتورة في خطوة الفاتورة أعلاه.')}</div>
+                // round-6 UX-030: messages take no photos, so no «send the delivery photo there»
+                : L('The Taseerak team will contact you. You can explain your side to the buyer in messages, and attach the invoice in the invoice step above.', 'تسعیرک کی ٹیم آپ سے رابطہ کرے گی۔ آپ پیغامات میں خریدار کو اپنا موقف سمجھا سکتے ہیں، اور انوائس اوپر انوائس کے مرحلے میں منسلک کریں۔', 'سيتواصل معك فريق تسعيرك. يمكنك توضيح موقفك للمشتري في الرسائل، وإرفاق الفاتورة في خطوة الفاتورة أعلاه.')}</div>
               {canAct && (
                 <button type="button" onClick={messageOtherSide} className={`${OUTLINE} mt-2`}><Glyph e="💬" /> {L('Message the buyer', 'خریدار کو پیغام بھیجیں', 'راسل المشتري')}</button>
               )}
             </>) : (<>
-              <div className="text-xs text-red-700 mt-1" dir="auto">
+              <div className="text-xs text-[#B42318] mt-1" dir="auto">
                 {isContractor && reportedBySupplier ? L('The supplier reported: ', 'سپلائر نے رپورٹ کیا: ', 'أبلغ المورد: ') : isSupplier ? (observer ? L('The account owner reported: ', 'اکاؤنٹ کے مالک نے رپورٹ کیا: ', 'أبلغ صاحب الحساب: ') : L('You reported: ', 'آپ نے رپورٹ کیا: ', 'أبلغتَ: ')) : L('You reported: ', 'آپ نے رپورٹ کیا: ', 'أبلغتَ: ')}{offer.dispute_reason}
               </div>
               <div className="text-xs text-gray-600 mt-1">{L('The Taseerak team will contact both sides to mediate.', 'تسعیرک کی ٹیم صلح کے لیے دونوں فریقوں سے رابطہ کرے گی۔', 'سيتواصل فريق تسعيرك مع الطرفين للوساطة.')}</div>
             </>)}
           </div>
         ) : offer.dispute_status === 'resolved' ? (
-          <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-3 text-sm text-emerald-700"><Check className="inline w-4 h-4" aria-hidden="true" /> {L('Problem resolved', 'شکایت حل ہو گئی', 'تم حل المشكلة')}{offer.dispute_resolution ? `: ${offer.dispute_resolution}` : ''}</div>
+          <div className="bg-[#E1F5EE] border border-[#0F6E56]/30 rounded-xl p-3 text-sm text-[#0F6E56]"><Check className="inline w-4 h-4" aria-hidden="true" /> {L('Problem resolved', 'شکایت حل ہو گئی', 'تم حل المشكلة')}{offer.dispute_resolution ? `: ${offer.dispute_resolution}` : ''}</div>
         ) : !canAct ? null : !showDispute ? (
-          <button type="button" onClick={() => openDispute()} className="text-xs font-semibold text-red-700 hover:underline min-h-11"><Glyph e="⚠" /> {L('Had a problem? Report it', 'کوئی مسئلہ ہوا؟ شکایت درج کریں', 'واجهت مشكلة؟ أبلغ عنها')}</button>
+          <button type="button" onClick={() => openDispute()} className="text-xs font-semibold text-[#B42318] hover:underline min-h-11"><Glyph e="⚠" /> {L('Had a problem? Report it', 'کوئی مسئلہ ہوا؟ شکایت درج کریں', 'واجهت مشكلة؟ أبلغ عنها')}</button>
         ) : (
           <div className="bg-red-50 border border-red-200 rounded-xl p-3">
-            <label htmlFor="deal-dispute-reason" className="block text-xs font-bold text-red-700 mb-1.5">{L('Describe the problem', 'مسئلہ بیان کریں', 'صف المشكلة')}</label>
+            <label htmlFor="deal-dispute-reason" className="block text-xs font-bold text-[#B42318] mb-1.5">{L('Describe the problem', 'مسئلہ بیان کریں', 'صف المشكلة')}</label>
             <textarea id="deal-dispute-reason" value={disputeReason} onChange={(e: any) => setDisputeReason(e.target.value)} className="input-field text-base sm:text-sm" rows={2} placeholder={isSupplier
               ? L('e.g. late payment / the buyer does not reply…', 'مثال: ادائیگی میں تاخیر / خریدار جواب نہیں دیتا…', 'مثال: تأخّر الدفع / المشتري لا يردّ…')
               : L('e.g. goods not delivered / different from the specs / late delivery…', 'مثال: مال ڈیلیور نہیں ہوا / اسپیسیفکیشن سے مختلف ہے / ڈیلیوری میں تاخیر…', 'مثال: البضاعة لم تُسلّم / مختلفة عن المواصفات / تأخّر التوصيل…')} />
@@ -499,7 +542,7 @@ export default function DealProtection({
                   setShowDispute(false)
                   setNotice(L('Report sent. The Taseerak team will contact both sides.', 'رپورٹ بھیج دی گئی۔ تسعیرک کی ٹیم دونوں فریقوں سے رابطہ کرے گی۔', 'أُرسل البلاغ. سيتواصل فريق تسعيرك مع الطرفين.'))
                 }
-              }} disabled={!disputeReason.trim() || busy === 'dispute'} className={`${BTN} text-white bg-red-700 hover:bg-red-800`}>{L('Send report', 'شکایت بھیجیں', 'إرسال البلاغ')}</button>
+              }} disabled={!disputeReason.trim() || busy === 'dispute'} className={`${BTN} text-white bg-[#B42318] hover:bg-[#912018]`}>{L('Send report', 'شکایت بھیجیں', 'إرسال البلاغ')}</button>
               <button type="button" onClick={() => setShowDispute(false)} className={`${BTN} text-gray-600`}>{L('Close without sending', 'بھیجے بغیر بند کریں', 'إغلاق دون إرسال')}</button>
             </div>
           </div>

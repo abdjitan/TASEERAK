@@ -61,6 +61,25 @@ export default function ForgotPasswordPage() {
   }, [wait])
   const emailRef = useRef<HTMLInputElement | null>(null)
   const [resent, setResent] = useState(false)
+  // opened from Settings while signed in: the email is the account's, filled and locked, and «back»
+  // returns to Settings (round-6 UX-117)
+  const [signedIn, setSignedIn] = useState(false)
+  useEffect(() => {
+    createClient().auth.getUser().then(({ data }: any) => {
+      const e = String(data?.user?.email || '')
+      if (data?.user && e && !/@phone\.taseerak\.com$/i.test(e)) { setEmail(e); setSignedIn(true) }
+    }, () => {})
+  }, [])
+  const backHref = signedIn ? '/settings?tab=password' : '/login?m=email'
+  const backLabel = signedIn ? L('Back to settings', 'ترتیبات پر واپس', 'رجوع إلى الإعدادات') : t.back
+  const supportNote = (
+    <p className="mt-3 text-[13px] text-gray-700">
+      {L('Still no message?', 'پیغام اب بھی نہیں آیا؟', 'ما زالت الرسالة لا تصل؟')}{' '}
+      <a href="https://wa.me/12135614366" target="_blank" rel="noopener noreferrer" className="inline-flex items-center min-h-[44px] font-bold underline" style={{ color: '#8F6820' }}>
+        {L('Contact the support team on WhatsApp', 'واٹس ایپ پر سپورٹ ٹیم سے رابطہ کریں', 'تواصل مع فريق الدعم عبر واتساب')}
+      </a>
+    </p>
+  )
   function backToForm(focus: boolean) {
     setSent(false); setError(''); setCaptchaToken('')
     if (focus) setTimeout(() => emailRef.current?.focus(), 50)
@@ -134,10 +153,11 @@ export default function ForgotPasswordPage() {
                     className="min-h-[44px] px-4 rounded-xl font-bold text-[#071827] bg-[#D4A543] disabled:opacity-50">
                     {loading ? t.sending : wait > 0 ? t.resendIn.replace('{s}', String(wait)) : t.resend}
                   </button>
-                  <button type="button" onClick={() => backToForm(true)} className="min-h-[44px] px-4 rounded-xl font-bold text-[#0B2438] border border-gray-200 bg-white hover:bg-gray-50">{t.editEmail}</button>
+                  {!signedIn && <button type="button" onClick={() => backToForm(true)} className="min-h-[44px] px-4 rounded-xl font-bold text-[#0B2438] border border-gray-200 bg-white hover:bg-gray-50">{t.editEmail}</button>}
                 </div>
+                {supportNote}
               </div>
-              <Link href="/login?m=email" className="inline-flex items-center justify-center w-full min-h-[48px] rounded-xl font-bold text-white text-sm" style={{ background: '#0B2438' }}>{t.back}</Link>
+              <Link href={backHref} className="inline-flex items-center justify-center w-full min-h-[48px] rounded-xl font-bold text-white text-sm" style={{ background: '#0B2438' }}>{backLabel}</Link>
             </div>
           ) : (
             <>
@@ -146,7 +166,7 @@ export default function ForgotPasswordPage() {
               {error && <div role="alert" className="bg-red-50 border border-red-200 text-red-700 text-sm rounded-xl p-3 mb-4"><Glyph e="⚠" /> {error}</div>}
               <form onSubmit={handleSubmit}>
                 <label htmlFor="fp-email" className="block text-xs font-bold text-gray-500 mb-1.5">{t.email}</label>
-                <input id="fp-email" ref={emailRef} type="email" autoComplete="email" dir="ltr" value={email} onChange={e => setEmail(e.target.value)} className="input-field mb-4" placeholder="info@company.com" required disabled={loading} />
+                <input id="fp-email" ref={emailRef} type="email" autoComplete="email" dir="ltr" value={email} onChange={e => setEmail(e.target.value)} readOnly={signedIn} className={`input-field mb-4 ${signedIn ? 'bg-gray-50 text-gray-700' : ''}`} placeholder="info@company.com" required disabled={loading} />
                 <div className="flex justify-center mb-5">
                   <Turnstile ref={captchaRef} siteKey={TURNSTILE_SITE_KEY} onToken={setCaptchaToken} dir={dir} language={locale} />
                 </div>
@@ -157,12 +177,12 @@ export default function ForgotPasswordPage() {
                 </button>
               </form>
               {/* a phone sign-up has no password to reset (UX-184) */}
-              <div className="mt-5 rounded-xl bg-[#F5F7FA] border border-gray-200 p-3 text-sm text-gray-700">
+              {!signedIn && <div className="mt-5 rounded-xl bg-[#F5F7FA] border border-gray-200 p-3 text-sm text-gray-700">
                 <span className="font-bold text-[#0B2438]">{t.phoneQ}</span> {t.phoneA}{' '}
                 <Link href="/login" className="inline-flex items-center min-h-[44px] font-bold hover:underline" style={{ color: '#8F6820' }}>{t.phoneBtn}</Link>
-              </div>
+              </div>}
               <p className="text-center text-sm text-gray-600 mt-3">
-                <Link href="/login?m=email" className="inline-flex items-center min-h-[44px] font-medium hover:underline" style={{ color: '#8F6820' }}>{t.back}</Link>
+                <Link href={backHref} className="inline-flex items-center min-h-[44px] font-medium hover:underline" style={{ color: '#8F6820' }}>{backLabel}</Link>
               </p>
             </>
           )}

@@ -93,13 +93,15 @@ export function CatalogBrowser({ locale, onPick, onRemove, onQty, picked = [], i
 
   // Not understood by the catalog or the dictionary → ask the AI, which may search the web
   // (/api/understand; answers are remembered, so a repeat costs nothing).
-  const [web, setWeb] = useState<{ q: string; loading: boolean; result?: any; matches?: { name: string; sector: Sector }[]; sources?: any[]; error?: string } | null>(null)
+  // pending: the pause before the lookup; nothing is drawn then, so typing does not flash a spinner (round-6 UX-091)
+  const [web, setWeb] = useState<{ q: string; loading: boolean; pending?: boolean; result?: any; matches?: { name: string; sector: Sector }[]; sources?: any[]; error?: string } | null>(null)
   useEffect(() => {
     const query = q.trim()
     if (query.length < 2 || confident > 0) { setWeb(null); return }
     let alive = true
-    setWeb({ q: query, loading: true })
+    setWeb({ q: query, loading: true, pending: true })
     const t = setTimeout(async () => {
+      if (alive) setWeb({ q: query, loading: true })
       try {
         const r = await fetch('/api/understand', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ q: query }) })
         const j = await r.json().catch(() => ({}))
@@ -234,7 +236,7 @@ export function CatalogBrowser({ locale, onPick, onRemove, onQty, picked = [], i
         </div>
       )}
 
-      {q.trim() && web && web.q === q.trim() && (
+      {q.trim() && web && !web.pending && web.q === q.trim() && (
         <div className="rounded-2xl border border-[#0B2438]/15 bg-[#0B2438]/[0.03] p-3 space-y-2" aria-live="polite">
           {web.loading ? (
             <p className="text-sm text-gray-600 flex items-center gap-2">
@@ -258,7 +260,8 @@ export function CatalogBrowser({ locale, onPick, onRemove, onQty, picked = [], i
                 className="w-full sm:w-auto min-h-[44px] px-4 rounded-xl text-sm font-bold text-[#071827]" style={{ background: '#D4A543' }}>
                 + {L(`Add «${web.result.name_ar}» to your request`, `«${web.result.name_ar}» درخواست میں شامل کریں`, `أضف «${web.result.name_ar}» إلى طلبك`)}
               </button>
-              {!!web.sources?.length && (
+              {/* round-6 UX-091: no web sources in the simple (home) mode */}
+              {!simple && !!web.sources?.length && (
                 <div className="text-[12px] text-gray-500 truncate" dir="ltr">{L('Sources', 'ذرائع', 'المصادر')}: {web.sources.map((s: any) => s.title || s.uri).join(' · ')}</div>
               )}
             </>
@@ -290,9 +293,18 @@ export function CatalogBrowser({ locale, onPick, onRemove, onQty, picked = [], i
             </button>
           </div>
         ) : (
-          <div className={tileGrid}>
-            {hits.map(h => tile(h.name, h.sector, `${h.sector}:${h.name}`))}
-          </div>
+          <>
+            <div className={tileGrid}>
+              {hits.map(h => tile(h.name, h.sector, `${h.sector}:${h.name}`))}
+            </div>
+            {/* round-6 UX-028: near matches that are not it: add the item as written */}
+            {!(web && !web.pending && web.q === q.trim()) && (
+              <button type="button" onClick={() => choose({ name: q.trim().slice(0, 120), sector: 'supply_store' as Sector })}
+                className="w-full min-h-[48px] px-4 rounded-xl border-2 border-dashed border-[#D4A543] bg-[#D4A543]/5 text-sm font-bold text-[#8F6820] hover:bg-[#D4A543]/10" dir="auto">
+                {L(`Didn’t find it? Add «${q.trim()}» as you wrote it`, `جو ڈھونڈ رہے تھے نہیں ملا؟ «${q.trim()}» جیسا لکھا ویسا شامل کریں`, `لم تجد ما تبحث عنه؟ أضف «${q.trim()}» كما كتبتها`)}
+              </button>
+            )}
+          </>
         )
       ) : !current ? (
         <div className={inline ? 'grid grid-cols-2 md:grid-cols-3 gap-3' : 'grid grid-cols-2 sm:grid-cols-4 gap-2.5'}>

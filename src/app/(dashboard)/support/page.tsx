@@ -4,7 +4,8 @@
 // ?topic=kind pre-fills a request to change the account type (company ↔ pricing agent), which only
 // the admin can approve.
 // Inside the app shell (menu + bottom bar, UX-033). A suspended or not-yet-verified seller (the
-// middleware lets them reach this page) gets the simple gate header with «back» instead.
+// middleware lets them reach this page) gets the simple gate header with «back» instead. Visitors
+// (signed out) reach it too: WhatsApp is offered and the thread asks them to sign in (round-6 UX-036).
 import { Suspense, useEffect, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { MessageCircle } from 'lucide-react'
@@ -70,7 +71,7 @@ function Support() {
   const prefill = topic === 'kind'
     ? L('I would like to change my account type (company / pricing agent). Reason: ', 'میں اپنے اکاؤنٹ کی قسم بدلنا چاہتا ہوں (کمپنی / قیمت ایجنٹ)۔ وجہ: ', 'أرغب في تغيير نوع حسابي (شركة / وسيط تسعير). السبب: ')
     : topic === 'cr' && topicCr ? crSupportMessage(topicCr, locale)
-    : topic === 'deal' ? L('I need to coordinate a deal in progress (request number: ', 'مجھے ایک جاری سودے میں رابطہ کرنا ہے (درخواست نمبر: ', 'أحتاج إلى التنسيق في صفقة جارية (رقم الطلب: ')
+    : topic === 'deal' ? L('I need to coordinate a deal in progress. Request number: ', 'مجھے ایک جاری سودے میں رابطہ کرنا ہے۔ درخواست نمبر: ', 'أحتاج إلى التنسيق في صفقة جارية. رقم الطلب: ')
     : topic === 'sms' ? L('The verification text message does not reach my mobile. ', 'تصدیقی ٹیکسٹ میسج میرے موبائل پر نہیں پہنچ رہا۔ ', 'لا تصل رسالة رمز التحقق إلى جوالي. ')
     : ''
   const waText = encodeURIComponent(L('Hello Taseerak, I need help with: ', 'السلام علیکم تسعیرک، مجھے مدد چاہیے: ', 'مرحباً تسعيرك، أحتاج مساعدة بخصوص: '))
@@ -145,7 +146,7 @@ function Support() {
       : { href: '/verify', label: L('Back', 'واپس', 'رجوع') }
     return (
       <div dir={dir} className="min-h-screen bg-[#F5F7FA]">
-        <GateHeader back={back} />
+        <GateHeader back={back} signedOut={!userId} />
         <div className="p-4 sm:p-6">{content}</div>
       </div>
     )

@@ -43,6 +43,16 @@ export default function PwaBoot() {
   const [ios, setIos] = useState(false)
   const [locale, setLocale] = useState('ar')
   const pathname = usePathname() || '/'
+  // a page with a fixed action bar (send request / send offer) sets body[data-actionbar]: the banner
+  // never covers it, the same rule as the assistant bubble (round-6 UX-041)
+  const [actionBar, setActionBar] = useState(false)
+  useEffect(() => {
+    const read = () => setActionBar(!!document.body.dataset.actionbar)
+    read()
+    const mo = new MutationObserver(read)
+    mo.observe(document.body, { attributes: true, attributeFilter: ['data-actionbar'] })
+    return () => mo.disconnect()
+  }, [])
 
   useEffect(() => {
     // 1) سجّل الـSW لكل زائر (شرط التثبيت وقاعدة الأوفلاين)
@@ -75,7 +85,7 @@ export default function PwaBoot() {
     return () => window.removeEventListener('beforeinstallprompt', onPrompt)
   }, [])
 
-  if (!show || under(pathname, HIDE_ON)) return null
+  if (!show || actionBar || under(pathname, HIDE_ON)) return null
   const bottom = under(pathname, WITH_BAR) ? 'calc(76px + env(safe-area-inset-bottom))' : 'calc(12px + env(safe-area-inset-bottom))'
   const t = TR[locale] || TR.ar
   const dir = locale === 'en' ? 'ltr' : 'rtl'

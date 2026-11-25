@@ -58,6 +58,8 @@ export default function AdminPanel() {
   const [pwMsg, setPwMsg] = useState('')
   // dispute resolution: a required text with a preview of what both parties receive (UX-127)
   const [dispModal, setDispModal] = useState<any>(null) // { id, text }
+  // cancel a deal by an admin decision, with a required reason (round-6 UX-003, migration 285 admin_close_deal)
+  const [closeModal, setCloseModal] = useState<any>(null) // { id, text, label }
   // ?filter=stuck (from the owner dashboard «متأخرة» tile): only late deals, same rule as admin_overview (UX-128)
   const [dealFilter, setDealFilter] = useState('')
 
@@ -300,6 +302,20 @@ export default function AdminPanel() {
     // عبر RPC خاصّ بالإدارة: يوثّق الحل ويُشعِر الطرفين (إشعار داخلي + web-push).
     const { error } = await supabase.rpc('admin_resolve_dispute', { p_offer_id: offerId, p_resolution: resolution })
     setMsg(error ? ('تعذّر حل النزاع: ' + (error.message || 'خطأ')) : '✓ تم حل النزاع وإشعار الطرفين')
+    setTimeout(() => setMsg(''), 3000)
+    await loadData()
+    setActionLoading('')
+  }
+
+  async function closeDeal(offerId: string, text: string) {
+    const reason = text.trim()
+    if (!reason) return
+    setCloseModal(null)
+    setActionLoading('close-' + offerId)
+    const supabase = createClient()
+    // the server stamps deal_closed_at/deal_closed_reason, resolves the open dispute and tells both parties
+    const { error } = await supabase.rpc('admin_close_deal', { p_offer_id: offerId, p_reason: reason })
+    setMsg(error ? ('تعذّر إلغاء الصفقة: ' + (error.message || 'خطأ')) : 'أُلغيت الصفقة وأُبلغ الطرفان')
     setTimeout(() => setMsg(''), 3000)
     await loadData()
     setActionLoading('')
@@ -637,10 +653,18 @@ export default function AdminPanel() {
                           التسليم: {o.supplier_delivered_at ? '✓' : '—'} · الاستلام: {o.received_at ? '✓' : '—'} · الدفع: {o.payment_status === 'paid' ? '✓' : '—'}
                         </div>
                       </div>
-                      <button onClick={() => setDispModal({ id: o.id, text: '' })} disabled={actionLoading === 'disp-' + o.id}
-                        className="text-sm min-h-[44px] px-4 rounded-xl font-semibold text-white disabled:opacity-50 flex-shrink-0" style={{ background: '#0B2438' }}>
-                        {actionLoading === 'disp-' + o.id ? '...' : 'حل النزاع'}
-                      </button>
+                      <div className="flex flex-col gap-2 flex-shrink-0">
+                        <button onClick={() => setDispModal({ id: o.id, text: '' })} disabled={actionLoading === 'disp-' + o.id || actionLoading === 'close-' + o.id}
+                          className="text-sm min-h-[44px] px-4 rounded-xl font-semibold text-white disabled:opacity-50" style={{ background: '#0B2438' }}>
+                          {actionLoading === 'disp-' + o.id ? '...' : 'حل النزاع'}
+                        </button>
+                        {!o.deal_closed_at && (
+                          <button onClick={() => setCloseModal({ id: o.id, text: '', label: r?.product_name || 'طلب' })} disabled={actionLoading === 'disp-' + o.id || actionLoading === 'close-' + o.id}
+                            className="text-sm min-h-[44px] px-4 rounded-xl font-semibold border border-[#B42318] text-[#B42318] bg-white hover:bg-red-50 disabled:opacity-50">
+                            {actionLoading === 'close-' + o.id ? '...' : 'إلغاء الصفقة'}
+                          </button>
+                        )}
+                      </div>
                     </div>
                   </div>
                 )
@@ -1535,6 +1559,33 @@ export default function AdminPanel() {
                 إرسال الحل وإغلاق النزاع
               </button>
               <button type="button" onClick={() => setDispModal(null)} className="px-4 min-h-[44px] rounded-xl text-sm border border-gray-200 text-gray-700">إلغاء</button>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* إلغاء الصفقة بقرار الإدارة: سبب إلزامي يصل إلى الطرفين (round-6 UX-003) */}
+      {closeModal && (
+        <div className="fixed inset-0 z-[70] bg-[#071827]/60 flex items-end sm:items-center justify-center p-0 sm:p-4">
+          <div role="dialog" aria-modal="true" aria-labelledby="close-title" className="w-full sm:max-w-lg bg-white rounded-t-3xl sm:rounded-3xl p-5 shadow-2xl">
+            <h2 id="close-title" className="text-lg font-bold text-[#071827]">إلغاء الصفقة</h2>
+            <p className="text-sm text-gray-600 mt-1">تُلغى الصفقة نهائياً ويُغلق النزاع المفتوح، وتُرفض بعدها خطوات التسليم والفاتورة والدفع. يصل السبب إلى المشتري والمورد مع إشعار.</p>
+            <label htmlFor="close-text" className="block text-xs font-bold text-gray-600 mt-3 mb-1.5">سبب الإلغاء (مطلوب)</label>
+            <textarea id="close-text" autoFocus rows={3} maxLength={500} value={closeModal.text} onChange={(e: any) => setCloseModal((d: any) => ({ ...d, text: e.target.value }))}
+              className="input-field text-sm" placeholder="مثال: تعذّر على المورد التوريد واتفق الطرفان على الإلغاء." />
+            {closeModal.text.trim() && (
+              <div className="mt-3 rounded-xl border border-gray-200 bg-[#F5F7FA] p-3 text-sm">
+                <div className="text-xs font-bold text-gray-600 mb-1">معاينة ما يصل إلى الطرفين</div>
+                <div className="font-bold text-[#0B2438]">أُلغيت الصفقة بقرار الإدارة</div>
+                <div className="text-gray-700 mt-0.5 whitespace-pre-wrap">أُلغيت صفقة «{closeModal.label}» بقرار الإدارة: {closeModal.text.trim().slice(0, 300)}.</div>
+              </div>
+            )}
+            <div className="flex gap-2 mt-4">
+              <button type="button" disabled={!closeModal.text.trim() || actionLoading === 'close-' + closeModal.id}
+                onClick={() => closeDeal(closeModal.id, closeModal.text)}
+                className="flex-1 min-h-[44px] rounded-xl font-bold text-sm text-white disabled:opacity-50" style={{ background: '#B42318' }}>
+                إلغاء الصفقة وإبلاغ الطرفين
+              </button>
+              <button type="button" onClick={() => setCloseModal(null)} className="px-4 min-h-[44px] rounded-xl text-sm border border-gray-200 text-gray-700">رجوع</button>
             </div>
           </div>
         </div>

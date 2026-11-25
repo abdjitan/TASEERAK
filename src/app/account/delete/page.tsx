@@ -40,6 +40,8 @@ const C: Record<string, any> = {
     backHome: 'العودة إلى الصفحة الرئيسية',
     delMember: ['يُحذف اسمك ورقم جوالك وبيانات دخولك، وتخرج من فريق الشركة.', 'المسودات والإشعارات ورموز الإشعارات على أجهزتك.'],
     keepMember: ['تبقى عروض الشركة وصفقاتها وفروعها كما هي لدى مالك الحساب.'],
+    delIndependent: ['اسمك ورقم جوالك وموقعك.', 'المسودات والإشعارات وتخصصاتك وأسعارك المحفوظة.', 'رموز الإشعارات على أجهزتك، وبيانات الدخول، فلا يمكن الدخول إلى الحساب بعدها.', 'تُلغى عروضك التي لم يُبتّ فيها.'],
+    cancelBack: 'إلغاء والرجوع',
   },
   en: {
     title: 'Delete your account', home: 'Home',
@@ -65,6 +67,8 @@ const C: Record<string, any> = {
     backHome: 'Back to the home page',
     delMember: ['Your name, mobile number and sign-in are deleted, and you leave the company team.', 'Drafts, notifications and your devices’ notification tokens.'],
     keepMember: ['The company’s offers, deals and branches stay as they are with the account owner.'],
+    delIndependent: ['Your name, mobile number and location.', 'Drafts, notifications, specialties and saved prices.', 'Your devices’ notification tokens and your sign-in, so the account can no longer be used.', 'Your undecided offers are cancelled.'],
+    cancelBack: 'Cancel and go back',
   },
   ur: {
     title: 'اکاؤنٹ حذف کریں', home: 'مرکزی صفحہ',
@@ -90,6 +94,8 @@ const C: Record<string, any> = {
     backHome: 'مرکزی صفحے پر واپس جائیں',
     delMember: ['آپ کا نام، موبائل نمبر اور لاگ اِن حذف ہو جاتے ہیں، اور آپ کمپنی کی ٹیم سے نکل جاتے ہیں۔', 'ڈرافٹ، اطلاعات اور آپ کے آلات کے اطلاعاتی ٹوکن۔'],
     keepMember: ['کمپنی کی پیشکشیں، سودے اور شاخیں اکاؤنٹ کے مالک کے پاس ویسے ہی رہتی ہیں۔'],
+    delIndependent: ['آپ کا نام، موبائل نمبر اور مقام۔', 'ڈرافٹ، اطلاعات، مہارتیں اور محفوظ قیمتیں۔', 'آپ کے آلات کے اطلاعاتی ٹوکن اور لاگ اِن، اس کے بعد اکاؤنٹ استعمال نہیں ہو سکتا۔', 'آپ کی زیرِ غور پیشکشیں منسوخ ہو جاتی ہیں۔'],
+    cancelBack: 'منسوخ کریں اور واپس جائیں',
   },
 }
 
@@ -107,6 +113,8 @@ export default function DeleteAccountPage() {
   const [role, setRole] = useState('')
   const [teamCount, setTeamCount] = useState(0)
   const [member, setMember] = useState(false)
+  // a pricing agent / individual seller has no business name, documents or branches (round-6 UX-118)
+  const [independent, setIndependent] = useState(false)
 
   useEffect(() => {
     const sb = createClient()
@@ -115,7 +123,8 @@ export default function DeleteAccountPage() {
       const uid = data.session?.user?.id
       if (!uid) return
       try {
-        const { data: p } = await sb.from('profiles').select('role, buyer_type').eq('id', uid).maybeSingle()
+        const { data: p } = await sb.from('profiles').select('role, buyer_type, provider_type').eq('id', uid).maybeSingle()
+        setIndependent(p?.role === 'supplier' && ['individual', 'broker', 'price_agent'].includes(String(p?.provider_type || '')))
         setHomeBuyer(p?.role === 'contractor' && p?.buyer_type === 'individual')
         setRole(p?.role || '')
         // the company's team members lose access at once (UX-119)
@@ -171,7 +180,7 @@ export default function DeleteAccountPage() {
           <a href={`mailto:${OPERATOR.email}`} dir="ltr" className="inline-block font-mono text-base font-bold text-[#8F6820] hover:underline select-all break-all">{OPERATOR.email}</a>
           <p className="text-xs text-gray-500 mt-1">{t.mailHint}</p>
         </section>
-        <section><h2 className="text-base font-bold mb-1.5" style={{ color: '#0B2438' }}>{t.delTitle}</h2><List items={member ? t.delMember : homeBuyer ? t.delHome : role === 'contractor' ? t.delBiz : t.del} /></section>
+        <section><h2 className="text-base font-bold mb-1.5" style={{ color: '#0B2438' }}>{t.delTitle}</h2><List items={member ? t.delMember : homeBuyer ? t.delHome : role === 'contractor' ? t.delBiz : independent ? (t as any).delIndependent : t.del} /></section>
         <section><h2 className="text-base font-bold mb-1.5" style={{ color: '#0B2438' }}>{t.keepTitle}</h2><List items={member ? t.keepMember : homeBuyer ? t.keepHome : t.keep} /></section>
 
         <div className="bg-white rounded-2xl border border-red-100 p-5">
@@ -204,10 +213,12 @@ export default function DeleteAccountPage() {
                 className="btn-danger text-sm">
                 {busy ? t.deleting : t.button}
               </button>
-              {/* a way back without deleting (UX-184) */}
-              <Link href="/settings" className="ms-0 sm:ms-2 inline-flex items-center min-h-[44px] px-4 rounded-xl text-sm font-bold border border-gray-200 text-[#0B2438] bg-white hover:bg-gray-50">
-                {locale === 'en' ? 'Cancel and go back to Settings' : locale === 'ur' ? 'منسوخ کریں اور ترتیبات پر واپس جائیں' : 'إلغاء والعودة إلى الإعدادات'}
-              </Link>
+              {/* a way back without deleting (UX-184): the page it came from (from /verify, Settings would loop back
+                  to /verify), else the home page (round-6 UX-118) */}
+              <button type="button" onClick={() => { if (window.history.length > 1) window.history.back(); else window.location.href = '/' }}
+                className="ms-0 sm:ms-2 inline-flex items-center min-h-[44px] px-4 rounded-xl text-sm font-bold border border-gray-200 text-[#0B2438] bg-white hover:bg-gray-50">
+                {(t as any).cancelBack}
+              </button>
             </div>
           ) : null}
         </div>

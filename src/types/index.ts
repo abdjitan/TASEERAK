@@ -27,13 +27,13 @@ export const SECTOR_LABELS: Record<Sector, string> = {
   civil: 'مدني',
   architectural: 'معماري',
   electrical: 'كهرباء',
-  mechanical: 'ميكانيك',
+  mechanical: 'ميكانيكا',
   equipment: 'آليات ومعدات',
-  supply_store: 'محل توريد',
+  supply_store: 'مستلزمات عامة',
 }
 const SECTOR_LABELS_I18N: Record<'en' | 'ur', Record<Sector, string>> = {
-  en: { civil: 'Civil', architectural: 'Architectural', electrical: 'Electrical', mechanical: 'Mechanical', equipment: 'Machinery & equipment', supply_store: 'Supply store' },
-  ur: { civil: 'سول', architectural: 'تعمیراتی', electrical: 'بجلی', mechanical: 'مکینیکل', equipment: 'مشینری اور آلات', supply_store: 'سپلائی اسٹور' },
+  en: { civil: 'Civil', architectural: 'Architectural', electrical: 'Electrical', mechanical: 'Mechanical', equipment: 'Machinery', supply_store: 'General supplies' },
+  ur: { civil: 'سول', architectural: 'تعمیراتی', electrical: 'بجلی', mechanical: 'مکینیکل', equipment: 'مشینری', supply_store: 'عام سامان' },
 }
 /** The sector name in the reader's language (SECTOR_LABELS is Arabic only). */
 export function getSectorLabel(sector: string | null | undefined, locale: string): string {

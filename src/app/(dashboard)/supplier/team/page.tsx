@@ -56,7 +56,12 @@ export default function SupplierTeamPage() {
 
   async function createInvite() {
     setBusy('invite'); setMsg('')
-    const { data, error } = await createClient().rpc('create_company_invite', { p_role: newRole })
+    // round-6 UX-032: the employee name is kept on the invitation (company_invites.label, p_label) so every device
+    // shows whom each open link is for; until the server takes p_label, the call falls back to the old signature
+    const sb = createClient()
+    const label = inviteFor.trim()
+    let { data, error } = await sb.rpc('create_company_invite', label ? { p_role: newRole, p_label: label } : { p_role: newRole })
+    if (error && label && /p_label|function|schema cache/i.test(error.message || '')) ({ data, error } = await sb.rpc('create_company_invite', { p_role: newRole }))
     const j: any = error ? { ok: false } : (data || {})
     if (j.ok) {
       setLastLink(linkFor(j.token)); setLastFor(inviteFor.trim()); setInviteFor('')

@@ -65,7 +65,7 @@ export default function EnablePush({ variant = 'card' }: { variant?: 'card' | 'n
       </button>
       <button type="button" onClick={putOff} className="shrink-0 min-h-[44px] rounded-2xl px-3 text-[13px] font-bold border border-gray-200 bg-white text-gray-600 hover:text-gray-800">{L('Later', 'بعد میں', 'لاحقاً')}</button>
       </div>
-      {err && <p role="alert" className="text-xs font-semibold text-amber-700 mt-2">{err}</p>}
+      {err && <p role="alert" className="text-xs font-semibold text-warn-text mt-2">{err}</p>}
       </div>
     )
   }
@@ -85,7 +85,7 @@ export default function EnablePush({ variant = 'card' }: { variant?: 'card' | 'n
       ) : state !== 'denied' ? (
         <button onClick={turnOn} disabled={busy} className="min-h-[44px] text-[13px] px-4 rounded-xl font-bold text-white disabled:opacity-50" style={{ background: '#0B2438' }}>{busy ? '...' : L('Turn on', 'آن کریں', 'تفعيل')}</button>
       ) : null}
-      {err && <p role="alert" className="basis-full text-xs font-semibold text-amber-700">{err}</p>}
+      {err && <p role="alert" className="basis-full text-xs font-semibold text-warn-text">{err}</p>}
     </div>
   )
 }

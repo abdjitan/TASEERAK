@@ -52,7 +52,7 @@ export default function JoinLanding({ kind }: { kind: 'company' | 'independent' 
   const points = company
     ? [
         [L('Requests from buyers near you', 'قریبی خریداروں کی درخواستیں', 'طلبات من مشترين قريبين منك'), L('Only the materials you sell reach you.', 'صرف آپ کے سامان کی درخواستیں۔', 'لا تصلك إلا طلبات المواد التي تبيعها.')],
-        [L('Quote from your phone in a minute', 'ایک منٹ میں فون سے قیمت', 'سعّر من جوالك خلال دقيقة'), L('A price per item, delivery included, in a minute.', 'ہر آئٹم کی قیمت، ڈیلیوری سمیت، ایک منٹ میں۔', 'سعر لكل مادة شامل التوصيل، خلال دقيقة.')],
+        [L('Quote from your phone in a minute', 'ایک منٹ میں فون سے قیمت', 'سعّر من جوالك خلال دقيقة'), L('Price each item from your phone in a minute, and set delivery as free or with a charge.', 'ہر آئٹم کی قیمت ایک منٹ میں اپنے فون سے دیں، اور ڈیلیوری مفت یا فیس کے ساتھ مقرر کریں۔', 'سعّر كل مادة من جوالك خلال دقيقة، وحدّد التوصيل مجاناً أو برسوم.')],
         [L('«Verified» badge', '«تصدیق شدہ» بیج', 'شارة «موثّق»'), L('Verify your commercial registration and your offers carry the «Verified» badge.', 'اپنی تجارتی رجسٹریشن کی تصدیق کریں اور آپ کی آفرز پر «تصدیق شدہ» بیج آئے گا۔', 'وثّق سجلك التجاري لتحمل عروضك شارة «موثّق».')],
         [L('Your team', 'آپ کی ٹیم', 'فريق مبيعاتك'), L('Add your sales staff so they quote on behalf of the company.', 'اپنے سیلز ملازمین شامل کریں تاکہ وہ کمپنی کی جانب سے قیمت دیں۔', 'أضف موظفي المبيعات ليقدّموا العروض باسم الشركة.')],
       ]
@@ -68,7 +68,7 @@ export default function JoinLanding({ kind }: { kind: 'company' | 'independent' 
         <div className="max-w-3xl mx-auto px-4 h-16 flex items-center justify-between">
           <Link href="/" className="flex items-center" aria-label={L('Taseerak home', 'تسعیرک مرکزی صفحہ', 'تسعيرك، الرئيسية')}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/taseerak-metallic-logo.webp" alt="تسعيرك — Taseerak" className="h-14 w-auto" />
+            <img src="/taseerak-metallic-logo.webp" alt="تسعيرك — Taseerak" className="h-11 w-auto" />
           </Link>
           <LanguageSwitcher variant="minimal" />
         </div>

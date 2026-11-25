@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { Check, RotateCcw, Plus } from 'lucide-react'
+import { Check, RotateCcw, Plus, X } from 'lucide-react'
 import { noEmoji, timeAgo as timeAgoText, arCount, arMaterials, arRequests, countLabel, dateLocale } from '@/lib/text'
 import Link from 'next/link'
 import PageLoader from '@/components/shared/PageLoader'
@@ -201,7 +201,7 @@ export default function ContractorDashboard() {
         const closedIds = (r || []).filter((x: any) => x.status === 'closed').map((x: any) => x.id)
         const openIds = (r || []).filter((x: any) => x.status === 'open' && (x.offer_count || 0) > 0).map((x: any) => x.id).slice(0, 60)
         const [acc, offs] = await Promise.all([
-          closedIds.length ? supabase.from('offers').select('id, rfq_id, accepted_at, supplier_delivered_at, received_at, payment_status, payment_confirmed_at, dispute_status').in('rfq_id', closedIds).eq('status', 'accepted') : Promise.resolve({ data: [] } as any),
+          closedIds.length ? supabase.from('offers').select('id, rfq_id, accepted_at, supplier_delivered_at, received_at, payment_status, payment_confirmed_at, dispute_status, payment_terms, deal_closed_at').in('rfq_id', closedIds).eq('status', 'accepted') : Promise.resolve({ data: [] } as any),
           openIds.length ? safe(supabase.from('offers').select('rfq_id, status, total_price, vat_included, vat_status, item_prices, price_valid_until').in('rfq_id', openIds)) : Promise.resolve({ data: [] } as any),
         ])
         // keep ALL accepted offers per RFQ (per-item awards → multiple suppliers), not one arbitrary (B11)
@@ -230,10 +230,13 @@ export default function ContractorDashboard() {
   useEffect(() => { if (profile?.buyer_type) rememberBuyerType(profile.buyer_type) }, [profile])
   if (loading) return <PageLoader />
 
-  const homeBuyer = profile?.buyer_type === 'individual'
+  // round-6 UX-026: a failed first load (profile null) keeps the device's buyer type, never the business layout by default
+  const homeBuyer = (profile?.buyer_type || storedBuyerType()) === 'individual'
   // recurring lists (rfq_drafts.data.is_template) apart from the drafts (round-4 UX-187)
   const templates = drafts.filter((d: any) => d?.data?.is_template)
   const plainDrafts = drafts.filter((d: any) => !d?.data?.is_template)
+  // round-6 UX-103: an unsent bill of quantities saved as a draft is listed once, under «المسودّات»
+  const boqSaved = plainDrafts.some((d: any) => d?.data?.kind === 'boq')
   const active = rfqs.filter((r: any) => r.status === 'open')
   const closed = rfqs.filter((r: any) => r.status === 'closed')
   const totalOffers = rfqs.reduce((s: any, r: any) => s + (r.offer_count || 0), 0)
@@ -329,7 +332,7 @@ export default function ContractorDashboard() {
 
   const nav = getNav('contractor', locale, '/contractor') // the shared menu (طلباتي، صفقاتي، الرسائل…)
   const name = profile?.company_name_ar || profile?.company_name_en || profile?.full_name || ''
-  const greeting = name ? `${t.welcome}، ${name}` : undefined
+  const greeting = name ? `${t.welcome}${locale === 'en' ? ', ' : '، '}${name}` : undefined // round-6 UX-085: the English comma in English
 
   // the request list's search: title, number, display name and every material name (raw, cleaned, translated) (UX-070)
   const haystack = (rfq: any) => normalizeText([
@@ -399,13 +402,14 @@ export default function ContractorDashboard() {
         {doneNote && (
           <div role="status" className="mb-4 flex items-center justify-between gap-3 rounded-xl border border-[#0B2438]/20 bg-white px-4 py-2 text-sm font-semibold text-[#0B2438]">
             <span>{doneNote}</span>
-            <button type="button" onClick={() => setDoneNote('')} className="min-w-11 min-h-11 -my-2 text-lg leading-none" aria-label={L('Close', 'بند کریں', 'إغلاق')}>×</button>
+            <button type="button" onClick={() => setDoneNote('')} className="min-w-11 min-h-11 -my-2 grid place-items-center" aria-label={L('Close', 'بند کریں', 'إغلاق')}><X className="w-4 h-4" aria-hidden /></button>
           </div>
         )}
         {/* a returning buyer: their requests come first, above the market (UX-065) */}
-        {rfqs.length > 0 && (
+        {/* round-6 UX-085: the «طلباتي» strip repeats the full list below; it shows only with more than two requests (the alerts stay) */}
+        {rfqs.length > 0 && (rfqs.length > 2 || awaitingReply > 0 || !!expiring || rfqs.some((r: any) => r.status === 'closed' && dealOf(r)?.todo)) && (
           <section className="mb-5 bg-white rounded-2xl p-4 border border-gray-100 shadow-sm animate-fade-in" aria-labelledby="my-req-strip">
-            <div className="flex items-center justify-between gap-2 mb-2">
+            <div className={`flex items-center justify-between gap-2 mb-2 ${rfqs.length > 2 ? '' : 'sr-only'}`}>
               <h2 id="my-req-strip" className="text-sm font-extrabold text-[#0B2438]">{L('My requests', 'میری درخواستیں', 'طلباتي')}</h2>
               <button type="button" onClick={() => { setFilter('all'); document.getElementById('rfq-list')?.scrollIntoView({ behavior: 'smooth', block: 'start' }) }}
                 className="min-h-[44px] px-1 text-[13px] font-bold text-[#8F6820] hover:underline">{L('All my requests', 'میری تمام درخواستیں', 'كل طلباتي')} {fwd}</button>
@@ -449,7 +453,7 @@ export default function ContractorDashboard() {
                   `سعر أحد عروض «${rfqDesc(expiring.rfq, locale)}» ينتهي خلال ${formatTimeLeft(expiring.at, locale)}، اختر قبل أن يتغيّر.`)}</span>
               </Link>
             )}
-            <div className="grid sm:grid-cols-2 gap-2">
+            {rfqs.length > 2 && <div className="grid sm:grid-cols-2 gap-2">
               {rfqs.slice(0, 2).map((rfq: any) => {
                 const d = rfq.status === 'closed' ? dealOf(rfq) : null
                 const stt = rfqState(rfq)
@@ -473,7 +477,7 @@ export default function ContractorDashboard() {
                   </Link>
                 )
               })}
-            </div>
+            </div>}
           </section>
         )}
 
@@ -524,7 +528,8 @@ export default function ContractorDashboard() {
         )}
 
         {/* one attention card at a time, by priority (UX-087) */}
-        {!profile?.region ? (
+        {/* round-6 UX-026: no «أكمل ملفك» before the profile has loaded */}
+        {!profile ? null : !profile.region ? (
           <Link href="/onboarding" className="flex items-center justify-between gap-3 rounded-2xl p-4 mb-4 bg-white border-2 border-[#D4A543]/60 hover:shadow-md transition-shadow">
             <div>
               <div className="font-extrabold text-sm text-[#0B2438]"><Glyph e="📍" /> {homeBuyer ? L('Add your delivery address', 'ڈیلیوری کا پتہ شامل کریں', 'أضف عنوان التوصيل') : L('Complete your profile', 'اپنی پروفائل مکمل کریں', 'أكمل ملفك')}</div>
@@ -547,7 +552,7 @@ export default function ContractorDashboard() {
             </div>
             <div className="flex flex-wrap gap-2">
               {completion.filter((c: any) => !c.ok).map((c: any) => (
-                <Link key={c.label} href={c.href} className="min-h-[40px] inline-flex items-center text-[12px] font-semibold px-3 rounded-full border border-dashed transition-all hover:bg-[#D4A543]/10" style={{ borderColor: '#D4A543', color: '#8F6820' }}>+ {c.label}</Link>
+                <Link key={c.label} href={c.href} className="min-h-[44px] inline-flex items-center text-[12px] font-semibold px-3 rounded-full border border-dashed transition-all hover:bg-[#D4A543]/10" style={{ borderColor: '#D4A543', color: '#8F6820' }}>+ {c.label}</Link>
               ))}
             </div>
           </div>
@@ -689,16 +694,22 @@ export default function ContractorDashboard() {
           </div>
         )}
 
-        {/* Bills of quantities (one consistent name: «جدول الكميات», UX-144) */}
+        {/* Quantity lists: one name, «القائمة», the same as the list page (round-6 UX-103) */}
         {projects.length > 0 && canUseProjects(profile) && !homeBuyer && (
           <div className="mb-6 animate-fade-in">
             <div className="flex items-center justify-between mb-3">
               <h2 className="text-sm font-bold" style={{ color: '#0B2438' }}>
-                <Glyph e="📋" /> {L('My bills of quantities', 'مقداروں کا جدول', 'جداول الكميات')}
+                <Glyph e="📋" /> {L('My quantity lists', 'میری مقداروں کی فہرستیں', 'قوائم الكميات')}
               </h2>
-              <Link href="/contractor/project/new" className="min-h-[44px] inline-flex items-center text-[13px] font-semibold" style={{ color: '#8F6820' }}>
-                + {L('New bill of quantities', 'نیا مقداروں کا جدول', 'جدول كميات جديد')}
-              </Link>
+              <span className="flex items-center gap-3">
+                <Link href="/contractor/project/new" className="min-h-[44px] inline-flex items-center text-[13px] font-semibold" style={{ color: '#8F6820' }}>
+                  + {L('New list', 'نئی فہرست', 'قائمة جديدة')}
+                </Link>
+                {/* round-6 UX-103: the tender tool stays reachable after the first bill of quantities */}
+                <Link href="/contractor/tender/new" className="min-h-[44px] inline-flex items-center text-[13px] font-semibold" style={{ color: '#8F6820' }}>
+                  + {L('New tender', 'نیا ٹینڈر', 'مناقصة جديدة')}
+                </Link>
+              </span>
             </div>
             <div className="space-y-2 stagger">
               {projects.map((p: any) => {
@@ -725,11 +736,11 @@ export default function ContractorDashboard() {
         )}
 
         {/* a business buyer's unfinished work: an unsent bill of quantities, tenders waiting for approval (UX-074) */}
-        {!homeBuyer && canUseProjects(profile) && (boqDraftItems > 0 || reviewTenders.length > 0) && (
+        {!homeBuyer && canUseProjects(profile) && ((boqDraftItems > 0 && !boqSaved) || reviewTenders.length > 0) && (
           <div className="bg-white rounded-2xl p-4 shadow-sm border border-[#D4A543]/50 mb-6 space-y-2">
-            {boqDraftItems > 0 && (
+            {boqDraftItems > 0 && !boqSaved && (
               <Link href="/contractor/project/new" className="flex items-center justify-between gap-2 rounded-xl px-3 min-h-[52px] border border-gray-100 hover:border-[#D4A543]/50">
-                <span className="text-sm font-bold text-[#0B2438]"><Glyph e="📋" /> {L(`Unsent bill of quantities (${boqDraftItems} items)`, `نہ بھیجا گیا مقداروں کا جدول (${boqDraftItems} اشیاء)`, `جدول كميات غير مُرسل (${arCount(boqDraftItems, 'بند واحد', 'بندان', 'بنود', 'بنداً')})`)}</span>
+                <span className="text-sm font-bold text-[#0B2438]"><Glyph e="📋" /> {L(`Unsent list (${boqDraftItems} items)`, `نہ بھیجی گئی فہرست (${boqDraftItems} اشیاء)`, `قائمة غير مُرسلة (${arCount(boqDraftItems, 'بند واحد', 'بندان', 'بنود', 'بنداً')})`)}</span>
                 <span className="shrink-0 text-[13px] font-bold text-[#8F6820]">{L('Continue', 'جاری رکھیں', 'إكمال')} {fwd}</span>
               </Link>
             )}
@@ -748,7 +759,7 @@ export default function ContractorDashboard() {
             <h2 className="font-bold text-sm mb-2" style={{ color: '#0B2438' }}><Glyph e="📊" /> {L('Business tools', 'کاروباری اوزار', 'أدوات الشركات')}</h2>
             <div className="grid sm:grid-cols-2 gap-2">
               <Link href="/contractor/project/new" className="rounded-xl border border-gray-100 px-3 py-2.5 min-h-[52px] hover:border-[#D4A543]/60">
-                <span className="block text-sm font-bold text-[#0B2438]">{L('Bill of quantities', 'مقداروں کا جدول', 'جدول الكميات')}</span>
+                <span className="block text-sm font-bold text-[#0B2438]">{L('Quantity list', 'مقداروں کی فہرست', 'قائمة الكميات')}</span>
                 <span className="block text-[12px] text-gray-600">{L('Upload Excel, PDF or a photo; every item goes to the right suppliers', 'Excel، PDF یا تصویر اپ لوڈ کریں؛ ہر چیز متعلقہ سپلائرز کو جاتی ہے', 'ارفع Excel أو PDF أو صورة، ويصل كل بند إلى الموردين المختصين')}</span>
               </Link>
               <Link href="/contractor/tender" className="rounded-xl border border-gray-100 px-3 py-2.5 min-h-[52px] hover:border-[#D4A543]/60">
@@ -795,7 +806,7 @@ export default function ContractorDashboard() {
             {homeBuyer ? (
               <div className="flex flex-wrap items-center justify-center gap-3">
                 <p className="text-sm font-semibold text-gray-600">{L('You have not sent any request yet.', 'آپ نے ابھی کوئی درخواست نہیں بھیجی۔', 'لم ترسل أي طلب بعد.')}</p>
-                <Link href="/contractor/rfq/quick" className="inline-flex items-center min-h-[44px] px-4 rounded-xl text-sm font-bold text-[#071827]" style={{ background: '#D4A543' }}>{L('Ask the price of your first product', 'اپنی پہلی چیز کی قیمت پوچھیں', 'اطلب سعر أول منتج')}</Link>
+                <Link href="/contractor/rfq/quick" className="inline-flex items-center min-h-[44px] px-2 text-sm font-bold text-[#0B2438] underline underline-offset-4 hover:text-[#071827]">{L('Ask the price of any product', 'کسی بھی چیز کی قیمت پوچھیں', 'اطلب سعر أي منتج')} <span aria-hidden="true">&nbsp;{fwd}</span></Link>
               </div>
             ) : (<>
               <h2 className="text-xl font-bold mb-3" style={{ color: '#0B2438' }}>{t.noRfqs}</h2>
@@ -812,8 +823,8 @@ export default function ContractorDashboard() {
               <span className="text-[12px] text-gray-500">{countLabel(rfqs.length, locale, arRequests, 'request', 'درخواستیں')}</span>
             </div>
 
-            {/* Filters */}
-            <div className="bg-white rounded-2xl p-4 border border-gray-100 shadow-sm mb-4">
+            {/* Filters; round-6 UX-085: only with more than four requests */}
+            {rfqs.length > 4 && <div className="bg-white rounded-2xl p-4 border border-gray-100 shadow-sm mb-4">
               <div className="flex flex-col gap-3">
                 <div className="flex gap-2 overflow-x-auto pb-1">
                   {[
@@ -854,7 +865,7 @@ export default function ContractorDashboard() {
                     className="input-field text-[16px] sm:text-[13px] basis-full sm:basis-auto sm:flex-1 sm:min-w-[160px] py-2 order-first sm:order-none" type="search" placeholder={L('Search by material or request number…', 'سامان یا درخواست نمبر سے تلاش کریں…', 'ابحث باسم المادة أو رقم الطلب…')} aria-label={L('Search requests', 'درخواستیں تلاش کریں', 'البحث في الطلبات')} />
                 </div>
               </div>
-            </div>
+            </div>}
 
             <div className="space-y-3 stagger">
               {(() => {

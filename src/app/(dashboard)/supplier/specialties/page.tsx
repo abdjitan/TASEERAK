@@ -14,7 +14,7 @@ import { detectSpecialtiesFromText } from '@/lib/classify'
 import CatIcon from '@/components/shared/CatIcon'
 import SpecialtyPicker from '@/components/shared/SpecialtyPicker'
 import SupplierPackPicker from '@/components/shared/SupplierPackPicker'
-import { storedSellerKind } from '@/lib/sellers'
+import { storedSellerKind, sectorName } from '@/lib/sellers'
 import Glyph from '@/components/shared/Glyph'
 import { compressImage } from '@/lib/compressImage'
 import { askConfirm } from '@/lib/askConfirm'
@@ -39,7 +39,7 @@ const txt = {
     sSending: 'جارٍ الإرسال...',
     sSent: 'أُرسل اقتراحك، وسيراجعه الفريق.',
     myReq: 'اقتراحاتي السابقة',
-    stPending: 'قيد المراجعة', stApproved: 'تمت الموافقة', stRejected: 'مرفوض',
+    stPending: 'قيد المراجعة', stApproved: 'تمت الموافقة', stRejected: 'لم تُعتمد',
   },
   en: {
     title: 'My Specialties', sub: 'Select exactly what you supply — you only get matching requests',
@@ -57,7 +57,7 @@ const txt = {
     sSending: 'Sending...',
     sSent: 'Suggestion sent; our team will review it.',
     myReq: 'My previous suggestions',
-    stPending: 'Under review', stApproved: 'Approved', stRejected: 'Rejected',
+    stPending: 'Under review', stApproved: 'Approved', stRejected: 'Not approved',
   },
   ur: {
     title: 'میرے تخصصات', sub: 'بالکل وہی منتخب کریں جو آپ فراہم کرتے ہیں',
@@ -75,7 +75,7 @@ const txt = {
     sSending: 'بھیجا جا رہا ہے...',
     sSent: 'آپ کی تجویز بھیج دی گئی۔',
     myReq: 'میری پچھلی تجاویز',
-    stPending: 'زیر جائزہ', stApproved: 'منظور', stRejected: 'مسترد',
+    stPending: 'زیر جائزہ', stApproved: 'منظور', stRejected: 'منظور نہیں ہوئی',
   },
 }
 
@@ -83,7 +83,8 @@ export default function SpecialtiesPage() {
   const { locale, dir } = useTranslation()
   const T = txt[locale] || txt.ar
   // UX-144: sector names in the reader's language
-  const secLabel = (k: string) => (locale === 'en' ? ({ civil: 'Civil', architectural: 'Architectural', electrical: 'Electrical', mechanical: 'Mechanical', equipment: 'Machinery', supply_store: 'General supplies' } as any)[k] : locale === 'ur' ? ({ civil: 'سول', architectural: 'تعمیراتی', electrical: 'برقی', mechanical: 'مکینیکل', equipment: 'مشینری', supply_store: 'عام سامان' } as any)[k] : ({ ...(SECTOR_LABELS as any), mechanical: 'ميكانيكا', supply_store: 'مستلزمات عامة' } as any)[k]) || k
+  // round-6 UX-106: one sector name on every seller screen (sectorName in src/lib/sellers)
+  const secLabel = (k: string) => sectorName(k, locale) || k
 
   const [user, setUser] = useState<any>(null)
   const [isMember, setIsMember] = useState(false) // team member: sees the company's list, the owner edits it
@@ -108,6 +109,7 @@ export default function SpecialtiesPage() {
   const [showIncluded, setShowIncluded] = useState(false)
   const [suggestSubmitting, setSuggestSubmitting] = useState(false)
   const [myRequests, setMyRequests] = useState<any[]>([])
+  const [matchCount, setMatchCount] = useState<number | null>(null) // round-6 UX-145
   const [openSector, setOpenSector] = useState<any>(null) // single-open accordion (Step 2)
   const [showDetailed, setShowDetailed] = useState(true)
   useEffect(() => { if (storedSellerKind() === 'independent') setShowDetailed(false) }, [])
@@ -242,6 +244,17 @@ export default function SpecialtiesPage() {
     setSavedKey(selKey(secs, mySpecialties))
     // round-4 UX-141: one success sign only (the «saved» bar below); no second green message
     setMsg('')
+    // round-6 UX-145: tie the choice to real requests: how many open requests in my regions match it now
+    setMatchCount(null)
+    Promise.resolve(supabase.rpc('get_supplier_feed', { p_sectors: secs.length ? secs : null, p_min_value: 0, p_limit: 150 })).then(({ data, error: fe }: any) => {
+      if (fe || !Array.isArray(data)) return
+      const n = data.filter((r: any) => {
+        if (r.expires_at && new Date(r.expires_at).getTime() < Date.now()) return false
+        const its = Array.isArray(r.items) && r.items.length ? r.items : [{ sector: r.sector, sub_category: r.sub_category }]
+        return its.some((it: any) => (!secs.length || secs.includes(it.sector)) && (!mySpecialties.length || !it.sub_category || mySpecialties.includes(it.sub_category)))
+      }).length
+      setMatchCount(n)
+    }, () => {})
   }
 
   async function submitSuggestion() {
@@ -379,7 +392,7 @@ export default function SpecialtiesPage() {
             )}
           </div>
         ) : !loadFailed && (
-          <div role="status" className="bg-amber-50 rounded-2xl p-5 border border-amber-200 text-center text-amber-900 text-sm font-semibold mb-5">
+          <div role="status" className="bg-warn-bg rounded-2xl p-5 border border-warn-border text-center text-warn-text text-sm font-semibold mb-5">
             {locale === 'en' ? 'You have not chosen what you sell yet, so no requests will reach you. Pick a kind of business above or your exact specialties.' : locale === 'ur' ? 'آپ نے ابھی منتخب نہیں کیا کہ آپ کیا بیچتے ہیں، اس لیے کوئی درخواست نہیں آئے گی۔ اوپر کاروبار کی قسم یا تخصصات منتخب کریں۔' : 'لم تختر بعد ما تبيعه، ولن تصلك طلبات حتى تختار. اختر نوع ما تبيعه من الأعلى أو تخصصاتك الدقيقة.'}
           </div>
         )}
@@ -440,11 +453,15 @@ export default function SpecialtiesPage() {
               <div className="space-y-2">
                 {myRequests.map(r => (
                   <div key={r.id} className="flex items-center justify-between gap-2 text-sm bg-gray-50 rounded-xl px-3 py-2">
-                    <span className="font-semibold text-gray-700">{r.name}</span>
-                    <span className={`text-[12px] px-2 py-0.5 rounded-full font-bold ${
+                    <span className="min-w-0">
+                      <span className="font-semibold text-gray-700">{r.name}</span>
+                      {/* round-6 UX-108: a declined suggestion says why (admin_note), in grey, never red */}
+                      {r.status === 'rejected' && r.admin_note && <span className="block text-[12px] text-gray-500 mt-0.5" dir="auto">{r.admin_note}</span>}
+                    </span>
+                    <span className={`shrink-0 text-[12px] px-2 py-0.5 rounded-full font-bold ${
                       r.status === 'approved' ? 'bg-emerald-100 text-emerald-700' :
-                      r.status === 'rejected' ? 'bg-red-100 text-red-600' :
-                      'bg-amber-100 text-amber-700'
+                      r.status === 'rejected' ? 'bg-gray-100 text-gray-600' :
+                      'bg-[#D4A543]/15 text-[#6C531F]'
                     }`}>
                       {r.status === 'approved' ? T.stApproved : r.status === 'rejected' ? T.stRejected : T.stPending}
                     </span>
@@ -457,6 +474,14 @@ export default function SpecialtiesPage() {
 
         {/* Save */}
         <div className="sticky bottom-[calc(4.5rem+env(safe-area-inset-bottom))] lg:bottom-4 mt-6 z-10">
+          {matchCount != null && !msg && (
+            <div role="status" className="text-sm rounded-xl p-3 mb-3 text-center border border-[#0B2438]/15 bg-[#0B2438]/5 text-[#0B2438] font-semibold">
+              {matchCount > 0
+                ? (locale === 'en' ? `Your choice now matches ${matchCount} open request${matchCount === 1 ? '' : 's'} in your area.` : locale === 'ur' ? `آپ کا انتخاب اب آپ کے علاقے کی ${matchCount} کھلی درخواستوں سے ملتا ہے۔` : `تطابق اختيارك الآن ${arCount(matchCount, 'طلباً واحداً مفتوحاً', 'طلبين مفتوحين', 'طلبات مفتوحة', 'طلباً مفتوحاً')} في منطقتك.`)
+                : (locale === 'en' ? 'No open request in your area matches your choice right now; we will alert you when one arrives.' : locale === 'ur' ? 'ابھی آپ کے علاقے کی کوئی کھلی درخواست آپ کے انتخاب سے نہیں ملتی؛ آتے ہی ہم بتائیں گے۔' : 'لا يطابق اختيارك طلباً مفتوحاً في منطقتك الآن، وسننبّهك فور وصول طلب مطابق.')}
+              {matchCount > 0 && <> <a href="/supplier/dashboard" className="inline-flex items-center min-h-[44px] px-1 font-bold text-[#8F6820] underline">{locale === 'en' ? 'See them' : locale === 'ur' ? 'دیکھیں' : 'اعرضها'}</a></>}
+            </div>
+          )}
           {msg && <div role={msgErr ? 'alert' : undefined} className={`text-sm rounded-xl p-3 mb-3 text-center border ${msgErr ? 'bg-red-50 border-red-200 text-red-700' : 'bg-emerald-50 border-emerald-200 text-emerald-700'}`}>{msg}</div>}
           {isMember ? null : dirty || saving ? (
           <button onClick={handleSave} disabled={saving || loadFailed}

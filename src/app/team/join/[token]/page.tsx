@@ -123,8 +123,11 @@ export default function JoinTeamPage() {
     let action = <Link href="/" className={navyBtn} style={{ background: '#0B2438' }}>{L('Back to the home page', 'مرکزی صفحے پر واپس', 'العودة إلى الصفحة الرئيسية')}</Link>
     if (memberAlready) {
       icon = '👥'
-      title = L(`You are already a member of the ${company} team`, `آپ پہلے سے ${company} کی ٹیم کے رکن ہیں`, `أنت عضو في فريق ${company} بالفعل`)
-      body = invite?.used_by_me === true || !invite?.company_name
+      // round-6 UX-019: only a link this account used means «this team»; otherwise the member belongs to another company
+      title = invite?.used_by_me === true
+        ? L(`You are already a member of the ${company} team`, `آپ پہلے سے ${company} کی ٹیم کے رکن ہیں`, `أنت عضو في فريق ${company} بالفعل`)
+        : L('You are a member of another company’s team', 'آپ کسی دوسری کمپنی کی ٹیم کے رکن ہیں', 'أنت عضو في فريق شركة أخرى')
+      body = invite?.used_by_me === true
         ? L('You can price the company’s requests from your dashboard.', 'آپ اپنے ڈیش بورڈ سے کمپنی کی درخواستوں کی قیمت دے سکتے ہیں۔', 'يمكنك تسعير طلبات الشركة من لوحتك.')
         : L('To join another team, leave your current team first from the Team page.', 'دوسری ٹیم میں شامل ہونے کے لیے پہلے ٹیم کے صفحے سے موجودہ ٹیم چھوڑیں۔', 'وإن أردت الانضمام إلى فريق آخر، فغادر فريقك الحالي أولاً من صفحة فريق العمل.')
       action = <Link href="/supplier/dashboard" className={navyBtn} style={{ background: '#0B2438' }}>{L('Go to your dashboard', 'اپنے ڈیش بورڈ پر جائیں', 'الانتقال إلى لوحتك')}</Link>
@@ -159,7 +162,7 @@ export default function JoinTeamPage() {
       <div className="flex items-center justify-between p-5">
         <Link href="/" className="flex items-center" aria-label={L('Taseerak home', 'تسعیرک مرکزی صفحہ', 'تسعيرك، الرئيسية')}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/taseerak-metallic-logo.webp" alt="تسعيرك — Taseerak" className="h-14 w-auto" />
+          <img src="/taseerak-metallic-logo.webp" alt="تسعيرك — Taseerak" className="h-11 w-auto" />
         </Link>
         <LanguageSwitcher variant="minimal" />
       </div>

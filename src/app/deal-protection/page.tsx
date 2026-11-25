@@ -4,8 +4,7 @@ import Link from 'next/link'
 import PublicFooter from '@/components/public/PublicFooter'
 import { useTranslation } from '@/i18n'
 import Logo from '@/components/shared/Logo'
-import LanguageSwitcher from '@/components/shared/LanguageSwitcher'
-import HomeOrAccountLink from '@/components/public/HomeOrAccountLink'
+import PublicTopBar from '@/components/public/PublicTopBar'
 import Glyph from '@/components/shared/Glyph'
 import { useSignedIn } from '@/components/public/useSignedIn'
 import { OPERATOR } from '@/lib/legal'
@@ -73,15 +72,8 @@ export default function DealProtectionPage() {
   const signedIn = useSignedIn()
   return (
     <div className="min-h-screen bg-slate-50" dir={dir}>
-      <nav className="bg-white/90 backdrop-blur sticky top-0 z-50 border-b border-gray-100">
-        <div className="max-w-3xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between">
-          <a href="/" className="shrink-0" aria-label="تسعيرك">{/* eslint-disable-next-line @next/next/no-img-element */}<img src="/taseerak-metallic-logo.webp" alt="تسعيرك" className="h-14 w-auto" /></a>
-          <div className="flex items-center gap-2">
-            <LanguageSwitcher variant="minimal" />
-            <HomeOrAccountLink homeLabel={t.home} />
-          </div>
-        </div>
-      </nav>
+      {/* one top bar for the trust and legal pages (round-6 UX-116) */}
+      <PublicTopBar />
       <div className="max-w-3xl mx-auto px-4 sm:px-6 py-8">
         <h1 className="text-2xl font-bold mb-3" style={{ color: '#0B2438' }}><Glyph e="🛡" /> {t.title}</h1>
         <p className="text-sm text-gray-700 leading-relaxed mb-6">{t.intro}</p>
@@ -106,23 +98,20 @@ export default function DealProtectionPage() {
         </div>
         {/* a next step at the end (UX-095) */}
         <div className="mt-6 rounded-2xl p-5 text-white" style={{ background: 'linear-gradient(135deg,#071827,#0B2438)' }}>
-          <h2 className="text-lg font-bold">{t.readyH}</h2>
-          <p className="text-sm text-[#C7CED6] mt-1">{t.readyP}</p>
+          <h2 className="text-lg font-bold">{signedIn ? L('Have a question about a deal?', 'کسی سودے کے بارے میں سوال ہے؟', 'لديك سؤال عن صفقة؟') : t.readyH}</h2>
+          {signedIn
+            ? <p className="text-sm text-[#C7CED6] mt-1">{L('The Taseerak team answers you from the support page.', 'تسعیرک ٹیم سپورٹ کے صفحے سے آپ کو جواب دیتی ہے۔', 'يجيبك فريق تسعيرك من صفحة الدعم.')}</p>
+            : <p className="text-sm text-[#C7CED6] mt-1">{t.readyP}</p>}
           {/* a signed-in reader gets one way back, not «join as a supplier» (round-5 UX-190) */}
           <div className="mt-4 flex flex-wrap gap-2">
             {signedIn
-              ? <a href="/login" className="btn-orange text-sm">{L('Back to my account', 'اپنے اکاؤنٹ پر واپس', 'العودة إلى حسابي')}</a>
+              ? <Link href="/support?topic=deal" className="btn-orange text-sm">{L('Support', 'سپورٹ', 'الدعم')}</Link>
               : <>
                 <Link href="/contractor/rfq/quick" className="btn-orange text-sm">{t.request}</Link>
                 <Link href="/join" className="btn-light text-sm">{t.join}</Link>
               </>}
           </div>
         </div>
-        <p className="text-center text-[13px] text-gray-600 mt-8 flex justify-center gap-4">
-          <Link href="/terms" className="inline-flex items-center min-h-[44px] underline hover:text-gray-800">{t.terms}</Link>
-          <Link href="/privacy" className="inline-flex items-center min-h-[44px] underline hover:text-gray-800">{t.privacy}</Link>
-        </p>
-        <p className="text-center text-[12px] text-gray-600 mt-4">© 2026 تسعيرك — Taseerak</p>
       </div>
       <PublicFooter />
     </div>

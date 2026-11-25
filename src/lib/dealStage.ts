@@ -25,7 +25,41 @@ export function payDueSoon(offer: any, now: number = Date.now()): boolean {
   return !due || now >= due.getTime() - 3 * 86400000
 }
 
-export const DEAL_STEPS = ['قبول', 'تسليم', 'استلام', 'دفع'] as const
+// ── The expected delivery day (round-6 UX-001): ONE rule for the date and for the «late» check, on
+// every screen. The offer's delivery_days are WORKING days counted in Riyadh from the day the offer was
+// chosen, Fridays skipped. The supplier is late only once that whole Riyadh day has passed.
+const riyadhYmd = (d: Date) => d.toLocaleDateString('en-CA', { timeZone: 'Asia/Riyadh' }) // YYYY-MM-DD
+const riyadhIsFriday = (d: Date) => d.toLocaleDateString('en-US', { weekday: 'short', timeZone: 'Asia/Riyadh' }) === 'Fri'
+export function expectedDeliveryDate(offer: any): Date | null {
+  const n = Math.floor(Number(offer?.delivery_days) || 0)
+  if (!(n > 0) || !offer?.accepted_at) return null
+  const d = new Date(offer.accepted_at)
+  if (isNaN(d.getTime())) return null
+  let left = n
+  while (left > 0) {
+    d.setTime(d.getTime() + 86400000)
+    if (!riyadhIsFriday(d)) left--
+  }
+  return d
+}
+/** The expected day is still to come or is today (Riyadh calendar). */
+export function deliveryDueAhead(offer: any, now: number = Date.now()): boolean {
+  const due = expectedDeliveryDate(offer)
+  return !!due && riyadhYmd(new Date(now)) <= riyadhYmd(due)
+}
+/** The supplier is past the expected day and nothing was delivered or received, on a live deal. */
+export function deliveryLate(offer: any, now: number = Date.now()): boolean {
+  const due = expectedDeliveryDate(offer)
+  if (!due || offer?.deal_closed_at || offer?.supplier_delivered_at || offer?.received_at) return false
+  return riyadhYmd(new Date(now)) > riyadhYmd(due)
+}
+/** Whether the expected day is today in Riyadh. */
+export function deliveryDueToday(offer: any, now: number = Date.now()): boolean {
+  const due = expectedDeliveryDate(offer)
+  return !!due && riyadhYmd(new Date(now)) === riyadhYmd(due)
+}
+
+export const DEAL_STEPS =['قبول', 'تسليم', 'استلام', 'دفع'] as const
 
 // Labels per viewer and language. The supplier reads its own next step (persona review 2026-10-17:
 // «بانتظار تأكيد استلامك» is the buyer's sentence and confused the seller).
@@ -64,7 +98,7 @@ export function dealStage(offer: any, who: Who = 'buyer', locale: string = 'ar')
   if (offer?.deal_closed_at)
     return { step: 0, key: 'closed', label: lbl('closed', who, locale), short: sh('closed', who, locale), emoji: 'ℹ', done: false, tone: '#6B7280' }
   if (offer?.dispute_status === 'open')
-    return { step: 0, key: 'disputed', label: lbl('disputed', who, locale), short: sh('disputed', who, locale), emoji: '⚠', done: false, tone: '#DC2626' }
+    return { step: 0, key: 'disputed', label: lbl('disputed', who, locale), short: sh('disputed', who, locale), emoji: '⚠', done: false, tone: '#B42318' }
 
   const paid = offer?.payment_status === 'paid'
 

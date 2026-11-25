@@ -15,6 +15,8 @@ export default function SuppliersPublic({ ranked, listings }: { ranked: any[]; l
   const { locale, dir } = useTranslation()
   const L = (en: string, ur: string, ar: string) => (locale === 'en' ? en : locale === 'ur' ? ur : ar)
   const verifiedCount = ranked.filter((r: any) => r.verification_status === 'verified').length
+  // nothing to list yet: the page says «coming soon» once, at the top, instead of promising first (round-6 UX-138)
+  const empty = ranked.length === 0 && listings.length === 0
   const removeHref = (name: string) => `mailto:${OPERATOR.email}?subject=${encodeURIComponent(L('Directory removal request', 'ڈائریکٹری سے ہٹانے کی درخواست', 'طلب إزالة من الدليل'))}&body=${encodeURIComponent(name)}`
 
   return (
@@ -22,12 +24,12 @@ export default function SuppliersPublic({ ranked, listings }: { ranked: any[]; l
       <div className="text-center mb-8">
         <h1 className="text-2xl sm:text-3xl font-extrabold mb-2" style={{ color: '#0B2438' }}>{FEATURES.gamification
           ? <><span className="text-[#8F6820]"><Glyph e="🏆" /></span> {L('Supplier leaderboard', 'سپلائرز کی درجہ بندی', 'لوحة شرف الموردين')}</>
-          : <><span className="text-[#8F6820]"><Glyph e="🏪" /></span> {L('Supplier directory', 'سپلائر ڈائریکٹری', 'دليل الموردين')}</>}</h1>
-        <p className="text-sm text-gray-600 max-w-xl mx-auto leading-relaxed">
+          : <><span className="text-[#8F6820]"><Glyph e="🏪" /></span> {empty ? L('Supplier directory coming soon', 'سپلائر ڈائریکٹری جلد', 'دليل الموردين قريباً') : L('Supplier directory', 'سپلائر ڈائریکٹری', 'دليل الموردين')}</>}</h1>
+        {!empty && <p className="text-sm text-gray-600 max-w-xl mx-auto leading-relaxed">
           {!FEATURES.gamification ? L('Building-materials suppliers on Taseerak, with their verification status, rating and activity.', 'تسعیرک پر تعمیراتی سامان کے سپلائرز، ان کی تصدیق کی حالت، ریٹنگ اور سرگرمی کے ساتھ۔', 'موردو مواد البناء على منصة تسعيرك، مع حالة توثيقهم وتقييمهم ونشاطهم.') : L('Building-materials suppliers on Taseerak, ranked by verification, rating and requests won. Each supplier gets a reliability score out of 100.',
             'تسعیرک پر تعمیراتی سامان کے سپلائرز، تصدیق، ریٹنگ اور جیتی گئی درخواستوں کے لحاظ سے۔ ہر سپلائر کو 100 میں سے اعتماد کا اسکور ملتا ہے۔',
             'موردون لمواد البناء على منصة تسعيرك، مرتّبون حسب التوثيق والتقييم والطلبات التي فازوا بها. لكل مورد «درجة موثوقية» من 100.')}
-        </p>
+        </p>}
         {ranked.length > 0 && (
           <div className="flex items-center justify-center gap-4 mt-4 text-[13px] text-gray-600">
             <span><Glyph e="👥" /> {L(ranked.length === 1 ? '1 supplier on the platform' : `${ranked.length} suppliers on the platform`, `پلیٹ فارم پر ${ranked.length} سپلائرز`, `${arCount(ranked.length, 'مورد واحد', 'موردان', 'موردين', 'مورداً')} على المنصة`)}</span>
@@ -36,10 +38,9 @@ export default function SuppliersPublic({ ranked, listings }: { ranked: any[]; l
         )}
       </div>
 
-      {ranked.length === 0 && listings.length === 0 ? (
+      {empty ? (
         <div className="bg-white rounded-2xl border border-gray-100 p-10 text-center">
           <div className="text-4xl mb-3 text-[#0B2438]"><Glyph e="🏗" /></div>
-          <p className="font-bold text-gray-800 mb-1">{L('Supplier directory coming soon', 'سپلائر ڈائریکٹری جلد', 'دليل الموردين قريباً')}</p>
           <p className="text-sm text-gray-600">{L('You can already send a price request: it reaches the suppliers who specialise in your materials.', 'آپ ابھی قیمت کی درخواست بھیج سکتے ہیں: یہ آپ کے سامان کے ماہر سپلائرز تک پہنچتی ہے۔', 'يمكنك الآن إرسال طلب تسعير، فيصل إلى الموردين المختصين بموادك.')}</p>
           <div className="mt-5 flex flex-wrap items-center justify-center gap-2">
             <Link href="/contractor/rfq/quick" className="btn-orange text-sm">{L('Request a price', 'قیمت معلوم کریں', 'اطلب سعراً')}</Link>

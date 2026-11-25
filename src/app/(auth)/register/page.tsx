@@ -206,6 +206,7 @@ export default function RegisterPage() {
   // اختيار مسبق للدور من الرابط (?role=contractor|supplier) — لروابط الدعوة/الهبوط الموجّهة
   useEffect(() => {
     captureRef() // «ادعُ من تعرفه»: keep ?ref= before any redirect
+    let waitInvite = false
     try {
       // Phone + WhatsApp OTP is the main way in; this email form stays for ?email=1.
       // ?next= (same-origin path): where to land after sign-up + onboarding, e.g. a landing section card
@@ -215,22 +216,25 @@ export default function RegisterPage() {
       const k = qs.get('kind')
       if (qs.get('only') === '1') setSellerOnly(true)
       const tt = qs.get('team') || ''
+      // round-6 UX-110: with an invitation the form waits for its check (never shown, then replaced)
+      if (/^[0-9a-f-]{36}$/.test(tt)) waitInvite = true
       if (/^[0-9a-f-]{36}$/.test(tt)) {
         setTeamToken(tt); setSellerOnly(true); switchTo('supplier')
         try { localStorage.setItem(TEAM_INVITE_KEY, tt) } catch {}
         Promise.resolve(supabase.rpc('get_company_invite', { p_token: tt })).then(({ data, error }: any) => {
           const bad = !!error || !data || data.ok === false || data.valid === false
-          if (bad) { setTeamInvalid(true); try { localStorage.removeItem(TEAM_INVITE_KEY) } catch {}; return }
+          if (bad) { setTeamInvalid(true); try { localStorage.removeItem(TEAM_INVITE_KEY) } catch {}; setReady(true); return }
           if (data.company_name) setTeamCompany(String(data.company_name))
           if (data.role) setTeamRole(String(data.role))
-        }).catch(() => {})
+          setReady(true)
+        }).catch(() => { setTeamInvalid(true); try { localStorage.removeItem(TEAM_INVITE_KEY) } catch {}; setReady(true) })
       }
       if (qs.get('role') === 'supplier' || k === 'company' || k === 'independent') {
         switchTo('supplier')
         if (k === 'company' || k === 'independent') setSellerKind(k)
       }
     } catch {}
-    setReady(true)
+    if (!waitInvite) setReady(true)
   }, [])
 
   // فحص التكرار قبل الإنشاء — الجوال والبريد فريدان (خصوصية: نُرجع boolean فقط بلا اسم)
@@ -321,7 +325,7 @@ export default function RegisterPage() {
           <h1 className="text-xl font-bold text-navy mb-2">{t.verifyTitle}</h1>
           <p className="text-sm text-gray-500 mb-2">{t.verifyBody}</p>
           {sentTo && <p className="text-sm font-bold text-navy mb-2" dir="ltr">{sentTo.email}</p>}
-          <p className="text-[13px] text-gray-600 mb-2">{teamToken ? (locale === 'en' ? 'After confirming, sign in and you will come back to the invitation to join.' : locale === 'ur' ? 'تصدیق کے بعد سائن اِن کریں، آپ شامل ہونے کے لیے دعوت پر واپس آئیں گے۔' : 'بعد التأكيد سجّل الدخول، وستعود إلى الدعوة لإتمام الانضمام.') : selectedType === 'contractor' ? t.verifyNextBuyer : t.verifyNext}</p>
+          <p className="text-[13px] text-gray-600 mb-2">{teamToken ? (locale === 'en' ? 'After confirming, sign in and you will come back to the invitation to join.' : locale === 'ur' ? 'تصدیق کے بعد سائن اِن کریں، آپ شامل ہونے کے لیے دعوت پر واپس آئیں گے۔' : 'بعد التأكيد سجّل الدخول، وستعود إلى الدعوة لإتمام الانضمام.') : selectedType === 'contractor' ? t.verifyNextBuyer : sellerKind === 'independent' ? (locale === 'en' ? 'After signing in you will complete your details (location and what you price) in easy steps.' : locale === 'ur' ? 'سائن اِن کے بعد آپ آسان مراحل میں اپنی تفصیلات (مقام اور آپ کن چیزوں کی قیمت دیتے ہیں) مکمل کریں گے۔' : 'بعد الدخول ستكمل بياناتك (الموقع، وما تسعّره) بخطوات سهلة.') : t.verifyNext}</p>
           <p className="text-[13px] text-gray-600 mb-6">{t.junk}</p>
           <Link href={selectedType === 'supplier' ? '/login?m=email' : '/login'} className="flex items-center justify-center w-full min-h-[44px] py-3 rounded-xl font-extrabold text-[#071827] text-sm" style={{ background: 'linear-gradient(135deg,#F5C55B,#D4A543)' }}>{t.goSignIn}</Link>
           {sentTo && <FixSignupEmail email={sentTo.email} password={sentTo.password} locale={locale} onFixed={(e) => setSentTo(s => s ? { ...s, email: e } : s)} />}
@@ -331,7 +335,8 @@ export default function RegisterPage() {
   }
 
   return (
-    <div className="auth-screen min-h-screen flex" dir={dir}>
+    <div className="auth-screen min-h-screen flex flex-col" dir={dir}>
+    <div className="flex flex-1">
       {/* ===== Brand panel (wide screens), same as the login page ===== */}
       <div className="auth-brand-panel hidden lg:flex lg:w-[42%] relative overflow-hidden flex-col justify-between p-12 text-white">
         <a href="/" className="flex items-center">
@@ -362,7 +367,6 @@ export default function RegisterPage() {
             {t.home}
           </a>
           <div className="flex items-center gap-4">
-            <Link href={selectedType === 'supplier' ? '/login?m=email' : '/login'} className="hidden sm:inline-flex items-center min-h-[44px] text-sm font-bold text-orange-dark hover:underline">{t.haveAccount} {t.login}</Link>
             <LanguageSwitcher variant="minimal" />
           </div>
         </div>
@@ -386,10 +390,12 @@ export default function RegisterPage() {
             <div className="mb-6">
               <h1 className="text-2xl font-extrabold text-navy">{teamToken
                 ? (locale === 'en' ? `Join the team of ${teamCompany || 'the company'}` : locale === 'ur' ? `${teamCompany || 'کمپنی'} کی ٹیم میں شامل ہوں` : `انضم إلى فريق ${teamCompany || 'الشركة'}`)
-                : selectedType === 'supplier' ? t.supTitle : t.title}</h1>
+                : selectedType === 'supplier' ? (sellerKind === 'independent' ? (locale === 'en' ? 'Register as a pricing agent' : locale === 'ur' ? 'قیمت ایجنٹ کے طور پر رجسٹر کریں' : 'سجّل كوسيط تسعير') : t.supTitle) : t.title}</h1>
               <p className="text-ink-2 mt-1.5 text-sm">{teamToken
                 ? (locale === 'en' ? 'You will price requests in the company name from your own account. You do not need a commercial registration.' : locale === 'ur' ? 'آپ اپنے اکاؤنٹ سے کمپنی کے نام پر قیمتیں دیں گے۔ تجارتی رجسٹریشن کی ضرورت نہیں۔' : 'ستسعّر الطلبات باسم الشركة من حسابك الخاص، ولا تحتاج سجلاً تجارياً.')
-                : selectedType === 'supplier' ? t.supSub : t.sub}</p>
+                : selectedType === 'supplier' ? (sellerKind === 'independent'
+                  ? (locale === 'en' ? 'Enter your basic details now, and complete your location and what you price after signing in. Your name is shown to buyers on your offers.' : locale === 'ur' ? 'ابھی اپنی بنیادی تفصیلات درج کریں، اور سائن اِن کے بعد مقام اور آپ کن چیزوں کی قیمت دیتے ہیں مکمل کریں۔ آپ کا نام آپ کی آفرز پر خریداروں کو دکھتا ہے۔' : 'أدخل بياناتك الأساسية الآن، وأكمل موقعك وما تسعّره بعد الدخول. يظهر اسمك للمشترين على عروضك.')
+                  : t.supSub) : t.sub}</p>
             </div>
 
           {teamToken && teamInvalid ? (
@@ -448,7 +454,7 @@ export default function RegisterPage() {
               <div role="alert" className="text-red-700 text-[13px] bg-red-50 border border-red-200 rounded-lg p-2">
                 <Glyph e="⚠" /> {t.phoneTaken}{' '}
                 <Link href={selectedType === 'supplier' ? '/login?m=email' : '/login'} className="font-bold underline">{t.login}</Link>
-                {' · '}<Link href="/reset-password" className="font-bold underline">{locale === 'en' ? 'Forgot your password?' : locale === 'ur' ? 'پاسورڈ بھول گئے؟' : 'نسيت كلمة المرور؟'}</Link>
+                {' · '}<Link href="/forgot-password" className="inline-flex items-center min-h-[44px] font-bold underline">{locale === 'en' ? 'Forgot your password?' : locale === 'ur' ? 'پاسورڈ بھول گئے؟' : 'نسيت كلمة المرور؟'}</Link>
               </div>
             )}
 
@@ -504,7 +510,7 @@ export default function RegisterPage() {
               {(() => { const sug = emailTypoSuggestion(watch('email') || ''); return sug ? (
                 <p className="text-xs mt-1 text-[#8F6820]">{locale === 'en' ? 'Did you mean' : locale === 'ur' ? 'کیا آپ کا مطلب' : 'هل تقصد'} <button type="button" dir="ltr" className="font-bold underline" onClick={() => { setValue('email', sug, { shouldValidate: true }); checkEmailDup(sug) }}>{sug}</button>{locale === 'en' ? '?' : '؟'}</p>
               ) : null })()}
-              {emailDup && <p className="text-red-700 text-[13px] bg-red-50 border border-red-200 rounded-lg p-2 mt-1"><Glyph e="⚠" /> {t.emailTaken}<Link href={selectedType === 'supplier' ? '/login?m=email' : '/login'} className="underline font-bold">{t.signInInstead}</Link></p>}
+              {emailDup && <p className="text-red-700 text-[13px] bg-red-50 border border-red-200 rounded-lg p-2 mt-1"><Glyph e="⚠" /> {t.emailTaken}<Link href={selectedType === 'supplier' ? '/login?m=email' : '/login'} className="inline-flex items-center min-h-[44px] underline font-bold">{t.signInInstead}</Link>{' · '}<Link href="/forgot-password" className="inline-flex items-center min-h-[44px] font-bold underline">{locale === 'en' ? 'Forgot your password?' : locale === 'ur' ? 'پاسورڈ بھول گئے؟' : 'نسيت كلمة المرور؟'}</Link></p>}
             </div>
 
             <div>
@@ -556,9 +562,9 @@ export default function RegisterPage() {
 
             {/* switch buyer ⇄ supplier, then «have an account?» */}
             {!sellerOnly && <button type="button" onClick={() => switchTo(selectedType === 'supplier' ? 'contractor' : 'supplier')}
-              className="mt-5 w-full rounded-xl border border-line bg-gray-50 hover:bg-gray-100 px-4 py-3 text-sm text-ink-2 transition-colors">
+              className="mt-5 w-full min-h-[44px] rounded-xl border-2 border-[#0B2438]/30 bg-white hover:border-[#0B2438] px-4 py-3 text-sm text-ink-2 transition-colors">
               {selectedType === 'supplier' ? t.toBuyer : t.toSupplier}{' '}
-              <span className="font-extrabold" style={{ color: '#8F6820' }}>{selectedType === 'supplier' ? t.toBuyerCta : t.toSupplierCta}</span>
+              <span className="font-extrabold text-[#0B2438]">{selectedType === 'supplier' ? t.toBuyerCta : t.toSupplierCta}</span>
             </button>}
             </>)}
             <p className="mt-3 text-sm text-ink-2 text-center">{t.haveAccount} <Link href={selectedType === 'supplier' ? '/login?m=email' : '/login'} className="inline-flex items-center min-h-[44px] font-extrabold text-orange-dark hover:underline">{t.login}</Link></p>
@@ -569,9 +575,10 @@ export default function RegisterPage() {
             </p>}
           </div>
         </div>
-        {/* round-5 UX-202: the same footer as the other public pages */}
-        <PublicFooter />
       </div>
+    </div>
+    {/* round-5 UX-202 / round-6 UX-116: the same footer as the other public pages, across the whole width */}
+    <PublicFooter />
     </div>
   )
 }

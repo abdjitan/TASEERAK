@@ -257,8 +257,9 @@ export default function TenderReviewPage() {
   async function bulkApprove() {
     if (sent) return
     const ids = bulkIds
-    if (!ids.length) { setMsg(L('No materials without flags (with a specialty and a quantity) to approve in this view.', 'اس منظر میں منظوری کے لیے بغیر انتباہ کوئی مواد (شعبے اور مقدار کے ساتھ) نہیں۔', 'لا توجد مواد بلا تنبيهات (ولها تخصص وكمية) لاعتمادها في هذا العرض.')); return }
-    if (!(await askConfirm(L(`Approve ${ids.length} material items without flags shown?`, `اس منظر میں بغیر انتباہ ${ids.length} مواد آئٹمز منظور کریں؟`, `اعتماد ${arItems(ids.length)} من المواد بلا تنبيهات في هذا العرض؟`)))) return
+    // «من البنود الظاهرة», never «في هذا العرض» (it reads as a supplier's offer): round-6 UX-102
+    if (!ids.length) { setMsg(L('No materials without flags (with a specialty and a quantity) to approve among the items shown.', 'دکھائے گئے آئٹمز میں منظوری کے لیے بغیر انتباہ کوئی مواد (شعبے اور مقدار کے ساتھ) نہیں۔', 'لا توجد مواد بلا تنبيهات (ولها تخصص وكمية) لاعتمادها من البنود الظاهرة.')); return }
+    if (!(await askConfirm(L(`Approve ${ids.length} material items without flags among the items shown?`, `دکھائے گئے آئٹمز میں سے بغیر انتباہ ${ids.length} مواد آئٹمز منظور کریں؟`, `اعتماد ${arItems(ids.length)} من المواد بلا تنبيهات من البنود الظاهرة؟`)))) return
     setBusy(true)
     const supabase = createClient()
     const at = new Date().toISOString()
@@ -392,7 +393,7 @@ export default function TenderReviewPage() {
   // a summary card is a filter: a tap shows those items in the table (UX-136)
   const card = (label: string, value: number | string, tone = 'text-[#0B2438]', filter?: { kind: string; flag: string }) => {
     if (!filter) return (
-      <div className="bg-white rounded-2xl border border-gray-200 p-3">
+      <div className="shrink-0 min-w-[8.5rem] snap-start sm:min-w-0 bg-white rounded-2xl border border-gray-200 p-3">
         <div className="text-xs text-gray-500">{label}</div>
         <div className={`text-xl font-extrabold ${tone}`}>{value}</div>
       </div>
@@ -400,12 +401,35 @@ export default function TenderReviewPage() {
     const on = fKind === filter.kind && fFlag === filter.flag
     return (
       <button type="button" aria-pressed={on} onClick={() => { setFKind(filter.kind); setFFlag(filter.flag); setFSheet(''); setLimit(PAGE); setTimeout(() => document.getElementById('tender-table')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50) }}
-        className={`min-h-11 text-start bg-white rounded-2xl border p-3 transition-colors hover:border-[#D4A543] ${on ? 'border-[#D4A543] ring-2 ring-[#D4A543]/40' : 'border-gray-200'}`}>
+        className={`shrink-0 min-w-[8.5rem] snap-start sm:min-w-0 min-h-11 text-start bg-white rounded-2xl border p-3 transition-colors hover:border-[#D4A543] ${on ? 'border-[#D4A543] ring-2 ring-[#D4A543]/40' : 'border-gray-200'}`}>
         <div className="text-xs text-gray-500">{label}</div>
         <div className={`text-xl font-extrabold ${tone}`}>{value}</div>
       </button>
     )
   }
+
+  // phones (round-6 UX-083): the filters fold into «تصفية», and a pinned «إلى البنود» link shows until the items table
+  // is reached, so the contractor is not scrolled through every summary before the first item
+  const [filtersOpen, setFiltersOpen] = useState(false)
+  const activeFilters = (fSheet ? 1 : 0) + (fKind !== 'material' ? 1 : 0) + (fFlag ? 1 : 0) + (fText.trim() ? 1 : 0)
+  const [tableAhead, setTableAhead] = useState(false)
+  useEffect(() => {
+    if (loading || !tender) return
+    const el = document.getElementById('tender-table')
+    if (!el || typeof IntersectionObserver === 'undefined') return
+    const io = new IntersectionObserver(([e]) => setTableAhead(!e.isIntersecting && e.boundingClientRect.top > 0))
+    io.observe(el)
+    return () => io.disconnect()
+  }, [loading, tender])
+  const toTable = () => document.getElementById('tender-table')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  // the current step of the three, for the one-line summary on a phone
+  const matTotal = kindCount.material || 0
+  const curStep = flaggedPending > 0 ? 1 : approvedAll.length < matTotal ? 2 : 3
+  const curStepText = curStep === 1
+    ? L(`Review the flags (${flaggedPending})`, `انتباہات دیکھیں (${flaggedPending})`, `راجع التنبيهات (${flaggedPending})`)
+    : curStep === 2
+      ? L(`Approve the materials (${approvedAll.length}/${matTotal})`, `مواد منظور کریں (${approvedAll.length}/${matTotal})`, `اعتمد المواد (${approvedAll.length}/${matTotal})`)
+      : L('Send them for pricing', 'قیمت کے لیے بھیجیں', 'أرسلها للتسعير')
 
   if (loading) return <PageLoader />
 
@@ -428,9 +452,9 @@ export default function TenderReviewPage() {
         {!loading && tender && (<>
           <div className="flex items-start justify-between gap-3 flex-wrap">
             <div>
-              <Link href="/contractor/tender" className="text-xs font-bold text-[#8F6820] hover:underline">{L('All tenders', 'تمام ٹینڈرز', 'كل المناقصات')}</Link>
+              <Link href="/contractor/tender" className="inline-flex items-center min-h-11 text-[13px] font-bold text-[#8F6820] hover:underline">{L('All tenders', 'تمام ٹینڈرز', 'كل المناقصات')}</Link>
               <h1 className="text-xl sm:text-2xl font-bold text-[#0B2438]">{tender.title}</h1>
-              <p className="text-xs text-gray-500 mt-0.5">{files.map(f => `${f.kind === 'boq' ? L('BOQ', 'BOQ', 'جدول الكميات') : f.kind === 'spec' ? L('Spec', 'تفصیل', 'مواصفات') : L('Drawing', 'ڈرائنگ', 'مخطط')}: ${f.name}${f.storage_path ? '' : f.kind === 'boq' ? L(' (the read items only; the original was not saved)', ' (صرف پڑھے گئے آئٹمز؛ اصل فائل محفوظ نہیں ہوئی)', ' (البنود المقروءة فقط، ولم تُحفظ النسخة الأصلية)') : f.summary?.original_failed ? L(' (the read text only; the original was not saved)', ' (صرف پڑھا گیا متن؛ اصل فائل محفوظ نہیں ہوئی)', ' (النص المقروء فقط، ولم تُحفظ النسخة الأصلية)') : L(' (text only)', ' (صرف متن)', ' (النص فقط)')}`).join(' · ')}</p>
+              <p className="text-xs text-gray-500 mt-0.5 line-clamp-2 sm:line-clamp-none">{files.map(f => `${f.kind === 'boq' ? L('BOQ', 'BOQ', 'جدول الكميات') : f.kind === 'spec' ? L('Spec', 'تفصیل', 'مواصفات') : L('Drawing', 'ڈرائنگ', 'مخطط')}: ${f.name}${f.storage_path ? '' : f.kind === 'boq' ? L(' (the read items only; the original was not saved)', ' (صرف پڑھے گئے آئٹمز؛ اصل فائل محفوظ نہیں ہوئی)', ' (البنود المقروءة فقط، ولم تُحفظ النسخة الأصلية)') : f.summary?.original_failed ? L(' (the read text only; the original was not saved)', ' (صرف پڑھا گیا متن؛ اصل فائل محفوظ نہیں ہوئی)', ' (النص المقروء فقط، ولم تُحفظ النسخة الأصلية)') : L(' (text only)', ' (صرف متن)', ' (النص فقط)')}`).join(' · ')}</p>
               {(originalsFailed || files.some(f => !f.storage_path && (f.kind === 'boq' || f.summary?.original_failed))) && (
                 <p className="mt-1 text-xs font-semibold text-[#8F6820]" role="status"><Glyph e="⚠" /> {L('An original file could not be uploaded: only what was read from it is kept. Keep the original with you.', 'ایک اصل فائل اپ لوڈ نہیں ہو سکی: صرف اس سے پڑھا گیا مواد محفوظ ہے۔ اصل فائل اپنے پاس رکھیں۔', 'تعذّر رفع ملف أصلي، فحُفظ ما قُرئ منه فقط. احتفظ بالنسخة الأصلية لديك.')}</p>
               )}
@@ -449,8 +473,8 @@ export default function TenderReviewPage() {
               {!sent && (<>
               <button type="button" disabled={busy || !bulkIds.length} onClick={bulkApprove} className="min-h-11 px-4 py-2.5 rounded-xl text-sm font-bold border border-[#0B2438] text-[#0B2438] disabled:opacity-40">
                 {bulkIds.length
-                  ? L(`Approve ${bulkIds.length} items without flags in this view`, `اس منظر میں بغیر انتباہ ${bulkIds.length} آئٹمز منظور کریں`, `اعتماد ${arItems(bulkIds.length)} بلا تنبيهات في هذا العرض`)
-                  : L('Approve the materials without flags in this view', 'اس منظر میں بغیر انتباہ مواد منظور کریں', 'اعتماد المواد بلا تنبيهات في هذا العرض')}
+                  ? L(`Approve ${bulkIds.length} items without flags among the items shown`, `دکھائے گئے آئٹمز میں سے بغیر انتباہ ${bulkIds.length} آئٹمز منظور کریں`, `اعتماد ${arItems(bulkIds.length)} بلا تنبيهات من البنود الظاهرة`)
+                  : L('Approve the materials without flags among the items shown', 'دکھائے گئے آئٹمز میں سے بغیر انتباہ مواد منظور کریں', 'اعتماد المواد بلا تنبيهات من البنود الظاهرة')}
               </button>
               <button type="button" disabled={busy || !approvedMaterials.length} onClick={sendApproved} aria-describedby={!approvedMaterials.length ? 'tender-send-why' : undefined} className="min-h-11 px-4 py-2.5 rounded-xl text-sm font-bold text-[#071827] disabled:opacity-40" style={{ background: 'linear-gradient(135deg,#F5C55B,#D4A543)' }}>
                 {L(`Continue to the sending page (${approvedMaterials.length}) →`, `بھیجنے کے صفحے پر جائیں (${approvedMaterials.length}) ←`, `متابعة إلى صفحة الإرسال (${approvedMaterials.length}) ←`)}
@@ -467,7 +491,12 @@ export default function TenderReviewPage() {
           {/* «اعتمدتَ X من Y» */}
           {!sent && (kindCount.material || 0) > 0 && (
             <div>
-              <div className="flex items-center justify-between text-xs font-bold text-[#0B2438] mb-1">
+              {/* a phone: one line «الخطوة 2 من 3: اعتمد المواد (14/40)» instead of the three step cards (UX-083) */}
+              <div className="sm:hidden flex items-center justify-between gap-2 text-[13px] font-bold text-[#0B2438] mb-1">
+                <span>{L(`Step ${curStep} of 3: ${curStepText}`, `مرحلہ ${curStep} از 3: ${curStepText}`, `الخطوة ${curStep} من 3: ${curStepText}`)}</span>
+                <span dir="ltr" className="shrink-0">{Math.round((approvedAll.length / (kindCount.material || 1)) * 100)}%</span>
+              </div>
+              <div className="hidden sm:flex items-center justify-between text-xs font-bold text-[#0B2438] mb-1">
                 <span>{L(`You approved ${approvedAll.length} of ${kindCount.material || 0} materials`, `آپ نے ${kindCount.material || 0} میں سے ${approvedAll.length} مواد منظور کیے`, `اعتمدتَ ${approvedAll.length} من ${arMaterials(kindCount.material || 0)}`)}</span>
                 <span dir="ltr">{Math.round((approvedAll.length / (kindCount.material || 1)) * 100)}%</span>
               </div>
@@ -487,7 +516,7 @@ export default function TenderReviewPage() {
           )}
           {/* the order of work, with progress */}
           {!sent && (
-            <ol className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+            <ol className="hidden sm:grid grid-cols-3 gap-2">
               {[
                 { n: 1, t: L('Review the flags', 'انتباہات دیکھیں', 'راجع التنبيهات'), d: flaggedPending ? L(`Materials with flags not approved yet: ${flaggedPending}`, `انتباہ والے مواد جو ابھی منظور نہیں ہوئے: ${flaggedPending}`, `مواد عليها تنبيهات لم تُعتمد بعد: ${flaggedPending}`) : flaggedMaterials ? L('You reviewed all the flags', 'آپ نے تمام انتباہات دیکھ لیے', 'راجعتَ كل التنبيهات') : L('No material has flags', 'کسی مواد پر انتباہ نہیں', 'لا توجد مواد عليها تنبيهات'), done: flaggedPending === 0 },
                 { n: 2, t: L(`Approve the materials (${approvedAll.length}/${kindCount.material || 0})`, `مواد منظور کریں (${approvedAll.length}/${kindCount.material || 0})`, `اعتمد المواد (${approvedAll.length}/${kindCount.material || 0})`), d: L('Open an item, check it and approve it, or approve the ones without flags at once.', 'آئٹم کھولیں، جانچیں اور منظور کریں، یا بغیر انتباہ والے سب ایک ساتھ منظور کریں۔', 'افتح البند وراجعه واعتمده، أو اعتمد المواد بلا تنبيهات دفعة واحدة.'), done: !!approvedAll.length && approvedAll.length === (kindCount.material || 0) },
@@ -504,7 +533,8 @@ export default function TenderReviewPage() {
           )}
           {msg && !sel && <div className="rounded-xl bg-[#0B2438]/5 p-2.5 text-sm text-[#0B2438]" role="status">{msg}</div>}
 
-          <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-2">
+          {/* a phone: one row of summary cards that scrolls sideways (UX-083) */}
+          <div className="flex overflow-x-auto snap-x gap-2 pb-1 sm:pb-0 sm:grid sm:grid-cols-4 lg:grid-cols-8 sm:overflow-visible">
             {card(kindLabel('material', L), kindCount.material || 0, undefined, { kind: 'material', flag: '' })}
             {card(kindLabel('works', L), kindCount.works || 0, 'text-gray-600', { kind: 'works', flag: '' })}
             {card(kindLabel('provisional', L), kindCount.provisional || 0, 'text-[#8F6820]', { kind: 'provisional', flag: '' })}
@@ -566,8 +596,13 @@ export default function TenderReviewPage() {
             </details>
           )}
 
-          {/* filters */}
-          <div className="bg-white rounded-2xl border border-gray-200 p-3 grid grid-cols-1 sm:grid-cols-4 gap-2">
+          {/* filters: folded into «تصفية» on a phone (UX-083) */}
+          <button type="button" onClick={() => setFiltersOpen(o => !o)} aria-expanded={filtersOpen} aria-controls="tender-filters"
+            className="sm:hidden w-full min-h-11 flex items-center justify-between gap-2 px-4 rounded-2xl border border-gray-200 bg-white text-sm font-bold text-[#0B2438]">
+            <span>{L('Filter', 'فلٹر', 'تصفية')}{activeFilters ? ` (${activeFilters})` : ''}</span>
+            <Glyph e={filtersOpen ? '▴' : '▾'} />
+          </button>
+          <div id="tender-filters" className={`${filtersOpen ? 'grid' : 'hidden'} sm:grid bg-white rounded-2xl border border-gray-200 p-3 grid-cols-1 sm:grid-cols-4 gap-2`}>
             <select value={fSheet} aria-label={L('Trade (workbook sheet)', 'کام (ورک بک شیٹ)', 'الأعمال (ورقة الجدول)')} onChange={(e: any) => { setFSheet(e.target.value); setLimit(PAGE) }} className="input-field text-sm">
               <option value="">{L('All trades (workbook sheets)', 'تمام کام (ورک بک شیٹس)', 'كل الأعمال (أوراق الجدول)')}</option>
               {sheets.map(s => <option key={s} value={s}>{s}</option>)}
@@ -819,7 +854,7 @@ export default function TenderReviewPage() {
                     ) : sel.approved ? (
                       <div className="flex gap-2 flex-wrap">
                         <button type="button" disabled={busy} onClick={() => saveItem()} className="min-h-11 px-4 py-2.5 rounded-xl text-sm font-bold border border-[#0B2438] text-[#0B2438] disabled:opacity-40">{L('Save', 'محفوظ کریں', 'حفظ')}</button>
-                        <button type="button" disabled={busy} onClick={() => saveItem(false)} className="min-h-11 px-4 py-2.5 rounded-xl text-sm font-bold border border-red-200 text-red-700 disabled:opacity-40">{L('Remove approval', 'منظوری ہٹائیں', 'إلغاء الاعتماد')}</button>
+                        <button type="button" disabled={busy} onClick={() => saveItem(false)} className="min-h-11 px-4 py-2.5 rounded-xl text-sm font-bold border border-[#0B2438] text-[#0B2438] bg-white disabled:opacity-40">{L('Remove approval', 'منظوری ہٹائیں', 'إلغاء الاعتماد')}</button>
                       </div>
                     ) : (
                       <div className="space-y-1">
@@ -835,8 +870,11 @@ export default function TenderReviewPage() {
                     {/* a disabled approval always says why (UX-142) */}
                     {!locked && !sel.approved && !canApprove && (
                       <p id="tender-approve-why" className="text-xs font-semibold text-[#8F6820]">
-                        {edit.kind !== 'material'
-                          ? L('Works are not sent to suppliers. To send this item, change its kind to «Material».', 'کام سپلائرز کو نہیں بھیجے جاتے۔ یہ آئٹم بھیجنے کے لیے اس کی قسم «مواد» کریں۔', 'الأعمال لا تُرسل إلى الموردين؛ لإرسال هذا البند غيّر نوعه إلى «مادة».')
+                        {/* a reason that fits the item's kind (round-6 UX-102) */}
+                        {edit.kind === 'provisional'
+                          ? L('Provisional and general sums are not sent to suppliers. If this line is really a material to buy, change its kind to «Material».', 'عارضی اور عمومی رقمیں سپلائرز کو نہیں بھیجی جاتیں۔ اگر یہ لائن واقعی خریدنے کا مواد ہے تو اس کی قسم «مواد» کریں۔', 'المبالغ الاحتياطية والعامة لا تُرسل إلى الموردين؛ وإن كان هذا البند مادة تُشترى فعلاً فغيّر نوعه إلى «مادة».')
+                          : edit.kind !== 'material'
+                          ? L('Works (labour and installation) are not sent to suppliers. To send this item as a material to buy, change its kind to «Material».', 'کام (مزدوری اور تنصیب) سپلائرز کو نہیں بھیجے جاتے۔ اسے خریدنے کے مواد کے طور پر بھیجنے کے لیے اس کی قسم «مواد» کریں۔', 'الأعمال (المصنعيات والتركيب) لا تُرسل إلى الموردين؛ لإرسال هذا البند مادةً تُشترى غيّر نوعه إلى «مادة».')
                           : !validPair(edit.sector, edit.sub_category)
                             ? L('Choose the specialty first: it routes the item to the right suppliers.', 'پہلے شعبہ منتخب کریں: یہی آئٹم کو صحیح سپلائرز تک پہنچاتا ہے۔', 'اختر التخصص أولاً، فهو ما يوصل البند إلى الموردين المختصين.')
                             : !editHasQty
@@ -850,6 +888,13 @@ export default function TenderReviewPage() {
               </aside>
             </div>
           </div>
+          {/* a phone: «إلى البنود» stays in view until the items table is reached (UX-083), above the bottom navigation */}
+          {tableAhead && !sel && (
+            <button type="button" onClick={toTable}
+              className="sm:hidden fixed z-30 end-4 bottom-[calc(88px+env(safe-area-inset-bottom))] min-h-11 px-4 rounded-full shadow-lg text-sm font-bold text-white bg-[#0B2438]">
+              {L(`To the items (${filtered.length})`, `آئٹمز کی طرف (${filtered.length})`, `إلى البنود (${filtered.length})`)} <Glyph e="▾" />
+            </button>
+          )}
         </>)}
       </div>
     </AppShell>

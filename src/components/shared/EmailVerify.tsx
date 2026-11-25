@@ -38,7 +38,7 @@ export default function EmailVerify({ currentEmail, verified, locale, onDone, op
     setBusy(false)
     if (!r.ok) {
       setErr(j?.error === 'bad_email' ? L('Enter a valid email.', 'درست ای میل لکھیں۔', 'اكتب بريداً إلكترونياً صحيحاً.')
-        : j?.error === 'email_taken' ? L('This email is already used by another account.', 'یہ ای میل کسی اور اکاؤنٹ میں استعمال ہو رہی ہے۔', 'هذا البريد مستخدم في حساب آخر.')
+        : j?.error === 'email_taken' ? L('This email is used by another account. Use another email, or sign in with that account.', 'یہ ای میل کسی اور اکاؤنٹ میں استعمال ہو رہی ہے۔ کوئی اور ای میل استعمال کریں، یا اسی اکاؤنٹ سے سائن ان کریں۔', 'هذا البريد مستخدم في حساب آخر. استخدم بريداً آخر، أو سجّل الدخول بذلك الحساب.')
         : j?.error === 'rate_limited' ? L('Too many codes. Try again in an hour.', 'بہت زیادہ کوڈ۔ ایک گھنٹے بعد کوشش کریں۔', 'طلبت رموزاً كثيرة. حاول بعد ساعة.')
         : L('Could not send the code. Try again.', 'کوڈ نہیں بھیجا جا سکا۔', 'تعذّر إرسال الرمز. حاول مرة أخرى.'))
       return
@@ -53,7 +53,7 @@ export default function EmailVerify({ currentEmail, verified, locale, onDone, op
     if (!r.ok) {
       setErr(j?.error === 'expired' ? L('The code expired. Send a new one.', 'کوڈ ختم ہو گیا۔ نیا بھیجیں۔', 'انتهت صلاحية الرمز. أرسل رمزاً جديداً.')
         : j?.error === 'too_many' ? L('Too many tries. Send a new code.', 'بہت زیادہ کوششیں۔ نیا کوڈ بھیجیں۔', 'محاولات كثيرة. أرسل رمزاً جديداً.')
-        : j?.error === 'email_taken' ? L('This email is already used by another account.', 'یہ ای میل کسی اور اکاؤنٹ میں استعمال ہو رہی ہے۔', 'هذا البريد مستخدم في حساب آخر.')
+        : j?.error === 'email_taken' ? L('This email is used by another account. Use another email, or sign in with that account.', 'یہ ای میل کسی اور اکاؤنٹ میں استعمال ہو رہی ہے۔ کوئی اور ای میل استعمال کریں، یا اسی اکاؤنٹ سے سائن ان کریں۔', 'هذا البريد مستخدم في حساب آخر. استخدم بريداً آخر، أو سجّل الدخول بذلك الحساب.')
         : L('Wrong code.', 'غلط کوڈ۔', 'الرمز غير صحيح.'))
       return
     }

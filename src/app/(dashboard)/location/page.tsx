@@ -17,7 +17,7 @@ import { friendlyError } from '@/lib/friendlyError'
 
 const txt = {
   ar: {
-    title: 'الموقع والعنوان الوطني', sub: 'حدّد موقعك ليحسب الموردون تكلفة التوصيل بدقة', subBuyer: 'أضف عنوان التوصيل ليحسب الموردون تكلفة التوصيل بدقة',
+    titleBuyer: 'عنوان التوصيل', title: 'الموقع والعنوان الوطني', sub: 'حدّد موقعك ليحسب الموردون تكلفة التوصيل بدقة', subBuyer: 'أضف عنوان التوصيل ليحسب الموردون تكلفة التوصيل بدقة',
     back: '→ رجوع', save: 'حفظ الموقع والعنوان', saving: 'جارٍ الحفظ...', saved: 'تم الحفظ بنجاح',
     nationalAddr: 'العنوان الوطني السعودي', nationalSub: 'حسب نظام العنوان الوطني من البريد السعودي',
     shortAddr: 'الرمز المختصر', shortHint: 'مثال: RUH2343', buildingNo: 'رقم المبنى',
@@ -28,7 +28,7 @@ const txt = {
     optional: 'اختياري',
   },
   en: {
-    title: 'Location & National Address', sub: 'Set your location so suppliers can price delivery accurately', subBuyer: 'Add your delivery address so suppliers can price delivery accurately',
+    titleBuyer: 'Delivery address', title: 'Location & National Address', sub: 'Set your location so suppliers can price delivery accurately', subBuyer: 'Add your delivery address so suppliers can price delivery accurately',
     back: '← Back', save: 'Save Location & Address', saving: 'Saving...', saved: 'Saved successfully',
     nationalAddr: 'Saudi National Address', nationalSub: 'Per Saudi Post National Address system',
     shortAddr: 'Short Address', shortHint: 'e.g. RUH2343', buildingNo: 'Building Number',
@@ -39,7 +39,7 @@ const txt = {
     optional: 'optional',
   },
   ur: {
-    title: 'مقام اور قومی پتہ', sub: 'اپنا مقام مقرر کریں تاکہ سپلائرز ڈیلیوری کی قیمت درست لگا سکیں', subBuyer: 'ڈیلیوری کا پتہ شامل کریں تاکہ سپلائرز ڈیلیوری کی قیمت درست لگا سکیں',
+    titleBuyer: 'ڈیلیوری کا پتہ', title: 'مقام اور قومی پتہ', sub: 'اپنا مقام مقرر کریں تاکہ سپلائرز ڈیلیوری کی قیمت درست لگا سکیں', subBuyer: 'ڈیلیوری کا پتہ شامل کریں تاکہ سپلائرز ڈیلیوری کی قیمت درست لگا سکیں',
     back: '→ واپس', save: 'محفوظ کریں', saving: 'محفوظ ہو رہا ہے...', saved: 'محفوظ ہو گیا',
     nationalAddr: 'سعودی قومی پتہ', nationalSub: 'سعودی پوسٹ نیشنل ایڈریس سسٹم کے مطابق',
     shortAddr: 'مختصر پتہ', shortHint: 'مثال: RUH2343', buildingNo: 'عمارت نمبر',
@@ -178,7 +178,7 @@ export default function LocationPage() {
           <select id="loc-city" value={city} onChange={e => { setCity(e.target.value); setDistrict('') }} className="input-field" disabled={!region}>
             <option value="">{region ? L('Choose the city', 'شہر منتخب کریں', 'اختر المدينة') : L('Choose the region first', 'پہلے علاقہ منتخب کریں', 'اختر المنطقة أولاً')}</option>
             {!!city && !(CITIES_BY_REGION[region] || []).some(c => c.ar === city) && <option value={city}>{city}</option>}
-            {(CITIES_BY_REGION[region] || []).map(c => <option key={c.ar} value={c.ar}>{locale === 'ar' ? c.ar : c.en}</option>)}
+            {(CITIES_BY_REGION[region] || []).map(c => <option key={c.ar} value={c.ar}>{locale === 'en' ? c.en : c.ar /* Urdu readers read the Arabic city names (round-6 UX-092) */}</option>)}
           </select>
         ))}
       </div>
@@ -186,10 +186,10 @@ export default function LocationPage() {
   )
 
   return (
-    <AppShell title={T.title} nav={getNav(profile?.role, locale, '/location')} dir={dir}>
+    <AppShell title={isBuyer ? T.titleBuyer : T.title} nav={getNav(profile?.role, locale, '/location')} dir={dir}>
       <div className="max-w-3xl mx-auto">
         <div className="mb-6">
-          <h1 className="text-xl sm:text-2xl font-bold" style={{ color: '#0B2438' }}>{T.title}</h1>
+          <h1 className="text-xl sm:text-2xl font-bold" style={{ color: '#0B2438' }}>{isBuyer ? T.titleBuyer : T.title}</h1>
           <p className="text-sm text-gray-600 mt-1">{isBuyer ? T.subBuyer : T.sub}</p>
         </div>
 

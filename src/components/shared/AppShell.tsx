@@ -66,6 +66,9 @@ export default function AppShell({
   hideAssistant?: boolean
 }) {
   const { locale } = useTranslation()
+  // a menu badge stops at «9+», with «unread» for screen readers (round-6 UX-120)
+  const badgeText = (b: any) => (typeof b === 'number' && b > 9 ? '9+' : b)
+  const unreadWord = locale === 'en' ? 'unread' : locale === 'ur' ? 'نئے' : 'غير مقروءة'
   const [card, setCard] = useState<ShellCard | null>(company ? { company, meta: companyMeta, verified: companyVerified } : shellCache.card || null)
   useEffect(() => {
     if (company) {
@@ -335,7 +338,7 @@ export default function AppShell({
                   <span className="truncate">{n.label}</span>
                   {badge != null && badge !== 0 && (
                     <span className="ms-auto min-w-[22px] h-[22px] px-1.5 grid place-items-center rounded-full text-[12px] font-bold" style={{ background: '#D4A543', color: '#050B12' }}>
-                      {badge}
+                      {badgeText(badge)}<span className="sr-only"> {unreadWord}</span>
                     </span>
                   )}
                 </Link>
@@ -441,7 +444,7 @@ export default function AppShell({
               <NavIcon href={n.href} fallback={n.icon} className="w-[21px] h-[21px]" />
               <span className="text-[12px] font-bold truncate max-w-[84px]">{label}</span>
               {badge != null && badge !== 0 && (
-                <span className="absolute top-0.5 end-[calc(50%-24px)] min-w-[20px] h-[20px] px-1 grid place-items-center rounded-full text-[12px] font-bold" style={{ background: '#D4A543', color: '#050B12' }}>{badge}</span>
+                <span className="absolute top-0.5 end-[calc(50%-24px)] min-w-[20px] h-[20px] px-1 grid place-items-center rounded-full text-[12px] font-bold" style={{ background: '#D4A543', color: '#050B12' }}>{badgeText(badge)}<span className="sr-only"> {unreadWord}</span></span>
               )}
             </Link>
           )

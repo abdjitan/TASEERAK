@@ -107,7 +107,16 @@ export default function OrderDetailPage() {
           supabase.from('profiles').select('*').eq('id', rfqData.contractor_id).maybeSingle(),
           buyer ? supabase.from('offers').select('id, total_price, vat_included, vat_status, status, item_prices').eq('rfq_id', rfqData.id) : Promise.resolve({ data: [] as any[] }),
         ])
-        setContractor(contractorData)
+        // round-6 UX-061: a team member cannot read the buyer's profile; the reveal RPC gives the name after the award
+        let buyerRow: any = contractorData
+        if (!buyer && !contractorData?.company_name_ar && !contractorData?.full_name) {
+          try {
+            const { data: c } = await supabase.rpc('get_rfq_contractor', { p_rfq_id: rfqData.id })
+            const row: any = Array.isArray(c) ? c[0] : c
+            if (row?.revealed) buyerRow = { ...(contractorData || {}), ...row }
+          } catch {}
+        }
+        setContractor(buyerRow)
         // the profile is the source of truth (a deal link opened on a new device, UX-068)
         if (buyer && contractorData?.buyer_type) rememberBuyerType(contractorData.buyer_type)
         setHome(buyer && (contractorData?.buyer_type ? contractorData.buyer_type === 'individual' : storedBuyerType() === 'individual'))
@@ -232,8 +241,9 @@ export default function OrderDetailPage() {
 
   if (loading) return <PageLoader />
 
+  // round-6 UX-061: a supplier whose load failed keeps the supplier menu
   if (loadFailed) return (
-    <AppShell title={L('Deal', 'ڈیل', 'الصفقة')} nav={getNav('contractor', locale, '/contractor/rfqs')} dir={dir}>
+    <AppShell title={L('Deal', 'ڈیل', 'الصفقة')} nav={roleHint === 'supplier' ? getNav('supplier', locale, '/supplier/deals') : getNav('contractor', locale, '/contractor/rfqs')} dir={dir}>
       <div className="max-w-xl mx-auto mt-6"><LoadError onRetry={() => { setLoading(true); load() }} /></div>
     </AppShell>
   )
@@ -259,7 +269,10 @@ export default function OrderDetailPage() {
       <div className="max-w-xl mx-auto mt-6 bg-white rounded-2xl p-8 sm:p-10 text-center border border-gray-100 shadow-sm">
         <div className="text-4xl mb-2 text-[#0B2438]"><Glyph e="📄" /></div>
         <p className="text-gray-800 font-bold mb-1">{L('This deal is no longer active.', 'یہ ڈیل اب فعال نہیں ہے۔', 'لم تعد هذه الصفقة سارية.')}</p>
-        <p className="text-sm text-gray-600 mb-4">{L('The offer was cancelled or is no longer chosen. You can review the request and its offers.', 'آفر منسوخ ہو گئی یا اب منتخب نہیں ہے۔ آپ درخواست اور اس کی آفرز دیکھ سکتے ہیں۔', 'أُلغي العرض أو لم يعد مختاراً. يمكنك مراجعة الطلب وعروضه.')}</p>
+        <p className="text-sm text-gray-600 mb-4">{isBuyer
+          ? L('The offer was cancelled or is no longer chosen. You can review the request and its offers.', 'آفر منسوخ ہو گئی یا اب منتخب نہیں ہے۔ آپ درخواست اور اس کی آفرز دیکھ سکتے ہیں۔', 'أُلغي العرض أو لم يعد مختاراً. يمكنك مراجعة الطلب وعروضه.')
+          // round-6 UX-061: the supplier's own words
+          : L('The offer was cancelled or is no longer chosen. You can review the request and your offer.', 'آفر منسوخ ہو گئی یا اب منتخب نہیں ہے۔ آپ درخواست اور اپنی آفر دیکھ سکتے ہیں۔', 'أُلغي العرض أو لم يعد مختاراً. يمكنك مراجعة الطلب وعرضك.')}</p>
         <Link href={isBuyer ? `/contractor/rfq/${rfq.id}` : `/supplier/dashboard/rfq/${rfq.id}`} className="inline-flex items-center justify-center min-h-[44px] px-5 rounded-xl text-sm font-bold" style={{ background: '#D4A543', color: '#071827' }}>
           {L('Open the request', 'درخواست کھولیں', 'افتح الطلب')}
         </Link>
@@ -271,6 +284,8 @@ export default function OrderDetailPage() {
   const manageHref = `/supplier/dashboard/rfq/${offer.rfq_id}#deal`
   // a home buyer reads plain words (UX-008): cleaned Arabic names, full unit names
   const pname = (n: any) => (home && locale === 'ar' ? cleanArName(String(n || '')) : getProductLabel(n, locale))
+  // round-6 UX-061: the buyer's name, never «—»
+  const buyerName = contractor?.company_name_ar || contractor?.full_name || L('The buyer', 'خریدار', 'المشتري')
 
   const poNumber = `PO-${offer.id.slice(0, 8).toUpperCase()}`
   const ref = rfqRef(rfq, locale)
@@ -324,27 +339,11 @@ export default function OrderDetailPage() {
   // «اطلب مرة أخرى» from a partly awarded deal: only this supplier's materials (round-4 UX-131)
   const againHref = `/contractor/rfq/quick?from=${offer.rfq_id}${hasAwards ? `&items=${awards.map((a: any) => a.item_index).join(',')}` : ''}`
   const pickupDeal = rfq.delivery_required === false
-  // round-5 UX-118: the expected delivery day (Riyadh calendar, working days, Fridays skipped)
-  const expected = (() => {
-    const n = Number(offer.delivery_days) || 0
-    if (!(n > 0) || !offer.accepted_at) return null
-    const d = new Date(offer.accepted_at)
-    let left = n
-    while (left > 0) {
-      d.setTime(d.getTime() + 86400000)
-      if (d.toLocaleDateString('en-US', { weekday: 'short', timeZone: 'Asia/Riyadh' }) !== 'Fri') left--
-    }
-    return d
-  })()
-  const expectedText = expected ? expected.toLocaleDateString(dloc, { weekday: 'long', day: 'numeric', month: 'long', timeZone: 'Asia/Riyadh' }) : ''
-  function downloadIcs() {
-    if (!expected) return
-    const ymd = expected.toLocaleDateString('en-CA', { timeZone: 'Asia/Riyadh' }).replace(/-/g, '')
-    const next = new Date(expected.getTime() + 86400000).toLocaleDateString('en-CA', { timeZone: 'Asia/Riyadh' }).replace(/-/g, '')
-    const title = pickupDeal ? L('Pick up my order (Taseerak)', 'میرا آرڈر وصول کریں (تسعیرک)', 'استلام طلبي (تسعيرك)') : L('My order arrives (Taseerak)', 'میرا آرڈر پہنچے گا (تسعیرک)', 'وصول طلبي (تسعيرك)')
-    const ics = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//Taseerak//Deal//AR', 'BEGIN:VEVENT', `UID:${offer.id}@taseerak`, `DTSTART;VALUE=DATE:${ymd}`, `DTEND;VALUE=DATE:${next}`, `SUMMARY:${title}`, 'END:VEVENT', 'END:VCALENDAR'].join('\r\n')
-    const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([ics], { type: 'text/calendar' })); a.download = 'taseerak-delivery.ics'; a.click()
-  }
+  // round-6 UX-001: the expected delivery day and «أضف إلى التقويم» live once, in the deal steps
+  // (DealProtection, via dealStage.expectedDeliveryDate); the terms card keeps only «مدة التوصيل».
+  // round-6 UX-029: a deal the admins cancelled
+  const dealClosed = !!offer.deal_closed_at
+  const closedOn = dealClosed ? new Date(offer.deal_closed_at).toLocaleDateString(dloc, { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'Asia/Riyadh' }) : ''
   // round-5 UX-014/UX-070: the public page exists only for a company or shop seller that is not banned
   const supplierPublic = !!supplier?.id && !isIndependentOffer(offer) && !supplier?.is_banned && !supplier?.banned_at
   const supplierHref = supplier?.id ? `/suppliers/${supplier.id}?from=${encodeURIComponent(`/contractor/orders/${offer.id}`)}` : ''
@@ -362,11 +361,13 @@ export default function OrderDetailPage() {
     setTimeout(() => (document.getElementById(`star-${v}`) as HTMLButtonElement | null)?.focus(), 0)
   }
   const rowName = (it: any) => it.installOf ? `${L('Installation', 'تنصیب', 'تركيب')}: ${pname(it.installOf)}` : it.isExtra ? it.product_name : pname(it.product_name)
-  const qtyText = (it: any) => it.quantity === '' || it.quantity == null ? '—' : `${it.quantity} ${getUnitLabelLong(it.unit, locale)}`
+  // round-6 UX-099: quantities with thousands separators
+  const qtyText = (it: any) => it.quantity === '' || it.quantity == null ? '—' : `${Number.isFinite(Number(it.quantity)) ? Number(it.quantity).toLocaleString('en-US', { maximumFractionDigits: 3 }) : it.quantity} ${getUnitLabelLong(it.unit, locale)}`
 
   // the seller's invoice, named by who the seller is (UX-025)
-  const invLabel = sellerInvoiceLabel(offer, locale, isBuyer ? 'buyer' : 'supplier')
   const independent = isIndependentOffer(offer)
+  // round-6 UX-099: one name, the same as the deal steps («فاتورة المورد» for a home buyer)
+  const invLabel = home && !independent ? L('The supplier’s invoice', 'سپلائر کی انوائس', 'فاتورة المورد') : sellerInvoiceLabel(offer, locale, isBuyer ? 'buyer' : 'supplier')
   const disclosure = independent
     ? (isBuyer
       // the source shop may not be VAT-registered: never promise a «tax» invoice from it (round-4 UX-069)
@@ -399,7 +400,7 @@ export default function OrderDetailPage() {
     <div className="text-sm text-gray-600">{L('Mobile:', 'موبائل:', 'جوال:')} <a href={`tel:${String(p).replace(/[^0-9+]/g, '')}`} dir="ltr" className="font-semibold text-[#0B2438] hover:underline">{p}</a></div>
   )
   const disputeOpen = offer.dispute_status === 'open'
-  const needsRating = isBuyer && offer.status === 'accepted' && !!offer.received_at && !existingReview && !disputeOpen
+  const needsRating = isBuyer && offer.status === 'accepted' && !!offer.received_at && !existingReview && !disputeOpen && !dealClosed
 
 
   return (
@@ -417,12 +418,26 @@ export default function OrderDetailPage() {
                 <Glyph e="🔁" /> {L('Request again', 'دوبارہ منگوائیں', 'اطلب مرة أخرى')}
               </Link>
             )}
+            {/* round-6 UX-099: printing is a secondary action, outline only; UX-029: a cancelled deal prints as such */}
             <button onClick={handlePrint}
-              className="inline-flex items-center gap-1.5 min-h-[44px] bg-[#0B2438] text-white px-4 rounded-xl text-sm font-semibold hover:bg-[#071827] transition-colors">
-              <Glyph e="🖨" /> {home ? L('Print deal details', 'ڈیل کی تفصیل پرنٹ کریں', 'طباعة تفاصيل الصفقة') : L('Print purchase order', 'پرچیز آرڈر پرنٹ کریں', 'طباعة أمر الشراء')}
+              className="inline-flex items-center gap-1.5 min-h-[44px] border border-[#0B2438] text-[#0B2438] bg-white px-4 rounded-xl text-sm font-semibold hover:bg-[#0B2438]/5 transition-colors">
+              <Glyph e="🖨" /> {dealClosed ? L('Print a cancelled copy', 'منسوخ نقل پرنٹ کریں', 'طباعة نسخة ملغاة') : home ? L('Print deal details', 'ڈیل کی تفصیل پرنٹ کریں', 'طباعة تفاصيل الصفقة') : L('Print purchase order', 'پرچیز آرڈر پرنٹ کریں', 'طباعة أمر الشراء')}
             </button>
           </div>
         </div>
+
+        {/* round-6 UX-029: a grey bar that also prints, and a «ملغاة» watermark on the printed copy */}
+        {dealClosed && (
+          <div role="status" className="rounded-xl bg-gray-100 border border-gray-300 text-gray-800 text-sm font-semibold px-4 py-3 leading-relaxed print:border-gray-500">
+            <Glyph e="ℹ" /> {L(`This deal was cancelled by an admin decision on ${closedOn}.`, `یہ ڈیل ${closedOn} کو انتظامیہ کے فیصلے سے منسوخ کر دی گئی۔`, `أُلغيت هذه الصفقة بقرار الإدارة بتاريخ ${closedOn}.`)}
+            {offer.deal_closed_reason ? <> <span dir="auto">{L('Reason: ', 'وجہ: ', 'السبب: ')}{offer.deal_closed_reason}</span></> : null}
+          </div>
+        )}
+        {dealClosed && (
+          <div aria-hidden="true" className="hidden print:flex fixed inset-0 items-center justify-center pointer-events-none z-50">
+            <span className="text-[120px] font-extrabold text-gray-400/40" style={{ transform: 'rotate(-30deg)' }}>{L('CANCELLED', 'منسوخ', 'ملغاة')}</span>
+          </div>
+        )}
 
         {/* right after the choice: what happens next (UX-017) */}
         {isNew && isBuyer && (
@@ -478,6 +493,7 @@ export default function OrderDetailPage() {
               amount={dealGross}
               rfqRefNo={rfq.ref_no}
               isHome={home}
+              hideContact
               pickup={pickupDeal}
               pickupPlace={supplierPlace}
               onChange={(o: any) => setOffer((prev: any) => (prev ? { ...prev, ...o } : prev))}
@@ -487,12 +503,17 @@ export default function OrderDetailPage() {
 
         {/* the other side: WhatsApp or message (UX-104). The buyer's WhatsApp button is in the deal
             steps above, so it shows once (UX-054). */}
-        {offer.status === 'accepted' && (
+        {/* round-6 UX-061: a company team member does not message the buyer; the owner does */}
+        {offer.status === 'accepted' && teamMember && (
+          <p className="print:hidden text-sm text-gray-600">{L('The account owner contacts the buyer on this deal.', 'اس ڈیل میں اکاؤنٹ کا مالک خریدار سے رابطہ کرتا ہے۔', 'يتواصل صاحب الحساب مع المشتري في هذه الصفقة.')}</p>
+        )}
+        {/* round-6 UX-099: WhatsApp and «راسل المورد» side by side (the deal steps no longer repeat WhatsApp) */}
+        {offer.status === 'accepted' && !teamMember && (
           <div className="print:hidden flex flex-wrap gap-2">
-            {wa && !isBuyer && (
+            {wa && !dealClosed && (
               <a href={wa} target="_blank" rel="noopener noreferrer"
                 className="inline-flex items-center gap-1.5 min-h-[44px] px-4 rounded-xl text-sm font-bold border border-[#0B2438] text-[#0B2438] bg-white hover:bg-[#0B2438]/5">
-                <Glyph e="💬" /> {L('WhatsApp', 'واٹس ایپ', 'واتساب')}
+                <Glyph e="💬" /> {isBuyer ? L('WhatsApp the supplier', 'سپلائر کو واٹس ایپ', 'واتساب المورد') : L('WhatsApp', 'واٹس ایپ', 'واتساب')}
               </a>
             )}
             <button type="button" onClick={openChat} disabled={chatBusy}
@@ -515,9 +536,10 @@ export default function OrderDetailPage() {
                 <p className="text-[#F5C55B] print:text-[#9D7425] text-sm mt-1" dir="auto">{rfqDesc(rfq, locale, hasAwards ? awards.length : undefined)}</p>
               </div>
               <div className="text-end">
-                <div className="text-sm text-[#F5C55B] print:text-[#9D7425]">{home ? L('Deal no.', 'ڈیل نمبر', 'رقم الصفقة') : L('Order no.', 'آرڈر نمبر', 'رقم الأمر')}</div>
-                <div className="text-xl font-bold" dir="auto">{dealNo}</div>
-                <div className="text-sm text-[#F5C55B] print:text-[#9D7425] mt-1">{L('Date:', 'تاریخ:', 'التاريخ:')} {date}</div>
+                {/* round-6 UX-099: a home buyer's number is the request number, named once */}
+                <div className="text-sm text-[#F5C55B] print:text-[#9D7425]">{home && rfq.ref_no ? L('Request no.', 'درخواست نمبر', 'رقم الطلب') : home ? L('Deal no.', 'ڈیل نمبر', 'رقم الصفقة') : L('Order no.', 'آرڈر نمبر', 'رقم الأمر')}</div>
+                <div className="text-xl font-bold" dir="auto">{home && rfq.ref_no ? String(rfq.ref_no) : dealNo}</div>
+                <div className="text-sm text-[#F5C55B] print:hidden mt-1">{L('Date:', 'تاریخ:', 'التاريخ:')} {date}</div>
                 {/* the printed copy names what the date is; the on-screen badge is hidden in print (round-4 UX-129) */}
                 <div className="hidden print:block text-sm text-[#9D7425] mt-1">{home ? L('Chosen on:', 'انتخاب کی تاریخ:', 'تاريخ الاختيار:') : L('Approved on:', 'منظوری کی تاریخ:', 'تاريخ الاعتماد:')} {date}</div>
                 {!home && ref && <div className="text-sm text-[#F5C55B] print:text-[#9D7425] mt-1">{ref.startsWith('RFQ-') ? <>{L('Request:', 'درخواست:', 'الطلب:')} <span dir="ltr">{ref}</span></> : ref}</div>}
@@ -529,7 +551,7 @@ export default function OrderDetailPage() {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 p-4 sm:p-8 border-b border-gray-100">
             <div>
               <div className="text-xs font-bold text-gray-500 mb-2">{L('Buyer', 'خریدار', 'المشتري')}</div>
-              <div className="font-bold text-gray-900">{contractor?.company_name_ar || '—'}</div>
+              <div className="font-bold text-gray-900">{buyerName}</div>
               {contractor?.commercial_registration && (
                 <div className="text-sm text-gray-600 mt-1">{L('CR:', 'کمرشل رجسٹریشن:', 'سجل تجاري:')} {contractor.commercial_registration}</div>
               )}
@@ -719,15 +741,6 @@ export default function OrderDetailPage() {
                   <span>{rfq.delivery_required ? L('Delivery time:', 'ڈیلیوری کا وقت:', 'مدة التوصيل:') : L('Ready for pickup within:', 'وصولی کے لیے تیار:', 'جاهز للاستلام خلال:')} {daysText(offer.delivery_days, locale)}</span>
                 </div>
               )}
-              {expected && !offer.received_at && (
-                <div className="sm:col-span-2 rounded-lg bg-[#0B2438]/5 px-3 py-2">
-                  <div className="font-bold text-[#0B2438]">{pickupDeal
-                    ? L(`Expected ready for pickup on ${expectedText}`, `متوقع وصولی کے لیے تیار: ${expectedText}`, `جاهز للاستلام متوقَّعاً يوم ${expectedText}`)
-                    : L(`Expected delivery date: ${expectedText}`, `متوقع ڈیلیوری کی تاریخ: ${expectedText}`, `الموعد المتوقَّع للتسليم: ${expectedText}`)}</div>
-                  <div className="text-xs text-gray-600 mt-0.5">{L('An estimate from the delivery time in the offer (Fridays not counted); agree on the date in messages.', 'آفر میں ڈیلیوری کے وقت سے اندازہ (جمعہ شامل نہیں)؛ تاریخ پیغامات میں طے کریں۔', 'تقدير بحسب مدة التوصيل في العرض (دون أيام الجمعة)، واتفق على الموعد عبر الرسائل.')}</div>
-                  <button type="button" onClick={downloadIcs} className="print:hidden mt-1 inline-flex items-center gap-1 min-h-[44px] text-sm font-bold text-[#8F6820] hover:underline"><Glyph e="📅" /> {L('Add to calendar', 'کیلنڈر میں شامل کریں', 'أضف إلى التقويم')}</button>
-                </div>
-              )}
             </div>
             {offer.notes && (
               <div className="mt-4 bg-gray-50 rounded-lg p-3 text-sm text-gray-700">
@@ -738,13 +751,23 @@ export default function OrderDetailPage() {
 
           {/* Status Badge */}
           <div className="p-4 sm:p-8 text-center print:hidden">
-            <div className="inline-flex items-center gap-2 bg-green-50 border border-green-200 text-green-800 px-6 py-3 rounded-xl">
-              <span className="text-xl"><Glyph e="✅" /></span>
-              <div>
-                <div className="font-bold">{isBuyer ? L('You chose this offer', 'آپ نے یہ آفر منتخب کی', 'اخترت هذا العرض') : L('The buyer chose your offer', 'خریدار نے آپ کی آفر منتخب کی', 'اختار المشتري عرضك')}</div>
-                <div className="text-xs text-green-700">{L('on', 'بتاریخ', 'بتاريخ')} {date}</div>
+            {dealClosed ? (
+              <div className="inline-flex items-center gap-2 bg-gray-100 border border-gray-300 text-gray-800 px-6 py-3 rounded-xl">
+                <span className="text-xl"><Glyph e="ℹ" /></span>
+                <div>
+                  <div className="font-bold">{L('Deal cancelled', 'ڈیل منسوخ', 'أُلغيت الصفقة')}</div>
+                  <div className="text-xs text-gray-600">{L('on', 'بتاریخ', 'بتاريخ')} {closedOn}</div>
+                </div>
               </div>
-            </div>
+            ) : (
+              <div className="inline-flex items-center gap-2 bg-[#E1F5EE] border border-[#0F6E56]/30 text-[#0F6E56] px-6 py-3 rounded-xl">
+                <span className="text-xl"><Glyph e="✅" /></span>
+                <div>
+                  <div className="font-bold">{isBuyer ? L('You chose this offer', 'آپ نے یہ آفر منتخب کی', 'اخترت هذا العرض') : L('The buyer chose your offer', 'خریدار نے آپ کی آفر منتخب کی', 'اختار المشتري عرضك')}</div>
+                  <div className="text-xs">{L('on', 'بتاریخ', 'بتاريخ')} {date}</div>
+                </div>
+              </div>
+            )}
           </div>
         </div>
 
@@ -771,7 +794,7 @@ export default function OrderDetailPage() {
             </div>
             <div>
               <div className="text-xs font-bold text-gray-500 mb-1">{L('Buyer', 'خریدار', 'المشتري')}</div>
-              <div className="font-bold text-gray-900">{contractor?.company_name_ar || '—'}</div>
+              <div className="font-bold text-gray-900">{buyerName}</div>
               {contractor?.vat_number && <div className="text-gray-600">{L('VAT no.:', 'ٹیکس نمبر:', 'الرقم الضريبي:')} {contractor.vat_number}</div>}
               {contractor?.commercial_registration && <div className="text-gray-600">{L('CR:', 'کمرشل رجسٹریشن:', 'سجل تجاري:')} {contractor.commercial_registration}</div>}
             </div>
@@ -832,7 +855,7 @@ export default function OrderDetailPage() {
                 {reviewParts.text && <p className="text-sm text-gray-600 mt-2 whitespace-pre-line" dir="auto">{reviewParts.text}</p>}
                 {justRated && <p className="text-sm font-semibold text-[#0F6E56] mt-2" role="status">{supplierPublic
                   ? L('Your rating will show on the supplier’s page.', 'آپ کی ریٹنگ سپلائر کے صفحے پر نظر آئے گی۔', 'سيظهر تقييمك في صفحة المورد.')
-                  : L('Thank you, your rating counts in the seller’s record.', 'شکریہ، آپ کی ریٹنگ بیچنے والے کے ریکارڈ میں شمار ہوتی ہے۔', 'شكراً لك، يُحتسب تقييمك في سجلّ البائع.')}</p>}
+                  : L('Thank you, your rating counts in the supplier’s record.', 'شکریہ، آپ کی ریٹنگ سپلائر کے ریکارڈ میں شمار ہوتی ہے۔', 'شكراً لك، يُحتسب تقييمك في سجلّ المورد.')}</p>}
                 <div className="mt-2 flex flex-wrap justify-center gap-2">
                   {canEditReview && (
                     <button type="button" onClick={startEditReview} className="min-h-[44px] px-4 rounded-xl text-sm font-bold border border-[#0B2438] text-[#0B2438] bg-white hover:bg-[#0B2438]/5">{L('Edit your rating', 'اپنی ریٹنگ میں ترمیم کریں', 'عدّل تقييمك')}</button>
@@ -865,7 +888,9 @@ export default function OrderDetailPage() {
                   ))}
                 </div>
                 <div className="text-sm font-bold text-[#8F6820] min-h-[20px] mb-3">{(hoverRating || rating) ? (STAR_WORDS[locale] || STAR_WORDS.ar)[(hoverRating || rating) - 1] : ''}</div>
-                <div className="flex flex-wrap gap-2 mb-3" aria-label={L('What went well (optional)', 'کیا اچھا رہا (اختیاری)', 'ما الذي أعجبك (اختياري)')}>
+                {/* round-6 UX-099: the chips get a visible heading */}
+                <div id="rate-tags-h" className="text-sm font-bold text-gray-800 mb-1.5">{L('What did you like? (optional)', 'آپ کو کیا اچھا لگا؟ (اختیاری)', 'ما الذي أعجبك؟ (اختياري)')}</div>
+                <div className="flex flex-wrap gap-2 mb-3" role="group" aria-labelledby="rate-tags-h">
                   {REVIEW_TAGS.map(t => {
                     const on = reviewTags.includes(t.key)
                     return (

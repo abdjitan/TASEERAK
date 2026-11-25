@@ -33,7 +33,7 @@ const PROTECTED = [
   '/verification',
   '/suggestions',
   '/invite-friends',
-  '/support',
+  // '/support' is open to visitors: someone whose code never arrives must still reach the team (round-6 UX-036)
   '/verify',
   '/banned',
 ]

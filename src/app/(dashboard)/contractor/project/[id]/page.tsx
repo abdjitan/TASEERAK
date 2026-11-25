@@ -98,7 +98,22 @@ export default function ProjectResultsPage() {
     const { error } = await supabase.rpc('accept_offer', { p_offer_id: offerId })
     if (error) { await notify(L('Could not choose the offer: another one may already be chosen. Refresh the page and try again.', 'پیشکش منتخب نہیں ہو سکی: شاید پہلے ہی کوئی منتخب ہو چکی ہے۔ صفحہ تازہ کر کے دوبارہ کوشش کریں۔', 'تعذّر اختيار العرض، فقد يكون اختير عرض مسبقاً. حدّث الصفحة وحاول مرة أخرى.'), { tone: 'error' }); return }
     setSelectedOffers((prev: any) => ({ ...prev, [itemId]: offerId }))
-    window.location.reload()
+    // the page is updated in place (no full reload) and says what happened (UX-104): the chosen offer is accepted,
+    // the others on the same request are declined and the request closes, as accept_offer did on the server
+    const supplierId: string | null = items.flatMap((it: any) => it.rfq?.offers || []).find((o: any) => o.id === offerId)?.supplier_id || null
+    setItems(prev => prev.map((it: any) => {
+      if (it.rfq_id !== rfqId || !it.rfq) return it
+      const offers = (it.rfq.offers || []).map((o: any) => (o.id === offerId ? { ...o, status: 'accepted' } : o.status === 'pending' ? { ...o, status: 'rejected' } : o))
+      return { ...it, rfq: { ...it.rfq, status: 'closed', offers } }
+    }))
+    // the chosen supplier's phone is readable now (RLS opens it after the award)
+    if (supplierId) {
+      try {
+        const { data: c } = await supabase.from('profiles').select('id, phone, contact_phone').eq('id', supplierId).maybeSingle()
+        if (c) setContactsById((m: any) => ({ ...m, [(c as any).id]: (c as any).contact_phone || (c as any).phone }))
+      } catch { /* the phone then shows on the purchase order */ }
+    }
+    await notify(L('Offer chosen and the supplier was notified. The purchase order is ready.', 'آفر منتخب ہو گئی اور سپلائر کو اطلاع دے دی گئی۔ پرچیز آرڈر تیار ہے۔', 'اختير العرض وأُبلغ المورد، وأمر الشراء جاهز.'), { tone: 'success' })
   }
 
   // a spec key («dia») shown by its label in the page's language (round-5 UX-158)
@@ -185,7 +200,8 @@ export default function ProjectResultsPage() {
         </div>
 
         {/* Filters */}
-        <div className="bg-white rounded-2xl p-4 border border-gray-100 shadow-sm mb-4 sticky top-[60px] z-20">
+        {/* sticky only from a medium screen up: on a phone it would cover half the screen (UX-104) */}
+        <div className="bg-white rounded-2xl p-4 border border-gray-100 shadow-sm mb-4 md:sticky md:top-[60px] md:z-20">
           <div className="flex flex-col gap-3">
             {/* Status filter */}
             <div className="flex gap-2 overflow-x-auto pb-1">
@@ -215,7 +231,8 @@ export default function ProjectResultsPage() {
               <select value={sectorFilter} onChange={(e: any) => setSectorFilter(e.target.value)}
                 className="input-field text-sm flex-shrink-0 w-auto min-h-11" aria-label={L('Sector', 'سیکٹر', 'القطاع')}>
                 <option value="all">{L('All Sectors', 'تمام سیکٹرز', 'كل القطاعات')}</option>
-                {Object.keys(SECTOR_LABELS).map((s: any) => <option key={s} value={s}>{sectorName(s, locale)}</option>)}
+                {/* only the sectors this project has (UX-104) */}
+                {Object.keys(SECTOR_LABELS).filter((s: string) => items.some((it: any) => it.sector === s)).map((s: any) => <option key={s} value={s}>{sectorName(s, locale)}</option>)}
               </select>
               <input value={search} onChange={(e: any) => setSearch(e.target.value)}
                 className="input-field text-sm flex-1 min-h-11" aria-label={L('Search material', 'مواد تلاش کریں', 'ابحث عن مادة')} placeholder={`${L('Search material...', 'مواد تلاش کریں...', 'ابحث عن مادة...')}`} />

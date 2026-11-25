@@ -68,7 +68,7 @@ export default function TendersPage() {
   // a tender with a request but not «sent» was sent in part and stays open (round-5 UX-021)
   const isPartial = (t: any) => t.status !== 'sent' && !!t.project_rfq_id
   const statusLabel = (t: any) => {
-    if (t.status === 'sent') return L('Sent for pricing', 'قیمت کے لیے بھیجا', 'أُرسل للتسعير')
+    if (t.status === 'sent') return L('Sent for pricing', 'قیمت کے لیے بھیجا', 'أُرسلت للتسعير')
     if (isPartial(t)) {
       const c = sentCounts[t.id]
       return c ? L(`Partly sent (${c.done} of ${c.all})`, `جزوی طور پر بھیجا گیا (${c.all} میں سے ${c.done})`, `أُرسل جزء منها (${c.done} من ${c.all})`) : L('Partly sent', 'جزوی طور پر بھیجا گیا', 'أُرسل جزء منها')

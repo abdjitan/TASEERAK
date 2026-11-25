@@ -14,6 +14,8 @@ import Glyph from '@/components/shared/Glyph'
 import { notifGlyph, safeNotifUrl, NOTIFS_READ_EVENT, NotifField } from '@/components/shared/NotificationBell'
 import { realtimeTopic } from '@/lib/realtimeTopic'
 import { readPageCache, writePageCache } from '@/lib/pageCache'
+import { askConfirm, notify } from '@/lib/askConfirm'
+import { Trash2 } from 'lucide-react'
 
 // صفحة الإشعارات الكاملة — كانت متاحة فقط عبر قائمة الجرس المنسدلة.
 // Grouped «اليوم / أمس / سابقاً», a relative time and a line icon per kind (UX-176).
@@ -75,6 +77,24 @@ export default function NotificationsPage() {
     return () => { supabase.removeChannel(channel) }
   }, [uid])
 
+  // delete one notice or all of them, as in the app (round-6 UX-124; RLS «Users delete own notifications»)
+  async function removeOne(id: string) {
+    const prev = notifs
+    setNotifs(list => list.filter(x => x.id !== id))
+    const { error } = await createClient().from('notifications').delete().eq('id', id)
+    if (error) { setNotifs(prev); notify(L('Could not delete the notification. Try again.', 'اطلاع حذف نہیں ہو سکی۔ دوبارہ کوشش کریں۔', 'تعذّر حذف الإشعار. حاول مرة أخرى.'), { tone: 'error' }); return }
+    if (uid) writePageCache('notifs_' + uid, { role, list: prev.filter(x => x.id !== id) })
+  }
+  async function removeAll() {
+    if (!uid) return
+    if (!(await askConfirm(L('Delete all notifications? This cannot be undone.', 'تمام اطلاعات حذف کریں؟ یہ واپس نہیں ہو سکتا۔', 'حذف كل الإشعارات؟ لا يمكن التراجع عن ذلك.'), { danger: true, okLabel: L('Delete all', 'سب حذف کریں', 'حذف الكل') }))) return
+    const prev = notifs
+    setNotifs([])
+    const { error } = await createClient().from('notifications').delete().eq('user_id', uid)
+    if (error) { setNotifs(prev); notify(L('Could not delete the notifications. Try again.', 'اطلاعات حذف نہیں ہو سکیں۔ دوبارہ کوشش کریں۔', 'تعذّر حذف الإشعارات. حاول مرة أخرى.'), { tone: 'error' }); return }
+    writePageCache('notifs_' + uid, { role, list: [] })
+  }
+
   if (loading) return <PageLoader />
 
   const go = (n: any) => {
@@ -108,6 +128,11 @@ export default function NotificationsPage() {
           </div>
         ) : (
           <div className="space-y-5">
+            <div className="flex justify-end">
+              <button type="button" onClick={removeAll} className="inline-flex items-center gap-1.5 min-h-[44px] px-3 rounded-xl text-sm font-bold text-[#B42318] hover:bg-red-50">
+                <Trash2 className="w-4 h-4" aria-hidden />{L('Delete all', 'سب حذف کریں', 'حذف الكل')}
+              </button>
+            </div>
             {groups.map(g => (
               <section key={g.b}>
                 <h2 className="text-xs font-bold text-gray-500 mb-2 px-1">{dayBucketLabel(g.b, locale)}</h2>
@@ -129,9 +154,17 @@ export default function NotificationsPage() {
                       </div>
                     )
                     // a notice without a link is plain text, not a button that does nothing (UX-133)
-                    return linked
-                      ? <button type="button" key={n.id} onClick={() => go(n)} className={cls}>{inner}</button>
-                      : <div key={n.id} className={cls}>{inner}</div>
+                    return (
+                      <div key={n.id} className="relative">
+                        {linked
+                          ? <button type="button" onClick={() => go(n)} className={cls + ' pe-14'}>{inner}</button>
+                          : <div className={cls + ' pe-14'}>{inner}</div>}
+                        <button type="button" onClick={() => removeOne(n.id)} aria-label={L('Delete notification', 'اطلاع حذف کریں', 'حذف الإشعار')}
+                          className="absolute top-2 end-2 w-11 h-11 grid place-items-center rounded-xl text-gray-500 hover:text-[#B42318] hover:bg-red-50">
+                          <Trash2 className="w-4 h-4" aria-hidden />
+                        </button>
+                      </div>
+                    )
                   })}
                 </div>
               </section>

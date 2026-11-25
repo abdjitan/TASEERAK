@@ -22,11 +22,11 @@ import { AppIcon } from '@/components/AppIcon'
 import { isExpired, formatTimeLeft, deadlineUrgency, urgencyStyle, formatDateTime } from '@/lib/deadline'
 import { offerComparable, VAT_RATE } from '@/lib/vat'
 import { dealTotal } from '@/lib/dealTotal'
-import { tierLabel, tierAllowed, sellerKindOf, rememberSellerKind, offerNeedsSupplier, offerHasOpenDiscount, offerHasOpenQuestion, offerOutcome, outcomeLabel, agentCapText, agentCapProgress } from '@/lib/sellers'
+import { tierLabel, tierAllowed, sellerKindOf, rememberSellerKind, offerNeedsSupplier, offerHasOpenDiscount, offerHasOpenQuestion, offerOutcome, outcomeLabel, agentCapText, agentCapProgress, sectorName } from '@/lib/sellers'
 import { SA_CITY_COORDS, distanceKm } from '@/lib/saCityCoords'
 import { clearAllLocalDrafts } from '@/lib/localDraft'
 import Glyph from '@/components/shared/Glyph'
-import { daysText, arMaterials, arCount } from '@/lib/text'
+import { daysText, arMaterials, arCount, timeAgo } from '@/lib/text'
 import { askConfirm } from '@/lib/askConfirm'
 import { Check, ChevronDown, ChevronUp, Star, X } from 'lucide-react'
 import { realtimeTopic } from '@/lib/realtimeTopic'
@@ -49,7 +49,7 @@ const txt = {
     acceptedOffers: 'Chosen offers', revenue: 'Need your reply',
     tabRfqs: 'Price requests', tabOffers: 'My Offers',
     noRfqs: 'No open requests', noRfqsSub: 'Make sure your specialties and location are complete; we will alert you as soon as the first matching request arrives.',
-    noOffers: 'No offers submitted yet', noOffersSub: 'Browse RFQs and submit your first offer',
+    noOffers: 'No offers submitted yet', noOffersSub: 'Browse price requests and send your first offer',
     submitOffer: 'Price now', offerSubmitted: 'Offer sent', accepted: 'Chosen', rejected: 'Not chosen', pending: 'Waiting for the buyer',
     day: 'days', offer: 'offer', loading: 'Loading...',
     sar: 'SAR',
@@ -67,16 +67,9 @@ const txt = {
   },
 }
 
-const sectorLabels = {
-  ar: { civil: 'مدني', architectural: 'معماري', electrical: 'كهرباء', mechanical: 'ميكانيكا', equipment: 'آليات ومعدات', supply_store: 'مستلزمات عامة' },
-  en: { civil: 'Civil', architectural: 'Architectural', electrical: 'Electrical', mechanical: 'Mechanical', equipment: 'Machinery', supply_store: 'General supplies' },
-  ur: { civil: 'سول', architectural: 'تعمیراتی', electrical: 'برقی', mechanical: 'مکینیکل', equipment: 'مشینری', supply_store: 'عام سامان' },
-}
-
 export default function SupplierDashboard() {
   const { locale, dir } = useTranslation()
   const t = txt[locale] || txt.ar
-  const sectors = (sectorLabels as any)[locale] || sectorLabels.ar
   const L = (en: string, ur: string, ar: string) => (locale === 'en' ? en : locale === 'ur' ? ur : ar)
 
   const [user, setUser] = useState<any>(null)
@@ -92,12 +85,13 @@ export default function SupplierDashboard() {
   const [pricesCount, setPricesCount] = useState<any>(null)
   // UX-169: product names with a saved price, so a card can say «لديك أسعار محفوظة لـ X من Y»
   const [savedNames, setSavedNames] = useState<Set<string>>(new Set())
-  // round-4 UX-188: market average per material + unit (get_market_prices, 3+ accepted prices, before VAT)
+  // round-4 UX-188: market average per material + unit (get_market_prices, 3+ accepted prices)
+  // round-6 UX-014: what buyers actually pay (avg_buyer_price, migration 284); before VAT x 1.15 only as a fallback
   const [market, setMarket] = useState<Record<string, number>>({})
   useEffect(() => {
     Promise.resolve(createClient().rpc('get_market_prices')).then(({ data }: any) => {
       const m: Record<string, number> = {}
-      for (const r of (data || [])) if (Number(r.offer_count) >= 3 && Number(r.avg_price) > 0) m[`${r.product_name}__${r.unit || ''}`] = Number(r.avg_price)
+      for (const r of (data || [])) if (Number(r.offer_count) >= 3 && Number(r.avg_price) > 0) m[`${r.product_name}__${r.unit || ''}`] = Number(r.avg_buyer_price) > 0 ? Number(r.avg_buyer_price) : Number(r.avg_price) * (1 + VAT_RATE)
       setMarket(m)
     }, () => {})
   }, [])
@@ -129,6 +123,9 @@ export default function SupplierDashboard() {
   const [hasSpecialties, setHasSpecialties] = useState(true)
   const [hasSectors, setHasSectors] = useState(true)
   const [showMoreBanners, setShowMoreBanners] = useState(false) // باقي التنبيهات خلف «عرض المزيد»
+  // round-6 UX-111: «منشأتي غير مسجّلة» hides the VAT question on this device
+  const [vatNotReg, setVatNotReg] = useState(false)
+  useEffect(() => { if (!profile?.id) return; try { setVatNotReg(localStorage.getItem('tsk_vat_not_reg_' + profile.id) === '1') } catch {} }, [profile?.id])
   const [showScoreMobile, setShowScoreMobile] = useState(false) // بطاقة قوة الملف على الجوال
   // Requests this supplier already opened (this device) — unopened, unpriced ones glow until opened.
   const [seen, setSeen] = useState<Set<string>>(new Set())
@@ -321,6 +318,16 @@ export default function SupplierDashboard() {
             })
             load()
           }
+          // round-6 UX-141: the buyer chose my offer while the page is open: a gold moment with the way to the deal
+          if (n?.type === 'offer_accepted' && String(n.title || '').startsWith('اختار المشتري عرضك')) {
+            const rid = n.data?.rfq_id || n.rfq_id || (String(n.data?.url || n.link || '').match(/rfq\/([0-9a-f-]{36})/) || [])[1]
+            toast(L('Congratulations, the buyer chose your offer', 'مبارک ہو، خریدار نے آپ کی آفر چن لی', 'تهانينا، اختار المشتري عرضك'), {
+              description: n.body || undefined, duration: 20000,
+              style: { background: '#FFF8E6', border: '2px solid #D4A543', color: '#071827' },
+              action: { label: L('Open the deal', 'سودا کھولیں', 'افتح الصفقة'), onClick: () => { window.location.href = rid ? `/supplier/dashboard/rfq/${rid}#deal` : '/supplier/deals' } },
+            })
+            load()
+          }
         })
         .subscribe()
     })
@@ -400,7 +407,7 @@ export default function SupplierDashboard() {
     const g = sub ? (SUB_CATEGORIES as any)[sector]?.[sub]?.group : null
     const k = sectionOfSub(sub || null, g || null)
     const s = k ? BROWSE_SECTIONS.find(x => x.key === k) : null
-    return s ? L(s.en, s.ur, s.ar) : ((sectors as any)[sector] || sector)
+    return s ? L(s.en, s.ur, s.ar) : (sectorName(sector, locale) || sector)
   }
   const rfqSection = (rfq: any): string => {
     const its: any[] = Array.isArray(rfq?.items) && rfq.items.length ? rfq.items : []
@@ -420,14 +427,15 @@ export default function SupplierDashboard() {
     }).length
     return { have, of: lines.length }
   }
-  // round-4 UX-188: an estimated value from the market index (accepted prices, before VAT), when known
-  const estimateOf = (rfq: any): number => {
+  // round-4 UX-188: an estimated value from the market index, when known
+  // round-6 UX-014: summed from what buyers pay (no VAT added on top); UX-111: how many of my materials it covers
+  const estimateInfo = (rfq: any): { sum: number; known: number; of: number } => {
     const lines: any[] = Array.isArray(rfq._myLines) ? rfq._myLines : []
-    let sum = 0
-    for (const l of lines) { const m = market[`${l.product_name}__${l.unit || ''}`]; if (m && l.quantity > 0) sum += m * l.quantity }
-    // round-5 UX-168: on the page's basis (prices incl. VAT); the market index is kept before VAT
-    return Math.round(sum * (1 + VAT_RATE))
+    let sum = 0, known = 0
+    for (const l of lines) { const m = market[`${l.product_name}__${l.unit || ''}`]; if (m && l.quantity > 0) { sum += m * l.quantity; known++ } }
+    return { sum: Math.round(sum), known, of: lines.length }
   }
+  const estimateOf = (rfq: any): number => estimateInfo(rfq).sum
   // round-5 UX-215: distance from my map pin to the request's city centre, rounded to 5 km (no pin or no city = none)
   const kmTo = (rfq: any): number | null => {
     const lat = Number(profile?.latitude), lng = Number(profile?.longitude)
@@ -515,21 +523,9 @@ export default function SupplierDashboard() {
                 </div>
               </div>
               <button type="button" onClick={() => { setTab('rfqs'); setRfqFilter('toprice'); document.getElementById('sup-list')?.scrollIntoView({ behavior: 'smooth', block: 'start' }) }}
-                className="inline-flex items-center gap-1 min-h-[44px] text-sm font-extrabold text-[#071827] px-4 rounded-xl" style={{ background: 'linear-gradient(135deg,#F5C55B,#D4A543)' }}>
+                className="inline-flex items-center gap-1 min-h-[44px] text-sm font-bold text-white px-4 rounded-xl border border-white/40 hover:bg-white/10">
                 {L('Show them', 'دیکھیں', 'اعرضها')} <span aria-hidden="true">{FWD}</span>
               </button>
-            </div>
-            <div className="mt-3 grid gap-2 sm:grid-cols-3">
-              {sortedOpen.filter((r: any) => !offeredRfqIds.has(r.id)).slice(0, 3).map((rfq: any) => (
-                <Link key={rfq.id} href={`/supplier/dashboard/rfq/${rfq.id}`} onClick={() => markSeen(rfq.id)}
-                  className="flex items-center justify-between gap-2 rounded-xl px-3 py-2.5 bg-white/[.07] border border-white/10 hover:bg-white/[.12] transition-colors">
-                  <span className="min-w-0">
-                    <span className="block text-sm font-bold text-white line-clamp-2">{cardTitle(rfq)}</span>
-                    <span className="block text-[12px] text-white/60 truncate">{getRegionLabel(rfq.region, locale)}{rfq.expires_at ? ' · ' + formatTimeLeft(rfq.expires_at, locale) : ''}</span>
-                  </span>
-                  {isFresh(rfq) && <span className="shrink-0 text-[12px] font-bold px-2 py-0.5 rounded-full text-[#071827]" style={{ background: '#F5C55B' }}>{L('New', 'نیا', 'جديد')}</span>}
-                </Link>
-              ))}
             </div>
           </div>
         )}
@@ -544,7 +540,37 @@ export default function SupplierDashboard() {
           const banners: { key: string; node: any }[] = []
           // round-5 UX-007: no commercial registration = no pricing: the first banner, before anything else.
           // A team member cannot add it: he is told the account owner must.
-          if (crRequired) banners.push({ key: 'cr', node: (
+          // round-6 UX-035: without the location and what he sells no request arrives at all, so that step comes first;
+          // when both are missing, one card with the two steps in order
+          const needsSetup = !!profile && !profile.region && !isMember
+          if (needsSetup && crRequired) banners.push({ key: 'setup2', node: (
+            <div role="status" className="rounded-2xl p-5 border-2 bg-white" style={{ borderColor: '#D4A543' }}>
+              <div className="font-extrabold text-[#071827] mb-3">{L('Two steps to start receiving and pricing requests', 'درخواستیں وصول کرنے اور قیمت دینے کے لیے دو قدم', 'خطوتان لتصلك الطلبات وتبدأ التسعير')}</div>
+              <ol className="space-y-3">
+                <li className="flex flex-wrap items-center justify-between gap-2">
+                  <span className="text-sm font-semibold text-[#0B2438]">{L('1. Complete your profile (your location and what you sell) so requests reach you', '1۔ اپنی پروفائل مکمل کریں (آپ کا مقام اور آپ کیا بیچتے ہیں) تاکہ درخواستیں آپ تک پہنچیں', '1. أكمل ملفك (موقعك وما تبيعه) لتصلك الطلبات')}</span>
+                  <Link href="/onboarding" className="inline-flex items-center gap-1 min-h-[44px] px-5 rounded-xl text-sm font-extrabold text-[#071827]" style={{ background: '#D4A543' }}>{L('Complete now', 'ابھی مکمل کریں', 'أكمل ملفك الآن')} <span aria-hidden="true">{FWD}</span></Link>
+                </li>
+                <li className="flex flex-wrap items-center justify-between gap-2">
+                  <span className="text-sm font-semibold text-[#0B2438]">{L('2. Add the commercial registration to start pricing', '2۔ قیمت دینا شروع کرنے کے لیے تجارتی رجسٹریشن شامل کریں', '2. أضف السجل التجاري لتبدأ التسعير')}</span>
+                  <Link href="/settings?tab=docs" className="inline-flex items-center gap-1 min-h-[44px] px-5 rounded-xl text-sm font-bold text-[#0B2438] border border-[#0B2438]/30 bg-white">{L('Add the registration', 'رجسٹریشن شامل کریں', 'أضف السجل التجاري')}</Link>
+                </li>
+              </ol>
+            </div>
+          ) })
+          if (needsSetup && !crRequired) banners.push({ key: 'onboarding', node: (
+            <Link href="/onboarding" className="block rounded-2xl p-5 border-2 hover:shadow-lg transition-all" style={{ borderColor: '#D4A543', background: 'linear-gradient(120deg,#fff7ed,#ffffff)' }}>
+              <div className="flex items-start gap-3">
+                <span className="text-3xl shrink-0"><Glyph e="🔒" /></span>
+                <div className="flex-1">
+                  <div className="font-extrabold text-sm" style={{ color: '#8F6820' }}><Glyph e="⚠" /> {L('Complete your profile to receive requests', 'درخواستیں وصول کرنے کے لیے اپنی پروفائل مکمل کریں', 'أكمل ملفك لاستلام الطلبات')}</div>
+                  <div className="text-[13px] text-gray-600 mt-1 leading-relaxed">{L("Without your location and what you sell you won't appear to buyers and won't receive any requests. One minute is enough.", 'اپنے مقام اور آپ کیا بیچتے ہیں، اس کے بغیر آپ خریداروں کو نظر نہیں آئیں گے اور کوئی درخواست موصول نہیں ہوگی۔ ایک منٹ کافی ہے۔', 'بدون موقعك وما تبيعه لن تظهر للمشترين ولن تصلك أي طلبات. دقيقة واحدة تكفي.')}</div>
+                  <span className="inline-flex items-center gap-1 mt-2.5 min-h-[44px] text-sm font-bold text-[#071827] px-4 rounded-xl" style={{ background: '#D4A543' }}>{L('Complete now', 'ابھی مکمل کریں', 'أكمل ملفك الآن')} <span aria-hidden="true">{FWD}</span></span>
+                </div>
+              </div>
+            </Link>
+          ) })
+          if (crRequired && !(needsSetup && crRequired)) banners.push({ key: 'cr', node: (
             <div role="status" className="rounded-2xl p-5 border-2 bg-white" style={{ borderColor: '#D4A543' }}>
               <div className="flex items-start gap-3">
                 <span className="text-2xl shrink-0 text-[#8F6820]"><Glyph e="🔒" /></span>
@@ -563,19 +589,6 @@ export default function SupplierDashboard() {
                 </div>
               </div>
             </div>
-          ) })
-          // بوابة إكمال الملف — بدونها لا تصل أي طلبات (أعلى أولوية)
-          if (profile && !profile.region && !isMember) banners.push({ key: 'onboarding', node: (
-            <Link href="/onboarding" className="block rounded-2xl p-5 border-2 hover:shadow-lg transition-all" style={{ borderColor: '#D4A543', background: 'linear-gradient(120deg,#fff7ed,#ffffff)' }}>
-              <div className="flex items-start gap-3">
-                <span className="text-3xl shrink-0"><Glyph e="🔒" /></span>
-                <div className="flex-1">
-                  <div className="font-extrabold text-sm" style={{ color: '#8F6820' }}><Glyph e="⚠" /> {L('Complete your profile to receive requests', 'درخواستیں وصول کرنے کے لیے اپنی پروفائل مکمل کریں', 'أكمل ملفك لاستلام الطلبات')}</div>
-                  <div className="text-[13px] text-gray-600 mt-1 leading-relaxed">{L("Without your location and what you sell you won't appear to buyers and won't receive any requests. One minute is enough.", 'اپنے مقام اور آپ کیا بیچتے ہیں، اس کے بغیر آپ خریداروں کو نظر نہیں آئیں گے اور کوئی درخواست موصول نہیں ہوگی۔ ایک منٹ کافی ہے۔', 'بدون موقعك وما تبيعه لن تظهر للمشترين ولن تصلك أي طلبات. دقيقة واحدة تكفي.')}</div>
-                  <span className="inline-block mt-2.5 text-sm font-bold text-[#071827] px-4 py-2 rounded-xl" style={{ background: '#D4A543' }}>{L('Complete now →', 'ابھی مکمل کریں ←', 'أكمل ملفك الآن ←')}</span>
-                </div>
-              </div>
-            </Link>
           ) })
           // UX-093: the next step depends on the seller kind (an independent seller has no CR to upload),
           // a gold main action and a way to reach support
@@ -620,7 +633,7 @@ export default function SupplierDashboard() {
             </Link>
           ) })
           if (profile?.verification_status === 'pending' && !isMember) banners.push({ key: 'pending', node: (
-            <div className="bg-amber-50 border border-amber-200 rounded-2xl p-5 flex items-start gap-3">
+            <div className="bg-warn-bg border border-warn-border rounded-2xl p-5 flex items-start gap-3">
               {/* round-5 UX-085: readable contrast (title navy, text dark gold) and the shared warning glyph */}
               <span className="text-2xl text-[#8F6820]"><Glyph e="⚠" /></span>
               <div>
@@ -635,25 +648,30 @@ export default function SupplierDashboard() {
             </div>
           ) })
           // تنبيهات ثانوية (ضريبة/أسعار/اشتراك) — بعد إكمال الملف فقط
-          if (!isMember && profile && profile.region && !profile.vat_number && sellerKindOf(profile.provider_type) === 'company') banners.push({ key: 'vat', node: (
-            <Link href="/settings" className="block bg-[#D4A543]/5 border border-[#D4A543]/40 rounded-2xl p-4 hover:shadow-md transition-all">
-              <div className="flex items-center gap-3">
+          // round-6 UX-111 + owner 2026-11-25 (tax-invoice rules): the VAT number is asked, never imposed; company/shop only
+          if (!isMember && profile && profile.region && !profile.vat_number && sellerKindOf(profile.provider_type) === 'company' && !vatNotReg) banners.push({ key: 'vat', node: (
+            <div className="bg-[#D4A543]/5 border border-[#D4A543]/40 rounded-2xl p-4">
+              <div className="flex items-start gap-3">
                 <span className="text-2xl"><Glyph e="🧾" /></span>
-                <div className="flex-1">
-                  <div className="font-bold text-sm" style={{ color: '#0B2438' }}>{L('Add your VAT number', 'اپنا ٹیکس (VAT) نمبر شامل کریں', 'أضف رقمك الضريبي')}</div>
-                  <div className="text-xs text-gray-500">{L('Required to issue tax invoices for your deals. Tap to add →', 'آپ کی ڈیلز کے لیے ٹیکس انوائس جاری کرنے کے لیے ضروری ہے۔ شامل کرنے کے لیے دبائیں ←', 'يلزم لإصدار فواتير ضريبية لصفقاتك. اضغط للإضافة ←')}</div>
+                <div className="flex-1 min-w-0">
+                  <div className="font-bold text-sm" style={{ color: '#0B2438' }}>{L('Do you have a VAT number? Add it now', 'کیا آپ کے پاس VAT نمبر ہے؟ ابھی شامل کریں', 'هل لديك رقم ضريبي؟ أضفه الآن')}</div>
+                  <div className="text-[13px] text-gray-600 mt-0.5 leading-relaxed">{L('Most requests from companies and contractors require a VAT invoice. If you are registered for VAT, add your VAT number so these requests reach you and your prices are shown including VAT.', 'کمپنیوں اور ٹھیکیداروں کی زیادہ تر درخواستوں میں VAT انوائس شرط ہوتی ہے۔ اگر آپ VAT میں رجسٹرڈ ہیں تو اپنا VAT نمبر شامل کریں تاکہ یہ درخواستیں آپ تک پہنچیں اور آپ کی قیمتیں VAT سمیت دکھائی جائیں۔', 'أغلب طلبات الشركات والمقاولين تشترط فاتورة ضريبية. إن كان لديك تسجيل في ضريبة القيمة المضافة فأضف رقمك الضريبي لتصلك هذه الطلبات وتُعرض أسعارك شاملة الضريبة.')}</div>
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    <Link href="/settings?tab=docs" className="inline-flex items-center min-h-[44px] px-4 rounded-xl text-sm font-bold text-white" style={{ background: '#0B2438' }}>{L('Add the VAT number', 'VAT نمبر شامل کریں', 'أضف الرقم الضريبي')}</Link>
+                    <button type="button" onClick={() => { setVatNotReg(true); try { localStorage.setItem('tsk_vat_not_reg_' + (profile?.id || ''), '1') } catch {} }} className="inline-flex items-center min-h-[44px] px-4 rounded-xl text-sm font-bold text-[#0B2438] border border-[#0B2438]/30 bg-white">{L('My business is not registered', 'میرا ادارہ رجسٹرڈ نہیں', 'منشأتي غير مسجّلة')}</button>
+                  </div>
                 </div>
               </div>
-            </Link>
+            </div>
           ) })
           // round-3 UX-031: «أسعاري» is private (migration 160) and fills prices in one tap; the public price board stays off
           if (!isMember && profile && profile.region && pricesCount === 0) banners.push({ key: 'prices', node: (
-            <Link href="/supplier/prices" className="block bg-gradient-to-l from-[#D4A543]/10 to-amber-50 border border-amber-200 rounded-2xl p-4 hover:shadow-md transition-all">
+            <Link href="/supplier/prices" className="block bg-gradient-to-l from-[#D4A543]/10 to-[#D4A543]/5 border border-[#D4A543]/40 rounded-2xl p-4 hover:shadow-md transition-all">
               <div className="flex items-center gap-3">
                 <span className="text-2xl"><Glyph e="📈" /></span>
                 <div className="flex-1">
                   <div className="font-bold text-sm" style={{ color: '#0B2438' }}>{L('Save your prices in «My prices»', 'اپنی قیمتیں «میری قیمتیں» میں محفوظ کریں', 'احفظ أسعارك في «أسعاري»')}</div>
-                  <div className="text-xs text-gray-500">{L('They are private, and fill in by themselves when you price a matching request. Tap to add →', 'یہ نجی ہیں، اور مماثل درخواست کی قیمت دیتے وقت خود بھر جاتی ہیں۔ شامل کرنے کے لیے دبائیں ←', 'أسعارك خاصة بك، وتُعبَّأ تلقائياً عند تسعير طلب مطابق. اضغط للإضافة ←')}</div>
+                  <div className="text-xs text-gray-500">{L('They are private, and fill in when you price the same material or its category in the same unit. Tap to add →', 'یہ نجی ہیں، اور اسی مال یا اس کے زمرے کی اسی یونٹ میں قیمت دیتے وقت بھر جاتی ہیں۔ شامل کرنے کے لیے دبائیں ←', 'أسعارك خاصة بك، وتُعبَّأ عند تسعير المادة نفسها أو فئتها بالوحدة نفسها. اضغط للإضافة ←')}</div>
                 </div>
               </div>
             </Link>
@@ -957,9 +975,13 @@ export default function SupplierDashboard() {
                               </span>
                             )}
                             {/* round-4 UX-184: the buyer identity is never shown in the list (revealed only after the award, on the request page) */}
-                            {!offeredRfqIds.has(rfq.id) && estimateOf(rfq) > 0 && (
-                              <span className="badge text-[12px] font-semibold bg-[#0B2438]/5 text-[#0B2438]">{L(`Estimated value about ${estimateOf(rfq).toLocaleString('en-US')} SAR incl. VAT`, `اندازاً مالیت تقریباً ${estimateOf(rfq).toLocaleString('en-US')} ریال VAT سمیت`, `قيمة تقديرية نحو ${estimateOf(rfq).toLocaleString('en-US')} ر.س شاملة الضريبة`)}</span>
-                            )}
+                            {!offeredRfqIds.has(rfq.id) && estimateOf(rfq) > 0 && (() => {
+                              // round-6 UX-111: a partial estimate says how many of my materials it covers
+                              const e = estimateInfo(rfq); const v = e.sum.toLocaleString('en-US')
+                              return <span className="badge text-[12px] font-semibold bg-[#0B2438]/5 text-[#0B2438]">{e.known < e.of
+                                ? L(`Estimated value for ${e.known} of ${e.of} materials: about ${v} SAR (what buyers pay)`, `${e.of} میں سے ${e.known} اشیاء کی اندازاً مالیت: تقریباً ${v} ریال (جو خریدار ادا کرتے ہیں)`, `قيمة تقديرية لـ ${e.known} من ${arMaterials(e.of, 'obl')}: نحو ${v} ر.س (ما يدفعه المشترون)`)
+                                : L(`Estimated value about ${v} SAR (what buyers pay)`, `اندازاً مالیت تقریباً ${v} ریال (جو خریدار ادا کرتے ہیں)`, `قيمة تقديرية نحو ${v} ر.س (ما يدفعه المشترون)`)}</span>
+                            })()}
                           </div>
                         </div>
                       </div>
@@ -993,7 +1015,9 @@ export default function SupplierDashboard() {
                       {/* round-5 UX-007: while the commercial registration is missing the card says so, navy outline instead of the gold «سعّر الآن» */}
                       {!offeredRfqIds.has(rfq.id) && (crRequired
                         ? <span className="inline-flex items-center gap-1 min-h-[36px] text-[#0B2438] text-[13px] font-bold px-4 rounded-xl whitespace-nowrap border-2 border-[#0B2438] bg-white">{isMember ? L('Registration needed to price', 'قیمت کے لیے رجسٹریشن درکار', 'يلزم السجل للتسعير') : L('Add your registration to price', 'قیمت کے لیے رجسٹریشن شامل کریں', 'أضف سجلك للتسعير')}</span>
-                        : <span className="inline-flex items-center gap-1 min-h-[36px] text-[#071827] text-[13px] font-bold px-4 rounded-xl whitespace-nowrap" style={{ background: '#D4A543' }}>{t.submitOffer} <span aria-hidden="true">{FWD}</span></span>)}
+                        : isFresh(rfq)
+                          ? <span className="inline-flex items-center gap-1 min-h-[36px] text-[#071827] text-[13px] font-bold px-4 rounded-xl whitespace-nowrap" style={{ background: '#D4A543' }}>{t.submitOffer} <span aria-hidden="true">{FWD}</span></span>
+                          : <span className="inline-flex items-center gap-1 min-h-[36px] text-[#0B2438] text-[13px] font-bold px-4 rounded-xl whitespace-nowrap border border-[#0B2438]/40 bg-white">{t.submitOffer} <span aria-hidden="true">{FWD}</span></span>)}
                     </div>
                   </Link>
                 ))}
@@ -1046,7 +1070,7 @@ export default function SupplierDashboard() {
                     <div className="flex flex-wrap items-start justify-between gap-2 mb-2">
                       <div className="flex items-center gap-3 min-w-0">
                         <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-lg ${
-                          oc === 'won' ? 'bg-emerald-100' : oc !== 'pending' ? 'bg-gray-100 text-gray-500' : 'bg-amber-50'
+                          oc === 'won' ? 'bg-emerald-100' : oc !== 'pending' ? 'bg-gray-100 text-gray-500' : 'bg-[#D4A543]/10'
                         }`}>{oc === 'won' ? <Glyph e="✅" /> : oc !== 'pending' ? <Glyph e="📭" /> : <Glyph e="⏳" />}</div>
                         <div className="min-w-0">
                           <span className="font-bold line-clamp-2" style={{ color: '#0B2438' }}>{offer.rfq ? rfqDisplayName({ ...offer.rfq, title: null }, locale) : '—'}</span>
@@ -1074,6 +1098,8 @@ export default function SupplierDashboard() {
                       {offer.delivery_days && <span><Glyph e="📦" /> {daysText(offer.delivery_days, locale)}</span>}
                       {offer.rfq?.region && <span><Glyph e="📍" /> {getRegionLabel(offer.rfq.region, locale)}</span>}
                       {sentBy(offer) && <span className="font-semibold text-gray-500">{sentBy(offer)}</span>}
+                      {/* round-6 UX-142: the buyer opened my offer (offers.buyer_viewed_at, set by mark_offer_viewed) */}
+                      {oc === 'pending' && offer.buyer_viewed_at && <span className="font-semibold text-[#0B2438]"><Glyph e="👁" /> {L(`The buyer viewed your offer · ${timeAgo(offer.buyer_viewed_at, 'en')}`, `خریدار نے آپ کی آفر دیکھی · ${timeAgo(offer.buyer_viewed_at, 'ur')}`, `اطّلع المشتري على عرضك · ${timeAgo(offer.buyer_viewed_at, 'ar')}`)}</span>}
                     </div>
                     <div className="mt-2.5 text-[13px] font-bold flex items-center gap-1" style={{ color: '#8F6820' }}>
                       {offer.status === 'accepted'

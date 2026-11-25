@@ -2,7 +2,7 @@
 
 import { sellerKindOf, rememberSellerKind } from '@/lib/sellers'
 import { useState, useEffect } from 'react'
-import PageLoader from '@/components/shared/PageLoader'
+import PageLoader, { ROLE_HINT_KEY } from '@/components/shared/PageLoader'
 import LoadError from '@/components/shared/LoadError'
 import { createClient } from '@/lib/supabase/client'
 import { rememberBuyerType } from '@/lib/buyerType'
@@ -48,13 +48,14 @@ const txt = {
     loading: 'جارٍ التحميل...',
     email: 'البريد الإلكتروني', emailNote: 'لا يمكن تغيير البريد الإلكتروني',
     role: 'نوع الحساب', contractor: 'مشتري', supplier: 'مورد',
-    verStatus: 'حالة التحقق', pending: 'قيد المراجعة', verified: 'موثق', rejected: 'مرفوض',
+    verStatus: 'حالة التحقق', pending: 'قيد المراجعة', verified: 'موثّق', rejected: 'التوثيق غير مقبول',
     docsTitle: 'المستندات الرسمية', docsSub: 'ارفع مستنداتك لإتمام عملية التحقق',
     licenseLabel: 'الرخصة البلدية أو رخصة النشاط (اختياري)', crLabel: 'شهادة السجل التجاري (اختياري، لشارة «موثّق»)',
-    uploadDoc: 'اضغط لرفع الملف', docHint: 'ملف PDF أو صورة، بحجم 5 ميجابايت على الأكثر',
+    uploadDoc: 'اضغط لرفع الملف', docHint: 'ملف PDF أو صورة، بحجم 15 ميجابايت على الأكثر',
     uploadBtn: 'رفع المستندات', uploaded: '✓ تم رفع المستندات بنجاح',
     currentDoc: 'المستند الحالي', viewDoc: 'عرض',
-    rejectedBanner: 'تم رفض حسابك — يرجى رفع المستندات المطلوبة مرة أخرى',
+    uploadAndSave: 'رفع المستندات وحفظها', saveCr: 'حفظ رقم السجل',
+    rejectedBanner: 'لم يُقبل طلب توثيق السجل التجاري. حسابك يعمل كالمعتاد، ويمكنك رفع نسخة أوضح من الشهادة للحصول على شارة «موثّق».',
   },
   en: {
     title: 'Account Settings', back: '← Back', logout: 'Logout',
@@ -71,13 +72,14 @@ const txt = {
     loading: 'Loading...',
     email: 'Email Address', emailNote: 'Email cannot be changed',
     role: 'Account Type', contractor: 'Buyer', supplier: 'Supplier',
-    verStatus: 'Verification Status', pending: 'Pending', verified: 'Verified', rejected: 'Rejected',
+    verStatus: 'Verification Status', pending: 'Pending', verified: 'Verified', rejected: 'Verification not accepted',
     docsTitle: 'Official Documents', docsSub: 'Upload your documents to complete verification',
     licenseLabel: 'Municipal or activity licence (optional)', crLabel: 'Commercial registration certificate (optional, for the «Verified» badge)',
-    uploadDoc: 'Click to upload file', docHint: 'PDF or image — max 5MB',
+    uploadDoc: 'Click to upload file', docHint: 'PDF or image, up to 15 MB',
     uploadBtn: 'Upload Documents', uploaded: '✓ Documents uploaded successfully',
     currentDoc: 'Current document', viewDoc: 'View',
-    rejectedBanner: 'Your account was rejected — please reupload required documents',
+    uploadAndSave: 'Upload and save the documents', saveCr: 'Save the registration number',
+    rejectedBanner: 'Your commercial registration verification was not accepted. Your account works as usual, and you can upload a clearer copy of the certificate to get the «Verified» badge.',
   },
   ur: {
     title: 'اکاؤنٹ کی ترتیبات', back: '→ واپس', logout: 'لاگ آؤٹ',
@@ -94,13 +96,14 @@ const txt = {
     loading: 'لوڈ ہو رہا ہے...',
     email: 'ای میل ایڈریس', emailNote: 'ای میل تبدیل نہیں کی جا سکتی',
     role: 'اکاؤنٹ کی قسم', contractor: 'خریدار', supplier: 'سپلائر',
-    verStatus: 'تصدیق کی حیثیت', pending: 'زیر التواء', verified: 'تصدیق شدہ', rejected: 'مسترد',
+    verStatus: 'تصدیق کی حیثیت', pending: 'زیر التواء', verified: 'تصدیق شدہ', rejected: 'تصدیق قبول نہیں ہوئی',
     docsTitle: 'سرکاری دستاویزات', docsSub: 'تصدیق مکمل کرنے کے لیے دستاویزات اپلوڈ کریں',
     licenseLabel: 'بلدیہ یا سرگرمی کا لائسنس (اختیاری)', crLabel: 'تجارتی رجسٹریشن سرٹیفکیٹ (اختیاری، «تصدیق شدہ» بیج کے لیے)',
-    uploadDoc: 'فائل اپلوڈ کرنے کے لیے کلک کریں', docHint: 'PDF یا تصویر — زیادہ سے زیادہ 5MB',
+    uploadDoc: 'فائل اپلوڈ کرنے کے لیے کلک کریں', docHint: 'PDF یا تصویر، زیادہ سے زیادہ 15 MB',
     uploadBtn: 'دستاویزات اپلوڈ کریں', uploaded: '✓ دستاویزات کامیابی سے اپلوڈ',
     currentDoc: 'موجودہ دستاویز', viewDoc: 'دیکھیں',
-    rejectedBanner: 'آپ کا اکاؤنٹ مسترد ہو گیا — مطلوبہ دستاویزات دوبارہ اپلوڈ کریں',
+    uploadAndSave: 'دستاویزات اپلوڈ کر کے محفوظ کریں', saveCr: 'رجسٹریشن نمبر محفوظ کریں',
+    rejectedBanner: 'تجارتی رجسٹریشن کی تصدیق کی درخواست قبول نہیں ہوئی۔ آپ کا اکاؤنٹ معمول کے مطابق کام کر رہا ہے، اور «تصدیق شدہ» بیج کے لیے سرٹیفکیٹ کی زیادہ واضح کاپی اپلوڈ کر سکتے ہیں۔',
   },
 }
 
@@ -126,7 +129,7 @@ function Msg({ m }: { m: string }) {
 // The CR check result in the reader's language (round-5 UX-084). The route answers in Arabic; the
 // meaning is read from its stable fields (error / mode / verified / httpStatus), so no raw ✓ or 🧪.
 // A result built on this page (no error, no mode) already carries a translated message.
-function crCheckText(j: any, locale: string): string {
+function crCheckText(j: any, locale: string, accountVerified = true): string {
   const L = (en: string, ur: string, ar: string) => (locale === 'en' ? en : locale === 'ur' ? ur : ar)
   const code = String(j?.code || j?.error || '')
   const unavailable = L('The Wathq check is not available right now. Try later, or upload the certificate photo.', 'واثق سے تصدیق ابھی دستیاب نہیں۔ بعد میں کوشش کریں یا سرٹیفکیٹ کی تصویر اپلوڈ کریں۔', 'تعذّر التحقق عبر واثق حالياً. حاول لاحقاً أو ارفع صورة الشهادة.')
@@ -143,9 +146,29 @@ function crCheckText(j: any, locale: string): string {
   if (j?.raw?.demo) return L('Test mode: sample data for display only.', 'آزمائشی موڈ: صرف دکھانے کے لیے نمونہ ڈیٹا۔', 'وضع تجريبي: بيانات نموذجية للعرض فقط.')
   if (j?.mode === 'manual') return L('The automatic Wathq link is not active yet. Your account is verified after you upload the certificate photo and the team reviews it.', 'واثق سے خودکار ربط ابھی فعال نہیں۔ سرٹیفکیٹ کی تصویر اپلوڈ کرنے اور ٹیم کے جائزے کے بعد آپ کا اکاؤنٹ تصدیق ہوگا۔', 'الربط الآلي مع واثق غير مفعّل بعد، ويُوثَّق حسابك بعد رفع صورة الشهادة ومراجعة الفريق لها.')
   if (j?.mode === 'wathq') return j?.verified
-    ? L('The commercial registration was verified through Wathq.', 'تجارتی رجسٹریشن کی واثق کے ذریعے تصدیق ہو گئی۔', 'تم التحقق من السجل التجاري عبر واثق.')
+    ? (accountVerified
+      ? L('The commercial registration was verified through Wathq.', 'تجارتی رجسٹریشن کی واثق کے ذریعے تصدیق ہو گئی۔', 'تم التحقق من السجل التجاري عبر واثق.')
+      : L('The commercial registration is active in Wathq. Your account is verified after the team reviews it.', 'تجارتی رجسٹریشن واثق میں فعال ہے۔ ٹیم کے جائزے کے بعد آپ کا اکاؤنٹ تصدیق ہوگا۔', 'السجل التجاري ساري المفعول في واثق، ويُوثَّق حسابك بعد مراجعة الفريق.'))
     : L('Wathq shows this commercial registration as not active, so it needs a review.', 'واثق کے مطابق یہ تجارتی رجسٹریشن فعال نہیں، اس لیے جائزہ درکار ہے۔', 'السجل التجاري غير ساري المفعول حسب واثق، ويحتاج إلى مراجعة.')
   return String(j?.message || '').replace(/[✓🧪]/gu, '').replace(/\s*—\s*/g, '، ').trim()
+}
+
+// The upload route answers in Arabic; its stable error code picks the reader's text (round-6 UX-067).
+function uploadErrText(j: any, locale: string, fallback: string): string {
+  const L = (en: string, ur: string, ar: string) => (locale === 'en' ? en : locale === 'ur' ? ur : ar)
+  switch (String(j?.error || '')) {
+    case 'rate_limited': return L('Too many uploads. Try again in a little while.', 'بہت زیادہ اپلوڈ۔ تھوڑی دیر بعد کوشش کریں۔', 'محاولات رفع كثيرة. حاول بعد قليل.')
+    case 'no_file': return L('No file arrived. Choose the file again.', 'کوئی فائل نہیں پہنچی۔ فائل دوبارہ منتخب کریں۔', 'لم يصل أي ملف. اختر الملف مرة أخرى.')
+    case 'bad_type': return L('Only a PDF or an image (JPG, PNG) is accepted.', 'صرف PDF یا تصویر (JPG، PNG) قبول ہے۔', 'المقبول ملف PDF أو صورة (JPG أو PNG) فقط.')
+    case 'too_large': return L('The file is larger than 15 MB. Choose a smaller file.', 'فائل 15 MB سے بڑی ہے۔ چھوٹی فائل منتخب کریں۔', 'الملف أكبر من 15 ميجابايت. اختر ملفاً أصغر.')
+    case 'content_mismatch': return L('We could not read this file. Save it again as a PDF or an image and upload it.', 'یہ فائل پڑھی نہیں جا سکی۔ اسے دوبارہ PDF یا تصویر کے طور پر محفوظ کر کے اپلوڈ کریں۔', 'تعذّرت قراءة هذا الملف. احفظه من جديد بصيغة PDF أو صورة ثم ارفعه.')
+    case 'upload_failed': return L('The file could not be uploaded. Try again.', 'فائل اپلوڈ نہیں ہو سکی۔ دوبارہ کوشش کریں۔', 'تعذّر رفع الملف. حاول مرة أخرى.')
+  }
+  return fallback
+}
+
+function roleHint(): string | undefined {
+  try { return localStorage.getItem(ROLE_HINT_KEY) || undefined } catch { return undefined }
 }
 
 export default function SettingsPage() {
@@ -182,6 +205,8 @@ export default function SettingsPage() {
   const [region, setRegion] = useState('')
   const [city, setCity] = useState('')
   const [vatNumber, setVatNumber] = useState('')
+  // a new or changed VAT number needs the owner's confirmation that the business is registered (owner 2026-11-25)
+  const [vatConfirm, setVatConfirm] = useState(false)
   const [district, setDistrict] = useState('')
   const [prefLang, setPrefLang] = useState('ar')
   const [profileMsg, setProfileMsg] = useState('')
@@ -222,8 +247,9 @@ export default function SettingsPage() {
   const [phoneRequired, setPhoneRequired] = useState(false)
   // a company team member: the company data belongs to the owner (UX-118)
   const [teamOf, setTeamOf] = useState<{ id: string; name: string } | null>(null)
-  function flashNotif(ok: boolean) {
-    setNotifMsg({ ok, text: ok ? L('Saved', 'محفوظ', 'حُفظ') : L('Could not save. Try again.', 'محفوظ نہیں ہو سکا۔ دوبارہ کوشش کریں۔', 'تعذّر الحفظ، حاول مرة أخرى.') })
+  function flashNotif(ok: boolean, lang?: string) {
+    const LL = (en: string, ur: string, ar: string) => { const l = lang || locale; return l === 'en' ? en : l === 'ur' ? ur : ar }
+    setNotifMsg({ ok, text: ok ? LL('Saved', 'محفوظ', 'حُفظ') : LL('Could not save. Try again.', 'محفوظ نہیں ہو سکا۔ دوبارہ کوشش کریں۔', 'تعذّر الحفظ، حاول مرة أخرى.') })
     setTimeout(() => setNotifMsg(null), 2500)
   }
 
@@ -336,7 +362,11 @@ export default function SettingsPage() {
     // VAT number (ZATCA): 15 digits starting and ending with 3; a wrong one marks every offer as VAT-registered
     const vat = toLatinDigits(vatNumber).replace(/\s/g, '')
     if (vat && !/^3\d{13}3$/.test(vat)) {
-      setProfileMsg(L('The VAT number must be 15 digits, starting and ending with 3.', 'VAT نمبر 15 ہندسوں کا ہونا چاہیے، جو 3 سے شروع اور 3 پر ختم ہو۔', 'رقم ضريبة القيمة المضافة يتكوّن من 15 رقماً يبدأ بـ 3 وينتهي بـ 3.'))
+      setProfileMsg(L('The VAT number is 15 digits, starting with 3 and ending with 3.', 'ٹیکس نمبر 15 ہندسوں کا ہوتا ہے، جو 3 سے شروع اور 3 پر ختم ہوتا ہے۔', 'الرقم الضريبي 15 رقماً يبدأ بـ3 وينتهي بـ3.'))
+      return
+    }
+    if (vat && vat !== (profile?.vat_number || '') && !vatConfirm) {
+      setProfileMsg(L('Confirm that your business is VAT-registered and the number is correct.', 'تصدیق کریں کہ آپ کا ادارہ VAT میں رجسٹرڈ ہے اور نمبر درست ہے۔', 'أكّد أن منشأتك مسجّلة في ضريبة القيمة المضافة وأن الرقم صحيح.'))
       return
     }
     setProfileSaving(true); setProfileMsg('')
@@ -375,7 +405,13 @@ export default function SettingsPage() {
     }
     const { error } = await supabase.from('profiles').update(updateData).eq('id', user.id)
     setProfileSaving(false)
-    setProfileMsg(error ? t.error : t.saved)
+    // a changed VAT number loses the team's check (DB trigger, migration 286): mirror it here
+    if (!error) {
+      setProfile((p: any) => ({ ...p, vat_number: vat || null, vat_verified_at: vat && vat === (p?.vat_number || '') ? p?.vat_verified_at : null }))
+      setVatConfirm(false)
+    }
+    // the database refuses a malformed VAT number (migration 286 constraint)
+    setProfileMsg(error ? (/vat_number_format/.test(String(error.message || '')) ? L('The VAT number is 15 digits, starting with 3 and ending with 3.', 'ٹیکس نمبر 15 ہندسوں کا ہوتا ہے، جو 3 سے شروع اور 3 پر ختم ہوتا ہے۔', 'الرقم الضريبي 15 رقماً يبدأ بـ3 وينتهي بـ3.') : t.error) : t.saved)
     setTimeout(() => setProfileMsg(''), 3000)
   }
 
@@ -436,7 +472,7 @@ export default function SettingsPage() {
       const fd = new FormData(); fd.append('file', await compressImage(file, { maxSide: DOC_MAX_SIDE })); fd.append('kind', kind)
       const res = await fetch('/api/upload-verification', { method: 'POST', body: fd })
       const j = await res.json().catch(() => ({}))
-      if (!res.ok || !j.ok) { setDocsMsg(j?.message || t.error); return null }
+      if (!res.ok || !j.ok) { setDocsMsg(uploadErrText(j, locale, t.error)); return null }
       return j.path as string
     }
 
@@ -544,12 +580,12 @@ export default function SettingsPage() {
     setPrefLang(key)
     if (!user) return
     const { error } = await createClient().from('profiles').update({ preferred_language: key }).eq('id', user.id)
-    flashNotif(!error)
+    flashNotif(!error, key)
   }
 
   if (loading) return <PageLoader />
   if (loadFailed || !profile) return (
-    <AppShell title={t.title} userId={user?.id} nav={getNav(profile?.role, locale, '/settings')} dir={dir}>
+    <AppShell title={t.title} userId={user?.id} nav={getNav(profile?.role || roleHint(), locale, '/settings')} dir={dir}>
       <div className="max-w-xl mx-auto">
         <LoadError onRetry={() => setReloadKey(k => k + 1)}
           message={L('We could not load your account details. Check your connection.', 'آپ کے اکاؤنٹ کی تفصیلات لوڈ نہیں ہو سکیں۔ اپنا کنکشن چیک کریں۔', 'تعذّر تحميل بيانات حسابك. تحقّق من اتصالك.')} />
@@ -590,7 +626,7 @@ export default function SettingsPage() {
     // notifications have their own tab (?tab=notifications), not the bottom of the profile (UX-099)
     { key: 'notifications', icon: <Glyph e="🔔" />, label: L('Notifications', 'اطلاعات', 'الإشعارات') },
     ...(showDocs ? [{ key: 'docs', icon: <Glyph e="📄" />, label: t.docsTab }] : []),
-    { key: 'password', icon: <Glyph e="🔒" />, label: phoneAccount ? L('Sign-in', 'سائن اِن', 'تسجيل الدخول') : t.passwordTab },
+    { key: 'password', icon: <Glyph e="🔒" />, label: phoneAccount ? L('Sign-in method', 'سائن اِن کا طریقہ', 'طريقة الدخول') : t.passwordTab },
     { key: 'language', icon: <Glyph e="🌐" />, label: t.langTab },
   ]
   const supportLabel = L('Support', 'سپورٹ', 'الدعم')
@@ -618,14 +654,20 @@ export default function SettingsPage() {
         {L(`Member of the «${teamOf?.name || 'company'}» team`, `«${teamOf?.name || 'کمپنی'}» کی ٹیم کے رکن`, `عضو في فريق «${teamOf?.name || 'الشركة'}»`)}
       </span>
     : isSupplier
-    ? <span className={`inline-flex items-center gap-1 mt-2 text-xs px-2 py-0.5 rounded-full font-semibold ${
+    ? (!independent && profile?.verification_status !== 'verified' && profile?.verification_status !== 'rejected' && !profile?.cr_url
+      ? <button type="button" onClick={() => setTab('docs')} className="inline-flex items-center gap-1 mt-2 min-h-[32px] text-xs px-2.5 rounded-full font-semibold bg-warn-bg text-warn-text border border-warn-border hover:underline">
+          {!profile?.commercial_registration
+            ? L('Add the commercial registration number', 'تجارتی رجسٹریشن نمبر شامل کریں', 'أضف رقم السجل التجاري')
+            : L('Not verified: request the «Verified» badge', 'تصدیق شدہ نہیں: «تصدیق شدہ» بیج کی درخواست کریں', 'غير موثّق، اطلب شارة «موثّق»')}
+        </button>
+      : <span className={`inline-flex items-center gap-1 mt-2 text-xs px-2 py-0.5 rounded-full font-semibold ${
         profile?.verification_status === 'verified' ? 'bg-emerald-100 text-emerald-800' :
-        profile?.verification_status === 'rejected' ? 'bg-red-100 text-red-700' : independent ? 'bg-[#0B2438] text-white' : 'bg-warn-bg text-warn-text'
+        profile?.verification_status === 'rejected' ? 'bg-gray-100 text-gray-700' : independent ? 'bg-[#0B2438] text-white' : 'bg-warn-bg text-warn-text'
       }`}>
         {profile?.verification_status === 'verified' ? t.verified : profile?.verification_status === 'rejected' ? t.rejected
           : independent ? <span title={L('Your deal cap rises with every successful deal', 'ہر کامیاب ڈیل کے ساتھ آپ کی ڈیل کی حد بڑھتی ہے', 'يرتفع حدّ صفقاتك مع كل صفقة ناجحة')}>{L('Pricing agent', 'قیمت ایجنٹ', 'وسيط تسعير')}</span>
-          : !profile?.cr_url ? L('Upload your commercial registration', 'اپنا تجارتی رجسٹریشن اپلوڈ کریں', 'ارفع السجل التجاري') : t.pending}
-      </span>
+          : t.pending}
+      </span>)
     : profile?.phone_verified_at
       ? <span className="inline-flex items-center gap-1 mt-2 text-xs px-2 py-0.5 rounded-full font-semibold bg-emerald-100 text-emerald-800"><Check className="w-3.5 h-3.5" aria-hidden />{L('Mobile verified', 'موبائل تصدیق شدہ', 'الجوال موثّق')}</span>
       : !phoneRequired ? null
@@ -640,9 +682,10 @@ export default function SettingsPage() {
         {/* Phones: one horizontal tab row that stays under the top bar, so a tab never changes content
             out of sight below a tall menu card (UX-138) */}
         <div className="lg:hidden sticky top-[61px] sm:top-[69px] z-20 -mx-4 px-4 py-2 mb-4 bg-[#F4F3EF]/95 backdrop-blur border-b border-gray-200/70">
-          <div role="tablist" aria-label={t.title} className="flex gap-2 overflow-x-auto">
+          {/* a soft fade at the end edge says the row scrolls (round-6 UX-115) */}
+          <div role="tablist" aria-label={t.title} className="flex gap-2 overflow-x-auto [mask-image:linear-gradient(to_left,transparent,#000_24px)] rtl:[mask-image:linear-gradient(to_right,transparent,#000_24px)] pe-6">
             {tabs.map(item => (
-              <button key={item.key} type="button" role="tab" aria-selected={tab === item.key} onClick={() => setTab(item.key)}
+              <button key={item.key} type="button" role="tab" aria-selected={tab === item.key} aria-controls="settings-panel" onClick={() => setTab(item.key)}
                 className={`shrink-0 min-h-[44px] inline-flex items-center gap-1.5 px-3.5 rounded-xl text-sm font-bold whitespace-nowrap border ${
                   tab === item.key ? 'bg-[#0B2438] text-white border-[#0B2438]' : 'bg-white text-[#0B2438] border-gray-200'}`}>
                 {item.icon}{item.label}
@@ -681,7 +724,7 @@ export default function SettingsPage() {
 
               <div role="tablist" aria-orientation="vertical" aria-label={t.title}>
                 {tabs.map(item => (
-                  <button key={item.key} type="button" role="tab" aria-selected={tab === item.key} onClick={() => setTab(item.key)}
+                  <button key={item.key} id={'set-tab-' + item.key} type="button" role="tab" aria-selected={tab === item.key} aria-controls="settings-panel" onClick={() => setTab(item.key)}
                     className={`w-full min-h-[44px] flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all text-start ${
                       tab === item.key ? 'text-white' : 'text-gray-700 hover:bg-gray-50'
                     }`}
@@ -707,7 +750,7 @@ export default function SettingsPage() {
           </div>
 
           {/* Content */}
-          <div className="lg:col-span-3 min-w-0">
+          <div className="lg:col-span-3 min-w-0" role="tabpanel" id="settings-panel" aria-labelledby={'set-tab-' + tab} tabIndex={-1}>
             {/* Profile Tab */}
             {(tab === 'profile' || (tab === 'docs' && !showDocs)) && (
               <div className="bg-white rounded-2xl p-4 sm:p-7 border border-gray-100 shadow-sm animate-fade-in">
@@ -738,6 +781,11 @@ export default function SettingsPage() {
                                 // the same check as the app (round-5 UX-094): open quantity lists + tenders in draft or review
                                 if (!busy) {
                                   try {
+                                    const { data: n, error: nErr } = await createClient().rpc('my_business_work_count')
+                                    if (nErr) throw nErr
+                                    busy = Number(n) > 0
+                                  } catch {
+                                  try {
                                     const sb = createClient()
                                     const [{ count }, { data: projs }] = await Promise.all([
                                       sb.from('tenders').select('id', { count: 'exact', head: true }).eq('contractor_id', profile.id).in('status', ['draft', 'review']),
@@ -746,6 +794,7 @@ export default function SettingsPage() {
                                     const openProjects = (projs || []).filter((p: any) => !['closed', 'completed', 'cancelled', 'done'].includes(String(p?.status || '')))
                                     busy = (count || 0) > 0 || openProjects.length > 0
                                   } catch {}
+                                  }
                                 }
                                 if (busy && !(await askConfirm(L(
                                   'You have quantity lists or tenders in progress. In «My home» mode they are hidden from the menu and the home page, not deleted, and you can bring them back by returning to «Contractor or company». Switch?',
@@ -766,7 +815,7 @@ export default function SettingsPage() {
                                 ? { ok: false, text: L('Could not save. Try again.', 'محفوظ نہیں ہو سکا۔ دوبارہ کوشش کریں۔', 'تعذّر الحفظ، حاول مرة أخرى.') }
                                 : v === 'individual'
                                   ? { ok: true, text: L('Saved. The home page and the request are now simpler.', 'محفوظ ہو گیا۔ ہوم پیج اور درخواست اب آسان ہیں۔', 'حُفظ. أصبحت الصفحة الرئيسية والطلب أبسط.') }
-                                  : { ok: true, text: L('Saved. All the options now appear in the menu.', 'محفوظ ہو گیا۔ تمام اختیارات اب مینو میں ہیں۔', 'حُفظ. ظهرت كل الخيارات في القائمة.') })
+                                  : { ok: true, text: L('Saved. All the options now appear in the menu. Write the name of your company or establishment in the field below.', 'محفوظ ہو گیا۔ تمام اختیارات اب مینو میں ہیں۔ نیچے والے خانے میں اپنی کمپنی یا ادارے کا نام لکھیں۔', 'حُفظ. ظهرت كل الخيارات في القائمة. اكتب اسم شركتك أو مؤسستك في الحقل أدناه.') })
                             }}
                             className={`min-h-[56px] text-start rounded-xl border-2 px-3 py-2.5 flex items-start gap-2 disabled:opacity-70 ${on ? 'border-[#D4A543] bg-[#D4A543]/10' : 'border-gray-200 bg-white hover:border-gray-300'}`}>
                             <span className={`mt-0.5 w-5 h-5 shrink-0 rounded-full border-2 grid place-items-center ${on ? 'border-[#0B2438] bg-[#0B2438] text-white' : 'border-gray-300'}`}>{on && <Check className="w-3 h-3" strokeWidth={3} aria-hidden />}</span>
@@ -865,9 +914,20 @@ export default function SettingsPage() {
                     <label htmlFor="set-vat" className="block text-xs font-bold text-gray-600 mb-1.5">
                       {isSupplier ? L('VAT number (if your business is VAT-registered)', 'ٹیکس نمبر (اگر آپ کا ادارہ VAT میں رجسٹرڈ ہے)', 'الرقم الضريبي (إن كانت منشأتك مسجّلة في ضريبة القيمة المضافة)') : L('VAT number (optional)', 'ٹیکس نمبر (اختیاری)', 'الرقم الضريبي (اختياري)')}
                     </label>
-                    <input id="set-vat" value={vatNumber} onChange={e => setVatNumber(e.target.value)} inputMode="numeric"
-                      className="input-field font-mono" dir="ltr" placeholder="3XXXXXXXXXXXXX3" maxLength={15} />
-                    <p className="text-[12px] text-gray-600 mt-1">
+                    <input id="set-vat" value={vatNumber} onChange={e => { setVatNumber(e.target.value); setVatConfirm(false) }} inputMode="numeric"
+                      className="input-field font-mono" dir="ltr" placeholder="3XXXXXXXXXXXXX3" maxLength={15} aria-describedby="set-vat-hint" />
+                    {/* checked by the team on ZATCA's site (migration 286); a changed number clears it */}
+                    {profile?.vat_verified_at && toLatinDigits(vatNumber).replace(/\s/g, '') === (profile?.vat_number || '') && (
+                      <p className="text-[13px] font-semibold text-[#0F6E56] mt-1.5 inline-flex items-center gap-1"><Check className="w-4 h-4" aria-hidden />{L('We checked your VAT number', 'ہم نے آپ کا ٹیکس نمبر چیک کر لیا', 'تحقّقنا من رقمك الضريبي')}</p>
+                    )}
+                    {!!toLatinDigits(vatNumber).replace(/\s/g, '') && toLatinDigits(vatNumber).replace(/\s/g, '') !== (profile?.vat_number || '') && (
+                      <label className="flex items-start gap-2 text-[13px] text-gray-700 mt-2 min-h-[44px] cursor-pointer">
+                        <input type="checkbox" checked={vatConfirm} onChange={e => setVatConfirm(e.target.checked)} className="mt-0.5 w-5 h-5 shrink-0 accent-[#0B2438]" />
+                        <span>{L('I confirm that my business is VAT-registered and the number is correct', 'میں تصدیق کرتا ہوں کہ میرا ادارہ VAT میں رجسٹرڈ ہے اور نمبر درست ہے', 'أؤكّد أن منشأتي مسجّلة في ضريبة القيمة المضافة وأن الرقم صحيح')}</span>
+                      </label>
+                    )}
+                    {isSupplier && <p className="text-[12px] font-semibold text-[#0B2438] mt-1">{L('Most company requests require a tax invoice.', 'کمپنیوں کی زیادہ تر درخواستوں میں ٹیکس انوائس شرط ہوتی ہے۔', 'أغلب طلبات الشركات تشترط فاتورة ضريبية.')}</p>}
+                    <p id="set-vat-hint" className="text-[12px] text-gray-600 mt-1">
                       {isSupplier
                         ? L('With a VAT number you choose, when pricing, whether your price includes VAT, and the buyer sees the price including 15% VAT. Without it, your price is shown as you type it, as a final price with no VAT.', 'ٹیکس نمبر کے ساتھ آپ قیمت دیتے وقت طے کرتے ہیں کہ آپ کی قیمت میں VAT شامل ہے یا نہیں، اور خریدار قیمت 15% VAT سمیت دیکھتا ہے۔ اس کے بغیر آپ کی قیمت جیسے آپ لکھیں ویسے ہی بغیر VAT کے حتمی قیمت کے طور پر دکھائی جاتی ہے۔', 'مع الرقم الضريبي تحدّد عند التسعير هل سعرك شامل الضريبة، ويرى المشتري السعر شاملاً ضريبة 15%. ومن دونه يُعرض سعرك كما تكتبه سعراً نهائياً بلا ضريبة.')
                         : L('It is shown with your request so the supplier can write it on your invoice.', 'یہ آپ کی درخواست کے ساتھ دکھایا جاتا ہے تاکہ سپلائر اسے آپ کی انوائس پر لکھ سکے۔', 'يظهر مع طلبك ليكتبه المورد في فاتورتك.')}
@@ -902,7 +962,7 @@ export default function SettingsPage() {
                   {/* Seller kind + company activity (the buyer-facing tier is derived from it) */}
                   {isSupplier && !teamMember && (
                     <div className="border-t border-gray-100 pt-5">
-                      <div className="block text-xs font-bold text-gray-600 mb-2">{L('Seller type (company or pricing agent)', 'فروخت کنندہ کی قسم (کمپنی یا قیمت ایجنٹ)', 'نوع البائع (شركة أو وسيط تسعير)')}</div>
+                      <div className="block text-xs font-bold text-gray-600 mb-2">{L('Supplier type (company or pricing agent)', 'سپلائر کی قسم (کمپنی یا قیمت ایجنٹ)', 'نوع المورد (شركة أو وسيط تسعير)')}</div>
                       <SellerKindPicker providerType={profile?.provider_type} supplierTier={supplierTier} locale={locale}
                         onChange={(pt: string, tr: string | null) => { setProfile({ ...profile, provider_type: pt, supplier_tier: tr }); setSupplierTier(tr || 'shop') }} />
                       {!independent && (
@@ -1060,7 +1120,7 @@ export default function SettingsPage() {
             {/* Password Tab */}
             {tab === 'password' && (
               <div className="bg-white rounded-2xl p-4 sm:p-7 border border-gray-100 shadow-sm animate-fade-in">
-                <h2 className="text-lg font-bold mb-6" style={{ color: '#0B2438' }}>{phoneAccount ? L('Sign-in', 'سائن اِن', 'تسجيل الدخول') : t.passwordTab}</h2>
+                <h2 className="text-lg font-bold mb-6" style={{ color: '#0B2438' }}>{phoneAccount ? L('Sign-in method', 'سائن اِن کا طریقہ', 'طريقة الدخول') : t.passwordTab}</h2>
 
                 {phoneAccount ? (
                   // a phone sign-up has no password to change (UX-040)
@@ -1090,7 +1150,7 @@ export default function SettingsPage() {
                           className="input-field pe-12" placeholder="••••••••" required />
                         <PwEye />
                         </div>
-                      <Link href="/forgot-password" className="inline-flex items-center min-h-[44px] text-[13px] font-bold text-[#8F6820] hover:underline">
+                      <Link href="/forgot-password?from=settings" className="inline-flex items-center min-h-[44px] text-[13px] font-bold text-[#8F6820] hover:underline">
                         {L('Forgot your current password? Get a reset link by email', 'موجودہ پاسورڈ بھول گئے؟ ای میل پر ری سیٹ لنک حاصل کریں', 'نسيت كلمة المرور الحالية؟ أرسل رابطاً إلى بريدك')}
                       </Link>
                     </div>
@@ -1142,7 +1202,7 @@ export default function SettingsPage() {
                 <div className="flex flex-wrap items-start justify-between gap-3 rounded-xl p-4 mb-6 bg-[#F5F7FA] border border-gray-200">
                   <p className="text-sm text-gray-800 leading-relaxed flex-1 min-w-[220px]"><Glyph e="🛡" /> {!profile?.commercial_registration
                     ? L('The commercial registration number (unified national number) is required to price requests. Uploading the certificate to get the «Verified» badge is optional.', 'درخواستوں کی قیمت دینے کے لیے تجارتی رجسٹریشن نمبر (متحدہ قومی نمبر) ضروری ہے۔ «تصدیق شدہ» بیج کے لیے سرٹیفکیٹ اپلوڈ کرنا اختیاری ہے۔', 'رقم السجل التجاري (الرقم الوطني الموحد) مطلوب لتسعير الطلبات. أما رفع الشهادة للحصول على شارة «موثّق» فاختياري.')
-                    : L('Uploading the certificate is optional. Once verified, buyers see a «Verified» badge next to your offers, which raises their trust and your chances of winning requests.', 'سرٹیفکیٹ اپلوڈ کرنا اختیاری ہے۔ تصدیق کے بعد خریدار آپ کی آفرز کے ساتھ «تصدیق شدہ» بیج دیکھتے ہیں، جس سے ان کا اعتماد اور آپ کے درخواستیں جیتنے کے امکانات بڑھتے ہیں۔', 'رفع الشهادة اختياري. بعد التوثيق تظهر شارة «موثّق» بجانب عروضك لدى المشترين، مما يرفع موثوقيتك وفرصك في الفوز بالطلبات.')}{supplierTier !== 'shop' && ' ' + L('Verified companies also appear under «Approved companies and factories».', 'تصدیق شدہ کمپنیاں «منظور شدہ کمپنیاں اور فیکٹریاں» کے حصے میں بھی دکھائی دیتی ہیں۔', 'وتظهر الشركات الموثّقة كذلك ضمن «شركات ومصانع معتمدة».')}</p>
+                    : L('Uploading the certificate is optional. Once verified, buyers see a «Verified» badge next to your offers, which raises their trust and your chances of winning requests.', 'سرٹیفکیٹ اپلوڈ کرنا اختیاری ہے۔ تصدیق کے بعد خریدار آپ کی آفرز کے ساتھ «تصدیق شدہ» بیج دیکھتے ہیں، جس سے ان کا اعتماد اور آپ کے درخواستیں جیتنے کے امکانات بڑھتے ہیں۔', 'رفع الشهادة اختياري. بعد التوثيق تظهر شارة «موثّق» بجانب عروضك لدى المشترين، مما يرفع موثوقيتك وفرصك في الفوز بالطلبات.')}{supplierTier !== 'shop' && ' ' + L('Verified companies also appear under «Verified companies and factories».', 'تصدیق شدہ کمپنیاں «تصدیق شدہ کمپنیاں اور فیکٹریاں» کے حصے میں بھی دکھائی دیتی ہیں۔', 'وتظهر الشركات الموثّقة كذلك ضمن «شركات ومصانع موثّقة».')}</p>
                   {/* «لاحقاً» stays on this page: it goes back to the profile tab instead of leaving (UX-160) */}
                   {!!profile?.commercial_registration && (
                     <button type="button" onClick={() => setTab('profile')} className="min-h-[44px] inline-flex items-center text-sm font-bold px-4 rounded-xl border bg-white hover:bg-gray-50 shrink-0" style={{ borderColor: '#e5e7eb', color: '#0B2438' }}>{L('Later', 'بعد میں', 'لاحقاً')}</button>
@@ -1150,9 +1210,9 @@ export default function SettingsPage() {
                 </div>
 
                 {profile?.verification_status === 'rejected' && (
-                  <div className="bg-red-50 border border-red-200 rounded-xl p-4 mb-5 flex items-start gap-2" role="alert">
-                    <span><Glyph e="❌" /></span>
-                    <div className="text-sm text-red-700 font-medium">{t.rejectedBanner}{profile?.rejection_reason && <span className="block mt-1 font-normal">{L('Reason:', 'وجہ:', 'السبب:')} {profile.rejection_reason}</span>}</div>
+                  <div className="bg-warn-bg border border-warn-border rounded-xl p-4 mb-5 flex items-start gap-2" role="status">
+                    <span><Glyph e="ℹ" /></span>
+                    <div className="text-sm text-warn-text font-medium">{t.rejectedBanner}{profile?.rejection_reason && <span className="block mt-1 font-normal">{L('Reason:', 'وجہ:', 'السبب:')} {profile.rejection_reason}</span>}</div>
                   </div>
                 )}
 
@@ -1186,15 +1246,15 @@ export default function SettingsPage() {
                     )}
                     {crCheck && (
                       <div className={`text-[13px] rounded-lg p-2.5 mt-3 flex items-start gap-2 ${
-                        crCheck.verified ? 'bg-emerald-50 text-emerald-800 border border-emerald-200'
-                        : crCheck.mode === 'manual' ? 'bg-[#D4A543]/10 text-[#6C531F] border border-[#D4A543]/40'
+                        crCheck.verified && profile?.verification_status === 'verified' ? 'bg-emerald-50 text-emerald-800 border border-emerald-200'
+                        : crCheck.verified || crCheck.mode === 'manual' ? 'bg-[#D4A543]/10 text-[#6C531F] border border-[#D4A543]/40'
                         : 'bg-warn-bg text-warn-text border border-warn-border'
                       }`} role="status">
-                        <span>{crCheck.verified ? <Glyph e="🛡" /> : crCheck.mode === 'manual' ? <Glyph e="ℹ" /> : <Glyph e="⚠" />}</span>
+                        <span>{crCheck.verified && profile?.verification_status === 'verified' ? <Glyph e="🛡" /> : crCheck.verified || crCheck.mode === 'manual' ? <Glyph e="ℹ" /> : <Glyph e="⚠" />}</span>
                         <div>
                           {crCheck.name && <div className="font-bold">{crCheck.name}</div>}
                           {crCheck.activity && <div className="opacity-80">{crCheck.activity}</div>}
-                          <div>{crCheckText(crCheck, locale)}</div>
+                          <div>{crCheckText(crCheck, locale, profile?.verification_status === 'verified')}</div>
                         </div>
                       </div>
                     )}
@@ -1275,7 +1335,7 @@ export default function SettingsPage() {
                   <button type="submit" disabled={docsSaving || (!licenseFile && !crFile && crDigits === (profile?.commercial_registration || ''))}
                     className="w-full sm:w-auto min-h-[48px] px-8 py-3 rounded-xl font-bold text-sm disabled:opacity-50 transition-all hover:shadow-lg"
                     style={{ background: '#D4A543', color: '#071827' }}>
-                    {docsSaving ? t.saving : t.uploadBtn}
+                    {docsSaving ? t.saving : (licenseFile || crFile) ? t.uploadAndSave : t.saveCr}
                   </button>
                 </form>
               </div>

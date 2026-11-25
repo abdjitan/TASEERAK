@@ -22,6 +22,10 @@ export const NOTIFS_READ_EVENT = 'tsk:notifs-read'
  */
 export function notifGlyph(type: any, data?: any, title?: any): string {
   const kind = String(data?.kind || '')
+  // payment steps: the cash icon (round-6 UX-101)
+  if (kind === 'paid' || kind === 'payment_confirmed' || type === 'paid' || type === 'payment_confirmed') return '💵'
+  if (kind === 'deal_closed') return 'ℹ'
+  if (kind === 'uncovered') return '📋'
   if (kind) {
     if (kind.startsWith('reduction')) return '📉'
     if (kind === 'info_request') return '❓'
@@ -164,9 +168,10 @@ export default function NotificationBell({ userId }: { userId?: string }) {
       <div className="overflow-y-auto flex-1 min-h-0 overscroll-contain">
         {notifications.length === 0 ? (
           <div className="p-8 text-center text-sm" style={{ color: '#526579' }}>{L('No notifications', 'کوئی اطلاع نہیں', 'لا توجد إشعارات')}</div>
-        ) : notifications.map((n: any) => (
-          <button type="button" key={n.id} onClick={() => openItem(n)}
-            className="w-full text-start px-4 py-3 min-h-[56px] hover:bg-[#F5F7FA] transition-colors"
+        ) : notifications.map((n: any) => { const hasUrl = !!safeNotifUrl(n.data?.url); const Row: any = hasUrl ? 'button' : 'div'; return (
+          // a notice with no page to open is plain text, not a button that does nothing (round-6 UX-101)
+          <Row {...(hasUrl ? { type: 'button' } : {})} key={n.id} onClick={() => (hasUrl ? openItem(n) : !n.is_read && markAsRead(n.id))}
+            className={`w-full text-start px-4 py-3 min-h-[56px] transition-colors ${hasUrl ? 'hover:bg-[#F5F7FA]' : ''}`}
             style={{ borderBottom: '1px solid #F0F3F6', background: n.is_read ? '#FFFFFF' : 'rgba(212,165,67,.10)' }}>
             <div className="flex items-start gap-3">
               <span aria-hidden="true" className="w-9 h-9 shrink-0 rounded-full grid place-items-center" style={{ background: 'rgba(11,36,56,.06)', color: '#0B2438' }}>
@@ -179,8 +184,8 @@ export default function NotificationBell({ userId }: { userId?: string }) {
               </div>
               {!n.is_read && <span className="w-2.5 h-2.5 rounded-full mt-1.5 shrink-0" style={{ background: '#D4A543' }} role="img" aria-label={L('Unread', 'نئی', 'غير مقروء')} />}
             </div>
-          </button>
-        ))}
+          </Row>
+        ) })}
       </div>
       <button type="button" onClick={() => { setOpen(false); router.push('/notifications') }}
         className="w-full text-center text-sm font-bold min-h-[48px] hover:bg-[#F5F7FA] shrink-0" style={{ color: '#8F6820', borderTop: '1px solid #E8EDF2' }}>

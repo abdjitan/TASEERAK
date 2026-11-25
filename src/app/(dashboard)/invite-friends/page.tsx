@@ -85,7 +85,7 @@ export default function InviteFriendsPage() {
             <div className="mt-5">
               <div className="text-sm font-bold mb-2" style={{ color: '#0B2438' }}>{L('Who are you inviting?', 'آپ کس کو دعوت دے رہے ہیں؟', 'من تريد أن تدعو؟')}</div>
               <div role="radiogroup" className="grid grid-cols-2 gap-2">
-                {([['supplier', L('A supplier', 'سپلائر', 'مورد'), L('a shop, factory or seller', 'دکان، فیکٹری یا بیچنے والا', 'محل أو مصنع أو بائع')], ['contractor', L('A buyer', 'خریدار', 'مشتري'), L('a contractor or a customer', 'ٹھیکیدار یا گاہک', 'مقاول أو عميل')]] as const).map(([k, label, hint]) => (
+                {([['supplier', L('A supplier', 'سپلائر', 'مورد'), L('a shop, factory or seller', 'دکان، فیکٹری یا بیچنے والا', 'محل أو مصنع أو بائع')], ['contractor', L('A buyer', 'خریدار', 'مشتري'), L('a contractor or someone building a home', 'ٹھیکیدار یا گھر بنانے والا', 'مقاول أو شخص يبني بيته')]] as const).map(([k, label, hint]) => (
                   <button key={k} type="button" role="radio" aria-checked={who === k} onClick={() => setWho(k)}
                     className={`text-start px-3 py-2.5 rounded-xl border-2 min-h-[44px] ${who === k ? 'border-[#D4A543] bg-[#D4A543]/10' : 'border-gray-200 bg-white'}`}>
                     <div className="text-sm font-bold" style={{ color: '#0B2438' }}>{label}</div>

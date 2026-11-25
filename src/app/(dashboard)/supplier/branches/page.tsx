@@ -116,13 +116,13 @@ export default function SupplierBranchesPage() {
             <div className="w-10 h-10 rounded-xl flex items-center justify-center text-xl text-[#F5C55B]" style={{ background: '#0B2438' }}><Glyph e="🏢" /></div>
             <div>
               <h1 className="text-xl sm:text-2xl font-bold" style={{ color: '#0B2438' }}>{L('Company branches', 'کمپنی کی شاخیں', 'فروع الشركة')}</h1>
-              <p className="text-gray-500 text-xs sm:text-sm">{readOnly ? L('Your company appears to buyers in every region where it has a branch.', 'آپ کی کمپنی ہر اس علاقے کے خریداروں کو نظر آتی ہے جہاں اس کی شاخ ہے۔', 'تظهر شركتك للمشترين في كل منطقة لها فيها فرع.') : L('Add your branches in different regions — buyers in every region with a branch will see your company.', 'مختلف علاقوں میں اپنی شاخیں شامل کریں — ہر اس علاقے کے خریدار آپ کی کمپنی دیکھیں گے جہاں شاخ ہے۔', 'أضف فروعك في المناطق المختلفة — تظهر شركتك للمشترين في كل منطقة فيها فرع.')}</p>
+              <p className="text-gray-500 text-xs sm:text-sm">{readOnly ? L('Price requests near each of your company branches reach you.', 'کمپنی کی ہر شاخ کے قریب کی قیمت کی درخواستیں آپ تک پہنچتی ہیں۔', 'تصلك طلبات التسعير القريبة من كل فرع من فروع شركتك.') : L('Add your branches in the different regions so price requests near each branch reach you.', 'مختلف علاقوں میں اپنی شاخیں شامل کریں تاکہ ہر شاخ کے قریب کی قیمت کی درخواستیں آپ تک پہنچیں۔', 'أضف فروعك في المناطق المختلفة لتصلك طلبات التسعير القريبة من كل فرع.')}</p>
             </div>
           </div>
         </div>
 
         {/* round-5 UX-105: the example is advice for the owner, not for a team member */}
-        {!readOnly && <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 mb-5 text-sm text-[#6C531F]">
+        {!readOnly && <div className="bg-warn-bg border border-warn-border rounded-xl p-3 mb-5 text-sm text-warn-text">
           <Glyph e="💡" /> {L('Example: with branches in Riyadh, Jeddah and Dammam, add all three — you will receive price requests from buyers in all of them.', 'مثال: اگر ریاض، جدہ اور دمام میں شاخیں ہیں تو تینوں شامل کریں — ان سب علاقوں کے خریداروں کی درخواستیں آپ کو ملیں گی۔', 'مثال: إذا كانت لديك فروع في الرياض وجدة والدمام، فأضف الثلاثة — وستصلك طلبات التسعير من المشترين في جميع هذه المناطق.')}
         </div>}
 
@@ -157,14 +157,14 @@ export default function SupplierBranchesPage() {
               <div>
                 <label htmlFor="br-region" className="block text-xs font-bold text-gray-600 mb-1">{L('Region', 'علاقہ', 'المنطقة')} *</label>
                 <select id="br-region" value={region} onChange={e => { setRegion(e.target.value); setCity('') }} className="input-field" required>
-                  <option value="">{L('-- Choose --', '-- منتخب کریں --', '-- اختر --')}</option>
+                  <option value="">{L('Choose the region', 'علاقہ منتخب کریں', 'اختر المنطقة')}</option>
                   {REGIONS.map(r => <option key={r} value={r}>{getRegionLabel(r, locale)}</option>)}
                 </select>
               </div>
               <div>
                 <label htmlFor="br-city" className="block text-xs font-bold text-gray-600 mb-1">{L('City', 'شہر', 'المدينة')}</label>
                 <select id="br-city" value={city} onChange={e => setCity(e.target.value)} className="input-field" disabled={!region}>
-                  <option value="">{region ? L('-- Choose --', '-- منتخب کریں --', '-- اختر --') : '—'}</option>
+                  <option value="">{region ? L('Choose the city', 'شہر منتخب کریں', 'اختر المدينة') : L('Choose the region first', 'پہلے علاقہ منتخب کریں', 'اختر المنطقة أولاً')}</option>
                   {(CITIES_BY_REGION[region] || []).map(c => <option key={c.ar} value={c.ar}>{cityName(c)}</option>)}
                 </select>
               </div>

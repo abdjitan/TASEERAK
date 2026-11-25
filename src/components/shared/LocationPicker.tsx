@@ -25,9 +25,9 @@ const txt = {
     notSupported: 'هذا المتصفح لا يتيح تحديد الموقع. الصق رابط الموقع بدلاً من ذلك.',
     invalidLink: 'لم نجد إحداثيات في هذا الرابط. افتح الموقع في خرائط Google ثم انسخ الرابط من شريط العنوان.',
     shortLink: 'هذا رابط مختصر. افتحه في المتصفح، ثم انسخ الرابط الكامل من شريط العنوان والصقه هنا.',
-    more: 'لست في مكان التسليم الآن؟ الصق رابط الموقع من خرائط Google', // round-4 UX-119 resolving: 'جارٍ قراءة الرابط...',
+    more: 'لست في مكان التسليم الآن؟ الصق رابط الموقع من خرائط Google', resolving: 'جارٍ قراءة الرابط…', // round-4 UX-119; round-6 UX-027: the key was inside this comment
     drag: 'اسحب الخريطة حتى يقع الدبوس على مكان التسليم بالضبط', accuracy: (m: number) => `الدقة: نحو ${m} م. تأكّد من موضع الدبوس.`,
-    zoomIn: 'تكبير', zoomOut: 'تصغير',
+    zoomIn: 'تكبير', zoomOut: 'تصغير', twoFingers: 'حرّك الخريطة بإصبعين', moved: 'نُقل موقع التوصيل', undo: 'تراجع',
   },
   en: {
     title: 'Location', detect: 'Use my current location', detecting: 'Finding your location...',
@@ -40,7 +40,7 @@ const txt = {
     shortLink: 'This is a short link. Open it in the browser, then copy the full link from the address bar and paste it here.',
     more: 'Not at the delivery place now? Paste the location link from Google Maps', resolving: 'Reading the link...',
     drag: 'Drag the map until the pin sits exactly on the delivery spot', accuracy: (m: number) => `Accuracy: about ${m} m. Check where the pin is.`,
-    zoomIn: 'Zoom in', zoomOut: 'Zoom out',
+    zoomIn: 'Zoom in', zoomOut: 'Zoom out', twoFingers: 'Move the map with two fingers', moved: 'Delivery location moved', undo: 'Undo',
   },
   ur: {
     title: 'مقام', detect: 'میرا موجودہ مقام استعمال کریں', detecting: 'مقام تلاش ہو رہا ہے...',
@@ -53,7 +53,7 @@ const txt = {
     shortLink: 'یہ مختصر لنک ہے۔ اسے براؤزر میں کھولیں اور ایڈریس بار سے پورا لنک کاپی کریں۔',
     more: 'ابھی ڈیلیوری کی جگہ پر نہیں؟ Google Maps سے مقام کا لنک پیسٹ کریں', resolving: 'لنک پڑھا جا رہا ہے...',
     drag: 'نقشہ کھینچیں یہاں تک کہ پن بالکل ڈیلیوری کی جگہ پر ہو', accuracy: (m: number) => `درستگی: تقریباً ${m} میٹر۔ پن کی جگہ چیک کریں۔`,
-    zoomIn: 'بڑا کریں', zoomOut: 'چھوٹا کریں',
+    zoomIn: 'بڑا کریں', zoomOut: 'چھوٹا کریں', twoFingers: 'نقشہ دو انگلیوں سے ہلائیں', moved: 'ڈیلیوری کا مقام بدل گیا', undo: 'واپس کریں',
   },
 }
 
@@ -64,6 +64,8 @@ export default function LocationPicker({ lat, lng, onChange, locale = 'ar', simp
   const [mapLink, setMapLink] = useState('')
   const [resolving, setResolving] = useState(false)
   const [accuracy, setAccuracy] = useState<number | null>(null) // indoor GPS can be far off: say so (round-2 UX-045)
+  // round-6 UX-027: every move of the pin says so, with «تراجع»
+  const [prevPin, setPrevPin] = useState<{ lat: number; lng: number } | null>(null)
 
   function detectLocation() {
     setError('')
@@ -72,7 +74,7 @@ export default function LocationPicker({ lat, lng, onChange, locale = 'ar', simp
     navigator.geolocation.getCurrentPosition(
       (pos) => {
         const acc = Math.round(pos.coords.accuracy || 0)
-        setAccuracy(acc > 50 ? acc : null)
+        setAccuracy(acc > 50 ? acc : null); setPrevPin(null)
         onChange(
           parseFloat(pos.coords.latitude.toFixed(7)),
           parseFloat(pos.coords.longitude.toFixed(7))
@@ -182,9 +184,14 @@ export default function LocationPicker({ lat, lng, onChange, locale = 'ar', simp
           </div>
           {accuracy != null && <p className="mb-2 rounded-lg border border-[#D4A543] bg-[#D4A543]/10 px-2 py-1.5 text-[13px] font-bold text-[#0B2438]" role="status">{T.accuracy(accuracy)}</p>}
           {/* a map the buyer can drag under a fixed pin (OpenStreetMap tiles, no script or key, round-2 UX-045) */}
-          <PinMap lat={lat!} lng={lng!} label={T.viewMap} zoomIn={T.zoomIn} zoomOut={T.zoomOut}
-            onMove={(a, b) => { setAccuracy(null); onChange(a, b) }} />
-          <p className="text-[12px] text-gray-600 mt-1.5">{T.drag}</p>
+          <PinMap lat={lat!} lng={lng!} label={T.viewMap} zoomIn={T.zoomIn} zoomOut={T.zoomOut} twoFingers={T.twoFingers}
+            onMove={(a, b) => { setPrevPin({ lat: lat!, lng: lng! }); setAccuracy(null); onChange(a, b) }} />
+          {prevPin ? (
+            <p className="text-[13px] font-semibold text-[#0B2438] mt-1.5 flex items-center gap-2" role="status">
+              {T.moved} ·
+              <button type="button" onClick={() => { onChange(prevPin.lat, prevPin.lng); setPrevPin(null) }} className="min-h-[44px] px-1 font-bold text-[#8F6820] underline">{T.undo}</button>
+            </p>
+          ) : <p className="text-[12px] text-gray-600 mt-1.5">{T.drag}</p>}
         </div>
       ) : (
         <div className="bg-gray-50 rounded-xl p-4 text-center text-gray-500 text-sm border border-dashed border-gray-200">
@@ -210,13 +217,18 @@ const unproject = (x: number, y: number, z: number) => {
   return { lat: parseFloat(lat.toFixed(7)), lng: parseFloat(lng.toFixed(7)) }
 }
 
-function PinMap({ lat, lng, onMove, label, zoomIn, zoomOut }: { lat: number; lng: number; onMove: (lat: number, lng: number) => void; label: string; zoomIn: string; zoomOut: string }) {
+function PinMap({ lat, lng, onMove, label, zoomIn, zoomOut, twoFingers }: { lat: number; lng: number; onMove: (lat: number, lng: number) => void; label: string; zoomIn: string; zoomOut: string; twoFingers: string }) {
   const H = 220
   const box = useRef<HTMLDivElement>(null)
   const [w, setW] = useState(320)
   const [z, setZ] = useState(17)
   const [off, setOff] = useState({ dx: 0, dy: 0 })
   const drag = useRef<{ x: number; y: number; id: number } | null>(null)
+  // round-6 UX-027: on a touch screen one finger scrolls the page; the map moves with two fingers
+  const touches = useRef(new Map<number, { x: number; y: number }>())
+  const [hint, setHint] = useState(false)
+  const hintTimer = useRef<any>(null)
+  const centroid = () => { let x = 0, y = 0; touches.current.forEach(p => { x += p.x; y += p.y }); const k = touches.current.size || 1; return { x: x / k, y: y / k } }
   useEffect(() => {
     const el = box.current
     if (!el) return
@@ -245,15 +257,36 @@ function PinMap({ lat, lng, onMove, label, zoomIn, zoomOut }: { lat: number; lng
   }
   return (
     <div className="relative rounded-lg overflow-hidden border border-gray-200 bg-[#e8eef3] select-none" dir="ltr">
-      <div ref={box} role="application" aria-label={label} className="relative w-full cursor-grab active:cursor-grabbing" style={{ height: H, touchAction: 'none' }}
-        onPointerDown={e => { drag.current = { x: e.clientX + off.dx, y: e.clientY + off.dy, id: e.pointerId }; (e.target as Element).setPointerCapture?.(e.pointerId) }}
-        onPointerMove={e => { if (drag.current) setOff({ dx: drag.current.x - e.clientX, dy: drag.current.y - e.clientY }) }}
-        onPointerUp={end} onPointerCancel={end}>
+      <div ref={box} role="application" aria-label={label} className="relative w-full cursor-grab active:cursor-grabbing" style={{ height: H, touchAction: 'pan-x pan-y' }}
+        onPointerDown={e => {
+          if (e.pointerType === 'touch') {
+            touches.current.set(e.pointerId, { x: e.clientX, y: e.clientY })
+            if (touches.current.size >= 2) {
+              const c0 = centroid(); drag.current = { x: c0.x + off.dx, y: c0.y + off.dy, id: e.pointerId }; setHint(false)
+            } else {
+              setHint(true); clearTimeout(hintTimer.current); hintTimer.current = setTimeout(() => setHint(false), 1800)
+            }
+            return
+          }
+          drag.current = { x: e.clientX + off.dx, y: e.clientY + off.dy, id: e.pointerId }; (e.target as Element).setPointerCapture?.(e.pointerId)
+        }}
+        onPointerMove={e => {
+          if (e.pointerType === 'touch') {
+            if (!touches.current.has(e.pointerId)) return
+            touches.current.set(e.pointerId, { x: e.clientX, y: e.clientY })
+            if (drag.current && touches.current.size >= 2) { const c0 = centroid(); setOff({ dx: drag.current.x - c0.x, dy: drag.current.y - c0.y }) }
+            return
+          }
+          if (drag.current) setOff({ dx: drag.current.x - e.clientX, dy: drag.current.y - e.clientY })
+        }}
+        onPointerUp={e => { if (e.pointerType === 'touch') { touches.current.delete(e.pointerId); if (touches.current.size < 2) end() } else end() }}
+        onPointerCancel={e => { if (e.pointerType === 'touch') { touches.current.delete(e.pointerId); if (touches.current.size < 2) end() } else end() }}>
         {tiles.map(t => (
           // eslint-disable-next-line @next/next/no-img-element
           <img key={t.k} src={t.src} alt="" draggable={false} className="absolute max-w-none pointer-events-none" style={{ left: t.left, top: t.top, width: TILE, height: TILE }} />
         ))}
         <MapPin className="absolute w-9 h-9 text-[#0B2438] fill-[#D4A543] pointer-events-none drop-shadow" style={{ left: w / 2 - 18, top: H / 2 - 34 }} aria-hidden />
+        {hint && <div className="absolute inset-0 grid place-items-center bg-[#071827]/45 pointer-events-none"><span className="rounded-lg bg-white/95 px-3 py-1.5 text-[13px] font-bold text-[#0B2438]" dir="auto">{twoFingers}</span></div>}
       </div>
       <div className="absolute top-2 right-2 flex flex-col gap-1">
         <button type="button" onClick={() => setZ(v => Math.min(19, v + 1))} aria-label={zoomIn} className="w-[44px] h-[44px] grid place-items-center rounded-lg bg-white shadow text-[#0B2438]"><Plus className="w-4 h-4" aria-hidden /></button>

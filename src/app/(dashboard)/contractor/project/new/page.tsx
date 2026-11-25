@@ -305,31 +305,65 @@ export default function NewProjectPage() {
   const [tenderId, setTenderId] = useState<string | null>(null)
   // restored once the account is known: the browser copy of THIS account (UX-096), or the server copy when it is newer
   // or the browser has none (another device, the app: UX-089). «?draft=<id>» opens a given server copy.
+  //
+  // Round-6 UX-081: the browser copy is applied AT ONCE (no wait for the server), and the server copy replaces it
+  // only when it is newer AND the contractor has not changed anything meanwhile (dirtyRef). Until the server answers,
+  // «جارٍ استعادة مسودتك…» is shown and adding (a material, the catalog, a file) is paused, so nothing he adds in those
+  // seconds can be overwritten.
   async function restoreDraft(uid: string) {
-    let d: any = readProjectDraft(uid)
+    const local: any = readProjectDraft(uid)
+    let wanted: string | null = null
+    try { wanted = new URLSearchParams(window.location.search).get('draft') } catch {}
+    const has = (x: any) => !!x && Array.isArray(x.items) && x.items.length > 0
+    // «?draft=<id>» asks for a given server copy: the browser copy (maybe another list) is not shown first
+    if (!wanted) applyDraft(local)
+    let applied = !wanted && has(local)
     try {
-      const wanted = new URLSearchParams(window.location.search).get('draft')
       const server = await fetchBoqServerDraft(createClient(), wanted)
       if (server) {
         serverIdRef.current = server.id
         const sd = server.data || {}
-        const localAt = d?.saved_at ? Date.parse(d.saved_at) : 0
+        const localAt = local?.saved_at ? Date.parse(local.saved_at) : 0
         const serverAt = Date.parse(server.updated_at || '') || 0
-        if (Array.isArray(sd.items) && sd.items.length && (wanted || !d || !Array.isArray(d.items) || !d.items.length || serverAt > localAt + 2000)) d = sd
-        if (d) setCloudState('saved')
-      } else if (d?.server_id) serverIdRef.current = null // the server copy was deleted (sent from another device)
+        if (has(sd) && (wanted || !has(local) || serverAt > localAt + 2000)) {
+          if (!dirtyRef.current) { applyDraft(sd); applied = true }
+          else {
+            // he already changed the list: his work stays, unless he chooses the other copy himself
+            const take = await askConfirm(L(`A newer copy of your draft (${sd.items.length} items) was saved from another device. You have changed the list here since opening it. Which one do you want to keep?`, `آپ کے مسودے کی ایک نئی نقل (${sd.items.length} آئٹمز) دوسرے آلے سے محفوظ ہوئی ہے۔ کھولنے کے بعد آپ نے یہاں فہرست بدلی ہے۔ کون سی رکھنا چاہتے ہیں؟`, `حُفظت نسخة أحدث من مسودتك (${arItems(sd.items.length)}) من جهاز آخر، وقد عدّلتَ القائمة هنا منذ فتحها. أيّهما تريد أن تبقي؟`),
+              { okLabel: L('Open the newer copy', 'نئی نقل کھولیں', 'فتح النسخة الأحدث'), cancelLabel: L('Keep my changes here', 'یہاں کی ترامیم رکھیں', 'إبقاء تعديلاتي هنا') })
+            if (take) { applyDraft(sd); applied = true }
+          }
+        }
+        if (applied || has(local)) setCloudState('saved')
+      } else if (local?.server_id) serverIdRef.current = null // the server copy was deleted (sent from another device)
     } catch { /* offline: the browser copy only */ }
-    applyDraft(d)
+    // a given server copy that could not be read: the browser copy, unless he has started a list meanwhile
+    if (wanted && !applied && !dirtyRef.current) applyDraft(local)
+    setRestoring(false)
     setRestored(true)
   }
+  // what the contractor changes while the draft is being restored (round-6 UX-081): any change to the list, its name,
+  // the notes or the delivery address after the last applied copy marks the page «dirty»
+  const [restoring, setRestoring] = useState(true)
+  const dirtyRef = useRef(false)
+  const baseRef = useRef<{ items: any[]; title: string; notes: string; loc: string } | null>(null)
+  useEffect(() => {
+    const b = baseRef.current
+    if (!b) { baseRef.current = { items, title, notes: supplierNotes, loc: deliveryLocation }; return }
+    if (items !== b.items || title !== b.title || supplierNotes !== b.notes || deliveryLocation !== b.loc) dirtyRef.current = true
+  }, [items, title, supplierNotes, deliveryLocation])
   function applyDraft(d: any) {
     try {
       if (d && Array.isArray(d.items) && d.items.length) {
         // an old draft's hidden «projectNotes» (e.g. «تسعير مناقصة: <name>») is never restored: only the visible
         // supplier notes the buyer wrote himself come back (UX-002)
-        setTitle(d.title || ''); setRegion(d.region || ''); setCity(d.city || ''); setSupplierNotes(typeof d.supplierNotes === 'string' ? d.supplierNotes : '')
+        const list = d.items.map(normalizeLine)
+        const notes = typeof d.supplierNotes === 'string' ? d.supplierNotes : ''
+        // what is applied here is not the contractor's own change (UX-081)
+        baseRef.current = { items: list, title: d.title || '', notes, loc: d.deliveryLocation || '' }
+        setTitle(d.title || ''); setRegion(d.region || ''); setCity(d.city || ''); setSupplierNotes(notes)
         setDeliveryRequired(d.deliveryRequired !== false); setDeliveryLocation(d.deliveryLocation || '')
-        setItems(d.items.map(normalizeLine)); if (d.hours) setHours(d.hours)
+        setItems(list); if (d.hours) setHours(d.hours)
         setRestoredCount(d.items.length)
         setLostFiles({ boq: typeof d.boqFileName === 'string' && d.boqFileName ? d.boqFileName : undefined, specs: typeof d.specsFileName === 'string' && d.specsFileName ? d.specsFileName : undefined })
         if (typeof d.extracted === 'number') setExtracted(d.extracted)
@@ -466,7 +500,7 @@ export default function NewProjectPage() {
   }
 
   async function handleBOQUpload(file: File) {
-    if (parsing) return
+    if (parsing || restoring) return // never while the draft is being restored (UX-081)
     // a new file replaces the items of the previous file (or of the tender), never the materials the buyer added
     // himself: ask first, the edits would be lost. A list from a tender is detached from it (UX-024).
     const replaced = items.filter(isFileItem).length
@@ -522,6 +556,7 @@ export default function NewProjectPage() {
   const [showCatalog, setShowCatalog] = useState(false)
   // a material picked from the catalog popup goes straight into the list, already classified
   function addFromCatalog(p: { name: string; sector: Sector; section?: string; sub?: string }) {
+    if (restoring) return // never while the draft is being restored (UX-081)
     const newId = `item-${Date.now()}-${items.length}`
     if (!items.some((it: any) => it.product_name === p.name)) setJustAddedId(newId)
     setItems(prev => prev.some((it: any) => it.product_name === p.name) ? prev : [...prev, {
@@ -533,7 +568,7 @@ export default function NewProjectPage() {
     setStep('items')
   }
   const catalogNames = useMemo(() => Array.from(new Set(Object.values(SECTOR_PRODUCTS).flat())), [])
-  function addItem() { setEditingIndex(null); setDraft({ product_name: '', quantity: '', unit: '', specification: '', spec: undefined }) }
+  function addItem() { if (restoring) return; setEditingIndex(null); setDraft({ product_name: '', quantity: '', unit: '', specification: '', spec: undefined }) }
   function draftGuess(name: string): { sector: string; sub: string | null; catalog: boolean } {
     const n = (name || '').trim()
     for (const sc of Object.keys(SECTOR_PRODUCTS) as Sector[]) if (SECTOR_PRODUCTS[sc].includes(n)) return { sector: sc, sub: detectSubCategory(n, sc) || null, catalog: true }
@@ -739,18 +774,18 @@ export default function NewProjectPage() {
     const tName = title.trim()
     const listTitle = (tName || defaultListName(locale)).slice(0, 200)
     if (tName.length >= 3 && supplierNotes.toLowerCase().includes(tName.toLowerCase())) {
-      const fix = await askConfirm(L(`Your notes for suppliers contain the project name «${tName}», and suppliers will read them. Remove the name before sending?`, `سپلائرز کے لیے آپ کے نوٹس میں پراجیکٹ کا نام «${tName}» ہے اور سپلائرز انہیں پڑھیں گے۔ بھیجنے سے پہلے نام ہٹا دیں؟`, `تتضمن ملاحظاتك للموردين اسم المشروع «${tName}»، وسيقرؤها الموردون. هل تريد إزالة الاسم قبل الإرسال؟`),
+      const fix = await askConfirm(L(`Your notes for suppliers contain the list name «${tName}», and suppliers will read them. Remove the name before sending?`, `سپلائرز کے لیے آپ کے نوٹس میں فہرست کا نام «${tName}» ہے اور سپلائرز انہیں پڑھیں گے۔ بھیجنے سے پہلے نام ہٹا دیں؟`, `تتضمن ملاحظاتك للموردين اسم القائمة «${tName}»، وسيقرؤها الموردون. هل تريد إزالة الاسم قبل الإرسال؟`),
         { okLabel: L('Remove the name', 'نام ہٹائیں', 'إزالة الاسم'), cancelLabel: L('Edit the notes myself', 'نوٹس خود درست کریں', 'سأعدّل الملاحظات بنفسي') })
       if (!fix) { goToField(notesRef); return }
       const esc = tName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
       const cleaned = supplierNotes.replace(new RegExp(esc, 'gi'), '').replace(/[ \t]{2,}/g, ' ').trim()
       setSupplierNotes(cleaned)
-      await notify(L('The project name was removed from the notes. Tap «Send» again.', 'نوٹس سے پراجیکٹ کا نام ہٹا دیا گیا۔ دوبارہ «بھیجیں» دبائیں۔', 'أُزيل اسم المشروع من الملاحظات. اضغط «إرسال» مرة أخرى.'))
+      await notify(L('The list name was removed from the notes. Tap «Send» again.', 'نوٹس سے فہرست کا نام ہٹا دیا گیا۔ دوبارہ «بھیجیں» دبائیں۔', 'أُزيل اسم القائمة من الملاحظات. اضغط «إرسال» مرة أخرى.'))
       goToField(notesRef); return
     }
     // a file attached before the page was reopened is not in the draft: never send without it silently (UX-094)
+    // the BOQ file itself is not here: it is kept in the buyer's record only and never reaches suppliers (round-6 UX-082)
     const missingFiles: string[] = [
-      ...(!boqFile && lostFiles.boq ? [lostFiles.boq] : []),
       ...(!specsFile && lostFiles.specs ? [lostFiles.specs] : []),
       ...classifiedItems.filter((i: any) => !i.specFile && i.specFileName).map((i: any) => String(i.specFileName)),
     ]
@@ -870,7 +905,7 @@ export default function NewProjectPage() {
         projectId = null
         await notify((rfqErr?.message || '').includes('rfq_daily_limit')
           ? L('Daily request limit reached. Your list is saved in your draft: try again later.', 'روزانہ درخواستوں کی حد پوری ہو گئی۔ آپ کی فہرست آپ کے مسودے میں محفوظ ہے: بعد میں کوشش کریں۔', 'وصلت إلى الحد اليومي للطلبات. قائمتك محفوظة في مسودتك، فحاول لاحقاً.')
-          : L('Could not send the project. Your list is saved in your draft: try again.', 'پراجیکٹ نہیں بھیجا جا سکا۔ آپ کی فہرست آپ کے مسودے میں محفوظ ہے: دوبارہ کوشش کریں۔', 'تعذّر إرسال المشروع. قائمتك محفوظة في مسودتك، فحاول مرة أخرى.'), { tone: 'error' })
+          : L('Could not send the list. It is saved in your draft: try again.', 'فہرست نہیں بھیجی جا سکی۔ یہ آپ کے مسودے میں محفوظ ہے: دوبارہ کوشش کریں۔', 'تعذّر إرسال القائمة، وهي محفوظة في مسودتك، فحاول مرة أخرى.'), { tone: 'error' })
         return
       }
       projectId = null // the request exists now: the project is kept whatever happens next
@@ -926,7 +961,7 @@ export default function NewProjectPage() {
       try { window.scrollTo({ top: 0, behavior: 'smooth' }) } catch {}
     } catch (err) {
       if (projectId) { try { await supabase.from('project_rfqs').delete().eq('id', projectId) } catch {} }
-      await notify(friendlyError((err as any)?.message, L('Could not send the project. Your list is saved in your draft: please try again.', 'پراجیکٹ نہیں بھیجا جا سکا۔ آپ کی فہرست آپ کے مسودے میں محفوظ ہے: دوبارہ کوشش کریں۔', 'تعذّر إرسال المشروع. قائمتك محفوظة في مسودتك، فحاول مرة أخرى.'), locale), { tone: 'error' })
+      await notify(friendlyError((err as any)?.message, L('Could not send the list. It is saved in your draft: please try again.', 'فہرست نہیں بھیجی جا سکی۔ یہ آپ کے مسودے میں محفوظ ہے: دوبارہ کوشش کریں۔', 'تعذّر إرسال القائمة، وهي محفوظة في مسودتك، فحاول مرة أخرى.'), locale), { tone: 'error' })
     } finally { setLoading(false); submittingRef.current = false }
   }
 
@@ -1058,7 +1093,7 @@ export default function NewProjectPage() {
                 </p>
               )}
               {!sentInfo.itemsSaved && (
-                <p className="mt-3 text-start text-xs text-gray-600">{L('The request was sent, but its copy in the project record could not be saved. Follow it from the request page.', 'درخواست بھیج دی گئی، لیکن پراجیکٹ ریکارڈ میں اس کی نقل محفوظ نہیں ہو سکی۔ اسے درخواست کے صفحے سے دیکھیں۔', 'أُرسل الطلب، لكن تعذّر حفظ نسخة بنوده في سجل المشروع، فتابعه من صفحة الطلب.')}</p>
+                <p className="mt-3 text-start text-xs text-gray-600">{L('The request was sent, but its copy in the list record could not be saved. Follow it from the request page.', 'درخواست بھیج دی گئی، لیکن فہرست کے ریکارڈ میں اس کی نقل محفوظ نہیں ہو سکی۔ اسے درخواست کے صفحے سے دیکھیں۔', 'أُرسل الطلب، لكن تعذّر حفظ نسخة بنوده في سجل القائمة، فتابعه من صفحة الطلب.')}</p>
               )}
               <div className="mt-5 space-y-2">
                 <Link href={`/contractor/rfq/${sentInfo.id}?sent=1`} className="flex items-center justify-center w-full min-h-12 py-3 rounded-xl font-extrabold text-[#071827]" style={{ background: 'linear-gradient(135deg,#F5C55B,#D4A543)' }}>
@@ -1098,11 +1133,20 @@ export default function NewProjectPage() {
           )}
         </div>
 
+        {/* the draft is being restored (round-6 UX-081): adding waits, so nothing typed now can be overwritten */}
+        {restoring && user && (
+          <div className="mb-5 rounded-2xl border border-[#0B2438]/15 bg-[#0B2438]/[.03] p-3 flex items-center gap-2 text-sm font-semibold text-[#0B2438]" role="status" aria-live="polite">
+            <span aria-hidden className="w-4 h-4 shrink-0 rounded-full border-2 border-[#0B2438]/25 border-t-[#0B2438] animate-spin" />
+            <span>{L('Restoring your draft…', 'آپ کا مسودہ بحال ہو رہا ہے…', 'جارٍ استعادة مسودتك…')}
+              <span className="block text-xs font-normal text-gray-600">{L('Adding materials is paused for a moment.', 'مواد شامل کرنا چند لمحوں کے لیے رکا ہے۔', 'إضافة المواد متوقفة لحظات.')}</span></span>
+          </div>
+        )}
+
         {/* a draft was restored: say so, and offer a clean start */}
-        {restoredCount > 0 && hasItems && !tenderId && (
+        {!restoring && restoredCount > 0 && hasItems && !tenderId && (
           <div className="mb-5 rounded-2xl border border-[#D4A543]/50 bg-[#D4A543]/[.06] p-3 flex flex-wrap items-center justify-between gap-2" role="status">
             <span className="text-sm font-semibold text-[#0B2438]"><Glyph e="📝" /> {L(`We restored your draft (${items.length} items).`, `ہم نے آپ کا مسودہ بحال کیا (${items.length} آئٹمز)۔`, `استعدنا مسودتك (${arItems(items.length)}).`)}
-              <span className="block text-xs font-normal text-gray-700 mt-0.5">{L('Files are not kept in a draft: attach them again before sending.', 'مسودے میں فائلیں محفوظ نہیں ہوتیں: بھیجنے سے پہلے انہیں دوبارہ منسلک کریں۔', 'الملفات لا تُحفظ في المسودة: أعد إرفاقها قبل الإرسال.')}</span></span>
+              <span className="block text-xs font-normal text-gray-700 mt-0.5">{L('Spec files are not kept in a draft: attach them again before sending.', 'مسودے میں اسپیسیفکیشن فائلیں محفوظ نہیں ہوتیں: بھیجنے سے پہلے انہیں دوبارہ منسلک کریں۔', 'ملفات المواصفات لا تُحفظ في المسودة: أعد إرفاقها قبل الإرسال.')}</span></span>
             <button type="button" onClick={startOver} className="min-h-11 px-4 rounded-xl border border-[#0B2438] text-sm font-bold text-[#0B2438] bg-white">{L('Start a new list', 'نئی فہرست شروع کریں', 'بدء قائمة جديدة')}</button>
           </div>
         )}
@@ -1118,11 +1162,12 @@ export default function NewProjectPage() {
 
           {/* drop zone: click or drop a file */}
           <div role="button" tabIndex={0}
-            onClick={() => { if (!parsing && !boqFile) fileRef.current?.click() }}
-            onKeyDown={(e: any) => { if ((e.key === 'Enter' || e.key === ' ') && !parsing && !boqFile) { e.preventDefault(); fileRef.current?.click() } }}
+            onClick={() => { if (!parsing && !boqFile && !restoring) fileRef.current?.click() }}
+            aria-disabled={restoring || undefined}
+            onKeyDown={(e: any) => { if ((e.key === 'Enter' || e.key === ' ') && !parsing && !boqFile && !restoring) { e.preventDefault(); fileRef.current?.click() } }}
             onDragOver={(e: any) => { e.preventDefault(); e.dataTransfer.dropEffect = 'copy' }}
-            onDrop={(e: any) => { e.preventDefault(); e.stopPropagation(); const f = e.dataTransfer?.files?.[0]; if (f && !parsing) handleBOQUpload(f) }}
-            className={`flex flex-col items-center justify-center border-2 border-dashed rounded-2xl p-6 sm:p-8 transition-all mb-4 ${boqFile ? 'border-[#0B2438] bg-[#0B2438]/5' : 'cursor-pointer border-gray-200 hover:border-[#D4A543]/50'}`}>
+            onDrop={(e: any) => { e.preventDefault(); e.stopPropagation(); const f = e.dataTransfer?.files?.[0]; if (f && !parsing && !restoring) handleBOQUpload(f) }}
+            className={`flex flex-col items-center justify-center border-2 border-dashed rounded-2xl p-6 sm:p-8 transition-all mb-4 ${boqFile ? 'border-[#0B2438] bg-[#0B2438]/5' : restoring ? 'border-gray-200 opacity-60' : 'cursor-pointer border-gray-200 hover:border-[#D4A543]/50'}`}>
             <input ref={fileRef} type="file" className="hidden" accept=".xlsx,.xls,.csv,.pdf,.jpg,.jpeg,.png,.webp"
               onChange={(e: any) => { const f = e.target.files?.[0]; e.target.value = ''; if (f) handleBOQUpload(f) }} />
             {parsing ? (
@@ -1158,6 +1203,7 @@ export default function NewProjectPage() {
                   {L('Drop the bill of quantities here, or tap to choose it', 'مقداروں کا جدول یہاں چھوڑیں، یا منتخب کرنے کے لیے دبائیں', 'اسحب ملف جدول الكميات هنا، أو اضغط لاختياره')}
                 </div>
                 <div className="text-xs text-gray-500 mt-1">Excel (.xlsx, .xls) · CSV · PDF · {L('photo', 'تصویر', 'صورة')}</div>
+                <div className="text-xs text-gray-500 mt-1">{L('Suppliers receive the items read from it; the file itself stays in your record only.', 'سپلائرز کو اس سے پڑھے گئے آئٹمز ملتے ہیں؛ فائل صرف آپ کے ریکارڈ میں رہتی ہے۔', 'تصل إلى الموردين البنود المقروءة منه، ويبقى الملف نفسه في سجلك فقط.')}</div>
               </div>
             )}
           </div>
@@ -1169,13 +1215,13 @@ export default function NewProjectPage() {
           {/* the BOQ file of a reopened draft: its items are kept, the file itself is not (UX-094) */}
           {!boqFile && !parsing && lostFiles.boq && hasItems && (
             <div className="rounded-xl border border-[#D4A543]/50 bg-[#D4A543]/[.06] p-3 mb-4 text-sm text-[#0B2438]" role="status">
-              <p><Glyph e="📎" /> {L(`The file «${lostFiles.boq}» is not attached after reopening. Upload it again to attach it to the request (the items are kept).`, `دوبارہ کھولنے کے بعد فائل «${lostFiles.boq}» منسلک نہیں۔ اسے درخواست کے ساتھ منسلک کرنے کے لیے دوبارہ اپ لوڈ کریں (آئٹمز محفوظ ہیں)۔`, `الملف «${lostFiles.boq}» غير مرفق بعد إعادة الفتح، ارفعه مرة أخرى لإرفاقه بالطلب (البنود محفوظة).`)}</p>
+              <p><Glyph e="📎" /> {L(`The file «${lostFiles.boq}» is not attached after reopening. This file is kept in your request record only and is not sent to suppliers; the items are saved.`, `دوبارہ کھولنے کے بعد فائل «${lostFiles.boq}» منسلک نہیں۔ یہ فائل صرف آپ کی درخواست کے ریکارڈ میں رکھی جاتی ہے اور سپلائرز کو نہیں بھیجی جاتی؛ آئٹمز محفوظ ہیں۔`, `الملف «${lostFiles.boq}» غير مرفق بعد إعادة الفتح. يُحفظ هذا الملف في سجل طلبك فقط ولا يُرسل إلى الموردين، والبنود محفوظة.`)}</p>
               <div className="mt-2 flex flex-wrap gap-2">
                 <button type="button" onClick={() => attachRef.current?.click()} className="min-h-11 px-4 rounded-xl text-sm font-bold text-white" style={{ background: '#0B2438' }}>
-                  {L('Attach the file again', 'فائل دوبارہ منسلک کریں', 'إرفاق الملف مرة أخرى')}
+                  {L('Attach it to my record (optional)', 'اسے میرے ریکارڈ سے منسلک کریں (اختیاری)', 'إرفاقه بسجلي (اختياري)')}
                 </button>
                 <button type="button" onClick={() => setLostFiles(l => ({ ...l, boq: undefined }))} className="min-h-11 px-4 rounded-xl text-sm font-bold border border-[#0B2438]/30 text-[#0B2438] bg-white">
-                  {L('Send without the file', 'فائل کے بغیر بھیجیں', 'الإرسال دون الملف')}
+                  {L('Continue without it', 'اس کے بغیر جاری رکھیں', 'متابعة دونه')}
                 </button>
               </div>
               <input ref={attachRef} type="file" className="hidden" accept=".xlsx,.xls,.csv,.pdf,.jpg,.jpeg,.png,.webp"
@@ -1190,8 +1236,8 @@ export default function NewProjectPage() {
           </div>
 
           {draft && !hasItems ? draftPanel : (
-          <button type="button" onClick={addItem}
-            className="w-full min-h-11 py-3 rounded-xl border-2 border-dashed border-gray-200 text-sm font-semibold text-gray-600 hover:border-[#0B2438] hover:text-[#0B2438] transition-all">
+          <button type="button" onClick={addItem} disabled={restoring}
+            className="w-full min-h-11 py-3 rounded-xl border-2 border-dashed border-gray-200 text-sm font-semibold text-gray-600 hover:border-[#0B2438] hover:text-[#0B2438] transition-all disabled:opacity-50">
             + {L('Add a material', 'مواد شامل کریں', 'أضف مادة')}
           </button>)}
         </div>
@@ -1203,7 +1249,7 @@ export default function NewProjectPage() {
               <h2 className="font-bold flex items-center gap-2" style={{ color: '#0B2438' }}>
                 {L(`2. Review the items (${items.length})`, `2. آئٹمز کا جائزہ لیں (${items.length})`, `2. راجع البنود (${items.length})`)}
                 {aiUsed && (
-                  <span className="text-xs font-bold px-2 py-0.5 rounded-full text-[#071827]" style={{ background: 'linear-gradient(135deg,#F5C55B,#D4A543)' }}>
+                  <span className="text-xs font-semibold px-2 py-0.5 rounded-full border border-[#0B2438]/15 bg-[#0B2438]/5 text-[#0B2438]">
                     <Glyph e="✨" /> {L('Read automatically', 'خودکار پڑھا گیا', 'قُرئ تلقائياً')}
                   </span>
                 )}
@@ -1289,8 +1335,8 @@ export default function NewProjectPage() {
                 className="min-h-11 text-xs font-bold px-3 rounded-lg border border-gray-200 text-gray-700 hover:bg-gray-50">
                 {L('Deselect all', 'سب ہٹائیں', 'إلغاء تحديد الكل')}
               </button>
-              <button type="button" onClick={addItem}
-                className="min-h-11 text-xs font-bold px-3 rounded-lg text-white" style={{ background: '#0B2438' }}>
+              <button type="button" onClick={addItem} disabled={restoring}
+                className="min-h-11 text-xs font-bold px-3 rounded-lg text-white disabled:opacity-50" style={{ background: '#0B2438' }}>
                 + {L('Add a material', 'مواد شامل کریں', 'أضف مادة')}
               </button>
             </div>
@@ -1322,9 +1368,11 @@ export default function NewProjectPage() {
                 }`}>
                   <div className="flex items-start gap-3 p-4">
                     {/* Checkbox */}
-                    <input type="checkbox" checked={item.selected} aria-label={L('Include in the request', 'درخواست میں شامل کریں', 'ضمّن البند في الطلب')}
-                      onChange={(e: any) => updateItem(item.id, 'selected', e.target.checked)}
-                      className="mt-1 w-5 h-5 accent-[#0B2438] flex-shrink-0" />
+                    <label className="-m-3 w-11 h-11 grid place-items-center shrink-0 cursor-pointer">
+                      <input type="checkbox" checked={item.selected} aria-label={L('Include in the request', 'درخواست میں شامل کریں', 'ضمّن البند في الطلب')}
+                        onChange={(e: any) => updateItem(item.id, 'selected', e.target.checked)}
+                        className="w-5 h-5 accent-[#0B2438]" />
+                    </label>
 
                     {/* Content */}
                     <div className="flex-1 min-w-0">
@@ -1566,12 +1614,12 @@ export default function NewProjectPage() {
         {hasItems && (
           <div id="boq-send" className="bg-white rounded-2xl p-5 sm:p-6 border border-gray-100 shadow-sm scroll-mt-20">
             <h2 className="font-bold mb-4" style={{ color: '#0B2438' }}>
-              {L('3. Project details and sending', '3. پراجیکٹ کی معلومات اور بھیجنا', '3. بيانات المشروع والإرسال')}
+              {L('3. List details and sending', '3. فہرست کی معلومات اور بھیجنا', '3. بيانات القائمة والإرسال')}
             </h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4 pb-4 border-b border-gray-100">
               <div className="sm:col-span-2">
                 <label htmlFor="boq-title" className="block text-xs font-bold text-gray-600 mb-1.5">
-                  {L('Project name (optional)', 'پراجیکٹ کا نام (اختیاری)', 'اسم المشروع (اختياري)')}
+                  {L('List name (optional)', 'فہرست کا نام (اختیاری)', 'اسم القائمة (اختياري)')}
                 </label>
                 <input id="boq-title" ref={titleRef} value={title} onChange={(e: any) => setTitle(e.target.value)} 
                   className="input-field" placeholder={L(`e.g. Building A. Left empty: «${defaultListName(locale)}»`, `مثلاً: عمارت A۔ خالی چھوڑیں تو: «${defaultListName(locale)}»`, `مثال: مبنى A. إن تركته فارغاً: «${defaultListName(locale)}»`)} />
@@ -1604,7 +1652,7 @@ export default function NewProjectPage() {
                 {/* the whole row is the switch (44px target: UX-107) */}
                 <button type="button" role="switch" aria-checked={deliveryRequired} onClick={() => setDeliveryRequired(!deliveryRequired)}
                   className="w-full min-h-11 flex items-center justify-between gap-2 text-start">
-                  <span className="text-sm font-semibold text-[#0B2438]"><Glyph e="🚚" /> {L('Delivery required (for the whole project)', 'ڈیلیوری درکار ہے (پورے پراجیکٹ کے لیے)', 'التوصيل مطلوب (لكل المشروع)')}</span>
+                  <span className="text-sm font-semibold text-[#0B2438]"><Glyph e="🚚" /> {L('Delivery required (for the whole list)', 'ڈیلیوری درکار ہے (پوری فہرست کے لیے)', 'التوصيل مطلوب (لكل القائمة)')}</span>
                   <span aria-hidden className={`w-12 h-7 rounded-full flex items-center px-1 shrink-0 transition-all ${deliveryRequired ? 'justify-end' : 'justify-start'}`} style={{ background: deliveryRequired ? '#0B2438' : '#e5e7eb' }}>
                     <span className="w-5 h-5 bg-white rounded-full shadow-sm" />
                   </span>
@@ -1708,7 +1756,7 @@ export default function NewProjectPage() {
               <label htmlFor="boq-notes" className="block text-sm font-bold text-[#0B2438] mb-1">{L('Notes for suppliers (optional)', 'سپلائرز کے لیے نوٹس (اختیاری)', 'ملاحظات للموردين (اختياري)')}</label>
               <textarea id="boq-notes" ref={notesRef} value={supplierNotes} onChange={(e: any) => setSupplierNotes(e.target.value.slice(0, 1000))} rows={3} dir="auto"
                 className="input-field text-sm" placeholder={L('e.g. delivery in two batches, unloading by crane, preferred delivery hours…', 'مثلاً: دو کھیپوں میں ڈیلیوری، کرین سے اتارنا، ترجیحی اوقات…', 'مثال: التوريد على دفعتين، التنزيل بالرافعة، أوقات التوصيل المفضّلة…')} />
-              <p className="text-xs text-gray-500 mt-1"><Glyph e="👁" /> {L('Suppliers read these notes. Do not write the project name or your contact details here.', 'سپلائرز یہ نوٹس پڑھتے ہیں۔ یہاں پراجیکٹ کا نام یا اپنے رابطے کی تفصیل نہ لکھیں۔', 'يقرأ الموردون هذه الملاحظات، فلا تكتب فيها اسم المشروع ولا بيانات تواصلك.')}</p>
+              <p className="text-xs text-gray-500 mt-1"><Glyph e="👁" /> {L('Suppliers read these notes. Do not write the list name or your contact details here.', 'سپلائرز یہ نوٹس پڑھتے ہیں۔ یہاں فہرست کا نام یا اپنے رابطے کی تفصیل نہ لکھیں۔', 'يقرأ الموردون هذه الملاحظات، فلا تكتب فيها اسم القائمة ولا بيانات تواصلك.')}</p>
             </div>
 
             <div className="mb-3">

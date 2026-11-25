@@ -7,7 +7,7 @@ export const makeL = (locale: string): Lfn => (en, ur, ar) => (locale === 'en' ?
 export function kindLabel(k: ItemKind | string, L: Lfn): string {
   if (k === 'material') return L('Material (to suppliers)', 'مواد (سپلائرز کو)', 'مادة (تُرسل للموردين)')
   if (k === 'works') return L('Works (not sent)', 'کام (نہیں بھیجا جاتا)', 'أعمال (لا تُرسل)')
-  if (k === 'provisional') return L('Provisional / general', 'عارضی رقم / عمومی', 'مبالغ احتياطية وعامة')
+  if (k === 'provisional') return L('Provisional / general (not sent)', 'عارضی رقم / عمومی (نہیں بھیجا جاتا)', 'مبالغ احتياطية وعامة (لا تُرسل)')
   return L('Heading', 'سرخی', 'عنوان')
 }
 
@@ -20,7 +20,8 @@ export const KIND_TONE: Record<string, string> = {
 
 export function severityLabel(s: FlagSeverity | string, L: Lfn): string {
   if (s === 'error') return L('Error', 'غلطی', 'خطأ')
-  if (s === 'warning') return L('Warning', 'انتباہ', 'تنبيه')
+  // «تحذير»: one severity; «تنبيهات» stays the name of all the flags together (round-6 UX-102)
+  if (s === 'warning') return L('Warning', 'تنبیہ', 'تحذير')
   if (s === 'review') return L('Needs review', 'جائزہ درکار', 'يحتاج مراجعة')
   return L('Note', 'نوٹ', 'ملاحظة')
 }

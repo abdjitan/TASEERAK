@@ -86,6 +86,14 @@ export default function AdminUserDetail() {
     setRejecting(false); setRejectReason('')
     await loadAll(); setBusy(''); clearMsg()
   }
+  // the admin checked the VAT number by hand on ZATCA's site (migration 286, owner 2026-11-25); undo with false
+  async function setVatVerified(on: boolean) {
+    setBusy('vat')
+    const { error } = await createClient().rpc('admin_set_vat_verified', { p_user: id, p_verified: on })
+    if (error) { setMsg('تعذّر: ' + error.message); setBusy(''); return }
+    setMsg(on ? 'سُجّل التحقق من الرقم الضريبي' : 'أُلغي التحقق من الرقم الضريبي')
+    await loadAll(); setBusy(''); clearMsg()
+  }
   async function setField(field: string, value: any) {
     setBusy(field)
     const c = createClient()
@@ -256,7 +264,30 @@ export default function AdminUserDetail() {
             <Field label="النشاط (واثق)">{p.cr_activity}</Field>
             <Field label="حالة السجل">{p.cr_status}</Field>
             <Field label="إصدار / انتهاء السجل">{dt(p.cr_issue_date)} — {dt(p.cr_expiry_date)}</Field>
-            <Field label="الرقم الضريبي">{p.vat_number}</Field>
+            <Field label="الرقم الضريبي">{p.vat_number ? <span dir="ltr" className="font-mono">{p.vat_number}</span> : null}</Field>
+            {p.role === 'supplier' && p.vat_number && (
+              <div className="rounded-xl border border-gray-200 bg-[#F5F7FA] p-3 text-sm space-y-2">
+                {p.vat_verified_at
+                  ? <div className="font-semibold text-[#0F6E56]">تحقّقت الإدارة من الرقم الضريبي في {dt(p.vat_verified_at)}</div>
+                  : <div className="text-gray-700">لم يُتحقَّق من الرقم الضريبي بعد.</div>}
+                <div className="flex flex-wrap items-center gap-2">
+                  {p.vat_verified_at ? (
+                    <button type="button" disabled={busy === 'vat'} onClick={() => setVatVerified(false)}
+                      className="min-h-[44px] px-4 rounded-xl text-sm font-bold border border-gray-300 bg-white text-[#0B2438] disabled:opacity-50">
+                      {busy === 'vat' ? '…' : 'إلغاء التحقق'}
+                    </button>
+                  ) : (
+                    <button type="button" disabled={busy === 'vat'} onClick={() => setVatVerified(true)}
+                      className="min-h-[44px] px-4 rounded-xl text-sm font-bold text-white disabled:opacity-50" style={{ background: '#0B2438' }}>
+                      {busy === 'vat' ? '…' : 'تحقّقتُ من الرقم في موقع هيئة الزكاة'}
+                    </button>
+                  )}
+                  {/* manual check only: the admin opens ZATCA's VAT-number lookup (no scraping) */}
+                  <a href="https://zatca.gov.sa/en/eServices/Pages/eServices-007.aspx" target="_blank" rel="noopener noreferrer"
+                    className="inline-flex items-center min-h-[44px] font-bold text-[#8F6820] underline underline-offset-2">صفحة التحقق في هيئة الزكاة والضريبة والجمارك</a>
+                </div>
+              </div>
+            )}
           </Section>
 
           <Section title="التواصل والحساب" icon={<Glyph e="✉" />}>

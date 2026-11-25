@@ -1,13 +1,13 @@
 'use client'
 // Public supplier profile body, translated (UX-115). Honest numbers (UX-115): «requests won», not
-// «completed deals», and the score is named «درجة الموثوقية» as on the leaderboard.
+// «completed deals». No score out of 100 (round-6 UX-079): it wronged new suppliers; facts only.
 import Link from 'next/link'
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Check, Star } from 'lucide-react'
 import { useTranslation } from '@/i18n'
 import { getRegionLabel } from '@/types'
-import { scoreColor, approvalLabel, isNewSupplier } from '@/lib/supplierScore'
+import { approvalLabel, isNewSupplier } from '@/lib/supplierScore'
 import { arCount } from '@/lib/text'
 import AutoTr from '@/components/shared/AutoTr'
 import { tierLabel, tierIcon } from '@/lib/sellers'
@@ -25,10 +25,7 @@ function safeFrom(v: string | null): string | null {
   return /^\/(contractor|supplier)\//.test(v) ? v.slice(0, 200) : null
 }
 
-// navy text on the gold/grey score circle, white only on green (UX-103)
-const scoreText = (s: number) => (s >= 75 ? '#fff' : '#071827')
-
-export default function SupplierProfile({ s, score }: { s: any; score: number }) {
+export default function SupplierProfile({ s }: { s: any }) {
   const { locale, dir } = useTranslation()
   const L = (en: string, ur: string, ar: string) => (locale === 'en' ? en : locale === 'ur' ? ur : ar)
   const lc = (locale === 'en' || locale === 'ur' ? locale : 'ar') as any
@@ -41,7 +38,11 @@ export default function SupplierProfile({ s, score }: { s: any; score: number })
   const ratingCount = Number(s.rating_count) || 0
   const router = useRouter()
   const [from, setFrom] = useState<string | null>(null)
-  useEffect(() => { try { setFrom(safeFrom(new URLSearchParams(window.location.search).get('from'))) } catch {} }, [])
+  const [canBack, setCanBack] = useState(false)
+  useEffect(() => {
+    try { setFrom(safeFrom(new URLSearchParams(window.location.search).get('from'))) } catch {}
+    try { setCanBack(window.history.length > 1 && !!document.referrer && new URL(document.referrer).origin === window.location.origin) } catch {}
+  }, [])
   const sectors: string[] = Array.isArray(s.sectors) ? s.sectors.filter(Boolean) : []
 
   return (
@@ -52,9 +53,15 @@ export default function SupplierProfile({ s, score }: { s: any; score: number })
           <span aria-hidden className="inline-block ltr:rotate-180">→</span> {L('Back to the deal', 'سودے پر واپس', 'العودة إلى الصفقة')}
         </Link>
       ) : (
-        <button type="button" onClick={() => router.back()} className="inline-flex items-center gap-1 min-h-[44px] text-sm font-semibold text-[#0B2438] hover:underline">
-          <span aria-hidden className="inline-block ltr:rotate-180">→</span> {L('Back', 'واپس', 'رجوع')}
-        </button>
+        // opened from a shared link there is no page to go back to: «Home» then (round-6 UX-138)
+        <div className="flex flex-wrap gap-x-4">
+          {canBack && (
+            <button type="button" onClick={() => router.back()} className="inline-flex items-center gap-1 min-h-[44px] text-sm font-semibold text-[#0B2438] hover:underline">
+              <span aria-hidden className="inline-block ltr:rotate-180">→</span> {L('Back', 'واپس', 'رجوع')}
+            </button>
+          )}
+          <Link href="/" className="inline-flex items-center min-h-[44px] text-sm font-semibold text-[#0B2438] hover:underline">{L('Home', 'ہوم', 'الرئيسية')}</Link>
+        </div>
       )}
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 mt-4">
         <div className="flex items-start gap-4">
@@ -73,16 +80,11 @@ export default function SupplierProfile({ s, score }: { s: any; score: number })
               {s.region && <span><Glyph e="📍" /> {getRegionLabel(s.region, locale)}{s.city ? ` · ${s.city}` : ''}</span>}
             </div>
           </div>
-          {/* a supplier with almost no history: «new», not a low grey score (UX-104) */}
-          {fresh ? (
+          {/* a supplier with almost no history: «new» (UX-104); no score circle any more (round-6 UX-079) */}
+          {fresh && (
             <div className="shrink-0 text-center">
               <span className="inline-flex items-center rounded-full px-3 min-h-[32px] text-[12px] font-bold" style={{ background: '#EEF2F6', color: '#0B2438' }}>{L('New on the platform', 'پلیٹ فارم پر نیا', 'جديد على المنصة')}</span>
             </div>
-          ) : (
-          <div className="shrink-0 text-center">
-            <div className="w-16 h-16 grid place-items-center rounded-full font-bold text-lg" style={{ background: scoreColor(score), color: scoreText(score) }}>{score}<span className="text-[12px] opacity-80">/100</span></div>
-            <div className="text-[12px] text-gray-600 mt-1">{L('Reliability score', 'اعتماد کا اسکور', 'درجة الموثوقية')}</div>
-          </div>
           )}
         </div>
 

@@ -13,10 +13,11 @@ import PricesComingSoon from '@/components/public/PricesComingSoon'
 import SellerIcon from '@/components/shared/SellerIcon'
 import Glyph from '@/components/shared/Glyph'
 import { timeAgo } from '@/lib/text'
+import PageLoader from '@/components/shared/PageLoader'
 
 const txt = {
   ar: {
-    title: 'مؤشر أسعار السوق', sub: 'متوسط أسعار المواد بناءً على العروض الفعلية في المنصة',
+    title: 'مؤشر أسعار السوق', sub: 'متوسط أسعار المواد بناءً على العروض الفعلية في المنصة، شاملة ضريبة القيمة المضافة',
     sector: 'القطاع', material: 'المادة', avgPrice: 'متوسط السعر', minPrice: 'أدنى سعر',
     maxPrice: 'أعلى سعر', offers: 'عدد العروض', unit: 'الوحدة', all: 'الكل',
     noData: 'لا توجد بيانات كافية بعد', noDataSub: 'ستظهر الأسعار بعد تراكم العروض في المنصة',
@@ -24,7 +25,7 @@ const txt = {
     trend: 'الاتجاه', updated: 'آخر تحديث',
   },
   en: {
-    title: 'Market Price Index', sub: 'Average material prices based on actual platform offers',
+    title: 'Market Price Index', sub: 'Average material prices based on actual platform offers, including VAT',
     sector: 'Sector', material: 'Material', avgPrice: 'Avg Price', minPrice: 'Min Price',
     maxPrice: 'Max Price', offers: 'Offers', unit: 'Unit', all: 'All',
     noData: 'No data yet', noDataSub: 'Prices will appear as offers accumulate on the platform',
@@ -32,7 +33,7 @@ const txt = {
     trend: 'Trend', updated: 'Last updated',
   },
   ur: {
-    title: 'مارکیٹ پرائس انڈیکس', sub: 'پلیٹ فارم کی اصل پیشکشوں کی بنیاد پر اوسط قیمتیں',
+    title: 'مارکیٹ پرائس انڈیکس', sub: 'پلیٹ فارم کی اصل پیشکشوں کی بنیاد پر اوسط قیمتیں، ویلیو ایڈڈ ٹیکس سمیت',
     sector: 'شعبہ', material: 'مواد', avgPrice: 'اوسط قیمت', minPrice: 'کم قیمت',
     maxPrice: 'زیادہ قیمت', offers: 'پیشکشیں', unit: 'اکائی', all: 'سب',
     noData: 'ابھی ڈیٹا نہیں', noDataSub: 'قیمتیں پیشکشوں کے جمع ہونے پر ظاہر ہوں گی',
@@ -83,14 +84,17 @@ export default function MarketPricePage() {
 
       if (!rows || rows.length === 0) { setLoading(false); return }
 
+      // what buyers pay: VAT-inclusive (final price for unregistered sellers), migration 284 (round-6 UX-138).
+      // min/max come before VAT from the server, so they show only once it returns buyer-side values.
+      const n = (v: any) => (v === null || v === undefined || v === '' ? null : Number(v))
       const result = rows
         .map((r: any) => ({
           name: r.product_name,
           sector: r.sector,
           unit: r.unit || '',
-          avg: Math.round(Number(r.avg_price)),
-          min: Number(r.min_price),
-          max: Number(r.max_price),
+          avg: Math.round(Number(r.avg_buyer_price ?? r.avg_price)),
+          min: n(r.min_buyer_price),
+          max: n(r.max_buyer_price),
           count: Number(r.offer_count),
         }))
         .sort((a: any, b: any) => b.count - a.count)
@@ -111,6 +115,9 @@ export default function MarketPricePage() {
   })
 
   const sectors = ['all', ...Object.keys(SECTOR_LABELS)]
+
+  // no flash of the old board while the role and the switch are read (round-6 UX-138)
+  if (loading && !loadErr) return <PageLoader />
 
   if (!FEATURES.priceBoard && !loading) return (
     <AppShell title={T.title} nav={getNav(userRole, locale, '/market')} dir={dir}>
@@ -165,9 +172,9 @@ export default function MarketPricePage() {
                       <div className="flex items-end justify-between">
                         <div>
                           <div className="flex items-center gap-1">
-                            {trend === 'up' && <span className="text-red-500 text-sm">▲</span>}
-                            {trend === 'down' && <span className="text-emerald-500 text-sm">▼</span>}
-                            <span className="text-2xl font-bold" style={{ color: trend === 'up' ? '#ef4444' : trend === 'down' ? '#0F6E56' : '#0B2438' }}>
+                            {trend === 'up' && <span className="text-[#0B2438] text-sm" aria-hidden>▲</span>}
+                            {trend === 'down' && <span className="text-[#0B2438] text-sm" aria-hidden>▼</span>}
+                            <span className="text-2xl font-bold" style={{ color: '#0B2438' }}>
                               {p.price?.toLocaleString('en-US')}
                             </span>
                           </div>
@@ -255,11 +262,11 @@ export default function MarketPricePage() {
                         <span className="badge badge-blue text-[12px]">{getSectorLabel(p.sector, locale)}</span>
                       </td>
                       <td className="px-4 py-3 text-xs text-gray-600">{getUnitLabel(p.unit, locale)}</td>
-                      <td className="px-4 py-3 text-sm text-emerald-600 font-semibold">{p.min?.toLocaleString('en-US')} {T.sar}</td>
+                      <td className="px-4 py-3 text-sm text-[#0B2438] font-semibold">{p.min !== null ? <>{p.min.toLocaleString('en-US')} {T.sar}</> : '—'}</td>
                       <td className="px-4 py-3">
                         <div className="text-base font-bold" style={{ color: '#8F6820' }}>{p.avg?.toLocaleString('en-US')} {T.sar}</div>
                       </td>
-                      <td className="px-4 py-3 text-sm text-red-500 font-semibold">{p.max?.toLocaleString('en-US')} {T.sar}</td>
+                      <td className="px-4 py-3 text-sm text-[#0B2438] font-semibold">{p.max !== null ? <>{p.max.toLocaleString('en-US')} {T.sar}</> : '—'}</td>
                       <td className="px-4 py-3">
                         <span className="inline-flex items-center gap-1 text-xs text-gray-500">
                           <span className="w-5 h-5 rounded-full bg-gray-100 flex items-center justify-center text-[12px] font-bold">{p.count}</span>
@@ -287,16 +294,16 @@ export default function MarketPricePage() {
                     </div>
                   </div>
                   <div className="grid grid-cols-3 gap-2 text-center text-xs">
-                    <div className="bg-emerald-50 rounded-lg p-2">
-                      <div className="text-emerald-600 font-semibold">{p.min?.toLocaleString('en-US')}</div>
+                    <div className="bg-[#F5F7FA] rounded-lg p-2">
+                      <div className="text-[#0B2438] font-semibold">{p.min !== null ? p.min.toLocaleString('en-US') : '—'}</div>
                       <div className="text-gray-400 text-[12px]">{T.minPrice}</div>
                     </div>
                     <div className="rounded-lg p-2" style={{ background: '#D4A54315' }}>
                       <div className="font-bold" style={{ color: '#8F6820' }}>{p.avg?.toLocaleString('en-US')}</div>
                       <div className="text-gray-400 text-[12px]">{T.avgPrice}</div>
                     </div>
-                    <div className="bg-red-50 rounded-lg p-2">
-                      <div className="text-red-500 font-semibold">{p.max?.toLocaleString('en-US')}</div>
+                    <div className="bg-[#F5F7FA] rounded-lg p-2">
+                      <div className="text-[#0B2438] font-semibold">{p.max !== null ? p.max.toLocaleString('en-US') : '—'}</div>
                       <div className="text-gray-400 text-[12px]">{T.maxPrice}</div>
                     </div>
                   </div>

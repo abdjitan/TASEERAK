@@ -1,7 +1,7 @@
 // Seller structure (migration 123): two account kinds, three buyer-facing tiers, and the
 // quote-level source/availability. One place for the labels so every page says the same thing.
 
-import { SUB_CATEGORIES } from '@/types'
+import { SUB_CATEGORIES, getSectorLabel } from '@/types'
 import { BROWSE_SECTIONS, sectionOfSub } from '@/lib/browseCategories'
 
 export type Locale = 'ar' | 'en' | 'ur' | string
@@ -223,6 +223,18 @@ export function outcomeLabel(k: OfferOutcome, locale: Locale): string { return p
 export function outcomeTitle(k: OfferOutcome, locale: Locale): string { return pick(OUTCOME_TITLE[k], locale) }
 
 // ── Sectors & sections (one rule for onboarding, specialties and the pricing page) ──────────────
+/** round-6 UX-106: one name per engineering sector on every seller screen («ميكانيكا», «مستلزمات عامة»).
+ *  Reads getSectorLabel; the two Arabic names are fixed here until SECTOR_LABELS in src/types says the same. */
+const SECTOR_FIX: Record<'ar' | 'en' | 'ur', Record<string, string>> = {
+  ar: { mechanical: 'ميكانيكا', supply_store: 'مستلزمات عامة' },
+  en: { equipment: 'Machinery', supply_store: 'General supplies' },
+  ur: { equipment: 'مشینری', supply_store: 'عام سامان' },
+}
+export function sectorName(sector: string | null | undefined, locale: Locale): string {
+  if (!sector) return ''
+  const fix = SECTOR_FIX[locale === 'en' ? 'en' : locale === 'ur' ? 'ur' : 'ar'][sector]
+  return fix || getSectorLabel(sector, locale)
+}
 /** UX-038 (round 3): a sector follows from the specialties chosen in it, so picking materials without
  *  ticking the sector header still saves. */
 export function sectorsFor(secs: string[], specs: string[]): string[] {

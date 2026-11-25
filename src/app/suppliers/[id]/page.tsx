@@ -1,22 +1,25 @@
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { createPublicClient } from '@/lib/supabase/server'
-import { supplierScore } from '@/lib/supplierScore'
 import PublicHeader from '@/components/public/PublicHeader'
 import PublicFooter from '@/components/public/PublicFooter'
 import { tierLabel } from '@/lib/sellers'
 import SupplierProfile from './SupplierProfile'
+import SupplierLoadFailed from './SupplierLoadFailed'
 
 export const dynamic = 'force-dynamic'
 
 
-async function getSupplier(id: string) {
+// a network or server failure is not «this supplier does not exist» (round-6 UX-138)
+async function loadSupplier(id: string): Promise<{ s: any; failed: boolean }> {
   try {
     const supabase = createPublicClient()
-    const { data } = await supabase.rpc('get_supplier_public', { p_id: id })
-    return Array.isArray(data) ? data[0] : data
-  } catch { return null }
+    const { data, error } = await supabase.rpc('get_supplier_public', { p_id: id })
+    if (error) return { s: null, failed: true }
+    return { s: Array.isArray(data) ? data[0] : data, failed: false }
+  } catch { return { s: null, failed: true } }
 }
+async function getSupplier(id: string) { return (await loadSupplier(id)).s }
 
 export async function generateMetadata(props: { params: Promise<{ id: string }> }): Promise<Metadata> {
   const params = await props.params
@@ -34,16 +37,19 @@ export async function generateMetadata(props: { params: Promise<{ id: string }> 
 
 export default async function SupplierProfilePage(props: { params: Promise<{ id: string }> }) {
   const params = await props.params
-  const s = await getSupplier(params.id)
+  const { s, failed } = await loadSupplier(params.id)
+  if (failed) return (
+    <div className="min-h-screen bg-[#f7f8fa]">
+      <PublicHeader active="suppliers" />
+      <SupplierLoadFailed />
+      <PublicFooter />
+    </div>
+  )
   if (!s) notFound()
-  const total = Number(s.total_offers) || 0
-  const won = Number(s.won_deals) || 0
-  const stats = { total_offers: total, won_rate: total > 0 ? (won / total) * 100 : 0, avg_response_hours: null }
-  const score = supplierScore({ verification_status: s.verification_status, rating_avg: s.rating_avg }, stats)
   return (
     <div className="min-h-screen bg-[#f7f8fa]">
       <PublicHeader active="suppliers" />
-      <SupplierProfile s={s} score={score} />
+      <SupplierProfile s={s} />
       <PublicFooter />
     </div>
   )

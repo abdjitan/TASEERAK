@@ -27,29 +27,32 @@ export default function VerifyGateProvider({ children }: { children: React.React
   const [open, setOpen] = useState(false)
   const [p, setP] = useState<any>(null)
   const [email, setEmail] = useState('')
+  // the SMS provider is down (migration 282): a verified email lets anyone act, so email comes first (round-6 UX-005)
+  const [smsDown, setSmsDown] = useState(false)
   const resolver = useRef<((ok: boolean) => void) | null>(null)
   const dialogRef = useRef<HTMLDivElement>(null)
   // focus moves into the sheet, Tab stays inside, and returns to the button that opened it (round-4 UX-116)
   useFocusTrap(dialogRef, open && !!p)
 
-  async function fetchState(): Promise<{ ok: boolean; prof: any; mail: string }> {
+  async function fetchState(): Promise<{ ok: boolean; prof: any; mail: string; down: boolean }> {
     const supabase = createClient()
     const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return { ok: true, prof: null, mail: '' } // signed-out pages handle sign-in themselves
-    const [{ data: prof }, { data: req }] = await Promise.all([
+    if (!user) return { ok: true, prof: null, mail: '', down: false } // signed-out pages handle sign-in themselves
+    const [{ data: prof }, { data: req }, { data: down }] = await Promise.all([
       supabase.from('profiles').select('role, phone, phone_verified_at, whatsapp_verified_at, email_verified_at').eq('id', user.id).maybeSingle(),
       supabase.rpc('phone_verify_required'),
+      supabase.rpc('sms_is_down'),
     ])
     // buyers need only the mobile; their email is optional and encouraged by a banner (owner 2026-11-19, migration 234)
     const ok = isAccountVerified(prof, req) // one shared rule (round-4 UX-067)
-    return { ok, prof, mail: user.email || '' }
+    return { ok, prof, mail: user.email || '', down: down === true }
   }
 
   const ensure = useCallback<Ensure>(async () => {
     try {
       const s = await fetchState()
       if (s.ok) return true
-      setP(s.prof); setEmail(s.mail); setOpen(true)
+      setP(s.prof); setEmail(s.mail); setSmsDown(s.down); setOpen(true)
       return await new Promise<boolean>(res => { resolver.current = res })
     } catch { return true } // never block on a network hiccup: the database still checks
   }, [])
@@ -64,7 +67,7 @@ export default function VerifyGateProvider({ children }: { children: React.React
 
   async function refresh() {
     const s = await fetchState()
-    setP(s.prof); setEmail(s.mail)
+    setP(s.prof); setEmail(s.mail); setSmsDown(s.down)
     if (s.ok) finish(true)
   }
 
@@ -79,7 +82,9 @@ export default function VerifyGateProvider({ children }: { children: React.React
   }, [open])
 
   const phoneOk = !!p?.phone_verified_at
-  const emailOk = !!p?.email_verified_at || p?.role === 'contractor'
+  // while SMS is down and the mobile is not verified, the email is the way through for every role
+  const emailFirst = smsDown && !phoneOk
+  const emailOk = !!p?.email_verified_at || (p?.role === 'contractor' && !emailFirst)
 
   return (
     <Ctx.Provider value={ensure}>
@@ -98,6 +103,27 @@ export default function VerifyGateProvider({ children }: { children: React.React
                 className="shrink-0 w-11 h-11 grid place-items-center rounded-full bg-gray-100 text-gray-600"><X className="w-5 h-5" aria-hidden /></button>
             </div>
 
+            {emailFirst && (
+              <p role="status" className="rounded-xl border border-[#D4A543]/50 bg-[#FBF5E6] p-3 text-sm text-[#071827] leading-relaxed">
+                {L('The text-message service is temporarily down. Verify your email to continue now, and verify your mobile later.',
+                  'ٹیکسٹ میسج سروس عارضی طور پر بند ہے۔ ابھی جاری رکھنے کے لیے اپنی ای میل تصدیق کریں، اور موبائل بعد میں تصدیق کریں۔',
+                  'خدمة الرسائل النصية متوقفة مؤقتاً. وثّق بريدك الإلكتروني لتتابع الآن، ووثّق جوالك لاحقاً.')}
+              </p>
+            )}
+            {emailFirst ? <>
+            {!emailOk && (
+              <section className="rounded-2xl border border-gray-200 p-4">
+                <div className="font-bold text-[#0B2438] mb-2">{L('Email', 'ای میل', 'البريد الإلكتروني')}</div>
+                <EmailVerify currentEmail={email} verified={false} locale={locale} onDone={() => refresh()} />
+              </section>
+            )}
+            {!phoneOk && (
+              <section className="rounded-2xl border border-gray-200 p-4">
+                <div className="font-bold text-[#0B2438] mb-1">{L('Mobile number (optional for now)', 'موبائل نمبر (فی الحال اختیاری)', 'رقم الجوال (اختياري الآن)')}</div>
+                <PhoneVerify initialPhone={p.phone || ''} locale={locale} verified={false} waVerified={!!p.whatsapp_verified_at} onDone={() => refresh()} />
+              </section>
+            )}
+            </> : <>
             {!phoneOk && (
               <section className="rounded-2xl border border-gray-200 p-4">
                 <div className="font-bold text-[#0B2438] mb-1">{L('Mobile number', 'موبائل نمبر', 'رقم الجوال')}</div>
@@ -110,6 +136,7 @@ export default function VerifyGateProvider({ children }: { children: React.React
                 <EmailVerify currentEmail={email} verified={false} locale={locale} onDone={() => refresh()} />
               </section>
             )}
+            </>}
           </div>
         </div>
       )}

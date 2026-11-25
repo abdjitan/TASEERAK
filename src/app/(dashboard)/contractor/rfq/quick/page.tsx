@@ -161,7 +161,7 @@ export default function QuickRequestPage() {
   const [city, setCity] = useState('')
   const [hours, setHours] = useState(48)
   const [notes, setNotes] = useState('')
-  const [vatRequired, setVatRequired] = useState(false)
+  const [vatRequired, setVatRequired] = useState(true) // owner 2026-11-25: ON by default for a business buyer
   // the usual market price per product + unit (stored before VAT, shown with VAT), only with 3+ different suppliers (UX-149)
   const [market, setMarket] = useState<Record<string, number>>({})
   useEffect(() => {
@@ -205,6 +205,7 @@ export default function QuickRequestPage() {
   const [sending, setSending] = useState(false)
   const [confirming, setConfirming] = useState(false) // the summary shown before sending
   const [reach, setReach] = useState<{ reached: number; items: { name: string; suppliers: number }[] } | null>(null)
+  const [marketEst, setMarketEst] = useState<number | null>(null) // round-6 UX-143: the usual market cost, VAT included
   const [reachState, setReachState] = useState<'loading' | 'done' | 'failed'>('loading') // the check never spins forever (round-4 UX-120)
   const [error, setError] = useState('')
   const [errKey, setErrKey] = useState<string | null>(null)   // the line the error is about (shown under it)
@@ -750,6 +751,8 @@ export default function QuickRequestPage() {
   function addPack(items: PackLine[]) {
     setLines(prev => [...foldDone(prev), ...items.filter(it => !prev.some(l => l.product_name === it.name)).map(it => ({
       key: uid(), product_name: it.name, sector: it.sector, quantity: it.quantity, unit: it.unit, details: '', done: parseFloat(it.quantity) > 0,
+      // round-6 UX-084: «اطلب السعر مع التركيب» from the pack, on the items that can be installed
+      ...(it.with_install && isInstallable(it.sector, detectSubCategory(it.name, it.sector)) ? { with_install: true } : {}),
     }))])
     setPack(null)
     setTimeout(() => document.getElementById('request-list')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 200)
@@ -883,6 +886,8 @@ export default function QuickRequestPage() {
   const skipped = lines.length - sendable.length
   const identifying = photos.some(p => p.status === 'identifying')
   const lineOk = (l: Line) => !!(l.product_name.trim() && parseFloat(l.quantity) > 0 && l.unit)
+  // round-6 UX-091: a hand-written item without its section cannot be folded yet (the same rule as the send check)
+  const noSection = (l: Line) => !!l.product_name.trim() && !CATALOG_NAMES.has(l.product_name.trim()) && (l.spec ? !choiceDone(l.spec) : !detectSubCategory(l.product_name, l.sector as any))
   const l2n = (l: Line) => nameLabel(l.product_name.trim()).slice(0, 40)
   // the first thing that keeps the request from going, with the line it is on (UX-007)
   function firstProblem(): Problem | null {
@@ -914,6 +919,8 @@ export default function QuickRequestPage() {
   }
   const problem = firstProblem()
   const ready = !problem
+  // round-6 UX-091: a line warning clears itself once the lines are fixed
+  useEffect(() => { if (errKey && errSoft && !problem?.key) { setError(''); setErrKey(null) } }, [errKey, errSoft, problem?.key])
   // why the request cannot go yet (shown next to the send button)
   const sendHint = sending ? ''
     : identifying ? L('Recognising the photos…', 'تصاویر پہچانی جا رہی ہیں…', 'جارٍ التعرّف على الصور…')
@@ -965,6 +972,25 @@ export default function QuickRequestPage() {
     setReach(null)
     setConfirming(true)
     previewReach()
+    marketEstimate()
+  }
+  // round-6 UX-143: «التكلفة المتوقعة في السوق» from what buyers paid on accepted deals (get_market_prices,
+  // avg_buyer_price incl. VAT); shown only when every line has a market price in the same unit
+  async function marketEstimate() {
+    setMarketEst(null)
+    try {
+      const { data } = await createClient().rpc('get_market_prices')
+      const rows: any[] = Array.isArray(data) ? data : []
+      let sum = 0
+      for (const l of sendable) {
+        const q = parseFloat(l.quantity)
+        const m = rows.find((r: any) => r.product_name === l.product_name.trim() && (!r.unit || r.unit === l.unit) && (r.supplier_count == null || Number(r.supplier_count) >= 3))
+        const unitPay = Number(m?.avg_buyer_price) > 0 ? Number(m.avg_buyer_price) : Number(m?.avg_price) > 0 ? Number(m.avg_price) * 1.15 : 0
+        if (!(q > 0) || !(unitPay > 0)) return
+        sum += q * unitPay
+      }
+      if (sum >= 1) setMarketEst(sum)
+    } catch { /* optional */ }
   }
 
   // «سيصل طلبك إلى نحو N موردين» before sending (UX-190): an optional RPC; nothing is shown if it is missing
@@ -973,9 +999,12 @@ export default function QuickRequestPage() {
     const timer = setTimeout(() => setReachState(st => (st === 'loading' ? 'failed' : st)), 8000)
     try {
       const items = sendable.map(l => ({ sector: l.sector, product_name: l.product_name.trim(), sub_category: lineSub(l) }))
-      const { data, error: e } = await createClient().rpc('preview_rfq_reach', {
-        p_items: items, p_region: region, p_city: city || null, p_geo: pickup || !geo ? null : `${geo.lat},${geo.lng}`, p_nearby: simple || nearbyOnly,
-      })
+      const base = { p_items: items, p_region: region, p_city: city || null, p_geo: pickup || !geo ? null : `${geo.lat},${geo.lng}`, p_nearby: simple || nearbyOnly }
+      const sb = createClient()
+      // round-6 UX-010: the estimate follows «الموردون الموثّقون فقط» and the chosen seller kind, like the routing.
+      // Until the server takes p_verified_only/p_tiers, the call falls back to the old signature.
+      let { data, error: e } = await sb.rpc('preview_rfq_reach', { ...base, p_verified_only: verifiedOnly, p_tiers: simple || tier === 'all' ? null : [tier] })
+      if (e) ({ data, error: e } = await sb.rpc('preview_rfq_reach', base))
       if (!e && data && typeof data === 'object') { setReach({ reached: Number((data as any).reached) || 0, items: Array.isArray((data as any).items) ? (data as any).items : [] }); setReachState('done') }
       else setReachState('failed')
     } catch { setReachState('failed') /* optional */ } finally { clearTimeout(timer) }
@@ -1279,7 +1308,7 @@ export default function QuickRequestPage() {
           </p>
         )}
         {views != null && views > 0 && !firstOffer && (
-          <p className="mb-3 text-[13px] font-bold text-[#0B2438]" aria-live="polite">{L(`${views} supplier${views === 1 ? '' : 's'} have seen your request so far`, `اب تک ${views} سپلائرز نے آپ کی درخواست دیکھی`, `اطّلع على طلبك حتى الآن ${arCount(views, 'مورد واحد', 'موردان', 'موردين', 'مورداً')}`)}</p>
+          <p className="mb-3 text-[13px] font-bold text-[#0B2438]" aria-live="polite">{L(`${views} ${views === 1 ? 'supplier has' : 'suppliers have'} seen your request so far`, `اب تک ${views} ${views === 1 ? 'سپلائر' : 'سپلائرز'} نے آپ کی درخواست دیکھی`, `اطّلع على طلبك حتى الآن ${arCount(views, 'مورد واحد', 'موردان', 'موردين', 'مورداً')}`)}</p>
         )}
         {firstOffer && sent?.id && (
           <div className="mb-3 rounded-xl border-2 border-[#D4A543] bg-[#D4A543]/15 p-3 flex flex-wrap items-center justify-between gap-2 text-start" role="status">
@@ -1288,14 +1317,14 @@ export default function QuickRequestPage() {
           </div>
         )}
         {cov && reached > 0 ? (
-          <p className="text-gray-700 font-semibold">{L(`Your request reached ${reached} supplier${reached === 1 ? '' : 's'}.`, `آپ کی درخواست ${reached} سپلائرز تک پہنچ گئی۔`, `وصل طلبك إلى ${suppliersAr(reached)}.`)}</p>
+          <p className="text-gray-700 font-semibold">{L(`Your request reached ${reached} supplier${reached === 1 ? '' : 's'}.`, `آپ کی درخواست ${reached} ${reached === 1 ? 'سپلائر' : 'سپلائرز'} تک پہنچ گئی۔`, `وصل طلبك إلى ${suppliersAr(reached)}.`)}</p>
         ) : (
           <p className="text-gray-600">{L('We will notify you as soon as an offer arrives.', 'کوئی بھی آفر آتے ہی ہم آپ کو اطلاع دیں گے۔', 'سنُبلغك فور وصول أي عرض.')}</p>
         )}
         {uncovered.length > 0 && (
-          <div className="mt-3 text-start rounded-xl border border-amber-200 bg-amber-50 p-3 space-y-1">
+          <div className="mt-3 text-start rounded-xl border-2 border-[#D4A543] bg-[#D4A543]/10 p-3 space-y-1">
             {uncovered.map(n => (
-              <p key={n} className="text-[13px] text-amber-900">{uncoveredMsg(n, true)}</p>
+              <p key={n} className="text-[13px] text-[#0B2438]">{uncoveredMsg(n, true)}</p>
             ))}
           </div>
         )}
@@ -1332,7 +1361,7 @@ export default function QuickRequestPage() {
             </Link>
           )}
           <div className="grid grid-cols-2 gap-2">
-            <button type="button" onClick={() => { setDone(false); setSent(null); setLines([]); setPhotos([]); setNotes(''); setText(''); setError(''); setErrKey(null); setErrField(null); setNeedDays(null); setReach(null) }}
+            <button type="button" onClick={() => { setDone(false); setSent(null); setViews(null); setLines([]); setPhotos([]); setNotes(''); setText(''); setError(''); setErrKey(null); setErrField(null); setNeedDays(null); setReach(null) }}
               className="min-h-12 py-3 rounded-xl font-bold border border-[#0B2438]/30 text-[#0B2438] bg-white">{L('New request', 'نئی درخواست', 'طلب جديد')}</button>
             <Link href="/contractor/rfqs" className="min-h-12 py-3 grid place-items-center rounded-xl font-bold border border-[#0B2438]/30 text-[#0B2438] bg-white">{L('My requests', 'میری درخواستیں', 'طلباتي')}</Link>
           </div>
@@ -1439,7 +1468,8 @@ export default function QuickRequestPage() {
                 <Glyph e="🔍" /> {L('Browse the materials guide', 'مواد کی فہرست دیکھیں', 'تصفّح دليل المواد')}
               </button>
             )}
-            <button type="button" onClick={() => parseText()} disabled={!text.trim() || parsing} className="btn-orange min-h-[44px] px-5 rounded-xl font-bold disabled:opacity-50">
+            {/* round-6 UX-092: navy, so the gold stays for «أرسل طلب التسعير» */}
+            <button type="button" onClick={() => parseText()} disabled={!text.trim() || parsing} className="min-h-[44px] px-5 rounded-xl font-bold text-white bg-[#0B2438] hover:bg-[#071827] disabled:opacity-50">
               {parsing ? L('Reading…', 'پڑھ رہے ہیں…', 'جارٍ القراءة…') : L('Add to my request', 'میری درخواست میں شامل کریں', 'أضف إلى طلبي')}
             </button>
             {canListen && (
@@ -1559,7 +1589,7 @@ export default function QuickRequestPage() {
             <div className="flex flex-wrap items-center gap-2">
               <button type="button" onClick={() => saveDraft(false)} disabled={savingDraft}
                 className="min-h-[44px] px-3 rounded-xl text-[13px] font-bold border border-[#0B2438]/40 bg-white text-[#0B2438] disabled:opacity-50">
-                {savingDraft && !tplOpen ? L('Saving…', 'محفوظ ہو رہا ہے…', 'جارٍ الحفظ…') : L('Save as a draft', 'مسودے کے طور پر محفوظ کریں', 'احفظ كمسودة')}
+                {savingDraft && !tplOpen ? L('Saving…', 'محفوظ ہو رہا ہے…', 'جارٍ الحفظ…') : L('Save it to my account to open from any device', 'اپنے اکاؤنٹ میں محفوظ کریں تاکہ کسی بھی ڈیوائس سے کھولیں', 'احفظه في حسابي لفتحه من أي جهاز')}
               </button>
               {!simple && !tplOpen && (
                 <button type="button" onClick={() => setTplOpen(true)} className="min-h-[44px] px-3 rounded-xl text-[13px] font-bold border border-[#0B2438]/40 bg-white text-[#0B2438]">
@@ -1775,7 +1805,7 @@ export default function QuickRequestPage() {
                             </button>
                           )}
                           {l.photoWarn && (
-                            <div className="basis-full text-[12px] text-amber-900 bg-amber-50 border border-amber-200 rounded-lg px-2 py-1">
+                            <div className="basis-full text-[12px] text-[#0B2438] bg-[#D4A543]/10 border border-[#D4A543] rounded-lg px-2 py-1">
                               <Glyph e="⚠" /> {l.photoWarn} <button type="button" className="underline font-bold min-h-[44px] px-1" onClick={() => updateLine(l.key, { photoWarn: undefined })}>{L('Keep it', 'رکھیں', 'أبقِها')}</button>
                             </div>
                           )}
@@ -1854,9 +1884,11 @@ export default function QuickRequestPage() {
                   {lineErr}
                   {/* «تم» folds the line into one row (it is saved either way) */}
                   <button type="button" onClick={() => { setSpecsOpen(null); updateLine(l.key, { done: true, review: undefined }) }}
-                    disabled={!lineOk(l) || (!simple && missingSpecs(l.product_name, l.sector as any, l.specs, l.details, !!l.fileId).length > 0)}
+                    disabled={!lineOk(l) || noSection(l) || (!simple && missingSpecs(l.product_name, l.sector as any, l.specs, l.details, !!l.fileId).length > 0)}
                     className="w-full min-h-[44px] rounded-xl text-sm font-bold border-2 border-[#0B2438]/30 bg-white text-[#0B2438] disabled:opacity-50 inline-flex items-center justify-center gap-1.5">
                     {!(parseFloat(l.quantity) > 0) ? L('Enter the quantity', 'مقدار لکھیں', 'أدخل الكمية')
+                      : !l.unit ? L('Choose the unit', 'یونٹ منتخب کریں', 'اختر الوحدة')
+                      : noSection(l) ? L('Choose the section', 'شعبہ منتخب کریں', 'اختر القسم')
                       : !simple && missingSpecs(l.product_name, l.sector as any, l.specs, l.details, !!l.fileId).length ? L('Enter the specifications', 'تفصیلات لکھیں', 'أدخل المواصفات')
                       : <><Check className="w-4 h-4" aria-hidden />{L('Done', 'ہو گیا', 'تم')}</>}
                   </button>
@@ -1925,12 +1957,36 @@ export default function QuickRequestPage() {
                 </select>
                 <select value={city} onChange={e => setCity(e.target.value)} className="input-field text-[16px] sm:text-sm" aria-label={L('City', 'شہر', 'المدينة')} disabled={!region}>
                   <option value="">{L('City', 'شہر', 'المدينة')}</option>
-                  {((CITIES_BY_REGION as any)[region] || []).map((c: any) => <option key={c.ar} value={c.ar}>{locale === 'ar' ? c.ar : c.en}</option>)}
+                  {((CITIES_BY_REGION as any)[region] || []).map((c: any) => <option key={c.ar} value={c.ar}>{locale === 'en' ? c.en : c.ar}</option>)}
                 </select>
               </div>
               {geoFilled && <p className="text-[12px] text-[#0F6E56] mt-1" role="status">{geoFilled}</p>}
               {errField === 'region' && error && <p role="alert" className="mt-1.5 rounded-lg border-2 border-[#D4A543] bg-[#D4A543]/10 px-3 py-2 text-[13px] font-bold text-[#0B2438]">{error}</p>}
             </div>
+            {!pickup && !simple && (
+              <div id="quick-location" className="space-y-2 scroll-mt-28">
+                <LocationPicker lat={geo?.lat ?? null} lng={geo?.lng ?? null} locale={locale} onChange={onGeo} />
+              </div>
+            )}
+            {!pickup && (
+              <div id="quick-location-box" className="space-y-2 scroll-mt-28">
+                {/* a visible label says whether the address is required (round-4 UX-119) */}
+                <label htmlFor="quick-address" className="block text-[12px] font-bold text-gray-700">
+                  {L('Delivery address', 'ڈیلیوری کا پتہ', 'عنوان التوصيل')}{' '}
+                  <span className={geo ? 'font-normal text-gray-500' : 'font-semibold text-[#8F6820]'}>{geo
+                    ? L('(optional)', '(اختیاری)', '(اختياري)')
+                    : L('(required because you did not set the location on the map)', '(ضروری، کیونکہ آپ نے نقشے پر مقام نہیں بتایا)', '(مطلوب لأنك لم تحدّد الموقع على الخريطة)')}</span>
+                </label>
+                <input id="quick-address" value={address} onChange={e => { setAddress(e.target.value); if (errField === 'location') { setErrField(null); setError('') } }} maxLength={300}
+                  aria-invalid={errField === 'location' || undefined}
+                  className={`input-field text-[16px] sm:text-sm ${errField === 'location' ? 'border-2 border-[#D4A543] bg-[#D4A543]/5' : ''}`}
+                  placeholder={L('District, street, landmark', 'محلہ، گلی، نشانی', 'الحي، الشارع، علامة مميزة')} />
+                {geo && geoFromProfile && <p className="text-[12px] text-gray-600">{L('Location filled from your profile. Change it if this delivery goes elsewhere.', 'مقام آپ کی پروفائل سے لیا گیا۔ ضرورت ہو تو بدلیں۔', 'عُبّئ الموقع من ملفك الشخصي. غيّره إن كان التوصيل إلى مكان آخر.')}</p>}
+                {errField === 'location' && error && <p role="alert" className="mt-1.5 rounded-lg border-2 border-[#D4A543] bg-[#D4A543]/10 px-3 py-2 text-[13px] font-bold text-[#0B2438]">{error}</p>}
+                <p className="text-[12px] text-gray-600"><Glyph e="🔒" /> {L('Only the supplier you choose sees the exact location.', 'صرف منتخب سپلائر درست مقام دیکھے گا۔', 'لا يرى الموقع الدقيق إلا المورد الذي تختاره.')}</p>
+              </div>
+            )}
+            {/* round-6 UX-092: «لمن نرسل طلبك؟» after the address */}
             {region && !simple && (
               <div>
                 <div className="text-[12px] font-bold text-gray-600 mb-1.5">{L('Who should receive your request?', 'آپ کی درخواست کس کو بھیجی جائے؟', 'لمن نرسل طلبك؟')}</div>
@@ -1944,29 +2000,6 @@ export default function QuickRequestPage() {
                     </button>
                   ))}
                 </div>
-              </div>
-            )}
-            {!pickup && !simple && (
-              <div id="quick-location" className="space-y-2 scroll-mt-28">
-                <LocationPicker lat={geo?.lat ?? null} lng={geo?.lng ?? null} locale={locale} onChange={onGeo} />
-              </div>
-            )}
-            {!pickup && (
-              <div id="quick-location-box" className="space-y-2 scroll-mt-28">
-                {/* a visible label says whether the address is required (round-4 UX-119) */}
-                <label htmlFor="quick-address" className="block text-[12px] font-bold text-gray-700">
-                  {L('Address details', 'پتے کی تفصیل', 'تفاصيل العنوان')}{' '}
-                  <span className={geo ? 'font-normal text-gray-500' : 'font-semibold text-[#8F6820]'}>{geo
-                    ? L('(optional)', '(اختیاری)', '(اختياري)')
-                    : L('(required because you did not set the location on the map)', '(ضروری، کیونکہ آپ نے نقشے پر مقام نہیں بتایا)', '(مطلوب لأنك لم تحدّد الموقع على الخريطة)')}</span>
-                </label>
-                <input id="quick-address" value={address} onChange={e => { setAddress(e.target.value); if (errField === 'location') { setErrField(null); setError('') } }} maxLength={300}
-                  aria-invalid={errField === 'location' || undefined}
-                  className={`input-field text-[16px] sm:text-sm ${errField === 'location' ? 'border-2 border-[#D4A543] bg-[#D4A543]/5' : ''}`}
-                  placeholder={L('District, street, landmark', 'محلہ، گلی، نشانی', 'الحي، الشارع، علامة مميزة')} />
-                {geo && geoFromProfile && <p className="text-[12px] text-gray-600">{L('Location filled from your profile. Change it if this delivery goes elsewhere.', 'مقام آپ کی پروفائل سے لیا گیا۔ ضرورت ہو تو بدلیں۔', 'عُبّئ الموقع من ملفك الشخصي. غيّره إن كان التوصيل إلى مكان آخر.')}</p>}
-                {errField === 'location' && error && <p role="alert" className="mt-1.5 rounded-lg border-2 border-[#D4A543] bg-[#D4A543]/10 px-3 py-2 text-[13px] font-bold text-[#0B2438]">{error}</p>}
-                <p className="text-[12px] text-gray-600"><Glyph e="🔒" /> {L('Only the supplier you choose sees the exact location.', 'صرف منتخب سپلائر درست مقام دیکھے گا۔', 'لا يرى الموقع الدقيق إلا المورد الذي تختاره.')}</p>
               </div>
             )}
             {/* how long suppliers have to send offers (a home buyer gets 24 or 48 hours by itself) */}
@@ -2009,6 +2042,7 @@ export default function QuickRequestPage() {
                   <input type="checkbox" checked={vatRequired} onChange={e => setVatRequired(e.target.checked)} className="w-5 h-5 accent-[#0B2438]" />
                   {L('I need a VAT tax invoice', 'مجھے VAT ٹیکس انوائس چاہیے', 'أحتاج فاتورة ضريبية')}
                 </label>
+                {!vatRequired && <p className="-mt-1 text-[13px] text-[#6C531F] leading-relaxed">{L('You may receive offers from suppliers without a VAT number, who do not issue a tax invoice.', 'آپ کو ایسے سپلائرز کی آفرز بھی مل سکتی ہیں جن کے پاس VAT نمبر نہیں، اس لیے وہ ٹیکس انوائس جاری نہیں کرتے۔', 'قد تصلك عروض من موردين ليس لديهم رقم ضريبي، فلا يُصدرون فاتورة ضريبية.')}</p>}
                 </>)}
                 <label className="flex items-center gap-2 min-h-[44px] text-sm text-gray-700 cursor-pointer select-none">
                   <input type="checkbox" checked={verifiedOnly} onChange={e => setVerifiedOnly(e.target.checked)} className="w-5 h-5 accent-[#0B2438]" />
@@ -2030,7 +2064,10 @@ export default function QuickRequestPage() {
             <div className="min-w-0 flex-1">
               <span className="block text-sm text-gray-600">{countLabel(sendable.length, locale, arMaterials, 'item', 'اشیاء')}</span>
               {error && errKey ? <span className={'block text-[13px] font-bold ' + (errSoft ? 'text-[#0B2438]' : 'text-red-700')} role="alert">{error}</span>
-                : sendHint ? <span className="block text-[13px] font-bold text-[#8F6820]" role="status">{sendHint}</span>
+                : sendHint ? (problem?.key
+                  // round-6 UX-091: «أدخل الكمية …» is a button that jumps to the line
+                  ? <button type="button" onClick={() => { const k = problem.key!; setLines(prev => prev.map(x => x.key === k ? { ...x, done: false } : x)); focusLine(k) }} className="block text-start min-h-[44px] -my-2 text-[13px] font-bold text-[#8F6820] underline underline-offset-2">{sendHint}</button>
+                  : <span className="block text-[13px] font-bold text-[#8F6820]" role="status">{sendHint}</span>)
                 : skipped > 0 ? <span className="block text-[13px] text-gray-600">{L(`${skipped} unnamed photo line(s) will be left out`, `بغیر نام کی ${skipped} تصویری لائنیں شامل نہیں ہوں گی`, `لن يُرسل ${skipped === 1 ? 'سطر الصورة غير المسمّى' : arCount(skipped, 'سطر واحد', 'سطران', 'أسطر', 'سطراً') + ' من الصور غير المسمّاة'}`)}</span>
                 : null}
             </div>
@@ -2065,6 +2102,11 @@ export default function QuickRequestPage() {
               {!reach && reachState === 'loading' && (
                 <p className="min-h-[40px] flex items-center rounded-xl bg-gray-50 border border-gray-100 px-3 text-[13px] text-gray-600" role="status">{L('Checking how many suppliers your request reaches…', 'جانچ رہے ہیں کہ درخواست کتنے سپلائرز تک پہنچے گی…', 'نتحقق من عدد الموردين الذين سيصلهم طلبك…')}</p>
               )}
+              {marketEst != null && (
+                <p className="rounded-xl bg-[#0B2438]/5 border border-[#0B2438]/15 px-3 py-2 text-[13px] font-bold text-[#0B2438]">
+                  {L(`Expected market cost: about ${Math.round(marketEst).toLocaleString('en-US')} SAR incl. VAT`, `مارکیٹ میں متوقع لاگت: تقریباً ${Math.round(marketEst).toLocaleString('en-US')} ریال VAT سمیت`, `التكلفة المتوقعة في السوق: نحو ${Math.round(marketEst).toLocaleString('en-US')} ر.س شاملة الضريبة`)}
+                </p>
+              )}
               {reach && (
                 <div className="space-y-1.5 min-h-[40px]">
                   {reach.reached >= 1 && (() => {
@@ -2074,7 +2116,7 @@ export default function QuickRequestPage() {
                       : region ? L(` in the ${getRegionLabel(region, 'en')} region`, ` ${getRegionLabel(region, 'ur')} علاقے میں`, ` في منطقة ${getRegionLabel(region, 'ar')}`) : ''
                     return (
                       <p className="rounded-xl bg-[#D4A543]/10 border border-[#D4A543]/40 px-3 py-2 text-[13px] font-bold text-[#0B2438]">
-                        {L(`Your request will reach about ${reach.reached} supplier${reach.reached === 1 ? '' : 's'}${where}.`, `آپ کی درخواست تقریباً ${reach.reached} سپلائرز تک پہنچے گی${where}۔`, `سيصل طلبك إلى ${reach.reached > 2 ? 'نحو ' : ''}${arCount(reach.reached, 'مورد واحد', 'موردَين', 'موردين', 'مورداً')}${where}.`)}
+                        {L(`Your request will reach about ${reach.reached} supplier${reach.reached === 1 ? '' : 's'}${where}.`, `آپ کی درخواست تقریباً ${reach.reached} ${reach.reached === 1 ? 'سپلائر' : 'سپلائرز'} تک پہنچے گی${where}۔`, `سيصل طلبك إلى ${reach.reached > 2 ? 'نحو ' : ''}${arCount(reach.reached, 'مورد واحد', 'موردَين', 'موردين', 'مورداً')}${where}.`)}
                       </p>
                     )
                   })()}

@@ -49,14 +49,18 @@ function LoginForm() {
   const pickedPack = packById(nextQuery.get('pack'))
   const pickedSection = BROWSE_SECTIONS.find(s => s.key === nextQuery.get('section')) || null
   const pickedLabel = pickedPack ? L(pickedPack.en, pickedPack.ur, pickedPack.ar) : pickedSection ? L(pickedSection.en, pickedSection.ur, pickedSection.ar) : ''
+  // «with your mobile number» only while the phone sign-in is on; otherwise the email account (round-6 UX-025)
+  const viaEn = phoneOn ? 'with your mobile number' : 'with your email'
+  const viaUr = phoneOn ? 'اپنے موبائل نمبر سے' : 'اپنی ای میل سے'
+  const viaAr = phoneOn ? 'برقم جوالك' : 'بالبريد الإلكتروني'
   const nextNote = !nextParam ? ''
     // a visitor who built a list on the request page and pressed «إرسال» (round-4 UX-056)
     : /^\/contractor\/rfq\/quick\?(.*&)?guest=1/.test(nextParam)
-      ? L('Create your account with your mobile number to send the request. You will not lose your list.', 'درخواست بھیجنے کے لیے اپنے موبائل نمبر سے اکاؤنٹ بنائیں۔ آپ کی فہرست محفوظ رہے گی۔', 'أنشئ حسابك برقم جوالك لإرسال الطلب، ولن تفقد قائمتك.')
+      ? L(`Create your account ${viaEn} to send the request. You will not lose your list.`, `درخواست بھیجنے کے لیے ${viaUr} اکاؤنٹ بنائیں۔ آپ کی فہرست محفوظ رہے گی۔`, `أنشئ حسابك ${viaAr} لإرسال الطلب، ولن تفقد قائمتك.`)
     : pickedPack
-      ? L(`You chose: ${pickedLabel}. Create your account with your mobile number, and the materials list will be ready for you to edit and send.`, `آپ نے منتخب کیا: ${pickedLabel}۔ اپنے موبائل نمبر سے اکاؤنٹ بنائیں، اشیاء کی فہرست تیار ملے گی جسے آپ بدل کر بھیج سکتے ہیں۔`, `اخترت: ${pickedLabel}. أنشئ حسابك برقم جوالك، وستجد قائمة المواد جاهزة لتعدّلها وترسلها.`)
+      ? L(`You chose: ${pickedLabel}. Create your account ${viaEn}, and the materials list will be ready for you to edit and send.`, `آپ نے منتخب کیا: ${pickedLabel}۔ ${viaUr} اکاؤنٹ بنائیں، اشیاء کی فہرست تیار ملے گی جسے آپ بدل کر بھیج سکتے ہیں۔`, `اخترت: ${pickedLabel}. أنشئ حسابك ${viaAr}، وستجد قائمة المواد جاهزة لتعدّلها وترسلها.`)
     : pickedSection
-      ? L(`You chose: ${pickedLabel}. Create your account with your mobile number to pick the materials and send your request.`, `آپ نے منتخب کیا: ${pickedLabel}۔ اشیاء چننے اور درخواست بھیجنے کے لیے اپنے موبائل نمبر سے اکاؤنٹ بنائیں۔`, `اخترت: ${pickedLabel}. أنشئ حسابك برقم جوالك لتختار المواد وترسل طلبك.`)
+      ? L(`You chose: ${pickedLabel}. Create your account ${viaEn} to pick the materials and send your request.`, `آپ نے منتخب کیا: ${pickedLabel}۔ اشیاء چننے اور درخواست بھیجنے کے لیے ${viaUr} اکاؤنٹ بنائیں۔`, `اخترت: ${pickedLabel}. أنشئ حسابك ${viaAr} لتختار المواد وترسل طلبك.`)
     : /^\/contractor\/(rfq\/quick|project\/new)/.test(nextParam)
       ? L('Create a free account to request prices for what you need.', 'جو آپ کو چاہیے اس کی قیمتیں منگوانے کے لیے مفت اکاؤنٹ بنائیں۔', 'أنشئ حساباً مجانياً لتطلب أسعار ما تحتاجه.')
       : L('Sign in to open the page whose link you received.', 'جس صفحے کا لنک آپ کو ملا ہے اسے کھولنے کے لیے سائن اِن کریں۔', 'سجّل الدخول لفتح الصفحة التي وصلك رابطها.')
@@ -289,7 +293,7 @@ function LoginForm() {
             {/* the phone form stays mounted while the email tab is open, so a code already sent is not lost (round-5 UX-121) */}
             {phoneOn && (
               <div hidden={mode !== 'phone'}>
-                <PhoneOtpForm registerHref={registerHref} onStep={setOtpStep} onSignedIn={async () => {
+                <PhoneOtpForm registerHref={registerHref} onStep={setOtpStep} defaultBuyerType={pickedPack ? 'individual' : undefined} onSignedIn={async () => {
                   const { data: { user } } = await createClient().auth.getUser()
                   if (user) await routeSignedIn(user.id)
                 }} onUseEmail={() => { setMode('email'); setEmailFormOpen(true); setError('') }} />

@@ -25,16 +25,18 @@ export default function SuggestionsPage() {
   // published suggestions everyone can vote on (181)
   const [board, setBoard] = useState<any[]>([])
   const [voting, setVoting] = useState('')
+  // a failed load says so instead of an empty list (round-6 UX-118)
+  const [listErr, setListErr] = useState(false)
 
   async function load() {
     const supabase = createClient()
     const { data: { session } } = await supabase.auth.getSession()
     if (!session) { window.location.href = '/login'; return }
-    const [{ data: prof }, { data }] = await Promise.all([
+    const [{ data: prof }, { data, error: listError }] = await Promise.all([
       supabase.from('profiles').select('role').eq('id', session.user.id).single(),
       supabase.from('suggestions').select('*').eq('user_id', session.user.id).order('created_at', { ascending: false }).limit(50),
     ])
-    setRole(prof?.role || 'contractor'); setList(data || []); setLoading(false)
+    setRole(prof?.role || 'contractor'); setList(data || []); setListErr(!!listError); setLoading(false)
     const { data: pub } = await supabase.rpc('list_public_suggestions')
     setBoard(pub || [])
   }
@@ -61,6 +63,7 @@ export default function SuggestionsPage() {
     const base = SUGGESTION_STATUS[k] || SUGGESTION_STATUS.new
     if (k === 'planned') return { ...base, ar: 'مُخطّط له', en: 'Planned', ur: 'منصوبے میں', tone: '#8F6820' }
     if (k === 'declined') return { ...base, tone: '#5B6B7C' }
+    if (k === 'new') return { ...base, ar: 'وصل إلى الفريق، بانتظار المراجعة', en: 'Received by the team, awaiting review', ur: 'ٹیم تک پہنچ گئی، جائزے کا انتظار' }
     return base
   }
   async function vote(id: string) {
@@ -126,6 +129,12 @@ export default function SuggestionsPage() {
           </div>
         )}
 
+        {listErr && (
+          <p role="alert" className="text-sm text-[#B42318] bg-white border border-red-100 rounded-xl p-3">
+            {L('We could not load your previous suggestions.', 'آپ کی پچھلی تجاویز لوڈ نہیں ہو سکیں۔', 'تعذّر تحميل اقتراحاتك السابقة.')}{' '}
+            <button type="button" onClick={() => load()} className="inline-flex items-center min-h-[44px] font-bold underline">{L('Try again', 'دوبارہ کوشش کریں', 'إعادة المحاولة')}</button>
+          </p>
+        )}
         {list.length > 0 && (
           <div className="space-y-2">
             <h2 className="text-sm font-bold" style={{ color: '#0B2438' }}>{L('Your previous suggestions', 'آپ کی پچھلی تجاویز', 'اقتراحاتك السابقة')}</h2>

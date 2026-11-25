@@ -52,8 +52,10 @@ const TX = {
   },
 }
 
-export default function PhoneOtpForm({ onSignedIn, onUseEmail, registerHref = '/register', onStep }: {
+export default function PhoneOtpForm({ onSignedIn, onUseEmail, registerHref = '/register', onStep, defaultBuyerType }: {
   onSignedIn: () => void; onUseEmail?: () => void; registerHref?: string
+  /** preselected «who are you buying for» (a home pack sends 'individual'); still changeable (round-6 UX-090) */
+  defaultBuyerType?: 'individual' | 'business'
   /** told when the step changes, so the page can hide its tabs and title during the code step (round-5 UX-121) */
   onStep?: (step: 'phone' | 'code' | 'name') => void
 }) {
@@ -64,7 +66,7 @@ export default function PhoneOtpForm({ onSignedIn, onUseEmail, registerHref = '/
   const [e164, setE164] = useState('')
   const [code, setCode] = useState('')
   const [name, setName] = useState('')
-  const [buyerType, setBuyerType] = useState<'individual' | 'business' | ''>('')
+  const [buyerType, setBuyerType] = useState<'individual' | 'business' | ''>(defaultBuyerType || '')
   const [agree, setAgree] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
@@ -242,7 +244,11 @@ export default function PhoneOtpForm({ onSignedIn, onUseEmail, registerHref = '/
           <span>{t.terms1} <Link href="/terms" target="_blank" className="font-bold underline">{t.terms}</Link> {t.and} <Link href="/privacy" target="_blank" className="font-bold underline">{t.privacy}</Link></span>
         </label>
         <button type="submit" disabled={loading} className="btn-orange w-full btn-lg">{loading ? t.creating : t.create}</button>
-        {/* the supplier link lives once under the form on the login page (round-4 UX-115) */}
+        {/* a shop owner about to become a buyer still sees the way to a seller account (round-6 UX-016) */}
+        <p className="text-center text-[13px] text-ink-2">
+          {locale === 'en' ? 'Do you sell building materials?' : locale === 'ur' ? 'کیا آپ تعمیراتی سامان بیچتے ہیں؟' : 'تبيع مواد البناء؟'}{' '}
+          <Link href="/join" className="inline-flex items-center min-h-[44px] font-bold text-orange-dark hover:underline">{locale === 'en' ? 'Register as a supplier' : locale === 'ur' ? 'سپلائر کے طور پر رجسٹر کریں' : 'سجّل كمورد'}</Link>
+        </p>
       </form>
     )
   }
@@ -279,6 +285,8 @@ export default function PhoneOtpForm({ onSignedIn, onUseEmail, registerHref = '/
             {onUseEmail
               ? <button type="button" onClick={onUseEmail} className="inline-flex items-center min-h-[44px] font-bold text-orange-dark hover:underline">{t.smsDownLogin}</button>
               : <a href="/login?m=email" className="inline-flex items-center min-h-[44px] font-bold text-orange-dark hover:underline">{t.smsDownLogin}</a>}
+            {/* /support is public now, so a visitor without a code still reaches the team (round-6 UX-036) */}
+            <a href="/support?topic=sms" className="inline-flex items-center min-h-[44px] font-bold text-orange-dark hover:underline">{locale === 'en' ? 'Contact support' : locale === 'ur' ? 'سپورٹ سے رابطہ کریں' : 'تواصل مع الدعم'}</a>
           </div>
         </div>
       )}

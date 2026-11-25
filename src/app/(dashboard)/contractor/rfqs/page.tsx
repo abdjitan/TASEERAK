@@ -183,10 +183,12 @@ function MyRequests() {
     setDeleting(true)
     const sb = createClient()
     const ids = ended.map(r => r.id)
-    const [{ data: acc }, { data: aw }] = await Promise.all([
+    const [{ data: acc, error: accErr }, { data: aw, error: awErr }] = await Promise.all([
       sb.from('offers').select('rfq_id').in('rfq_id', ids).eq('status', 'accepted'),
       sb.from('rfq_item_awards').select('rfq_id').in('rfq_id', ids),
     ])
+    // round-6 UX-100: without the deal check nothing is deleted
+    if (accErr || awErr) { setDeleting(false); setStatus({ tone: 'err', text: L('Could not delete. Check your connection and try again.', 'حذف نہیں ہو سکا۔ کنکشن چیک کر کے دوبارہ کوشش کریں۔', 'تعذّر الحذف. تحقّق من الاتصال وحاول مرة أخرى.') }); return }
     const keep = new Set([...(acc || []), ...(aw || [])].map((x: any) => x.rfq_id))
     const go = ids.filter(id => !keep.has(id))
     // all at once (was one by one); each result is checked so a failure is reported, not hidden
@@ -218,10 +220,12 @@ function MyRequests() {
     setCancelling(true)
     const sb = createClient()
     const ids = pick.map(r => r.id)
-    const [{ data: acc }, { data: aw }] = await Promise.all([
+    const [{ data: acc, error: accErr }, { data: aw, error: awErr }] = await Promise.all([
       sb.from('offers').select('rfq_id').in('rfq_id', ids).eq('status', 'accepted'),
       sb.from('rfq_item_awards').select('rfq_id').in('rfq_id', ids),
     ])
+    // round-6 UX-100: a failed deal check stops the cancellation (a deal must never be cancelled by mistake)
+    if (accErr || awErr) { setCancelling(false); setStatus({ tone: 'err', text: L('Could not cancel. Check your connection and try again.', 'منسوخ نہیں ہو سکا۔ کنکشن چیک کر کے دوبارہ کوشش کریں۔', 'تعذّر الإلغاء. تحقّق من الاتصال وحاول مرة أخرى.') }); return }
     const keep = new Set([...(acc || []), ...(aw || [])].map((x: any) => x.rfq_id))
     const go = ids.filter(id => !keep.has(id))
     const { error } = go.length ? await sb.from('rfqs').update({ status: 'cancelled' }).in('id', go) : { error: null }
@@ -249,7 +253,8 @@ function MyRequests() {
 
   const tabs: [Filter, string][] = [
     ['all', L('All', 'سب', 'الكل')],
-    ...(counts.choose > 0 ? [['choose', L('Waiting for your choice', 'آپ کے انتخاب کی منتظر', 'بانتظار اختيارك')] as [Filter, string]] : []),
+    // round-6 UX-100: a ?filter=choose link keeps its tab even when the count is zero
+    ...(counts.choose > 0 || filter === 'choose' ? [['choose', L('Waiting for your choice', 'آپ کے انتخاب کی منتظر', 'بانتظار اختيارك')] as [Filter, string]] : []),
     ['open', L('Open', 'کھلی', 'مفتوحة')],
     ['closed', L('Offer chosen', 'آفر منتخب ہو گئی', 'تمّ اختيار العرض')], // not «الصفقات»: that is the «صفقاتي» tab (UX-070)
     ['ended', L('Ended', 'ختم', 'منتهية')],
@@ -313,7 +318,7 @@ function MyRequests() {
         ) : null}
 
         {status && (
-          <div role="status" className={`flex items-start justify-between gap-2 rounded-xl border px-3 py-2.5 text-sm ${status.tone === 'err' ? 'bg-red-50 border-red-200 text-red-800' : status.tone === 'warn' ? 'bg-amber-50 border-amber-200 text-amber-900' : 'bg-emerald-50 border-emerald-200 text-emerald-800'}`}>
+          <div role="status" className={`flex items-start justify-between gap-2 rounded-xl border px-3 py-2.5 text-sm ${status.tone === 'err' ? 'bg-red-50 border-red-200 text-red-800' : status.tone === 'warn' ? 'bg-warn-bg border-warn-border text-warn-text' : 'bg-[#E1F5EE] border-[#0F6E56]/30 text-[#0F6E56]'}`}>
             <span>{status.text}</span>
             <button type="button" onClick={() => setStatus(null)} aria-label={L('Close', 'بند کریں', 'إغلاق')} className="shrink-0 min-w-[44px] min-h-[44px] -my-2 -me-2 grid place-items-center rounded-lg hover:bg-black/5"><Glyph e="✕" /></button>
           </div>
@@ -368,7 +373,8 @@ function MyRequests() {
               return (
                 <div key={r.id}
                   className={`bg-white rounded-2xl border shadow-sm hover:shadow transition-all ${sel.has(r.id) ? 'border-[#0B2438] ring-2 ring-[#0B2438]/15' : st === 'choose' || todo ? 'border-[#D4A543]/60' : rs === 'offers' ? 'border-[#D4A543]/40' : 'border-gray-100 hover:border-[#D4A543]/50'} ${selecting && !cancellable(r) ? 'opacity-50' : ''}`}>
-                  <Link href={`/contractor/rfq/${r.id}`} aria-pressed={selecting ? sel.has(r.id) : undefined}
+                  <Link href={`/contractor/rfq/${r.id}`} role={canPick ? 'checkbox' : undefined} aria-checked={canPick ? sel.has(r.id) : undefined}
+                    aria-disabled={selecting && !cancellable(r) ? true : undefined}
                     onClick={(e: any) => { if (selecting) { e.preventDefault(); if (cancellable(r)) toggle(r.id) } }}
                     className="block p-4 sm:p-5 rounded-2xl">
                     <div className="flex flex-wrap items-start justify-between gap-2">
@@ -392,7 +398,7 @@ function MyRequests() {
                           </span>
                         )}
                         {u && <span className="text-xs font-bold px-2.5 py-1 rounded-full" style={{ background: u.bg, color: u.fg, border: `1px solid ${u.border}` }}><Glyph e="⏰" /> {formatTimeLeft(r.expires_at, locale)}</span>}
-                        {purge && <span title={purge.hint} className={`text-xs font-bold px-2.5 py-1 rounded-full border ${purge.soon ? 'bg-amber-50 text-amber-800 border-amber-200' : 'bg-gray-50 text-gray-600 border-gray-200'}`}><Glyph e="🗑" /> {purge.label}</span>}
+                        {purge && <span title={purge.hint} className={`text-xs font-bold px-2.5 py-1 rounded-full border ${purge.soon ? 'bg-warn-bg text-warn-text border-warn-border' : 'bg-gray-50 text-gray-600 border-gray-200'}`}><Glyph e="🗑" /> {purge.label}</span>}
                       </div>
                     </div>
                     <div className="mt-3 flex flex-wrap gap-2">

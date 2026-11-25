@@ -29,6 +29,9 @@ export default function PublicFooter() {
           <span className="text-gray-300" aria-hidden>·</span>
           <Link href="/terms" className="inline-flex items-center min-h-[44px] px-2 hover:text-[#0B2438]">{L('Terms and conditions', 'شرائط و ضوابط', 'الشروط والأحكام')}</Link>
           <span className="text-gray-300" aria-hidden>·</span>
+          {/* /support is open to visitors (round-6 UX-036) */}
+          <Link href="/support" className="inline-flex items-center min-h-[44px] px-2 hover:text-[#0B2438]">{L('Contact us', 'ہم سے رابطہ کریں', 'تواصل معنا')}</Link>
+          <span className="text-gray-300" aria-hidden>·</span>
           <Link href="/account/delete" className="inline-flex items-center min-h-[44px] px-2 hover:text-[#0B2438]">{L('Delete an account', 'اکاؤنٹ حذف کریں', 'حذف الحساب')}</Link>
         </div>
         <p className="text-[12px] text-gray-600 mt-4">© {new Date().getFullYear()} {L('Taseerak. All rights reserved.', 'تسعیرک۔ جملہ حقوق محفوظ ہیں۔', 'تسعيرك. جميع الحقوق محفوظة.')}</p>

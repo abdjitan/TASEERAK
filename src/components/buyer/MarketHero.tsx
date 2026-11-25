@@ -14,12 +14,15 @@ import { HOME_PACKS, HOME_ROOM_PACKS, homeName } from '@/lib/homePacks'
 import { productImageUrl } from '@/lib/productImage'
 
 // All sections, building first (owner 2026-10-19: show every category photo, building materials first)
-const CATS: { key: string; img: string; ar: string; en: string; ur: string; sub: { ar: string; en: string; ur: string } }[] = [
+type Tri = { ar: string; en: string; ur: string }
+const CATS: { key: string; img: string; ar: string; en: string; ur: string; sub: Tri; home?: Tri & { sub: Tri } }[] = [
   { key: 'building', img: 'building', ar: 'مواد البناء', en: 'Building materials', ur: 'تعمیراتی سامان', sub: { ar: 'حديد، أسمنت، عزل', en: 'Steel, cement, insulation', ur: 'سریا، سیمنٹ، انسولیشن' } },
   { key: 'finishing', img: 'finishing', ar: 'الدهانات والتشطيبات', en: 'Paints & finishing', ur: 'پینٹ اور فنشنگ', sub: { ar: 'ألوان وبلاط ورخام', en: 'Colours, tiles, marble', ur: 'رنگ، ٹائلیں، ماربل' } },
   { key: 'electrical', img: 'lighting', ar: 'الكهرباء والإنارة', en: 'Electrical & lighting', ur: 'بجلی اور روشنی', sub: { ar: 'مصابيح وكابلات', en: 'Lamps & cables', ur: 'لیمپ اور کیبل' } },
   { key: 'plumbing', img: 'plumbing', ar: 'الحمّام والسباكة', en: 'Bathroom & plumbing', ur: 'باتھ روم اور پلمبنگ', sub: { ar: 'أدوات وإكسسوارات', en: 'Fixtures & fittings', ur: 'سامان اور فٹنگز' } },
-  { key: 'hvac_fire', img: 'hvac_fire', ar: 'التكييف والحريق', en: 'AC & firefighting', ur: 'اے سی اور فائر', sub: { ar: 'مكيفات ورشاشات', en: 'AC units, sprinklers', ur: 'اے سی، اسپرنکلر' } },
+  // round-6 UX-086: a home buyer reads «التكييف والتهوية», no firefighting or sprinklers
+  { key: 'hvac_fire', img: 'hvac_fire', ar: 'التكييف والحريق', en: 'AC & firefighting', ur: 'اے سی اور فائر', sub: { ar: 'مكيفات ورشاشات', en: 'AC units, sprinklers', ur: 'اے سی، اسپرنکلر' },
+    home: { ar: 'التكييف والتهوية', en: 'AC & ventilation', ur: 'اے سی اور وینٹیلیشن', sub: { ar: 'مكيفات ومراوح وشفاطات', en: 'AC units, fans, extractors', ur: 'اے سی، پنکھے، ایگزاسٹ' } } },
   { key: 'furniture', img: 'furniture', ar: 'الأثاث والديكور', en: 'Furniture & decor', ur: 'فرنیچر', sub: { ar: 'للبيت والمكتب', en: 'Home & office', ur: 'گھر اور دفتر' } },
   { key: 'tools', img: 'tools', ar: 'العدد والمعدات', en: 'Tools & equipment', ur: 'اوزار اور سامان', sub: { ar: 'عدد يدوية وكهربائية', en: 'Hand and power tools', ur: 'ہاتھ اور بجلی کے اوزار' } }, // not «الموقع» (a place), round-4 UX-114
   { key: 'machinery', img: 'machinery', ar: 'الآليات الثقيلة', en: 'Heavy machinery', ur: 'بھاری مشینری', sub: { ar: 'تأجير وشراء', en: 'Rent or buy', ur: 'کرایہ یا خرید' } },
@@ -53,8 +56,9 @@ export default function MarketHero({ locale, homeBuyer = false, greeting }: { lo
     const t = q.trim()
     if (!t) return []
     const seen = new Set<string>()
-    return searchProducts(t, { limit: 12 }).filter(h => !seen.has(h.name) && seen.add(h.name)).slice(0, 7)
-  }, [q])
+    // round-6 UX-086: no heavy machinery (concrete mixers…) in a home buyer's suggestions
+    return searchProducts(t, { limit: 12 }).filter(h => (!homeBuyer || h.sector !== 'equipment') && !seen.has(h.name) && seen.add(h.name)).slice(0, 7)
+  }, [q, homeBuyer])
   const open_ = (term: string) => {
     const t = term.trim()
     router.push(t ? `/contractor/rfq/quick?q=${encodeURIComponent(t.slice(0, 80))}` : '/contractor/rfq/quick')
@@ -169,7 +173,7 @@ export default function MarketHero({ locale, homeBuyer = false, greeting }: { lo
       <div className="mt-6 flex items-end justify-between gap-3">
         <div>
           <h3 className="text-lg font-extrabold text-[#0B2438]">{L('Start with what you need', 'جو چاہیے وہاں سے شروع کریں', 'ابدأ من الشيء الذي تحتاجه')}</h3>
-          <p className="text-[13px] text-[#48596E]">{homeBuyer ? L('The sections homes ask for most come first', 'گھروں کی سب سے زیادہ مانگ والے حصے پہلے', 'الأقسام الأكثر طلباً للبيوت أولاً') : L('For your home, a renovation or a whole project', 'گھر، مرمت یا پورے پراجیکٹ کے لیے', 'للبيت أو التجديد أو مشروع كامل')}</p>
+          <p className="text-[13px] text-[#48596E]">{homeBuyer ? L('What a home usually needs comes first', 'گھر کو عموماً جو چاہیے وہ پہلے', 'ما يحتاجه البيت عادةً يظهر أولاً') : L('For your home, a renovation or a whole project', 'گھر، مرمت یا پورے پراجیکٹ کے لیے', 'للبيت أو التجديد أو مشروع كامل')}</p>
         </div>
         <Link href="/contractor/rfq/quick?browse=1" className="text-sm font-bold text-[#8F6820] hover:underline whitespace-nowrap min-h-[44px] inline-flex items-center">{L('All categories', 'تمام زمرے', 'كل التصنيفات')} {fwd}</Link>
       </div>
@@ -181,8 +185,8 @@ export default function MarketHero({ locale, homeBuyer = false, greeting }: { lo
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={`/images/section-icons/${c.key}.webp`} alt="" aria-hidden className="w-12 h-12 shrink-0" />
             <span className="min-w-0">
-              <span className="block font-extrabold text-[14px] text-[#0B2438] leading-snug">{pick(c)}</span>
-              <span className="block text-[12px] text-gray-600 leading-snug truncate">{pick(c.sub)}</span>
+              <span className="block font-extrabold text-[14px] text-[#0B2438] leading-snug">{pick(c.home || c)}</span>
+              <span className="block text-[12px] text-gray-600 leading-snug truncate">{pick(c.home ? c.home.sub : c.sub)}</span>
             </span>
           </Link>
           ) : (
