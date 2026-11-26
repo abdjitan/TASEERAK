@@ -23,7 +23,8 @@ export function aiProvider(): 'anthropic' | 'gemini' | 'groq' | null {
 export const AI_ENABLED = !!(anthropicKey() || geminiKey() || groqKey())
 export const DEFAULT_AI_MODEL = process.env.AI_MODEL || 'claude-haiku-5-5' // cheapest by default (review 2026-10-28); set AI_MODEL to override
 // نماذج Gemini المجانية للمحاولة بالترتيب (قابلة للتهيئة عبر GEMINI_MODEL كقائمة مفصولة بفواصل)
-const GEMINI_MODEL_FALLBACKS = 'gemini-3.8-flash,gemini-flash-latest,gemini-2.5-flash'
+// 2026-11-26: gemini-2.5-flash is retired for new keys; the free tier often answers 503 «high demand», so more models are tried
+const GEMINI_MODEL_FALLBACKS = 'gemini-3.8-flash,gemini-4-hydrogen,gemini-flash-latest,gemini-3.8-flash-lite,gemini-flash-lite-latest'
 // Per-call cap for every provider request: routes stop at 30-60 s, so a hung provider must give
 // up early enough for the next one in the chain to answer. A timeout throws and falls through.
 const AI_CALL_TIMEOUT_MS = 12_000
@@ -64,7 +65,7 @@ async function geminiGenerate(system: string, contents: any[], maxTokens: number
       const t = await r.text().catch(() => '')
       lastErr = 'Gemini ' + r.status + ' (' + model + '): ' + t.slice(0, 250)
       // النموذج غير متاح/محدود الحصّة — جرّب النموذج التالي (الحصّة المجانية تختلف بين النماذج)
-      if (r.status === 404 || r.status === 400 || r.status === 429) continue
+      if (r.status === 404 || r.status === 400 || r.status === 429 || r.status === 500 || r.status === 503) continue
       throw new Error(lastErr)
     }
     const j = await r.json()
