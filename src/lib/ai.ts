@@ -299,3 +299,27 @@ export async function aiWebJson<T = any>(opts: { system: string; user: string; i
   }
   return null
 }
+
+// Admin diagnostics (2026-11-26): one tiny call per configured provider, to see why AI features fail
+// (bad key, model retired, quota) without reading server logs. Never returns a key.
+export async function aiHealth(): Promise<Record<string, any>> {
+  const out: Record<string, any> = {
+    provider: aiProvider(), gemini_key: !!geminiKey(), anthropic_key: !!anthropicKey(), groq_key: !!groqKey(),
+    gemini_models: GEMINI_MODELS,
+  }
+  if (geminiKey()) {
+    const per: Record<string, string> = {}
+    for (const model of GEMINI_MODELS) {
+      try {
+        const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
+          method: 'POST', headers: { 'Content-Type': 'application/json', 'x-goog-api-key': geminiKey() },
+          body: JSON.stringify({ contents: [{ role: 'user', parts: [{ text: 'Reply with OK' }] }], generationConfig: { maxOutputTokens: 5 } }),
+          signal: AbortSignal.timeout(10_000),
+        })
+        per[model] = r.ok ? 'ok' : `${r.status}: ${(await r.text().catch(() => '')).slice(0, 200)}`
+      } catch (e: any) { per[model] = 'error: ' + String(e?.message || e).slice(0, 150) }
+    }
+    out.gemini = per
+  }
+  return out
+}
