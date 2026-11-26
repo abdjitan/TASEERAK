@@ -744,8 +744,15 @@ export default function QuickRequestPage() {
       })
       .then(j => {
         const s = j?.suggestion
-        // the photo shows something that is not a material: say what we saw (2026-11-26)
-        if (!s && j?.not_item && j?.seen) { const seen = locale === 'en' ? (j.seen.en || j.seen.ar) : locale === 'ur' ? (j.seen.ur || j.seen.ar) : j.seen.ar; showError(L(`The photo looks like «${seen}», not a material we price. Take a photo of the material itself, or write its name.`, `تصویر «${seen}» لگتی ہے، قیمت کا مال نہیں۔ مال کی تصویر لیں یا اس کا نام لکھیں۔`, `تبدو الصورة لـ«${seen}»، وليست مادة نطلب سعرها. صوّر المادة نفسها، أو اكتب اسمها.`)) }
+        // owner 2026-11-26: the photo shows something outside our usual materials (a mouse…): name it, say it is
+        // not one of our usual materials, and still let the buyer send it (the line takes the name; he picks the closest section)
+        if (!s && j?.not_item && j?.seen) {
+          const seen = locale === 'en' ? (j.seen.en || j.seen.ar) : locale === 'ur' ? (j.seen.ur || j.seen.ar) : j.seen.ar
+          setPhotos(prev => prev.map(p => p.id === id ? { ...p, status: 'done', confidence: 'low' } : p))
+          setLines(prev => prev.map(l => l.photoId === id && !l.product_name ? { ...l, product_name: String(j.seen.ar || seen).slice(0, 120), suggestion: null } : l))
+          showError(L(`This looks like «${seen}», which is not one of our usual materials. You can still send it for pricing: pick the closest section, or change the name.`, `یہ «${seen}» لگتا ہے، جو ہمارے عام مال میں شامل نہیں۔ پھر بھی قیمت کے لیے بھیج سکتے ہیں: قریب ترین شعبہ چنیں یا نام بدلیں۔`, `يبدو أنها «${seen}»، وليست من المواد المعتادة لدينا. يمكنك إرسالها للتسعير مع ذلك: اختر أقرب قسم لها، أو عدّل الاسم.`))
+          return
+        }
         setPhotos(prev => prev.map(p => p.id === id ? { ...p, status: s ? 'done' : 'failed', confidence: s?.confidence, localName: s?.local_name || undefined, question: s?.question || undefined } : p))
         if (s) setLines(prev => prev.map(l => l.photoId === id && !l.product_name ? {
           ...l, product_name: s.product_name, sector: s.sector, details: s.details || '', unit: s.unit || l.unit, suggestion: s.catalog_suggestion || null,
