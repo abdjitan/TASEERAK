@@ -744,6 +744,8 @@ export default function QuickRequestPage() {
       })
       .then(j => {
         const s = j?.suggestion
+        // the photo shows something that is not a material: say what we saw (2026-11-26)
+        if (!s && j?.not_item && j?.seen) { const seen = locale === 'en' ? (j.seen.en || j.seen.ar) : locale === 'ur' ? (j.seen.ur || j.seen.ar) : j.seen.ar; showError(L(`The photo looks like «${seen}», not a material we price. Take a photo of the material itself, or write its name.`, `تصویر «${seen}» لگتی ہے، قیمت کا مال نہیں۔ مال کی تصویر لیں یا اس کا نام لکھیں۔`, `تبدو الصورة لـ«${seen}»، وليست مادة نطلب سعرها. صوّر المادة نفسها، أو اكتب اسمها.`)) }
         setPhotos(prev => prev.map(p => p.id === id ? { ...p, status: s ? 'done' : 'failed', confidence: s?.confidence, localName: s?.local_name || undefined, question: s?.question || undefined } : p))
         if (s) setLines(prev => prev.map(l => l.photoId === id && !l.product_name ? {
           ...l, product_name: s.product_name, sector: s.sector, details: s.details || '', unit: s.unit || l.unit, suggestion: s.catalog_suggestion || null,

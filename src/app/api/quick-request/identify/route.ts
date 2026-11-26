@@ -124,6 +124,12 @@ export async function POST(req: NextRequest) {
       }
     }
   }
+  // 2026-11-26: the model saw something that is not a material (a mouse, a cup…): say what it saw,
+  // so the screen can tell the buyer instead of «we could not recognise the photo»
+  if (!item && r && r.is_construction_item === false && r.name_ar) {
+    return NextResponse.json({ suggestion: null, ai: true, not_item: true,
+      seen: { ar: String(r.name_ar).slice(0, 80), en: String(r.name_en || '').slice(0, 80), ur: String(r.name_ur || r.name_ar).slice(0, 80) } })
+  }
   if (!item) return NextResponse.json({ suggestion: null, ai: true, ...(lab ? { lab: { ms: Date.now() - t0, photos: images.length, resized, calls: trace.calls } } : {}) })
   const rr = item
 
