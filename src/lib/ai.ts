@@ -269,7 +269,7 @@ export function buildTaxonomyRef(SUB_CATEGORIES: any, SECTOR_LABELS: any): strin
 // with JSON mode, so the JSON is read out of the text.
 export async function aiWebJson<T = any>(opts: { system: string; user: string; image?: { base64: string; mime: string }; maxTokens?: number; trace?: AiTrace }): Promise<{ data: T; sources: { title: string; uri: string }[] } | null> {
   if (!geminiKey()) return null
-  const models = (process.env.GEMINI_WEB_MODEL || 'gemini-3.8-flash,gemini-flash-latest').split(',').map(s => s.trim()).filter(Boolean)
+  const models = (process.env.GEMINI_WEB_MODEL || 'gemini-flash-lite-latest,gemini-3.8-flash').split(',').map(s => s.trim()).filter(Boolean)
   const parts: any[] = [{ text: opts.user }]
   if (opts.image) parts.push({ inline_data: { mime_type: opts.image.mime, data: opts.image.base64 } })
   for (const model of models) {

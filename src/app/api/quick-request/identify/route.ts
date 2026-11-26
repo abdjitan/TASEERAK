@@ -16,7 +16,7 @@ import { getDefaultUnit, loadCatalogSpecs, type Sector } from '@/types'
 // the printed values pre-fill the product's spec fields, and when it is unsure one short question
 // is returned for the buyer. The suggestion is never treated as fact; the buyer can also just send
 // the photo to suppliers as-is. Up to 3 photos of the same item (e.g. whole item + label close-up).
-export const maxDuration = 30
+export const maxDuration = 60 // 2026-11-26: a slow free-tier model answer hit the 30 s limit (504)
 
 const SECTORS: Sector[] = ['civil', 'architectural', 'electrical', 'mechanical', 'equipment', 'supply_store']
 const MAX_BYTES = 6 * 1024 * 1024
@@ -111,7 +111,8 @@ export async function POST(req: NextRequest) {
   // (Gemini + Google Search, inside the free tier: 15 photo lookups an hour per person, shares the
   // 300-a-day total with the text lookups).
   const firstMatch = item ? groundName(String(item.name_ar || ''), SECTORS.includes(item.sector) ? item.sector : null, labelDetails(item)) : null
-  if (!item || item.confidence === 'low' || !firstMatch?.exact) {
+  // the web lookup only while there is time left (route limit 60 s; free-tier models can be slow)
+  if ((!item || item.confidence === 'low' || !firstMatch?.exact) && Date.now() - t0 < 20_000) {
     const { data: mine } = await supabase.rpc('check_rate_limit', { p_bucket: `understand-photo:${user.id}`, p_max: 15, p_window_seconds: 3600 })
     const { data: all } = mine === false ? { data: false } : await createAdminSupabaseClient().rpc('check_rate_limit', { p_bucket: 'understand:global', p_max: 300, p_window_seconds: 86400 })
     if (mine === true && all === true) { // an errored limit check skips the paid web lookup
