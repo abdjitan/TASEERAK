@@ -9,8 +9,9 @@ import LanguageSwitcher from '@/components/shared/LanguageSwitcher'
 import AppShell from '@/components/shared/AppShell'
 import { getNav } from '@/lib/nav'
 import LocationPicker from '@/components/shared/LocationPicker'
-import { REGIONS, getRegionLabel, CITIES_BY_REGION } from '@/types'
+import { nearestSaCity } from '@/lib/saCityCoords'
 import DistrictField from '@/components/shared/DistrictField'
+import CityPicker from '@/components/shared/CityPicker'
 import { Check } from 'lucide-react'
 import Glyph from '@/components/shared/Glyph'
 import { friendlyError } from '@/lib/friendlyError'
@@ -78,6 +79,18 @@ export default function LocationPage() {
   const [additionalNo, setAdditionalNo] = useState('')
   const [lat, setLat] = useState<any>(null)
   const [lng, setLng] = useState<any>(null)
+  const [pinNote, setPinNote] = useState('')
+
+  // the map pin also fills the city (and its region), still editable (UX-073)
+  function onPin(la: number, ln: number) {
+    setLat(la); setLng(ln)
+    const n = nearestSaCity(la, ln)
+    if (n && n.km < 80) {
+      if (n.city !== city) setDistrict('')
+      setRegion(n.region); setCity(n.city)
+      setPinNote(L('We set the city from your location.', 'ہم نے آپ کے مقام سے شہر منتخب کیا۔', 'حدّدنا المدينة من موقعك.'))
+    }
+  }
 
   async function load() {
     setLoading(true); setLoadFailed(false)
@@ -149,7 +162,24 @@ export default function LocationPage() {
         <span className="text-xl text-[#0B2438]"><Glyph e="🗺" /></span>
         <h2 className="font-bold" style={{ color: '#0B2438' }}>{T.locationSection}</h2>
       </div>
-      <LocationPicker lat={lat} lng={lng} locale={locale} onChange={(la, ln) => { setLat(la); setLng(ln) }} />
+      <LocationPicker lat={lat} lng={lng} locale={locale} onChange={onPin} />
+      {pinNote && <p role="status" className="mt-2 text-[13px] font-semibold text-[#0F6E56]">{pinNote}</p>}
+    </div>
+  )
+
+  // owner 2026-11-26: one searchable «المدينة» picker (the region comes from the city) + «الحي», always shown
+  const placeCard = (
+    <div className="bg-white rounded-2xl p-5 sm:p-6 border border-gray-100 shadow-sm mb-5">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        {field('loc-city', T.city, (
+          <CityPicker id="loc-city" city={city} region={region} locale={locale}
+            onPick={c => { if (c.ar !== city) setDistrict(''); setRegion(c.region); setCity(c.ar); setPinNote('') }} />
+        ))}
+        <div>
+          <span className="block text-[13px] font-bold text-gray-600 mb-1.5">{T.district}</span>
+          <DistrictField city={city} value={district} onChange={setDistrict} locale={locale} className="input-field min-h-[44px]" />
+        </div>
+      </div>
     </div>
   )
 
@@ -165,22 +195,7 @@ export default function LocationPage() {
         {field('loc-building', T.buildingNo, <input id="loc-building" value={buildingNo} onChange={e => setBuildingNo(e.target.value)} className="input-field" placeholder="1234" dir="ltr" inputMode="numeric" />)}
         {field('loc-additional', T.additionalNo, <input id="loc-additional" value={additionalNo} onChange={e => setAdditionalNo(e.target.value)} className="input-field" placeholder="5678" dir="ltr" inputMode="numeric" />)}
         {field('loc-street', T.street, <input id="loc-street" value={street} onChange={e => setStreet(e.target.value)} className="input-field" />, true)}
-        {field('loc-district', T.district, <DistrictField city={city} value={district} onChange={setDistrict} locale={locale} />)}
         {field('loc-postal', T.postalCode, <input id="loc-postal" value={postalCode} onChange={e => setPostalCode(e.target.value)} className="input-field" placeholder="12345" dir="ltr" maxLength={5} inputMode="numeric" />)}
-        {field('loc-region', T.region, (
-          <select id="loc-region" value={region} onChange={e => { setRegion(e.target.value); setCity(''); setDistrict('') }} className="input-field">
-            <option value="">{T.selectRegion}</option>
-            {REGIONS.map(r => <option key={r} value={r}>{getRegionLabel(r, locale)}</option>)}
-          </select>
-        ))}
-        {/* a list from the region, so the city always matches the routing names (UX-121) */}
-        {field('loc-city', T.city, (
-          <select id="loc-city" value={city} onChange={e => { setCity(e.target.value); setDistrict('') }} className="input-field" disabled={!region}>
-            <option value="">{region ? L('Choose the city', 'شہر منتخب کریں', 'اختر المدينة') : L('Choose the region first', 'پہلے علاقہ منتخب کریں', 'اختر المنطقة أولاً')}</option>
-            {!!city && !(CITIES_BY_REGION[region] || []).some(c => c.ar === city) && <option value={city}>{city}</option>}
-            {(CITIES_BY_REGION[region] || []).map(c => <option key={c.ar} value={c.ar}>{locale === 'en' ? c.en : c.ar /* Urdu readers read the Arabic city names (round-6 UX-092) */}</option>)}
-          </select>
-        ))}
       </div>
     </div>
   )
@@ -213,6 +228,7 @@ export default function LocationPage() {
           {/* a buyer starts with the map pin; the formal national address is optional (UX-118) */}
           {isBuyer ? (<>
             {mapCard}
+            {placeCard}
             {showNational ? nationalCard : (
               <button type="button" onClick={() => setShowNational(true)} aria-expanded={false}
                 className="mb-5 w-full min-h-[48px] rounded-xl border border-dashed border-gray-300 bg-white text-sm font-bold text-[#0B2438] hover:border-[#D4A543]">
@@ -220,6 +236,7 @@ export default function LocationPage() {
               </button>
             )}
           </>) : (<>
+            {placeCard}
             {nationalCard}
             {mapCard}
           </>)}

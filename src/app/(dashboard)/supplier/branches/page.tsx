@@ -9,8 +9,9 @@ import Logo from '@/components/shared/Logo'
 import LanguageSwitcher from '@/components/shared/LanguageSwitcher'
 import AppShell from '@/components/shared/AppShell'
 import { getNav } from '@/lib/nav'
-import { REGIONS, CITIES_BY_REGION, getRegionLabel } from '@/types'
+import { CITIES_BY_REGION, getRegionLabel } from '@/types'
 import DistrictField from '@/components/shared/DistrictField'
+import CityPicker from '@/components/shared/CityPicker'
 import Glyph from '@/components/shared/Glyph'
 import { askConfirm } from '@/lib/askConfirm'
 import LocationPicker from '@/components/shared/LocationPicker'
@@ -86,7 +87,7 @@ export default function SupplierBranchesPage() {
   async function save(e: any) {
     e.preventDefault()
     if (!name.trim()) return failAt(L('Write the branch name.', 'شاخ کا نام لکھیں۔', 'اكتب اسم الفرع.'), 'br-name')
-    if (!region) return failAt(L('Choose the branch region.', 'شاخ کا علاقہ منتخب کریں۔', 'اختر منطقة الفرع.'), 'br-region')
+    if (!region) return failAt(L('Choose the branch city.', 'شاخ کا شہر منتخب کریں۔', 'اختر مدينة الفرع.'), 'br-city')
     if (lat == null || lng == null) return failAt(L('Set the branch location on the map, so requests near it reach you.', 'شاخ کا مقام نقشے پر مقرر کریں تاکہ اس کے قریب کی درخواستیں آپ تک پہنچیں۔', 'حدّد موقع الفرع على الخريطة لتصلك الطلبات القريبة منه.'), 'br-map')
     // round-4 UX-141: the branch mobile is normalised and checked (05XXXXXXXX)
     const ph = phone.trim() ? toLocalSa(phone) : null
@@ -163,23 +164,15 @@ export default function SupplierBranchesPage() {
                 <label htmlFor="br-name" className="block text-xs font-bold text-gray-600 mb-1">{L('Branch name', 'شاخ کا نام', 'اسم الفرع')} *</label>
                 <input id="br-name" value={name} onChange={e => setName(e.target.value)} className="input-field" placeholder={L('Riyadh branch - Olaya', 'ریاض شاخ - العلیا', 'فرع الرياض - العليا')} required />
               </div>
+              {/* owner 2026-11-26: one searchable «المدينة» picker (the region comes from the city) + «الحي», always shown */}
               <div>
-                <label htmlFor="br-region" className="block text-xs font-bold text-gray-600 mb-1">{L('Region', 'علاقہ', 'المنطقة')} *</label>
-                <select id="br-region" value={region} onChange={e => { setRegion(e.target.value); setCity('') }} className="input-field" required>
-                  <option value="">{L('Choose the region', 'علاقہ منتخب کریں', 'اختر المنطقة')}</option>
-                  {REGIONS.map(r => <option key={r} value={r}>{getRegionLabel(r, locale)}</option>)}
-                </select>
+                <label htmlFor="br-city" className="block text-xs font-bold text-gray-600 mb-1">{L('City', 'شہر', 'المدينة')} *</label>
+                <CityPicker id="br-city" city={city} region={region} locale={locale}
+                  onPick={c => { if (c.ar !== city) setDistrict(''); setRegion(c.region); setCity(c.ar); setFormErr('') }} />
               </div>
               <div>
-                <label htmlFor="br-city" className="block text-xs font-bold text-gray-600 mb-1">{L('City', 'شہر', 'المدينة')}</label>
-                <select id="br-city" value={city} onChange={e => setCity(e.target.value)} className="input-field" disabled={!region}>
-                  <option value="">{region ? L('Choose the city', 'شہر منتخب کریں', 'اختر المدينة') : L('Choose the region first', 'پہلے علاقہ منتخب کریں', 'اختر المنطقة أولاً')}</option>
-                  {(CITIES_BY_REGION[region] || []).map(c => <option key={c.ar} value={c.ar}>{cityName(c)}</option>)}
-                </select>
-              </div>
-              <div>
-                <span className="block text-xs font-bold text-gray-500 mb-1">{L('District', 'محلہ', 'الحي')}</span>
-                <DistrictField city={city} value={district} onChange={setDistrict} locale={locale} />
+                <span className="block text-xs font-bold text-gray-600 mb-1">{L('District', 'محلہ', 'الحي')}</span>
+                <DistrictField city={city} value={district} onChange={setDistrict} locale={locale} className="input-field min-h-[44px]" />
               </div>
               <div>
                 <label htmlFor="br-phone" className="block text-xs font-bold text-gray-600 mb-1">{L('Branch mobile (optional)', 'شاخ کا موبائل (اختیاری)', 'جوال الفرع (اختياري)')}</label>

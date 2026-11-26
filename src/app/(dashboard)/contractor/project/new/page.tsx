@@ -9,6 +9,7 @@ import { useState, useEffect, useRef, useMemo } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useTranslation } from '@/i18n'
 import Logo from '@/components/shared/Logo'
+import CityPicker from '@/components/shared/CityPicker'
 import LanguageSwitcher from '@/components/shared/LanguageSwitcher'
 import AppShell from '@/components/shared/AppShell'
 import { getNav } from '@/lib/nav'
@@ -126,7 +127,7 @@ export default function NewProjectPage() {
   const toggleGroup = (k: string) => setOpenGroups(o => ({ ...o, [k]: !(o[k] ?? (k === '_unclassified')) }))
   // fields of step 3, so a click on «إرسال» can take the buyer to the first missing one
   const titleRef = useRef<HTMLInputElement>(null)
-  const regionRef = useRef<HTMLSelectElement>(null)
+  const regionRef = useRef<HTMLDivElement>(null)
   const deliveryRef = useRef<HTMLInputElement>(null)
   const notesRef = useRef<HTMLTextAreaElement>(null)
   const [showMissing, setShowMissing] = useState(false)
@@ -733,13 +734,15 @@ export default function NewProjectPage() {
   // what step 3 still needs before sending (shown above the button; each name takes you to its field)
   const missingFields: { key: string; label: string; ref: { current: HTMLElement | null } }[] = []
   // the list name is optional (round-5 UX-156): an empty one becomes «قائمة <date>»
-  if (!region) missingFields.push({ key: 'region', label: L('Region', 'علاقہ', 'المنطقة'), ref: regionRef })
-  if (deliveryRequired && !deliveryLocation.trim()) missingFields.push({ key: 'delivery', label: L('Delivery location', 'ڈیلیوری کا مقام', 'موقع التوصيل'), ref: deliveryRef })
+  if (!region) missingFields.push({ key: 'region', label: L('City', 'شہر', 'المدينة'), ref: regionRef })
+  if (deliveryRequired && !deliveryLocation.trim()) missingFields.push({ key: 'delivery', label: L('District', 'محلہ', 'الحي'), ref: deliveryRef })
   function goToField(ref: { current: HTMLElement | null }) {
     const el = ref.current
     if (!el) return
     el.scrollIntoView({ behavior: 'smooth', block: 'center' })
-    setTimeout(() => el.focus(), 250)
+    // the city field is a wrapper around the picker's input
+    const f = el.matches('input, select, textarea') ? el : (el.querySelector('input') as HTMLElement | null) || el
+    setTimeout(() => f.focus(), 250)
   }
 
   // إرسال المشروع
@@ -914,7 +917,7 @@ export default function NewProjectPage() {
         items: rfqItems,
         region, city: city || null,
         delivery_required: deliveryRequired,
-        delivery_location: deliveryRequired ? (deliveryLocation || null) : null,
+        delivery_location: deliveryLocation.trim().slice(0, 300) || null, // «الحي» is always shown (owner 2026-11-26)
         vat_invoice_required: vatRequired,
         hide_identity: true, // always: the identity is revealed only after an offer is chosen
         target_tiers: targetTiers.length > 0 ? targetTiers : null,
@@ -1682,21 +1685,25 @@ export default function NewProjectPage() {
                   className="input-field" placeholder={L(`e.g. Building A. Left empty: «${defaultListName(locale)}»`, `مثلاً: عمارت A۔ خالی چھوڑیں تو: «${defaultListName(locale)}»`, `مثال: مبنى A. إن تركته فارغاً: «${defaultListName(locale)}»`)} />
                 <p className="text-xs text-gray-500 mt-1"><Glyph e="🔒" /> {L('Only you see this name; it is not shown to suppliers.', 'یہ نام صرف آپ دیکھتے ہیں؛ سپلائرز کو نہیں دکھایا جاتا۔', 'يظهر هذا الاسم لك وحدك ولا يُعرض على الموردين.')}</p>
               </div>
-              <div>
-                <label htmlFor="boq-region" className="block text-xs font-bold text-gray-600 mb-1.5">{L('Region *', 'علاقہ *', 'المنطقة *')}</label>
-                <select id="boq-region" ref={regionRef} value={region} onChange={(e: any) => { setRegion(e.target.value); setCity('') }} aria-invalid={showMissing && !region}
-                  className={`input-field ${showMissing && !region ? 'border-red-400 bg-red-50/40' : ''}`}>
-                  <option value="">{L('Select region', 'علاقہ منتخب کریں', 'اختر المنطقة')}</option>
-                  {REGIONS.map((r: any) => <option key={r} value={r}>{getRegionLabel(r, locale)}</option>)}
-                </select>
+              {/* owner 2026-11-26: one searchable «المدينة» picker (the region comes from the city) + «الحي», always shown */}
+              <div ref={regionRef}>
+                <label htmlFor="boq-city" className="block text-xs font-bold text-gray-600 mb-1.5">{L('City *', 'شہر *', 'المدينة *')}</label>
+                <CityPicker id="boq-city" city={city} region={region} locale={locale} invalid={showMissing && !region}
+                  onPick={c => { setRegion(c.region); setCity(c.ar) }} />
                 {showMissing && !region && <p className="text-xs font-bold text-red-600 mt-1">{L('This field is required', 'یہ خانہ ضروری ہے', 'هذا الحقل مطلوب')}</p>}
               </div>
               <div>
-                <label htmlFor="boq-city" className="block text-xs font-bold text-gray-600 mb-1.5">{L('City', 'شہر', 'المدينة')}</label>
-                <select id="boq-city" value={city} onChange={(e: any) => setCity(e.target.value)} className="input-field" disabled={!region}>
-                  <option value="">{!region ? (L('Select region first', 'پہلے علاقہ منتخب کریں', 'اختر المنطقة أولاً')) : (L('Select city', 'شہر منتخب کریں', 'اختر المدينة'))}</option>
-                  {(CITIES_BY_REGION[region] || []).map((c: any) => <option key={c.ar} value={c.ar}>{locale === 'ar' ? c.ar : c.en}</option>)}
-                </select>
+                <label htmlFor="boq-district" className="block text-xs font-bold text-gray-600 mb-1.5">
+                  {L('District', 'محلہ', 'الحي')}{' '}
+                  <span className={deliveryRequired ? 'font-semibold text-[#8F6820]' : 'font-normal text-gray-500'}>{deliveryRequired
+                    ? L('(required for delivery)', '(ڈیلیوری کے لیے ضروری)', '(مطلوب للتوصيل)')
+                    : L('(optional)', '(اختیاری)', '(اختياري)')}</span>
+                </label>
+                <input id="boq-district" ref={deliveryRef} value={deliveryLocation} onChange={(e: any) => setDeliveryLocation(e.target.value)} maxLength={300}
+                  aria-invalid={(showMissing && deliveryRequired && !deliveryLocation.trim()) || undefined}
+                  className={`input-field min-h-[44px] ${showMissing && deliveryRequired && !deliveryLocation.trim() ? 'border-red-400 bg-red-50/40' : ''}`}
+                  placeholder={L('District, street, landmark', 'محلہ، گلی، نشانی', 'الحي، الشارع، علامة مميزة')} />
+                {showMissing && deliveryRequired && !deliveryLocation.trim() && <p className="text-xs font-bold text-red-600 mt-1">{L('This field is required', 'یہ خانہ ضروری ہے', 'هذا الحقل مطلوب')}</p>}
               </div>
               <div className="sm:col-span-2 -mt-1 flex flex-wrap items-center gap-2">
                 <button type="button" onClick={geolocate}
@@ -1715,16 +1722,9 @@ export default function NewProjectPage() {
                   </span>
                 </button>
                 {deliveryRequired && (
-                  <div className="mt-2">
-                    <input ref={deliveryRef} value={deliveryLocation} onChange={(e: any) => setDeliveryLocation(e.target.value)} aria-invalid={showMissing && !deliveryLocation.trim()}
-                      aria-label={L('Delivery location', 'ڈیلیوری کا مقام', 'موقع التوصيل')}
-                      className={`input-field ${showMissing && !deliveryLocation.trim() ? 'border-red-400 bg-red-50/40' : ''}`}
-                      placeholder={L('Delivery location: district / site address *', 'ڈیلیوری کا مقام: محلہ / سائٹ کا پتہ *', 'موقع التوصيل: الحي / عنوان الموقع *')} />
-                    {showMissing && !deliveryLocation.trim() && <p className="text-xs font-bold text-red-600 mt-1">{L('This field is required', 'یہ خانہ ضروری ہے', 'هذا الحقل مطلوب')}</p>}
-                    <p className="text-xs text-gray-600 mt-1">
-                      {L('Helps suppliers calculate shipping cost.', 'اس سے سپلائرز کو ترسیل کا خرچ نکالنے میں مدد ملتی ہے۔', 'يساعد الموردين على حساب تكلفة الشحن.')}
-                    </p>
-                  </div>
+                  <p className="text-xs text-gray-600 mt-1">
+                    {L('The district helps suppliers calculate the shipping cost.', 'محلہ سپلائرز کو ترسیل کا خرچ نکالنے میں مدد دیتا ہے۔', 'يساعد الحيّ الموردين على حساب تكلفة الشحن.')}
+                  </p>
                 )}
               </div>
             </div>

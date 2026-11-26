@@ -6,6 +6,7 @@ import { createClient } from '@/lib/supabase/client'
 import { useTranslation } from '@/i18n'
 import PageLoader from '@/components/shared/PageLoader'
 import DistrictField from '@/components/shared/DistrictField'
+import CityPicker from '@/components/shared/CityPicker'
 import LocationPicker from '@/components/shared/LocationPicker'
 import SpecialtyPicker from '@/components/shared/SpecialtyPicker'
 import SupplierPackPicker from '@/components/shared/SupplierPackPicker'
@@ -16,7 +17,7 @@ import { askConfirm } from '@/lib/askConfirm'
 import { rememberBuyerType } from '@/lib/buyerType'
 import { Check, Star } from 'lucide-react'
 import LanguageSwitcher from '@/components/shared/LanguageSwitcher'
-import { REGIONS, SECTOR_LABELS, SUB_CATEGORIES, getRegionLabel, CITIES_BY_REGION } from '@/types'
+import { SECTOR_LABELS, SUB_CATEGORIES, CITIES_BY_REGION } from '@/types'
 import { CONTRACTOR_FEATURES } from '@/lib/features'
 import Glyph from '@/components/shared/Glyph'
 import { takePostSignupNext } from '@/lib/postSignupNext'
@@ -44,7 +45,7 @@ const TR = {
     verifyTitle: 'وثّق نشاطك التجاري', verifyBody: 'أرفق مستندات منشأتك ليراجعها الفريق، فتظهر شارة «موثّق» على عروضك لدى المشترين وترتفع فرصك في الفوز بالطلبات.', verifyCta: 'احفظ وابدأ التوثيق ←', verifyLocked: 'أكمل موقعك وما تبيعه أعلاه لتُفتح خطوة التوثيق.',
     addMatTitle: 'لا تجد مادة تورّدها في القائمة؟', addMatPh: 'اسم المادة...', addMatBtn: 'إضافة', remove: 'إزالة',
     save: 'حفظ ومتابعة ←', saving: 'جارٍ الحفظ...', later: 'لاحقاً', selected: 'محدد',
-    needLoc: 'اختر المنطقة والمدينة', needSector: 'اختر قطاعاً واحداً على الأقل', saved: 'تم حفظ ملفك',
+    needLoc: 'اختر المدينة', needSector: 'اختر قطاعاً واحداً على الأقل', saved: 'تم حفظ ملفك',
     progress: 'اكتمال ملفك', stepKind: 'نوع الحساب', stepActivity: 'النشاط الرئيسي', stepLocation: 'الموقع', stepSectors: 'القطاعات', stepSpecialties: 'ما تبيعه', stepVerify: 'التوثيق (لاحقاً)', stepMap: 'الموقع على الخريطة', stepBiz: 'اسم المحل', stepCr: 'السجل التجاري', left: 'باقٍ',
     warn: 'بدون موقعك وما تبيعه لن تظهر للمشترين ولن تصلك أي طلبات.',
     company: 'ملف الشركة', required: 'مطلوب', optional: 'اختياري',
@@ -67,7 +68,7 @@ const TR = {
     verifyTitle: 'Verify your business', verifyBody: 'Attach your business documents for the team to review; a «Verified» badge then shows on your offers and raises your chance of winning requests.', verifyCta: 'Save & start verification →', verifyLocked: 'Complete your location and what you sell above to unlock verification.',
     addMatTitle: "Can't find a material you supply?", addMatPh: 'Material name...', addMatBtn: 'Add', remove: 'Remove',
     save: 'Save & continue →', saving: 'Saving...', later: 'Later', selected: 'selected',
-    needLoc: 'Select region and city', needSector: 'Select at least one sector', saved: 'Profile saved',
+    needLoc: 'Choose the city', needSector: 'Select at least one sector', saved: 'Profile saved',
     progress: 'Profile completion', stepKind: 'Account type', stepActivity: 'Main activity', stepLocation: 'Location', stepSectors: 'Sectors', stepSpecialties: 'What you sell', stepVerify: 'Verification (later)', stepMap: 'Map location', stepBiz: 'Shop name', stepCr: 'Commercial registration', left: 'Left',
     warn: "Without your location and what you sell you won't appear to buyers and won't receive any requests.",
     company: 'Company profile', required: 'Required', optional: 'Optional',
@@ -90,7 +91,7 @@ const TR = {
     verifyTitle: 'اپنے کاروبار کی تصدیق کریں', verifyBody: 'اپنے ادارے کی دستاویزات منسلک کریں تاکہ ٹیم جائزہ لے؛ پھر آپ کی آفرز پر «تصدیق شدہ» بیج دکھے گا۔', verifyCta: 'محفوظ کریں اور تصدیق شروع کریں ←', verifyLocked: 'تصدیق کھولنے کے لیے اوپر اپنا مقام اور آپ کیا بیچتے ہیں مکمل کریں۔',
     addMatTitle: 'فہرست میں کوئی مواد نہیں؟', addMatPh: 'مواد کا نام...', addMatBtn: 'شامل کریں', remove: 'ہٹائیں',
     save: 'محفوظ کریں اور جاری رکھیں ←', saving: 'محفوظ ہو رہا ہے...', later: 'بعد میں', selected: 'منتخب',
-    needLoc: 'علاقہ اور شہر منتخب کریں', needSector: 'کم از کم ایک شعبہ منتخب کریں', saved: 'پروفائل محفوظ',
+    needLoc: 'شہر منتخب کریں', needSector: 'کم از کم ایک شعبہ منتخب کریں', saved: 'پروفائل محفوظ',
     progress: 'پروفائل تکمیل', stepKind: 'اکاؤنٹ کی قسم', stepActivity: 'بنیادی سرگرمی', stepLocation: 'مقام', stepSectors: 'شعبے', stepSpecialties: 'آپ کیا بیچتے ہیں', stepVerify: 'تصدیق (بعد میں)', stepMap: 'نقشے پر مقام', stepBiz: 'دکان کا نام', stepCr: 'تجارتی رجسٹریشن', left: 'باقی',
     warn: 'اپنے مقام اور آپ کیا بیچتے ہیں، اس کے بغیر آپ خریداروں کو نظر نہیں آئیں گے اور کوئی درخواست موصول نہیں ہوگی۔',
     company: 'کمپنی پروفائل', required: 'ضروری', optional: 'اختیاری',
@@ -311,7 +312,7 @@ export default function OnboardingPage() {
     // round-4 UX-059: a company or shop cannot finish without its commercial registration (a CR held by another account keeps blocking)
     if (role === 'supplier' && !isIndividual && !crNo) { setCrAsk(true); showErr(locale === 'en' ? 'Add your commercial registration number (10 digits starting with 7) and press «Save».' : locale === 'ur' ? 'اپنا تجارتی رجسٹریشن نمبر (7 سے شروع، 10 ہندسے) درج کریں اور «محفوظ کریں» دبائیں۔' : 'أدخل رقم سجلك التجاري (10 أرقام يبدأ بـ7) واضغط «حفظ».', 'ob-cr2'); return }
     if (role === 'supplier' && !isIndividual && bizName.trim().length < 2) { showErr(t.needBiz, 'ob-biz'); return }
-    if (!region || !city) { showErr(t.needLoc, !region ? 'ob-region' : 'ob-city'); return }
+    if (!region || !city) { showErr(t.needLoc, 'ob-city'); return }
     // owner 2026-11-25: a VAT number must have the right form; a seller also confirms the registration
     if (role === 'contractor' && buyerType === 'business' && buyerVat.trim() && !isVatNo(buyerVat.trim())) { showErr(vatFormatMsg(locale), 'ob-buyer-vat'); return }
     const supVatNew = role === 'supplier' && !isIndividual && !supVatSaved ? supVat.trim() : ''
@@ -634,28 +635,18 @@ export default function OnboardingPage() {
               {role === 'supplier' && isIndividual && <p className="text-[13px] text-gray-600 mb-3">{locale === 'en' ? 'Your location and district are not shown to buyers; we use them only so requests from your area reach you.' : locale === 'ur' ? 'آپ کا مقام اور محلہ خریداروں کو نہیں دکھایا جاتا؛ ہم انہیں صرف اس لیے استعمال کرتے ہیں کہ آپ کے علاقے کی درخواستیں آپ تک پہنچیں۔' : 'لا يظهر موقعك ولا حيّك للمشترين؛ نستخدمه فقط لتصلك طلبات منطقتك.'}</p>}
               {mapFirst && mapBlock}
               {mapFirst && <p className="text-xs font-bold text-gray-600 mb-2">{locale === 'en' ? 'Or choose manually' : locale === 'ur' ? 'یا خود منتخب کریں' : 'أو اختر يدوياً'}</p>}
+              {/* owner 2026-11-26: one searchable «المدينة» picker (the region comes from the city) + «الحي», always shown */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <label htmlFor="ob-region" className="block text-xs font-semibold text-gray-600 mb-1">{t.region} *</label>
-                  <select id="ob-region" value={region} onChange={e => { setRegion(e.target.value); setCity('') }} className="input-field">
-                    <option value="">{t.selectRegion}</option>
-                    {REGIONS.map((r: any) => <option key={r} value={r}>{getRegionLabel(r, locale)}</option>)}
-                  </select>
+                <div id="ob-region" className="scroll-mt-24">
+                  <label htmlFor="ob-city" className="block text-xs font-semibold text-gray-600 mb-1">{t.city} *</label>
+                  <CityPicker id="ob-city" city={city} region={region} locale={locale}
+                    onPick={c => { if (c.ar !== city) setDistrict(''); setRegion(c.region); setCity(c.ar); setCityNote('') }} />
                 </div>
                 <div>
-                  <label htmlFor="ob-city" className="block text-xs font-semibold text-gray-600 mb-1">{t.city} *</label>
-                  <select id="ob-city" value={city} onChange={e => { setCity(e.target.value); setCityNote('') }} className="input-field" disabled={!region}>
-                    <option value="">{region ? t.selectCity : '—'}</option>
-                    {(CITIES_BY_REGION[region] || []).map((c: any) => <option key={c.ar} value={c.ar}>{locale === 'ar' ? c.ar : (locale === 'ur' ? (c.ur || c.en) : c.en)}</option>)}
-                  </select>
+                  <span className="block text-xs font-semibold text-gray-600 mb-1">{t.district}</span>
+                  <DistrictField city={city} value={district} onChange={setDistrict} locale={locale} className="input-field min-h-[44px]" />
                 </div>
               </div>
-              {city && (
-                <div className="mt-3">
-                  <span className="block text-xs font-semibold text-gray-600 mb-1">{t.district}</span>
-                  <DistrictField city={city} value={district} onChange={setDistrict} locale={locale} />
-                </div>
-              )}
               {/* موقعك على الخريطة: المورد بتوصله طلبات منطقته (للمشتري يأتي أولاً) */}
               {!mapFirst && mapBlock}
             </div>

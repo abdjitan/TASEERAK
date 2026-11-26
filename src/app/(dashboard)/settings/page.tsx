@@ -14,7 +14,7 @@ import { getNav } from '@/lib/nav'
 import DistrictField from '@/components/shared/DistrictField'
 import EnablePush from '@/components/shared/EnablePush'
 import SellerKindPicker from '@/components/shared/SellerKindPicker'
-import { REGIONS, CITIES_BY_REGION, getRegionLabel } from '@/types'
+import CityPicker from '@/components/shared/CityPicker'
 import Link from 'next/link'
 import { Check, Circle, LogOut, LifeBuoy, Eye, EyeOff } from 'lucide-react'
 import { CONTRACTOR_FEATURES, FEATURES } from '@/lib/features'
@@ -674,8 +674,6 @@ export default function SettingsPage() {
     || (isSupplier && !teamMember && (
       (minOrderValue || '') !== (profile?.min_order_value ? String(profile.min_order_value) : '')
       || (useDiffContact ? toLatinDigits(contactPhone).replace(/[^\d+]/g, '') : '') !== savedContact))
-  const cityOptions = CITIES_BY_REGION[region] || []
-  const cityKnown = !city || cityOptions.some(c => c.ar === city)
 
   const tabs = [
     { key: 'profile', icon: <Glyph e="👤" />, label: profileTitle },
@@ -1028,28 +1026,20 @@ export default function SettingsPage() {
                       ? L('You receive the requests near your location.', 'آپ کو اپنے مقام کے قریب کی درخواستیں ملتی ہیں۔', 'تصلك الطلبات القريبة من موقعك.')
                       : L('We use your location to send your requests to suppliers near you; you can change the delivery place in each request.', 'ہم آپ کا مقام آپ کی درخواستیں قریبی سپلائرز تک پہنچانے کے لیے استعمال کرتے ہیں؛ آپ ہر درخواست میں ڈیلیوری کی جگہ بدل سکتے ہیں۔', 'نستخدم موقعك لإيصال طلباتك إلى الموردين القريبين منك، ويمكنك تغيير موقع التسليم في كل طلب.')}</p>
                   </div>
+                  {/* owner 2026-11-26: one searchable «المدينة» picker (the region comes from the city) + «الحي», always shown */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
-                      <label htmlFor="set-region" className="block text-xs font-bold text-gray-600 mb-1.5">{t.region}</label>
-                      <select id="set-region" value={region} onChange={e => { setRegion(e.target.value); setCity(''); setDistrict('') }} className="input-field">
-                        <option value="">{t.selectRegion}</option>
-                        {REGIONS.map(r => <option key={r} value={r}>{getRegionLabel(r, locale)}</option>)}
-                      </select>
+                      <label htmlFor="set-city" className="block text-xs font-bold text-gray-600 mb-1.5">{t.city}</label>
+                      <CityPicker id="set-city" city={city} region={region} locale={locale}
+                        onPick={c => { if (c.ar !== city) setDistrict(''); setRegion(c.region); setCity(c.ar) }} />
                     </div>
                     <div>
-                      <label htmlFor="set-city" className="block text-xs font-bold text-gray-600 mb-1.5">{t.city}</label>
-                      {/* a list from the region (UX-138), so the city always matches the routing names */}
-                      <select id="set-city" value={city} onChange={e => { setCity(e.target.value); setDistrict('') }} className="input-field" disabled={!region}>
-                        <option value="">{region ? L('Choose the city', 'شہر منتخب کریں', 'اختر المدينة') : L('Choose the region first', 'پہلے علاقہ منتخب کریں', 'اختر المنطقة أولاً')}</option>
-                        {!cityKnown && <option value={city}>{city}</option>}
-                        {cityOptions.map(c => <option key={c.ar} value={c.ar}>{locale === 'en' ? c.en : c.ar}</option>)}
-                      </select>
+                      <div className="block text-xs font-bold text-gray-600 mb-1.5">{L('District', 'محلہ', 'الحي')}</div>
+                      <DistrictField city={city} value={district} onChange={setDistrict} locale={locale} className="input-field min-h-[44px]" />
                     </div>
                   </div>
 
                   <div>
-                    <div className="block text-xs font-bold text-gray-600 mb-1.5">{L('District', 'محلہ', 'الحي')}</div>
-                    <DistrictField city={city} value={district} onChange={setDistrict} locale={locale} />
                     {FEATURES.locationNav && <Link href="/location" className="inline-flex items-center gap-1 min-h-[44px] text-[13px] font-bold text-[#8F6820] hover:underline">{L('Set your location on the map (optional)', 'نقشے پر اپنا مقام منتخب کریں (اختیاری)', 'حدّد موقعك على الخريطة (اختياري)')}</Link>}
                   </div>
 

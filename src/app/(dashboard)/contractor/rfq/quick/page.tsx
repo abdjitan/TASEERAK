@@ -42,7 +42,7 @@ import { toLatinNumber } from '@/lib/number' // «2,500» = 2500: commas are tho
 import { readPageCache, writePageCache } from '@/lib/pageCache'
 import { realtimeTopic } from '@/lib/realtimeTopic'
 import { getPlaceLabel } from '@/lib/displayName'
-import { findCityOption, cityOptionLabel, searchCities, type CityOption } from '@/lib/cityList'
+import CityPicker from '@/components/shared/CityPicker'
 import { useFocusTrap } from '@/components/shared/useFocusTrap'
 
 // Every catalog product name — a line outside it gets the «which specialty?» chooser.
@@ -96,64 +96,6 @@ type Photo = {
   question?: string // one short question from the AI when it is not sure what the photo shows
 }
 type Problem = { msg: string; hint: string; key?: string; field?: 'region' | 'location' }
-
-// One searchable «المدينة» picker over every city (owner 2026-11-26): the region comes from the chosen city.
-function CityPicker({ city, region, locale, invalid, onPick }: { city: string; region: string; locale: string; invalid: boolean; onPick: (c: CityOption) => void }) {
-  const L = (en: string, ur: string, ar: string) => (locale === 'en' ? en : locale === 'ur' ? ur : ar)
-  const [open, setOpen] = useState(false)
-  const [q, setQ] = useState('')
-  const [active, setActive] = useState(0)
-  const boxRef = useRef<HTMLDivElement>(null)
-  const listRef = useRef<HTMLUListElement>(null)
-  const sel = findCityOption(city, region)
-  const shown = sel ? cityOptionLabel(sel, locale) : city ? getPlaceLabel(city, null, locale) : ''
-  const list = open ? searchCities(q, locale) : []
-  useEffect(() => {
-    if (!open) return
-    const off = (e: MouseEvent | TouchEvent) => { if (boxRef.current && !boxRef.current.contains(e.target as Node)) setOpen(false) }
-    document.addEventListener('mousedown', off); document.addEventListener('touchstart', off)
-    return () => { document.removeEventListener('mousedown', off); document.removeEventListener('touchstart', off) }
-  }, [open])
-  useEffect(() => { (listRef.current?.children[active] as HTMLElement | undefined)?.scrollIntoView({ block: 'nearest' }) }, [active])
-  const pick = (c: CityOption) => { onPick(c); setOpen(false); setQ('') }
-  return (
-    <div ref={boxRef} className="relative">
-      <input type="text" role="combobox" aria-expanded={open} aria-controls="quick-city-list" aria-autocomplete="list"
-        aria-activedescendant={open && list[active] ? `quick-city-${active}` : undefined}
-        aria-invalid={invalid || undefined} aria-label={L('City', 'شہر', 'المدينة')} autoComplete="off"
-        value={open ? q : shown}
-        placeholder={!open && region && !city ? getRegionLabel(region, locale) : L('Search for your city', 'اپنا شہر تلاش کریں', 'ابحث عن مدينتك')}
-        onFocus={() => { setOpen(true); setQ(''); setActive(0) }}
-        onClick={() => { if (!open) { setOpen(true); setQ(''); setActive(0) } }}
-        onChange={e => { setQ(e.target.value); setActive(0); setOpen(true) }}
-        onKeyDown={e => {
-          if (e.key === 'ArrowDown') { e.preventDefault(); if (!open) setOpen(true); setActive(a => Math.min(a + 1, Math.max(list.length - 1, 0))) }
-          else if (e.key === 'ArrowUp') { e.preventDefault(); setActive(a => Math.max(a - 1, 0)) }
-          else if (e.key === 'Enter') { if (open && list[active]) { e.preventDefault(); pick(list[active]) } }
-          else if (e.key === 'Escape' || e.key === 'Tab') setOpen(false)
-        }}
-        className={`input-field min-h-[44px] pe-9 text-[16px] sm:text-sm ${invalid ? 'border-2 border-[#D4A543] bg-[#D4A543]/5' : ''}`} />
-      <ChevronDown className="w-4 h-4 text-gray-500 absolute top-1/2 -translate-y-1/2 end-3 pointer-events-none" aria-hidden />
-      {open && (
-        <ul id="quick-city-list" ref={listRef} role="listbox" aria-label={L('Cities', 'شہر', 'المدن')}
-          className="absolute z-30 mt-1 w-full max-h-64 overflow-y-auto rounded-xl border border-gray-200 bg-white shadow-lg py-1">
-          {list.length === 0 && <li className="px-3 py-3 text-[13px] text-gray-500">{L('No city by this name.', 'اس نام کا کوئی شہر نہیں۔', 'لا توجد مدينة بهذا الاسم.')}</li>}
-          {list.map((c, i) => {
-            const on = !!sel && sel.ar === c.ar && sel.region === c.region
-            return (
-              <li key={c.region + '|' + c.ar} id={`quick-city-${i}`} role="option" aria-selected={on}
-                onMouseDown={e => e.preventDefault()} onClick={() => pick(c)} onMouseEnter={() => setActive(i)}
-                className={`min-h-[44px] px-3 flex items-center justify-between gap-2 cursor-pointer text-sm ${i === active ? 'bg-[#D4A543]/10' : ''} ${on ? 'font-bold text-[#0B2438]' : 'text-gray-800'}`}>
-                <span>{cityOptionLabel(c, locale)}</span>
-                <span className="flex items-center gap-1 text-[12px] text-gray-500 shrink-0">{!c.dup && getRegionLabel(c.region, locale)}{on && <Check className="w-4 h-4 text-[#0B2438]" aria-hidden />}</span>
-              </li>
-            )
-          })}
-        </ul>
-      )}
-    </div>
-  )
-}
 
 let seq = 0
 const uid = () => 'k' + Date.now().toString(36) + (seq++)
@@ -285,6 +227,9 @@ export default function QuickRequestPage() {
   const recRef = useRef<any>(null)
   const heardRef = useRef(false)
   const fileRef = useRef<HTMLInputElement>(null)
+  // owner 2026-11-26: «التقط صورة أوضح» replaces one line's photo (camera or file picker) and identifies it again
+  const retakeRef = useRef<HTMLInputElement>(null)
+  const retakeFor = useRef<string | null>(null)
   const confirmRef = useRef<HTMLDivElement>(null)
   const [showCatalog, setShowCatalog] = useState(false)
   const [replaceKey, setReplaceKey] = useState<string | null>(null) // «تغيير المادة»: the next guide pick replaces this line (round-4 UX-027)
@@ -798,6 +743,26 @@ export default function QuickRequestPage() {
     if (!ph) return
     setPhotos(prev => prev.map(p => p.id === id ? { ...p, status: 'identifying' } : p))
     identify(id, ph.file)
+  }
+  function retakePhoto(id: string) {
+    retakeFor.current = id
+    retakeRef.current?.click()
+  }
+  function replacePhoto(file: File | undefined) {
+    const id = retakeFor.current
+    retakeFor.current = null
+    if (!id || !file) return
+    if (!/^image\/(jpeg|png|webp)$/.test(file.type) || file.size > 6 * 1024 * 1024) {
+      showError(L('Photos must be JPG, PNG or WEBP and under 6 MB.', 'تصویر JPG، PNG یا WEBP اور 6 میگا بائٹ سے کم ہو۔', 'يجب أن تكون الصورة بصيغة JPG أو PNG أو WEBP وأقل من 6 ميجابايت.'))
+      return
+    }
+    const old = photos.find(p => p.id === id)
+    if (!old) return
+    const url = URL.createObjectURL(file)
+    try { URL.revokeObjectURL(old.url) } catch { /* already released */ }
+    putDraftBlob(id, file)
+    setPhotos(prev => prev.map(p => p.id === id ? { ...p, file, url, status: 'identifying', confidence: undefined, localName: undefined, question: undefined } : p))
+    identify(id, file)
   }
 
   // a home project pack: every ticked material becomes a line (saved when it has a quantity)
@@ -1576,6 +1541,9 @@ export default function QuickRequestPage() {
             </button>
             <input ref={fileRef} type="file" accept="image/jpeg,image/png,image/webp" multiple className="hidden"
               onChange={e => { addPhotos(e.target.files); e.target.value = '' }} />
+            {/* no capture attribute: the phone offers the camera or the gallery */}
+            <input ref={retakeRef} type="file" accept="image/jpeg,image/png,image/webp" className="hidden" aria-hidden tabIndex={-1}
+              onChange={e => { replacePhoto(e.target.files?.[0]); e.target.value = '' }} />
             <input ref={specFileRef} type="file" accept="application/pdf,image/jpeg,image/png,image/webp" multiple className="hidden"
               onChange={e => { if (fileFor) attachFiles(fileFor, Array.from(e.target.files || [])); e.target.value = '' }} />
           </div>
@@ -1767,7 +1735,9 @@ export default function QuickRequestPage() {
                         ? <p className="text-[12px] text-gray-600">{L('We could not recognise what is in the photo; check the name you wrote.', 'تصویر میں موجود چیز پہچانی نہیں جا سکی؛ لکھا ہوا نام چیک کریں۔', 'لم نتمكّن من التعرّف على ما في الصورة؛ تأكّد من الاسم الذي كتبته.')}</p>
                         : <div className="rounded-lg border border-[#D4A543]/50 bg-[#D4A543]/10 p-2 space-y-1.5" role="status">
                             <p className="text-[13px] font-bold text-[#8F6820]"><Glyph e="⚠" /> {L('We could not recognise what is in the photo. Write the item name, try again, or remove the line. You can send the rest of the request.', 'تصویر میں موجود چیز پہچانی نہیں جا سکی۔ چیز کا نام لکھیں، دوبارہ کوشش کریں، یا لائن ہٹا دیں۔ باقی درخواست بھیجی جا سکتی ہے۔', 'لم نتمكّن من التعرّف على ما في الصورة. اكتب اسم المادة، أو أعد المحاولة، أو احذف السطر. يمكنك إرسال بقية الطلب.')}</p>
-                            <div className="flex gap-2">
+                            <p className="text-[12px] text-[#0B2438]"><Glyph e="💡" /> {L('Photograph the item on its own, up close, with its label if it has one.', 'چیز کی اکیلے قریب سے تصویر لیں، اور اگر لیبل ہو تو وہ بھی۔', 'صوّر المادة وحدها عن قرب، والملصق إن وُجد.')}</p>
+                            <div className="flex flex-wrap gap-2">
+                              <button type="button" onClick={() => retakePhoto(ph.id)} className="min-h-[44px] px-3 rounded-lg text-[13px] font-extrabold text-[#071827]" style={{ background: 'linear-gradient(135deg,#F5C55B,#D4A543)' }}><Glyph e="📷" /> {L('Take a clearer photo', 'زیادہ واضح تصویر لیں', 'التقط صورة أوضح')}</button>
                               <button type="button" onClick={() => retryIdentify(ph.id)} className="min-h-[44px] px-3 rounded-lg border border-[#0B2438]/40 text-[#0B2438] bg-white text-[13px] font-bold"><Glyph e="🔁" /> {L('Try again', 'دوبارہ کوشش کریں', 'أعد المحاولة')}</button>
                               <button type="button" onClick={() => removeLine(l.key)} className="min-h-[44px] px-3 rounded-lg border border-red-200 text-red-700 bg-white text-[13px] font-bold"><Glyph e="🗑" /> {L('Remove the line', 'لائن ہٹائیں', 'احذف السطر')}</button>
                             </div>
@@ -2032,12 +2002,29 @@ export default function QuickRequestPage() {
                   detectHint={L('If you are at home now, we fill the city for you.', 'اگر آپ ابھی گھر پر ہیں تو ہم شہر خود بھر دیں گے۔', 'إذا كنت في البيت الآن نملأ المدينة تلقائياً.')} />
               </div>
             )}
-            <div id="quick-region" className="scroll-mt-28">
-              <div className="text-[12px] font-bold text-gray-600 mb-1">{simple && !pickup ? L('Or choose the city by hand', 'یا شہر خود منتخب کریں', 'أو اختر المدينة يدوياً') : L('City', 'شہر', 'المدينة')}</div>
-              <CityPicker city={city} region={region} locale={locale} invalid={errField === 'region'}
-                onPick={c => { setRegion(c.region); setCity(c.ar); setGeoFilled(''); if (errField === 'region') { setErrField(null); setError('') } }} />
-              {geoFilled && <p className="text-[12px] text-[#0F6E56] mt-1" role="status">{geoFilled}</p>}
-              {errField === 'region' && error && <p role="alert" className="mt-1.5 rounded-lg border-2 border-[#D4A543] bg-[#D4A543]/10 px-3 py-2 text-[13px] font-bold text-[#0B2438]">{error}</p>}
+            {/* owner 2026-11-26: «المدينة» and «الحي» side by side, «الحي» always shown (optional with a map pin, required otherwise) */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div id="quick-region" className="scroll-mt-28">
+                <label htmlFor="quick-city" className="block text-[12px] font-bold text-gray-700 mb-1">{simple && !pickup ? L('Or choose the city by hand', 'یا شہر خود منتخب کریں', 'أو اختر المدينة يدوياً') : L('City', 'شہر', 'المدينة')}</label>
+                <CityPicker id="quick-city" city={city} region={region} locale={locale} invalid={errField === 'region'}
+                  onPick={c => { setRegion(c.region); setCity(c.ar); setGeoFilled(''); if (errField === 'region') { setErrField(null); setError('') } }} />
+                {geoFilled && <p className="text-[12px] text-[#0F6E56] mt-1" role="status">{geoFilled}</p>}
+                {errField === 'region' && error && <p role="alert" className="mt-1.5 rounded-lg border-2 border-[#D4A543] bg-[#D4A543]/10 px-3 py-2 text-[13px] font-bold text-[#0B2438]">{error}</p>}
+              </div>
+              <div id="quick-location-box" className="scroll-mt-28">
+                {/* a visible label says whether the district is required (round-4 UX-119) */}
+                <label htmlFor="quick-address" className="block text-[12px] font-bold text-gray-700 mb-1">
+                  {L('District', 'محلہ', 'الحي')}{' '}
+                  <span className={geo || pickup ? 'font-normal text-gray-500' : 'font-semibold text-[#8F6820]'}>{geo || pickup
+                    ? L('(optional)', '(اختیاری)', '(اختياري)')
+                    : L('(required if you do not set the location)', '(ضروری اگر آپ مقام نہ بتائیں)', '(مطلوب إن لم تحدّد الموقع)')}</span>
+                </label>
+                <input id="quick-address" value={address} onChange={e => { setAddress(e.target.value); if (errField === 'location') { setErrField(null); setError('') } }} maxLength={300}
+                  aria-invalid={errField === 'location' || undefined}
+                  className={`input-field min-h-[44px] text-[16px] sm:text-sm ${errField === 'location' ? 'border-2 border-[#D4A543] bg-[#D4A543]/5' : ''}`}
+                  placeholder={L('District, street, landmark', 'محلہ، گلی، نشانی', 'الحي، الشارع، علامة مميزة')} />
+                {errField === 'location' && error && <p role="alert" className="mt-1.5 rounded-lg border-2 border-[#D4A543] bg-[#D4A543]/10 px-3 py-2 text-[13px] font-bold text-[#0B2438]">{error}</p>}
+              </div>
             </div>
             {!pickup && !simple && (
               <div id="quick-location" className="space-y-2 scroll-mt-28">
@@ -2045,20 +2032,8 @@ export default function QuickRequestPage() {
               </div>
             )}
             {!pickup && (
-              <div id="quick-location-box" className="space-y-2 scroll-mt-28">
-                {/* a visible label says whether the address is required (round-4 UX-119) */}
-                <label htmlFor="quick-address" className="block text-[12px] font-bold text-gray-700">
-                  {L('District', 'محلہ', 'الحي')}{' '}
-                  <span className={geo ? 'font-normal text-gray-500' : 'font-semibold text-[#8F6820]'}>{geo
-                    ? L('(optional)', '(اختیاری)', '(اختياري)')
-                    : L('(required if you do not set the location)', '(ضروری اگر آپ مقام نہ بتائیں)', '(مطلوب إن لم تحدّد الموقع)')}</span>
-                </label>
-                <input id="quick-address" value={address} onChange={e => { setAddress(e.target.value); if (errField === 'location') { setErrField(null); setError('') } }} maxLength={300}
-                  aria-invalid={errField === 'location' || undefined}
-                  className={`input-field text-[16px] sm:text-sm ${errField === 'location' ? 'border-2 border-[#D4A543] bg-[#D4A543]/5' : ''}`}
-                  placeholder={L('District, street, landmark', 'محلہ، گلی، نشانی', 'الحي، الشارع، علامة مميزة')} />
+              <div className="space-y-2">
                 {geo && geoFromProfile && <p className="text-[12px] text-gray-600">{L('Location filled from your profile. Change it if this delivery goes elsewhere.', 'مقام آپ کی پروفائل سے لیا گیا۔ ضرورت ہو تو بدلیں۔', 'عُبّئ الموقع من ملفك الشخصي. غيّره إن كان التوصيل إلى مكان آخر.')}</p>}
-                {errField === 'location' && error && <p role="alert" className="mt-1.5 rounded-lg border-2 border-[#D4A543] bg-[#D4A543]/10 px-3 py-2 text-[13px] font-bold text-[#0B2438]">{error}</p>}
                 <p className="text-[12px] text-gray-600"><Glyph e="🔒" /> {L('Only the supplier you choose sees the exact location.', 'صرف منتخب سپلائر درست مقام دیکھے گا۔', 'لا يرى الموقع الدقيق إلا المورد الذي تختاره.')}</p>
               </div>
             )}
