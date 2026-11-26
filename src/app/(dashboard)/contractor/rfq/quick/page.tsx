@@ -10,7 +10,7 @@ import { createClient } from '@/lib/supabase/client'
 import { useTranslation } from '@/i18n'
 import AppShell from '@/components/shared/AppShell'
 import { getNav } from '@/lib/nav'
-import { SPEC_UNSURE, specUnsureLabel, REGIONS, CITIES_BY_REGION, SECTOR_LABELS, SECTOR_PRODUCTS, getProductLabel, getUnitLabelLong, unitChoicesFor, detectSubCategory, getDefaultUnit, getProductSpecs, getOptionLabel, missingSpecs, specsRequired, brandApplies, withBrand, getRegionLabel, getSubCategoryLabel, type Sector } from '@/types'
+import { SPEC_UNSURE, specUnsureLabel, SECTOR_LABELS, SECTOR_PRODUCTS, getProductLabel, getUnitLabelLong, unitChoicesFor, detectSubCategory, getDefaultUnit, getProductSpecs, getOptionLabel, missingSpecs, specsRequired, brandApplies, withBrand, getRegionLabel, getSubCategoryLabel, type Sector } from '@/types'
 import CatalogPicker, { CatalogBrowser } from '@/components/shared/CatalogPicker'
 import { rememberBuyerType, storedBuyerType } from '@/lib/buyerType'
 import PackSheet, { type PackLine } from '@/components/buyer/PackSheet'
@@ -42,6 +42,7 @@ import { toLatinNumber } from '@/lib/number' // «2,500» = 2500: commas are tho
 import { readPageCache, writePageCache } from '@/lib/pageCache'
 import { realtimeTopic } from '@/lib/realtimeTopic'
 import { getPlaceLabel } from '@/lib/displayName'
+import { findCityOption, cityOptionLabel, searchCities, type CityOption } from '@/lib/cityList'
 import { useFocusTrap } from '@/components/shared/useFocusTrap'
 
 // Every catalog product name — a line outside it gets the «which specialty?» chooser.
@@ -95,6 +96,64 @@ type Photo = {
   question?: string // one short question from the AI when it is not sure what the photo shows
 }
 type Problem = { msg: string; hint: string; key?: string; field?: 'region' | 'location' }
+
+// One searchable «المدينة» picker over every city (owner 2026-11-26): the region comes from the chosen city.
+function CityPicker({ city, region, locale, invalid, onPick }: { city: string; region: string; locale: string; invalid: boolean; onPick: (c: CityOption) => void }) {
+  const L = (en: string, ur: string, ar: string) => (locale === 'en' ? en : locale === 'ur' ? ur : ar)
+  const [open, setOpen] = useState(false)
+  const [q, setQ] = useState('')
+  const [active, setActive] = useState(0)
+  const boxRef = useRef<HTMLDivElement>(null)
+  const listRef = useRef<HTMLUListElement>(null)
+  const sel = findCityOption(city, region)
+  const shown = sel ? cityOptionLabel(sel, locale) : city ? getPlaceLabel(city, null, locale) : ''
+  const list = open ? searchCities(q, locale) : []
+  useEffect(() => {
+    if (!open) return
+    const off = (e: MouseEvent | TouchEvent) => { if (boxRef.current && !boxRef.current.contains(e.target as Node)) setOpen(false) }
+    document.addEventListener('mousedown', off); document.addEventListener('touchstart', off)
+    return () => { document.removeEventListener('mousedown', off); document.removeEventListener('touchstart', off) }
+  }, [open])
+  useEffect(() => { (listRef.current?.children[active] as HTMLElement | undefined)?.scrollIntoView({ block: 'nearest' }) }, [active])
+  const pick = (c: CityOption) => { onPick(c); setOpen(false); setQ('') }
+  return (
+    <div ref={boxRef} className="relative">
+      <input type="text" role="combobox" aria-expanded={open} aria-controls="quick-city-list" aria-autocomplete="list"
+        aria-activedescendant={open && list[active] ? `quick-city-${active}` : undefined}
+        aria-invalid={invalid || undefined} aria-label={L('City', 'شہر', 'المدينة')} autoComplete="off"
+        value={open ? q : shown}
+        placeholder={!open && region && !city ? getRegionLabel(region, locale) : L('Search for your city', 'اپنا شہر تلاش کریں', 'ابحث عن مدينتك')}
+        onFocus={() => { setOpen(true); setQ(''); setActive(0) }}
+        onClick={() => { if (!open) { setOpen(true); setQ(''); setActive(0) } }}
+        onChange={e => { setQ(e.target.value); setActive(0); setOpen(true) }}
+        onKeyDown={e => {
+          if (e.key === 'ArrowDown') { e.preventDefault(); if (!open) setOpen(true); setActive(a => Math.min(a + 1, Math.max(list.length - 1, 0))) }
+          else if (e.key === 'ArrowUp') { e.preventDefault(); setActive(a => Math.max(a - 1, 0)) }
+          else if (e.key === 'Enter') { if (open && list[active]) { e.preventDefault(); pick(list[active]) } }
+          else if (e.key === 'Escape' || e.key === 'Tab') setOpen(false)
+        }}
+        className={`input-field min-h-[44px] pe-9 text-[16px] sm:text-sm ${invalid ? 'border-2 border-[#D4A543] bg-[#D4A543]/5' : ''}`} />
+      <ChevronDown className="w-4 h-4 text-gray-500 absolute top-1/2 -translate-y-1/2 end-3 pointer-events-none" aria-hidden />
+      {open && (
+        <ul id="quick-city-list" ref={listRef} role="listbox" aria-label={L('Cities', 'شہر', 'المدن')}
+          className="absolute z-30 mt-1 w-full max-h-64 overflow-y-auto rounded-xl border border-gray-200 bg-white shadow-lg py-1">
+          {list.length === 0 && <li className="px-3 py-3 text-[13px] text-gray-500">{L('No city by this name.', 'اس نام کا کوئی شہر نہیں۔', 'لا توجد مدينة بهذا الاسم.')}</li>}
+          {list.map((c, i) => {
+            const on = !!sel && sel.ar === c.ar && sel.region === c.region
+            return (
+              <li key={c.region + '|' + c.ar} id={`quick-city-${i}`} role="option" aria-selected={on}
+                onMouseDown={e => e.preventDefault()} onClick={() => pick(c)} onMouseEnter={() => setActive(i)}
+                className={`min-h-[44px] px-3 flex items-center justify-between gap-2 cursor-pointer text-sm ${i === active ? 'bg-[#D4A543]/10' : ''} ${on ? 'font-bold text-[#0B2438]' : 'text-gray-800'}`}>
+                <span>{cityOptionLabel(c, locale)}</span>
+                <span className="flex items-center gap-1 text-[12px] text-gray-500 shrink-0">{!c.dup && getRegionLabel(c.region, locale)}{on && <Check className="w-4 h-4 text-[#0B2438]" aria-hidden />}</span>
+              </li>
+            )
+          })}
+        </ul>
+      )}
+    </div>
+  )
+}
 
 let seq = 0
 const uid = () => 'k' + Date.now().toString(36) + (seq++)
@@ -195,7 +254,6 @@ export default function QuickRequestPage() {
   const [address, setAddress] = useState('')                                // district, street, landmark
   const [geoFromProfile, setGeoFromProfile] = useState(false) // pre-filled: say so, so the buyer checks it
   const [geoFilled, setGeoFilled] = useState('') // «حدّدنا المنطقة والمدينة من موقعك»
-  const [pastPlaces, setPastPlaces] = useState<{ label: string; geo: { lat: number; lng: number } | null; address: string; region: string; city: string }[]>([])
   const [specsOpen, setSpecsOpen] = useState<string | null>(null) // line key whose specifications are open
   const [calcFor, setCalcFor] = useState<string | null>(null)     // line key whose «احسبها من مقاس الغرفة» is open
   const [draftId, setDraftId] = useState<string | null>(null)     // a saved draft (rfq_drafts) opened here
@@ -298,7 +356,6 @@ export default function QuickRequestPage() {
       if (p?.region) setRegion(p.region)
       if (p?.city) setCity(p.city)
       if (p?.latitude != null && p?.longitude != null) { setGeo({ lat: p.latitude, lng: p.longitude }); setGeoFromProfile(true) }
-      loadPastPlaces(supabase, user.id)
       loadPastItems(supabase, user.id)
 
       // 1) bring back what the buyer had entered before leaving the page; a list built before signing up
@@ -431,33 +488,6 @@ export default function QuickRequestPage() {
     })()
     setCanListen(typeof window !== 'undefined' && !!((window as any).SpeechRecognition || (window as any).webkitSpeechRecognition))
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
-
-  // «مواقعي السابقة» (UX-195): the delivery points of the buyer's last requests, from rfq_private
-  async function loadPastPlaces(supabase: any, uid: string) {
-    try {
-      const { data: rs } = await supabase.from('rfqs').select('id, region, city').eq('contractor_id', uid).eq('delivery_required', true).order('created_at', { ascending: false }).limit(15)
-      const ids = (rs || []).map((r: any) => r.id)
-      if (!ids.length) return
-      const { data: pv } = await supabase.from('rfq_private').select('rfq_id, delivery_location, delivery_geo').in('rfq_id', ids)
-      const byId: Record<string, any> = {}
-      for (const r of rs || []) byId[r.id] = r
-      const seen = new Set<string>()
-      const out: { label: string; geo: { lat: number; lng: number } | null; address: string; region: string; city: string }[] = []
-      for (const id of ids) {
-        const v = (pv || []).find((x: any) => x.rfq_id === id)
-        if (!v || (!v.delivery_geo && !v.delivery_location)) continue
-        const g = String(v.delivery_geo || '').split(',').map(Number)
-        const gg = g.length === 2 && g.every((n: number) => isFinite(n)) ? { lat: g[0], lng: g[1] } : null
-        const k = gg ? `${gg.lat.toFixed(3)},${gg.lng.toFixed(3)}` : String(v.delivery_location).trim()
-        if (seen.has(k)) continue
-        seen.add(k)
-        const r = byId[id] || {}
-        out.push({ label: String(v.delivery_location || '').trim().slice(0, 40) || [r.city, r.region].filter(Boolean).join('، '), geo: gg, address: String(v.delivery_location || ''), region: r.region || '', city: r.city || '' })
-        if (out.length >= 4) break
-      }
-      setPastPlaces(out)
-    } catch { /* optional */ }
-  }
 
   // «طلبتَها سابقاً» (round-2 UX-167): catalog materials from the buyer's last 20 requests, newest first
   async function loadPastItems(supabase: any, uid: string) {
@@ -939,8 +969,8 @@ export default function QuickRequestPage() {
     // an item written by hand needs at least its main section (owner 2026-10-24)
     const lost = sendable.find(l => !CATALOG_NAMES.has(l.product_name.trim()) && (l.spec ? !choiceDone(l.spec) : !detectSubCategory(l.product_name, l.sector as any)))
     if (lost) return { key: lost.key, msg: L(`Choose the section of «${l2n(lost)}» so it reaches the right suppliers.`, `«${l2n(lost)}» کا شعبہ منتخب کریں تاکہ صحیح سپلائرز تک پہنچے۔`, `اختر قسم «${l2n(lost)}» ليصل إلى الموردين المختصين.`), hint: L(`Choose the section of «${l2n(lost)}»`, `«${l2n(lost)}» کا شعبہ منتخب کریں`, `اختر قسم «${l2n(lost)}»`) }
-    if (!region) return { field: 'region', msg: L('Choose your region.', 'اپنا علاقہ منتخب کریں۔', 'اختر منطقتك.'), hint: L('Choose the region', 'علاقہ منتخب کریں', 'حدّد المنطقة') }
-    if (!pickup && !geo && !address.trim()) return { field: 'location', msg: L('Set the delivery location: use your current location, paste a Google Maps link, or write the address.', 'ڈیلیوری کا مقام بتائیں: موجودہ مقام استعمال کریں، Google Maps کا لنک پیسٹ کریں، یا پتہ لکھیں۔', 'حدّد موقع التوصيل: باستخدام موقعك الحالي، أو بلصق رابط خرائط Google، أو بكتابة العنوان.'), hint: L('Set the delivery location', 'ڈیلیوری کا مقام بتائیں', 'حدّد موقع التوصيل') }
+    if (!region) return { field: 'region', msg: L('Choose your city.', 'اپنا شہر منتخب کریں۔', 'اختر مدينتك.'), hint: L('Choose the city', 'شہر منتخب کریں', 'حدّد المدينة') }
+    if (!pickup && !geo && !address.trim()) return { field: 'location', msg: L('Set the delivery location: use your current location, paste a Google Maps link, or write the district.', 'ڈیلیوری کا مقام بتائیں: موجودہ مقام استعمال کریں، Google Maps کا لنک پیسٹ کریں، یا محلہ لکھیں۔', 'حدّد موقع التوصيل: باستخدام موقعك الحالي، أو بلصق رابط خرائط Google، أو بكتابة الحي.'), hint: L('Set the delivery location', 'ڈیلیوری کا مقام بتائیں', 'حدّد موقع التوصيل') }
     return null
   }
   const problem = firstProblem()
@@ -1280,7 +1310,7 @@ export default function QuickRequestPage() {
     const n = nearestSaCity(a, b)
     if (n && n.km < 80) {
       setRegion(n.region); setCity(n.city)
-      setGeoFilled(L(`We set the region and city from your location: ${n.city}.`, `ہم نے آپ کے مقام سے علاقہ اور شہر منتخب کیا: ${n.city}۔`, `حدّدنا المنطقة والمدينة من موقعك: ${n.city}.`))
+      setGeoFilled(L('We set the city from your location.', 'ہم نے آپ کے مقام سے شہر منتخب کیا۔', 'حدّدنا المدينة من موقعك'))
     }
   }
 
@@ -1999,37 +2029,13 @@ export default function QuickRequestPage() {
             {!pickup && simple && (
               <div id="quick-location" className="space-y-2 scroll-mt-28">
                 <LocationPicker simple lat={geo?.lat ?? null} lng={geo?.lng ?? null} locale={locale} onChange={onGeo}
-                  detectHint={L('If you are at home now, we fill the region and city for you.', 'اگر آپ ابھی گھر پر ہیں تو ہم علاقہ اور شہر خود بھر دیں گے۔', 'إذا كنت في البيت الآن نملأ المنطقة والمدينة تلقائياً.')} />
-              </div>
-            )}
-            {pastPlaces.length > 0 && !pickup && (
-              <div>
-                <div className="text-[12px] font-bold text-gray-600 mb-1">{L('My previous locations:', 'میرے پچھلے مقامات:', 'مواقعي السابقة:')}</div>
-                <div className="flex flex-wrap gap-1.5">
-                  {pastPlaces.map((pp, i) => {
-                    const on = !!pp.geo && !!geo && Math.abs(pp.geo.lat - geo.lat) < 1e-4 && Math.abs(pp.geo.lng - geo.lng) < 1e-4
-                    return (
-                      <button key={i} type="button" aria-pressed={on} onClick={() => { if (pp.geo) { setGeo(pp.geo); setGeoFromProfile(false) } setAddress(pp.address); if (pp.region) { setRegion(pp.region); setCity(pp.city) } if (errField) { setErrField(null); setError('') } }}
-                        className={`min-h-[44px] px-3 rounded-full border-2 text-[13px] font-bold max-w-[16rem] truncate ${on ? CHOICE_ON : CHOICE_OFF}`}>
-                        <Glyph e="📍" /> {pp.label}
-                      </button>
-                    )
-                  })}
-                </div>
+                  detectHint={L('If you are at home now, we fill the city for you.', 'اگر آپ ابھی گھر پر ہیں تو ہم شہر خود بھر دیں گے۔', 'إذا كنت في البيت الآن نملأ المدينة تلقائياً.')} />
               </div>
             )}
             <div id="quick-region" className="scroll-mt-28">
-              <div className="text-[12px] font-bold text-gray-600 mb-1">{simple && !pickup ? L('Or choose by hand: region and city', 'یا خود منتخب کریں: علاقہ اور شہر', 'أو اختر يدوياً: المنطقة والمدينة') : L('Region and city', 'علاقہ اور شہر', 'المنطقة والمدينة')}</div>
-              <div className="grid grid-cols-2 gap-2">
-                <select value={region} aria-invalid={errField === 'region' || undefined} onChange={e => { setRegion(e.target.value); setCity(''); setGeoFilled(''); if (errField === 'region') { setErrField(null); setError('') } }} className={`input-field text-[16px] sm:text-sm ${errField === 'region' ? 'border-2 border-[#D4A543] bg-[#D4A543]/5' : ''}`} aria-label={L('Region', 'علاقہ', 'المنطقة')}>
-                  <option value="">{L('Region', 'علاقہ', 'المنطقة')}</option>
-                  {REGIONS.map(r => <option key={r} value={r}>{getRegionLabel(r, locale)}</option>)}
-                </select>
-                <select value={city} onChange={e => setCity(e.target.value)} className="input-field text-[16px] sm:text-sm" aria-label={L('City', 'شہر', 'المدينة')} disabled={!region}>
-                  <option value="">{L('City', 'شہر', 'المدينة')}</option>
-                  {((CITIES_BY_REGION as any)[region] || []).map((c: any) => <option key={c.ar} value={c.ar}>{locale === 'en' ? c.en : c.ar}</option>)}
-                </select>
-              </div>
+              <div className="text-[12px] font-bold text-gray-600 mb-1">{simple && !pickup ? L('Or choose the city by hand', 'یا شہر خود منتخب کریں', 'أو اختر المدينة يدوياً') : L('City', 'شہر', 'المدينة')}</div>
+              <CityPicker city={city} region={region} locale={locale} invalid={errField === 'region'}
+                onPick={c => { setRegion(c.region); setCity(c.ar); setGeoFilled(''); if (errField === 'region') { setErrField(null); setError('') } }} />
               {geoFilled && <p className="text-[12px] text-[#0F6E56] mt-1" role="status">{geoFilled}</p>}
               {errField === 'region' && error && <p role="alert" className="mt-1.5 rounded-lg border-2 border-[#D4A543] bg-[#D4A543]/10 px-3 py-2 text-[13px] font-bold text-[#0B2438]">{error}</p>}
             </div>
@@ -2042,10 +2048,10 @@ export default function QuickRequestPage() {
               <div id="quick-location-box" className="space-y-2 scroll-mt-28">
                 {/* a visible label says whether the address is required (round-4 UX-119) */}
                 <label htmlFor="quick-address" className="block text-[12px] font-bold text-gray-700">
-                  {L('Delivery address', 'ڈیلیوری کا پتہ', 'عنوان التوصيل')}{' '}
+                  {L('District', 'محلہ', 'الحي')}{' '}
                   <span className={geo ? 'font-normal text-gray-500' : 'font-semibold text-[#8F6820]'}>{geo
                     ? L('(optional)', '(اختیاری)', '(اختياري)')
-                    : L('(required because you did not set the location on the map)', '(ضروری، کیونکہ آپ نے نقشے پر مقام نہیں بتایا)', '(مطلوب لأنك لم تحدّد الموقع على الخريطة)')}</span>
+                    : L('(required if you do not set the location)', '(ضروری اگر آپ مقام نہ بتائیں)', '(مطلوب إن لم تحدّد الموقع)')}</span>
                 </label>
                 <input id="quick-address" value={address} onChange={e => { setAddress(e.target.value); if (errField === 'location') { setErrField(null); setError('') } }} maxLength={300}
                   aria-invalid={errField === 'location' || undefined}
