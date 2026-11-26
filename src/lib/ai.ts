@@ -24,7 +24,8 @@ export const AI_ENABLED = !!(anthropicKey() || geminiKey() || groqKey())
 export const DEFAULT_AI_MODEL = process.env.AI_MODEL || 'claude-haiku-5-5' // cheapest by default (review 2026-10-28); set AI_MODEL to override
 // نماذج Gemini المجانية للمحاولة بالترتيب (قابلة للتهيئة عبر GEMINI_MODEL كقائمة مفصولة بفواصل)
 // 2026-11-26: gemini-2.5-flash is retired for new keys; the free tier often answers 503 «high demand», so more models are tried
-const GEMINI_MODEL_FALLBACKS = 'gemini-3.8-flash,gemini-4-hydrogen,gemini-flash-latest,gemini-3.8-flash-lite,gemini-flash-lite-latest'
+// order from the admin health check 2026-11-26: the lite model answers on the free tier, the others often time out
+const GEMINI_MODEL_FALLBACKS = 'gemini-flash-lite-latest,gemini-3.8-flash,gemini-flash-latest,gemini-4-hydrogen'
 // Per-call cap for every provider request: routes stop at 30-60 s, so a hung provider must give
 // up early enough for the next one in the chain to answer. A timeout throws and falls through.
 const AI_CALL_TIMEOUT_MS = 12_000
@@ -60,7 +61,10 @@ async function geminiGenerate(system: string, contents: any[], maxTokens: number
       generationConfig: { maxOutputTokens: maxTokens, temperature: 0.3 },
     }
     if (jsonMode) body.generationConfig.responseMimeType = 'application/json'
-    const r = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-goog-api-key': geminiKey() }, body: JSON.stringify(body), signal: AbortSignal.timeout(timeoutMs) })
+    let r: Response
+    // a timeout or network error on one model moves on to the next (2026-11-26)
+    try { r = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-goog-api-key': geminiKey() }, body: JSON.stringify(body), signal: AbortSignal.timeout(timeoutMs) }) }
+    catch (e: any) { lastErr = 'Gemini ' + model + ': ' + String(e?.message || e).slice(0, 120); continue }
     if (!r.ok) {
       const t = await r.text().catch(() => '')
       lastErr = 'Gemini ' + r.status + ' (' + model + '): ' + t.slice(0, 250)
