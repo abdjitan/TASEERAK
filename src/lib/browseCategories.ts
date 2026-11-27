@@ -280,3 +280,28 @@ export function subsOfSection(section: BrowseSection): SectionSub[] {
   subsCache[section] = { v, subs: out }
   return out
 }
+
+// The catalog products of each sub-category key (owner 2026-11-27, «ماذا تبيع؟» level 3): every product
+// of SECTOR_PRODUCTS (with the admin-approved materials merged in) whose detectSubCategory is that key,
+// across the sectors that hold the key. Built in one pass and rebuilt when the taxonomy or the product
+// list changes, so new sub-categories and products show without a redeploy.
+let productsBySubCache: { v: number; map: Map<string, string[]> } | null = null
+export function productsBySub(): Map<string, string[]> {
+  const v = taxonomyVersion()
+  if (productsBySubCache && productsBySubCache.v === v) return productsBySubCache.map
+  const map = new Map<string, string[]>()
+  for (const sector of Object.keys(SECTOR_PRODUCTS) as Sector[]) {
+    for (const name of SECTOR_PRODUCTS[sector] || []) {
+      const sub = detectSubCategory(name, sector)
+      if (!sub) continue
+      const list = map.get(sub)
+      if (!list) map.set(sub, [name])
+      else if (!list.includes(name)) list.push(name)
+    }
+  }
+  productsBySubCache = { v, map }
+  return map
+}
+export function productsOfSub(subKey: string): string[] {
+  return productsBySub().get(subKey) || []
+}

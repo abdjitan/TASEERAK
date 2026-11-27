@@ -90,6 +90,8 @@ export default function SpecialtiesPage() {
   const [saving, setSaving] = useState(false)
   const [msg, setMsg] = useState('')
   const [mySpecialties, setMySpecialties] = useState<any[]>([])
+  // owner 2026-11-27: the materials he unticked inside his chosen lists (migration 297)
+  const [myExcluded, setMyExcluded] = useState<string[]>([])
   // suggest-a-material
   const [suggestName, setSuggestName] = useState('')
   const [suggestSection, setSuggestSection] = useState<BrowseSection | ''>('')
@@ -150,8 +152,13 @@ export default function SpecialtiesPage() {
       if (specErr) throw specErr
       // old rows with sectors and no specialty show as every specialty of those sectors (same routing)
       const loaded = legacySpecialties((secs || []).map(s => s.sector), (specs || []).map(s => s.specialty))
+      // own rows only (RLS on acting_uid): a team member reads the company's
+      const { data: ex, error: exErr } = await supabase.from('supplier_excluded_products').select('product_name')
+      if (exErr) throw exErr
+      const loadedEx = Array.from(new Set((ex || []).map((r: any) => String(r.product_name))))
       setMySpecialties(loaded)
-      setSavedKey(selKey(loaded))
+      setMyExcluded(loadedEx)
+      setSavedKey(selKey(loaded, loadedEx))
 
       const { data: reqs } = await supabase.from('material_requests')
         .select('*').eq('supplier_id', session.user.id).order('created_at', { ascending: false })
@@ -175,8 +182,8 @@ export default function SpecialtiesPage() {
   useEffect(() => { load() }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   // owner 2026-11-27: the seller picks sections; the sectors follow from the chosen keys (sectorsFor)
-  function selKey(specs: any[]) { return JSON.stringify([...new Set(specs)].sort()) }
-  const dirty = !loading && !loadFailed && !isMember && savedKey !== '' && selKey(mySpecialties) !== savedKey
+  function selKey(specs: any[], ex: string[]) { return JSON.stringify([[...new Set(specs)].sort(), [...new Set(ex)].sort()]) }
+  const dirty = !loading && !loadFailed && !isMember && savedKey !== '' && selKey(mySpecialties, myExcluded) !== savedKey
   // warn before leaving with unsaved changes
   useEffect(() => {
     if (!dirty) return
@@ -229,9 +236,12 @@ export default function SpecialtiesPage() {
       p_sectors: secs,
       p_specialties: specs,
     })
+    // then the materials he unticked inside the chosen lists (a request line for one of them skips him)
+    const ex = Array.from(new Set(myExcluded))
+    const exRes = error ? null : await supabase.rpc('save_supplier_excluded_products', { p_names: ex })
     setSaving(false)
-    if (error) { setMsgErr(true); setMsg(locale === 'en' ? 'Could not save your specialties. Check your connection and try again.' : locale === 'ur' ? 'آپ کے تخصصات محفوظ نہیں ہو سکے۔ کنکشن چیک کر کے دوبارہ کوشش کریں۔' : 'تعذّر حفظ تخصصاتك. تحقّق من اتصالك وحاول مرة أخرى.'); return false }
-    setSavedKey(selKey(specs))
+    if (error || exRes?.error) { setMsgErr(true); setMsg(locale === 'en' ? 'Could not save your specialties. Check your connection and try again.' : locale === 'ur' ? 'آپ کے تخصصات محفوظ نہیں ہو سکے۔ کنکشن چیک کر کے دوبارہ کوشش کریں۔' : 'تعذّر حفظ تخصصاتك. تحقّق من اتصالك وحاول مرة أخرى.'); return false }
+    setSavedKey(selKey(specs, ex))
     // round-4 UX-141: one success sign only (the «saved» bar below); the live match line sits in the picker
     setMsg('')
     return true
@@ -331,12 +341,14 @@ export default function SpecialtiesPage() {
           </div>
         )}
 
-        {/* owner 2026-11-27: one way to choose (same as onboarding): the 10 sections, then (optional) the exact materials */}
+        {/* owner 2026-11-27: one way to choose (same as onboarding): the 10 sections, then the lists inside, then the materials of each list */}
         <fieldset disabled={isMember} className="bg-white rounded-2xl p-5 sm:p-6 border border-gray-100 shadow-sm mb-5 min-w-0">
           <legend className="sr-only">{indep ? L('What do you price?', 'آپ کس چیز کی قیمت دیتے ہیں؟', 'ما الذي تسعّره؟') : L('What do you sell?', 'آپ کیا بیچتے ہیں؟', 'ماذا تبيع؟')}</legend>
           <h2 className="text-base font-bold mb-0.5" style={{ color: '#0B2438' }}>{indep ? L('What do you price?', 'آپ کس چیز کی قیمت دیتے ہیں؟', 'ما الذي تسعّره؟') : L('What do you sell?', 'آپ کیا بیچتے ہیں؟', 'ماذا تبيع؟')}</h2>
-          <p className="text-[13px] text-gray-500 mb-3">{L('Tap every section you sell from. Only its requests reach you.', 'ہر وہ سیکشن منتخب کریں جس سے آپ بیچتے ہیں۔ صرف اسی کی درخواستیں آپ تک پہنچیں گی۔', 'اختر كل قسم تبيع منه، ولن تصلك إلا طلباته.')}</p>
-          <SellWhatPicker specialties={mySpecialties} onChange={setMySpecialties} locale={locale} independent={indep} disabled={isMember} showMatches={!isMember} />
+          <p className="text-[13px] text-gray-500 mb-3">{indep
+            ? L('Open a section, tick the lists you price, and untick the materials you do not price. Only their requests reach you.', 'سیکشن کھولیں، جن فہرستوں کی قیمت دیتے ہیں انہیں منتخب کریں، اور جس مال کی قیمت نہیں دیتے اسے ہٹا دیں۔ صرف انہی کی درخواستیں آپ تک پہنچیں گی۔', 'افتح القسم، وعلِّم القوائم التي تسعّرها، وأزل المواد التي لا تسعّرها، ولن تصلك إلا طلباتها.')
+            : L('Open a section, tick the lists you sell, and untick the materials you do not sell. Only their requests reach you.', 'سیکشن کھولیں، جو فہرستیں بیچتے ہیں انہیں منتخب کریں، اور جو مال نہیں بیچتے اسے ہٹا دیں۔ صرف انہی کی درخواستیں آپ تک پہنچیں گی۔', 'افتح القسم، وعلِّم القوائم التي تبيعها، وأزل المواد التي لا تبيعها، ولن تصلك إلا طلباتها.')}</p>
+          <SellWhatPicker specialties={mySpecialties} onChange={setMySpecialties} excluded={myExcluded} onExcludedChange={setMyExcluded} locale={locale} independent={indep} disabled={isMember} showMatches={!isMember} />
         </fieldset>
 
         {/* اقتراح مادة جديدة غير موجودة بالقائمة */}

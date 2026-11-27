@@ -124,6 +124,8 @@ export default function OnboardingPage() {
   const [lng, setLng] = useState<number | null>(null)
   const [sectors, setSectors] = useState<string[]>([])
   const [specialties, setSpecialties] = useState<string[]>([])
+  // owner 2026-11-27: the materials a seller unticked inside his chosen lists (migration 297)
+  const [excludedProducts, setExcludedProducts] = useState<string[]>([])
   const [supplierTier, setSupplierTier] = useState<string | null>(null)
   const [providerType, setProviderType] = useState('')
   const [crNo, setCrNo] = useState('') // UX-125: say which CR was entered at sign-up
@@ -228,11 +230,13 @@ export default function OnboardingPage() {
         }
         if (p.contractor_grade) setContractorGrade(p.contractor_grade)
       }
-      const [{ data: ps, error: psErr }, { data: psp, error: pspErr }] = await Promise.all([
+      const [{ data: ps, error: psErr }, { data: psp, error: pspErr }, { data: pex, error: pexErr }] = await Promise.all([
         supabase.from('profile_sectors').select('sector').eq('profile_id', session.user.id),
         supabase.from('profile_specialties').select('specialty').eq('profile_id', session.user.id),
+        supabase.from('supplier_excluded_products').select('product_name'), // own rows only (RLS)
       ])
-      if (psErr || pspErr) { setLoadFailed(true); showErr(t.loadFailed) }
+      if (psErr || pspErr || pexErr) { setLoadFailed(true); showErr(t.loadFailed) }
+      if (pex) setExcludedProducts(Array.from(new Set(pex.map((r: any) => String(r.product_name)))))
       if (ps) setSectors(ps.map((r: any) => r.sector))
       // a seller chooses by section: old rows with sectors and no specialty show as every specialty of them
       const isSup = (p?.role || metaRole) === 'supplier'
@@ -361,6 +365,11 @@ export default function OnboardingPage() {
         })
         if (secErr) { showErr(role === 'supplier' ? t.saveFailed : t.profileFailed); setSaving(false); return }
       }
+      // then the materials a seller unticked inside his chosen lists (a request line for one of them skips him)
+      if (role === 'supplier') {
+        const { error: exErr } = await supabase.rpc('save_supplier_excluded_products', { p_names: Array.from(new Set(excludedProducts)) })
+        if (exErr) { showErr(t.saveFailed); setSaving(false); return }
+      }
 
       if (role === 'supplier') {
         // المواد المقترحة: نزيل ما أُرسل بنجاح من القائمة، فإعادة الحفظ ترسل الفاشل فقط بلا تكرار.
@@ -395,7 +404,7 @@ export default function OnboardingPage() {
   }
 
   // round-6 UX-017: the state that «save» writes; compared with what was loaded
-  const formSig = JSON.stringify({ region, city, district, lat, lng, sectors: [...sectors].sort(), specialties: [...specialties].sort(), bizName, buyerCo, buyerVat, supVat, contractorGrade, extraMaterials, extraMaterialInput })
+  const formSig = JSON.stringify({ region, city, district, lat, lng, sectors: [...sectors].sort(), specialties: [...specialties].sort(), excludedProducts: [...excludedProducts].sort(), bizName, buyerCo, buyerVat, supVat, contractorGrade, extraMaterials, extraMaterialInput })
   // eslint-disable-next-line react-hooks/rules-of-hooks
   useEffect(() => { if (!loading && baseRef.current === null) baseRef.current = formSig }, [loading, formSig])
   const dirty = !loading && baseRef.current !== null && baseRef.current !== formSig
@@ -681,8 +690,8 @@ export default function OnboardingPage() {
 
               {role === 'supplier' && (
                 <div className="mt-3">
-                  {/* owner 2026-11-27: one way to choose: the 10 sections, then (optional) the exact materials */}
-                  <SellWhatPicker specialties={specialties} onChange={setSpecialties} locale={locale} independent={isIndividual} showMatches
+                  {/* owner 2026-11-27: one way to choose: the 10 sections, then the lists inside, then the materials of each list */}
+                  <SellWhatPicker specialties={specialties} onChange={setSpecialties} excluded={excludedProducts} onExcludedChange={setExcludedProducts} locale={locale} independent={isIndividual} showMatches
                     extra={
                       <div className="rounded-2xl border border-gray-100 p-3">
                         <label htmlFor="ob-extra-mat" className="block text-[13px] font-bold text-gray-700 mb-1.5">{t.addMatTitle}</label>
