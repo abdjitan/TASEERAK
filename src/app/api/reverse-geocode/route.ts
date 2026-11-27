@@ -16,27 +16,30 @@ async function viaGoogle(lat: string, lng: string) {
   const res = await fetch(url, { cache: 'no-store', signal: AbortSignal.timeout(7000) })
   const j: any = await res.json()
   if (j.status !== 'OK' || !Array.isArray(j.results) || !j.results.length) return null
-  let city = '', region = ''
+  let city = '', region = '', district = ''
   for (const r of j.results) {
     for (const comp of r.address_components || []) {
       const types = comp.types || []
       if (!region && types.includes('administrative_area_level_1')) region = comp.long_name
       if (!city && (types.includes('locality') || types.includes('administrative_area_level_2'))) city = comp.long_name
+      if (!district && (types.includes('sublocality') || types.includes('sublocality_level_1') || types.includes('neighborhood'))) district = comp.long_name
     }
-    if (city && region) break
+    if (city && region && district) break
   }
-  return { city, region, formatted: j.results[0].formatted_address || '' }
+  return { city, region, district, formatted: j.results[0].formatted_address || '' }
 }
 
 async function viaNominatim(lat: string, lng: string) {
-  const url = `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json&accept-language=ar&zoom=12`
+  const url = `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json&accept-language=ar&zoom=16`
   const res = await fetch(url, { cache: 'no-store', signal: AbortSignal.timeout(7000), headers: { 'User-Agent': 'Taseerak/1.0 (rfq-location)' } })
   if (!res.ok) return null
   const j: any = await res.json()
   const a = j.address || {}
-  const city = a.city || a.town || a.municipality || a.village || a.county || a.suburb || a.city_district || a.province || ''
+  const city = a.city || a.town || a.municipality || a.village || a.county || a.province || ''
+  // round-8 UX-081: the district for «الحي» (zoom 16 returns the neighbourhood)
+  const district = a.suburb || a.neighbourhood || a.quarter || a.city_district || ''
   const region = a.state || a.region || a.province || ''
-  return { city, region, formatted: j.display_name || '' }
+  return { city, region, district, formatted: j.display_name || '' }
 }
 
 export async function GET(req: NextRequest) {
