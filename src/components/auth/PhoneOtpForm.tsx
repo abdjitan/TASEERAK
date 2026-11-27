@@ -15,37 +15,37 @@ import BuyerTypeCards from '@/components/auth/BuyerTypeCards'
 // Sellers sign in with email + password.
 const TX = {
   ar: {
-    phone: 'رقم جوالك', phoneHint: 'سيصلك رمز التحقق برسالة نصية (SMS)', send: 'أرسل الرمز', sending: 'جارٍ الإرسال…',
-    badPhone: 'اكتب رقم جوال سعودي بصيغة 05XXXXXXXX، أو رقماً إماراتياً أو أردنياً مع رمز الدولة (‎+971‎ أو ‎+962‎).', codeTitle: 'اكتب الرمز', codeSent: 'أرسلنا رمزاً من 6 أرقام برسالة نصية إلى',
+    phone: 'رقم جوالك', phoneHint: 'سيصلك رمز التحقق برسالة نصية', send: 'أرسل الرمز', sending: 'جارٍ الإرسال…',
+    badPhone: 'اكتب رقم جوال سعودي بصيغة 05XXXXXXXX.', codeTitle: 'اكتب الرمز', codeSent: 'أرسلنا رمزاً من 6 أرقام برسالة نصية إلى',
     verify: 'تأكيد والدخول', verifying: 'جارٍ التحقق…', creating: 'جارٍ إنشاء حسابك…', badCode: 'الرمز غير صحيح. تحقّق منه وأعد كتابته، أو اطلب رمزاً جديداً.', expiredCode: 'انتهت صلاحية الرمز. اطلب رمزاً جديداً.', sessionGone: 'انتهت صلاحية التحقق. أعد إرسال الرمز إلى رقمك.',
     resend: 'أعد إرسال الرمز', resendIn: 'إعادة الإرسال بعد', sec: 'ثانية', change: 'تغيير الرقم', resent: 'أرسلنا رمزاً جديداً إلى',
     emailAccount: 'هذا الرقم مسجّل لحساب يدخل بالبريد الإلكتروني ولم يُوثَّق جواله بعد. ادخل بالبريد الإلكتروني وكلمة المرور.', emailBtn: 'الدخول بالبريد الإلكتروني',
     rate: 'محاولات كثيرة. انتظر قليلاً ثم أعد المحاولة.', sendFail: 'تعذّر إرسال الرمز. تأكد من الرقم ثم أعد المحاولة.',
-    smsDown: 'تعذّر إرسال رمز الجوال الآن. ادخل ببريدك الإلكتروني، أو أنشئ حساباً بالبريد.', smsOff: 'خدمة الرسائل النصية متوقفة مؤقتاً، فلا يصل رمز الجوال الآن. ادخل ببريدك الإلكتروني، أو أنشئ حساباً بالبريد.', smsDownCreate: 'أنشئ حساباً بالبريد', smsDownLogin: 'لديك حساب؟ ادخل ببريدك', smsDownNote: 'إن لم تعيّن كلمة مرور فاختر «نسيت كلمة المرور» واكتب بريدك.',
+    smsDown: 'تعذّر إرسال رمز الجوال الآن. ادخل ببريدك الإلكتروني، أو أنشئ حساباً بالبريد.', smsOff: 'خدمة الرسائل النصية متوقفة مؤقتاً، فلا يصل رمز الجوال الآن. ادخل ببريدك الإلكتروني، أو أنشئ حساباً بالبريد.', smsDownCreate: 'أنشئ حساباً بالبريد', smsDownLogin: 'لديك حساب؟ ادخل ببريدك', smsDownNote: 'إن لم تعيّن كلمة مرور فاختر «نسيت كلمة المرور» واكتب بريدك.', newAcctHint: 'يُنشئ حساباً جديداً منفصلاً عن حسابك الحالي.', phoneOnly: 'سجّلت برقم الجوال فقط؟ راسلنا لنربط بريدك بحسابك ونعيدك إلى طلباتك.', phoneOnlyBtn: 'راسل الدعم',
     newTitle: 'أهلاً بك في تسعيرك', newSub: 'هذا الرقم جديد. اكتب اسمك لإنشاء حساب مشتري.', name: 'الاسم', create: 'إنشاء الحساب والدخول',
     terms1: 'أوافق على', terms: 'الشروط والأحكام', and: 'و', privacy: 'سياسة الخصوصية', badName: 'اكتب اسمك.', needTerms: 'وافق على الشروط وسياسة الخصوصية للمتابعة.',
     useEmail: 'هذا الحساب يدخل بالبريد الإلكتروني وكلمة المرور.', failed: 'تعذّر الدخول. حاول مرة أخرى.',
   },
   en: {
-    phone: 'Your mobile number', phoneHint: 'You will get a code by text message (SMS)', send: 'Send code', sending: 'Sending…',
-    badPhone: 'Type a Saudi mobile number like 05XXXXXXXX, or a UAE or Jordanian number with its country code (+971 or +962).', codeTitle: 'Enter the code', codeSent: 'We sent a 6-digit code by SMS to',
+    phone: 'Your mobile number', phoneHint: 'You will get a code by text message', send: 'Send code', sending: 'Sending…',
+    badPhone: 'Type a Saudi mobile number in the form 05XXXXXXXX.', codeTitle: 'Enter the code', codeSent: 'We sent a 6-digit code by text message to',
     verify: 'Verify and continue', verifying: 'Verifying…', creating: 'Creating your account…', badCode: 'The code is not correct. Check it and type it again, or request a new one.', expiredCode: 'The code has expired. Request a new one.', sessionGone: 'The verification has expired. Send the code to your number again.',
     resend: 'Resend code', resendIn: 'Resend in', sec: 'seconds', change: 'Change number', resent: 'We sent a new code to',
     emailAccount: 'This number belongs to an account that signs in with email and has not verified its mobile yet. Sign in with your email and password.', emailBtn: 'Sign in with email',
     rate: 'Too many attempts. Wait a little and try again.', sendFail: 'Could not send the code. Check the number and try again.',
-    smsDown: 'We cannot send the mobile code right now. Sign in with your email, or create an account with email.', smsOff: 'The text message service is temporarily down, so mobile codes cannot arrive now. Sign in with your email, or create an account with email.', smsDownCreate: 'Create an account with email', smsDownLogin: 'Have an account? Sign in with your email', smsDownNote: 'If you have not set a password, choose «Forgot password» and type your email.',
+    smsDown: 'We cannot send the mobile code right now. Sign in with your email, or create an account with email.', smsOff: 'The text message service is temporarily down, so mobile codes cannot arrive now. Sign in with your email, or create an account with email.', smsDownCreate: 'Create an account with email', smsDownLogin: 'Have an account? Sign in with your email', smsDownNote: 'If you have not set a password, choose «Forgot password» and type your email.', newAcctHint: 'This creates a new account, separate from your current one.', phoneOnly: 'Signed up with your mobile number only? Message us and we will link your email to your account and bring you back to your requests.', phoneOnlyBtn: 'Contact support',
     newTitle: 'Welcome to Taseerak', newSub: 'This number is new. Write your name to create a buyer account.', name: 'Name', create: 'Create account and continue',
     terms1: 'I agree to the', terms: 'Terms', and: 'and', privacy: 'Privacy Policy', badName: 'Write your name.', needTerms: 'Accept the Terms and Privacy Policy to continue.',
     useEmail: 'This account signs in with email and password.', failed: 'Could not sign in. Try again.',
   },
   ur: {
-    phone: 'آپ کا موبائل نمبر', phoneHint: 'تصدیقی کوڈ ٹیکسٹ میسج (SMS) سے آئے گا', send: 'کوڈ بھیجیں', sending: 'بھیجا جا رہا ہے…',
-    badPhone: 'سعودی موبائل نمبر 05XXXXXXXX کی صورت میں لکھیں، یا اماراتی یا اردنی نمبر ملک کے کوڈ کے ساتھ (‎+971‎ یا ‎+962‎)۔', codeTitle: 'کوڈ درج کریں', codeSent: 'ہم نے SMS سے 6 ہندسوں کا کوڈ بھیجا',
+    phone: 'آپ کا موبائل نمبر', phoneHint: 'تصدیقی کوڈ ٹیکسٹ میسج سے آئے گا', send: 'کوڈ بھیجیں', sending: 'بھیجا جا رہا ہے…',
+    badPhone: 'سعودی موبائل نمبر 05XXXXXXXX کی صورت میں لکھیں۔', codeTitle: 'کوڈ درج کریں', codeSent: 'ہم نے ٹیکسٹ میسج سے 6 ہندسوں کا کوڈ بھیجا',
     verify: 'تصدیق کریں اور جاری رکھیں', verifying: 'تصدیق ہو رہی ہے…', creating: 'آپ کا اکاؤنٹ بن رہا ہے…', badCode: 'کوڈ درست نہیں۔ اسے چیک کر کے دوبارہ لکھیں، یا نیا کوڈ منگوائیں۔', expiredCode: 'کوڈ کی مدت ختم ہو گئی۔ نیا کوڈ منگوائیں۔', sessionGone: 'تصدیق کی مدت ختم ہو گئی۔ اپنے نمبر پر کوڈ دوبارہ بھیجیں۔',
     resend: 'کوڈ دوبارہ بھیجیں', resendIn: 'دوبارہ بھیجیں', sec: 'سیکنڈ بعد', change: 'نمبر تبدیل کریں', resent: 'ہم نے نیا کوڈ بھیجا',
     emailAccount: 'یہ نمبر ایسے اکاؤنٹ کا ہے جو ای میل سے سائن اِن کرتا ہے اور جس کا موبائل ابھی تصدیق نہیں ہوا۔ اپنی ای میل اور پاسورڈ سے سائن اِن کریں۔', emailBtn: 'ای میل سے سائن اِن',
     rate: 'بہت زیادہ کوششیں۔ تھوڑا انتظار کریں، پھر دوبارہ کوشش کریں۔', sendFail: 'کوڈ نہیں بھیجا جا سکا۔ نمبر چیک کر کے دوبارہ کوشش کریں۔',
-    smsDown: 'ابھی موبائل کوڈ نہیں بھیجا جا سکتا۔ اپنی ای میل سے سائن اِن کریں، یا ای میل سے اکاؤنٹ بنائیں۔', smsOff: 'ٹیکسٹ میسج سروس عارضی طور پر بند ہے، اس لیے ابھی موبائل کوڈ نہیں آ سکتا۔ اپنی ای میل سے سائن اِن کریں، یا ای میل سے اکاؤنٹ بنائیں۔', smsDownCreate: 'ای میل سے اکاؤنٹ بنائیں', smsDownLogin: 'اکاؤنٹ ہے؟ اپنی ای میل سے سائن اِن کریں', smsDownNote: 'اگر آپ نے پاسورڈ نہیں بنایا تو «پاسورڈ بھول گئے» منتخب کریں اور اپنی ای میل لکھیں۔',
+    smsDown: 'ابھی موبائل کوڈ نہیں بھیجا جا سکتا۔ اپنی ای میل سے سائن اِن کریں، یا ای میل سے اکاؤنٹ بنائیں۔', smsOff: 'ٹیکسٹ میسج سروس عارضی طور پر بند ہے، اس لیے ابھی موبائل کوڈ نہیں آ سکتا۔ اپنی ای میل سے سائن اِن کریں، یا ای میل سے اکاؤنٹ بنائیں۔', smsDownCreate: 'ای میل سے اکاؤنٹ بنائیں', smsDownLogin: 'اکاؤنٹ ہے؟ اپنی ای میل سے سائن اِن کریں', smsDownNote: 'اگر آپ نے پاسورڈ نہیں بنایا تو «پاسورڈ بھول گئے» منتخب کریں اور اپنی ای میل لکھیں۔', newAcctHint: 'یہ آپ کے موجودہ اکاؤنٹ سے الگ ایک نیا اکاؤنٹ بناتا ہے۔', phoneOnly: 'صرف موبائل نمبر سے رجسٹر کیا تھا؟ ہمیں پیغام بھیجیں، ہم آپ کی ای میل آپ کے اکاؤنٹ سے جوڑ کر آپ کو آپ کی درخواستوں تک واپس لے آئیں گے۔', phoneOnlyBtn: 'سپورٹ سے رابطہ کریں',
     newTitle: 'تسعیرک میں خوش آمدید', newSub: 'یہ نمبر نیا ہے۔ خریدار اکاؤنٹ بنانے کے لیے اپنا نام لکھیں۔', name: 'نام', create: 'اکاؤنٹ بنائیں اور جاری رکھیں',
     terms1: 'میں متفق ہوں', terms: 'شرائط', and: 'اور', privacy: 'رازداری کی پالیسی', badName: 'اپنا نام لکھیں۔', needTerms: 'جاری رکھنے کے لیے شرائط اور رازداری کی پالیسی قبول کریں۔',
     useEmail: 'یہ اکاؤنٹ ای میل اور پاسورڈ سے سائن اِن کرتا ہے۔', failed: 'سائن اِن نہیں ہو سکا۔ دوبارہ کوشش کریں۔',
@@ -213,10 +213,15 @@ export default function PhoneOtpForm({ onSignedIn, onUseEmail, registerHref = '/
         : <a href="/login?m=email" className="btn-primary w-full">{t.smsDownLogin}</a>}
       <p className="text-[12px]">{t.smsDownNote}</p>
       <a href={registerHref} className="w-full min-h-[44px] rounded-xl font-bold text-sm grid place-items-center border border-[#0B2438]/25 text-[#0B2438] bg-white">{t.smsDownCreate}</a>
+      <p className="text-[12px]">{t.newAcctHint}</p>
+      {/* a phone-only account cannot get in while texts are down: support links an email to it (round-8 UX-016) */}
+      <p className="text-[12px] pt-1 border-t border-warn-border">{t.phoneOnly} <a href="/support?topic=login" className="inline-flex items-center min-h-[44px] font-bold underline">{t.phoneOnlyBtn}</a></p>
     </div>
   )
 
   if (step === 'phone') {
+    // texts cannot arrive: the outage box alone, no number field and no second gold «send code» (round-8 UX-013)
+    if (smsOff) return <div className="space-y-4">{smsDownBox}</div>
     return (
       <form onSubmit={sendCode} className="space-y-4">
         {smsDownBox}

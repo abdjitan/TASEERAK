@@ -31,6 +31,9 @@ import { askConfirm } from '@/lib/askConfirm'
 import { readProjectDraft } from '@/lib/tender/projectDraft'
 import { readPageCache, writePageCache } from '@/lib/pageCache'
 import { buyerTypeText } from '@/components/auth/BuyerTypeCards'
+import { useFocusTrap } from '@/components/shared/useFocusTrap'
+import { buttonClass } from '@/components/shared/Button'
+import { isPlaceholderEmail, smsIsDown, signOutLocksOut, lockOutText } from '@/components/shared/signOutGuard'
 
 const txt = {
   ar: {
@@ -49,7 +52,7 @@ const txt = {
     email: 'البريد الإلكتروني', emailNote: 'لا يمكن تغيير البريد الإلكتروني',
     role: 'نوع الحساب', contractor: 'مشتري', supplier: 'مورد',
     verStatus: 'حالة التحقق', pending: 'قيد المراجعة', verified: 'موثّق', rejected: 'التوثيق غير مقبول',
-    docsTitle: 'المستندات الرسمية', docsSub: 'ارفع مستنداتك لإتمام عملية التحقق',
+    docsTitle: 'المستندات الرسمية', docsSub: 'رقم السجل التجاري مطلوب للتسعير، أما رفع الشهادة فاختياري للحصول على شارة «موثّق».',
     licenseLabel: 'الرخصة البلدية أو رخصة النشاط (اختياري)', crLabel: 'شهادة السجل التجاري (اختياري، لشارة «موثّق»)',
     uploadDoc: 'اضغط لرفع الملف', docHint: 'ملف PDF أو صورة، بحجم 15 ميجابايت على الأكثر',
     uploadBtn: 'رفع المستندات', uploaded: '✓ تم رفع المستندات بنجاح',
@@ -73,7 +76,7 @@ const txt = {
     email: 'Email Address', emailNote: 'Email cannot be changed',
     role: 'Account Type', contractor: 'Buyer', supplier: 'Supplier',
     verStatus: 'Verification Status', pending: 'Pending', verified: 'Verified', rejected: 'Verification not accepted',
-    docsTitle: 'Official Documents', docsSub: 'Upload your documents to complete verification',
+    docsTitle: 'Official Documents', docsSub: 'The commercial registration number is required to price; uploading the certificate is optional, for the «Verified» badge.',
     licenseLabel: 'Municipal or activity licence (optional)', crLabel: 'Commercial registration certificate (optional, for the «Verified» badge)',
     uploadDoc: 'Click to upload file', docHint: 'PDF or image, up to 15 MB',
     uploadBtn: 'Upload Documents', uploaded: '✓ Documents uploaded successfully',
@@ -97,7 +100,7 @@ const txt = {
     email: 'ای میل ایڈریس', emailNote: 'ای میل تبدیل نہیں کی جا سکتی',
     role: 'اکاؤنٹ کی قسم', contractor: 'خریدار', supplier: 'سپلائر',
     verStatus: 'تصدیق کی حیثیت', pending: 'زیر التواء', verified: 'تصدیق شدہ', rejected: 'تصدیق قبول نہیں ہوئی',
-    docsTitle: 'سرکاری دستاویزات', docsSub: 'تصدیق مکمل کرنے کے لیے دستاویزات اپلوڈ کریں',
+    docsTitle: 'سرکاری دستاویزات', docsSub: 'قیمت دینے کے لیے تجارتی رجسٹریشن نمبر ضروری ہے؛ سرٹیفکیٹ اپلوڈ کرنا اختیاری ہے، «تصدیق شدہ» بیج کے لیے۔',
     licenseLabel: 'بلدیہ یا سرگرمی کا لائسنس (اختیاری)', crLabel: 'تجارتی رجسٹریشن سرٹیفکیٹ (اختیاری، «تصدیق شدہ» بیج کے لیے)',
     uploadDoc: 'فائل اپلوڈ کرنے کے لیے کلک کریں', docHint: 'PDF یا تصویر، زیادہ سے زیادہ 15 MB',
     uploadBtn: 'دستاویزات اپلوڈ کریں', uploaded: '✓ دستاویزات کامیابی سے اپلوڈ',
@@ -114,7 +117,6 @@ const langOptions = [
 ]
 
 // A phone sign-up gets an internal address (m9665…@phone.taseerak.com): never shown as «your email» (UX-045).
-const isPlaceholderEmail = (e?: string | null) => !e || /@phone\.taseerak\.com$/i.test(String(e))
 // A pasted VAT number may carry spaces, dashes or Arabic digits: keep the 15 digits (round-7 UX-169)
 const cleanVat = (v: string) => toLatinDigits(v || '').replace(/\D/g, '').slice(0, 15)
 
@@ -607,10 +609,23 @@ export default function SettingsPage() {
 
   // sign-out from the menu or from this page; an unsent request saved on this device is deleted with
   // it, so ask first (UX-036)
+  // texts cannot arrive (sms_is_down): a phone-only account must add and verify its email before it
+  // signs out (round-8 UX-002 / UX-014)
+  const [smsDown, setSmsDown] = useState(false)
+  useEffect(() => { smsIsDown().then(setSmsDown, () => {}) }, [])
+  // the change-request dialog keeps the focus inside it (round-8 UX-113)
+  const crqRef = useRef<HTMLDivElement>(null)
+  useFocusTrap(crqRef, !!crqModal, { lockScroll: true })
   async function handleSignOut() {
+    if (await signOutLocksOut()) {
+      const ok = await askConfirm(lockOutText(locale), { danger: true, okLabel: L('Log out anyway', 'پھر بھی لاگ آؤٹ کریں', 'تسجيل الخروج رغم ذلك'), cancelLabel: L('Add my email first', 'پہلے ای میل شامل کریں', 'أضف بريدي أولاً'), dismissValue: null })
+      if (ok === null) return
+      if (!ok) { setTab('profile'); setTimeout(() => document.getElementById('email')?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 60); return }
+    } else {
     let draft = false
     try { for (let i = 0; i < localStorage.length; i++) if ((localStorage.key(i) || '').startsWith('taseerak_draft:')) { draft = true; break } } catch {}
     if (draft && !(await askConfirm(L('Log out? The unsent request saved on this device will be deleted with its photos.', 'لاگ آؤٹ کریں؟ اس ڈیوائس پر محفوظ نہ بھیجی گئی درخواست اپنی تصاویر سمیت حذف ہو جائے گی۔', 'تسجيل الخروج؟ سيُحذف الطلب غير المرسل المحفوظ على هذا الجهاز مع صوره.'), { danger: true, okLabel: L('Log out', 'لاگ آؤٹ', 'تسجيل الخروج') }))) return
+    }
     const supabase = createClient()
     clearAllLocalDrafts()
     clearShellCard()
@@ -650,6 +665,8 @@ export default function SettingsPage() {
   const placeholderEmail = isPlaceholderEmail(user?.email)
   // a phone sign-up has no password: it signs in with a code (UX-040)
   const phoneAccount = placeholderEmail || user?.user_metadata?.signup_method === 'phone'
+  // signing out would lock this account out: no verified email and texts cannot arrive (round-8 UX-002)
+  const lockOutRisk = phoneAccount && smsDown && (placeholderEmail || !profile?.email_verified_at)
   // documents are for selling businesses only (company / shop), not buyers or independents (UX-043)
   const showDocs = isSupplier && !independent && !teamMember
   // ?tab=docs for an account without documents opens the profile tab, with its tab selected (round-7 UX-167)
@@ -709,7 +726,7 @@ export default function SettingsPage() {
       </span>
     : isSupplier
     ? (!independent && profile?.verification_status !== 'verified' && profile?.verification_status !== 'rejected' && !profile?.cr_url
-      ? <button type="button" onClick={() => setTab('docs')} className="inline-flex items-center gap-1 mt-2 min-h-[32px] text-xs px-2.5 rounded-full font-semibold bg-warn-bg text-warn-text border border-warn-border hover:underline">
+      ? <button type="button" onClick={() => setTab('docs')} className="inline-flex items-center gap-1 mt-2 min-h-[44px] text-xs px-3 rounded-full font-semibold bg-warn-bg text-warn-text border border-warn-border hover:underline">
           {!profile?.commercial_registration
             ? L('Add the commercial registration number', 'تجارتی رجسٹریشن نمبر شامل کریں', 'أضف رقم السجل التجاري')
             : L('Not verified: request the «Verified» badge', 'تصدیق شدہ نہیں: «تصدیق شدہ» بیج کی درخواست کریں', 'غير موثّق، اطلب شارة «موثّق»')}
@@ -725,7 +742,7 @@ export default function SettingsPage() {
     : profile?.phone_verified_at
       ? <span className="inline-flex items-center gap-1 mt-2 text-xs px-2 py-0.5 rounded-full font-semibold bg-emerald-100 text-emerald-800"><Check className="w-3.5 h-3.5" aria-hidden />{L('Mobile verified', 'موبائل تصدیق شدہ', 'الجوال موثّق')}</span>
       : !phoneRequired ? null
-      : <a href="#phone" onClick={() => setTab('profile')} className="inline-flex items-center mt-2 text-xs px-2.5 py-1 rounded-full font-semibold bg-warn-bg text-warn-text">{L('Verify your mobile', 'اپنا موبائل تصدیق کریں', 'وثّق جوالك')}</a>
+      : <a href="#phone" onClick={() => setTab('profile')} className="inline-flex items-center mt-2 min-h-[44px] text-xs px-3 rounded-full font-semibold bg-warn-bg text-warn-text">{L('Verify your mobile', 'اپنا موبائل تصدیق کریں', 'وثّق جوالك')}</a>
 
   return (
     <AppShell title={t.title} company={profile?.company_name_ar || companyAr} companyVerified={isSupplier && profile?.verification_status === 'verified'} userId={user?.id} nav={getNav(profile?.role, locale, '/settings')} dir={dir}>
@@ -918,8 +935,13 @@ export default function SettingsPage() {
                   )}
 
                   <div id="email" className="scroll-mt-32">
-                    <div className="block text-xs font-bold text-gray-600 mb-1.5">{isBuyer ? L('Email (optional)', 'ای میل (اختیاری)', 'البريد الإلكتروني (اختياري)') : L('Email', 'ای میل', 'البريد الإلكتروني')}</div>
-                    <EmailVerify currentEmail={user?.email} verified={!!profile?.email_verified_at} locale={locale} optional={isBuyer}
+                    {lockOutRisk && (
+                      <div className="mb-3 rounded-xl border-2 border-[#D4A543] bg-[#FBF3E1] p-3 text-[13px] leading-relaxed text-[#071827]" role="alert">
+                        {L('The text message service is temporarily down, so the sign-in code cannot reach your mobile now. Add your email and verify it before you log out, or you will not be able to sign in.', 'ٹیکسٹ میسج سروس عارضی طور پر بند ہے، اس لیے ابھی سائن اِن کوڈ آپ کے موبائل پر نہیں پہنچ سکتا۔ لاگ آؤٹ کرنے سے پہلے اپنی ای میل شامل کر کے اس کی تصدیق کریں، ورنہ آپ سائن اِن نہیں کر سکیں گے۔', 'خدمة الرسائل النصية متوقفة مؤقتاً، فلا يصل رمز الدخول إلى جوالك الآن. أضف بريدك الإلكتروني ووثّقه قبل تسجيل الخروج، وإلا تعذّر عليك الدخول.')}
+                      </div>
+                    )}
+                    <div className="block text-xs font-bold text-gray-600 mb-1.5">{isBuyer && !phoneAccount ? L('Email (optional)', 'ای میل (اختیاری)', 'البريد الإلكتروني (اختياري)') : L('Email', 'ای میل', 'البريد الإلكتروني')}</div>
+                    <EmailVerify currentEmail={user?.email} verified={!!profile?.email_verified_at} locale={locale} optional={isBuyer && !phoneAccount}
                       onDone={async () => {
                         setProfile({ ...profile, email_verified_at: new Date().toISOString() })
                         try { const { data } = await createClient().auth.refreshSession(); if (data?.user) setUser(data.user) } catch {}
@@ -932,7 +954,7 @@ export default function SettingsPage() {
                       verified={!!profile?.phone_verified_at}
                       waVerified={!!profile?.whatsapp_verified_at}
                       onDone={(ph: string) => { setPhone(ph); setProfile({ ...profile, phone: ph, phone_verified_at: new Date().toISOString() }) }} />
-                    <p className="text-[12px] text-gray-600 mt-1">{L('Changing the number needs a new SMS code.', 'نمبر بدلنے کے لیے نیا SMS کوڈ درکار ہے۔', 'تغيير الرقم يتطلّب توثيقه من جديد برمز SMS.')}</p>
+                    {!smsDown && <p className="text-[12px] text-gray-600 mt-1">{L('Changing the number needs a new code by text message.', 'نمبر بدلنے کے لیے ٹیکسٹ میسج سے آنے والا نیا کوڈ درکار ہے۔', 'تغيير الرقم يتطلّب توثيقه من جديد برمز يصلك برسالة نصية.')}</p>}
                     {isSupplier && (
                       <p className="text-[12px] text-gray-600 mt-1"><Glyph e="🔒" /> {teamMember
                         ? L('This number is for signing in and notifications. Buyers do not see it.', 'یہ نمبر سائن اِن اور اطلاعات کے لیے ہے۔ خریدار اسے نہیں دیکھتا۔', 'يُستخدم هذا الرقم للدخول والإشعارات، ولا يراه المشتري.')
@@ -970,16 +992,20 @@ export default function SettingsPage() {
                     <input id="set-vat" value={vatNumber} onChange={e => { setVatNumber(cleanVat(e.target.value)); setVatConfirm(false) }} inputMode="numeric"
                       className="input-field font-mono" dir="ltr" placeholder="3XXXXXXXXXXXXX3" aria-describedby="set-vat-hint" />
                     {/* checked by the team on ZATCA's site (migration 286); a changed number clears it */}
-                    {profile?.vat_verified_at && cleanVat(vatNumber) === (profile?.vat_number || '') && (
+                    {/* a buyer (or a pricing agent) has no check to wait for: a neutral «saved» line (round-8 UX-047) */}
+                    {!(isSupplier && !independent) && !!profile?.vat_number && cleanVat(vatNumber) === profile.vat_number && (
+                      <p className="text-[13px] text-[#0B2438] mt-1.5 inline-flex items-center gap-1"><Check className="w-4 h-4" aria-hidden />{isSupplier
+                        ? L('Your VAT number is saved.', 'آپ کا ٹیکس نمبر محفوظ ہو گیا۔', 'حُفظ رقمك الضريبي.')
+                        : L('Your VAT number is saved, and it is shown to the supplier to write on your tax invoice.', 'آپ کا ٹیکس نمبر محفوظ ہو گیا، اور یہ سپلائر کو دکھایا جاتا ہے تاکہ وہ اسے آپ کی ٹیکس انوائس پر لکھے۔', 'حُفظ رقمك الضريبي، ويظهر للمورد ليكتبه في فاتورتك الضريبية.')}</p>
+                    )}
+                    {isSupplier && !independent && profile?.vat_verified_at && cleanVat(vatNumber) === (profile?.vat_number || '') && (
                       <p className="text-[13px] font-semibold text-[#0F6E56] mt-1.5 inline-flex items-center gap-1"><Check className="w-4 h-4" aria-hidden />{L('We checked your VAT number', 'ہم نے آپ کا ٹیکس نمبر چیک کر لیا', 'تحقّقنا من رقمك الضريبي')}</p>
                     )}
                     {/* saved, not checked yet: «under review», in a neutral tone (round-7 UX-037) */}
-                    {!profile?.vat_verified_at && !!profile?.vat_number && cleanVat(vatNumber) === profile.vat_number && (
+                    {isSupplier && !independent && !profile?.vat_verified_at && !!profile?.vat_number && cleanVat(vatNumber) === profile.vat_number && (
                       <p className="text-[13px] text-[#0B2438] mt-1.5 rounded-lg bg-[#EEF2F6] px-3 py-2" role="status">
                         <span className="font-bold">{L('Under review', 'زیرِ جائزہ', 'قيد المراجعة')}: </span>
-                        {isSupplier && !independent
-                          ? L('Your VAT number is being reviewed by the Taseerak team. The «Issues a tax invoice» badge appears on your offers after it is checked.', 'آپ کا ٹیکس نمبر تسعیرک کی ٹیم کے جائزے میں ہے۔ چیک ہونے کے بعد آپ کی آفرز پر «ٹیکس انوائس جاری کرتا ہے» کا بیج دکھائی دے گا۔', 'رقمك الضريبي قيد المراجعة لدى فريق تسعيرك، وتظهر شارة «يُصدر فاتورة ضريبية» على عروضك بعد التحقق منه.')
-                          : L('Your VAT number is being reviewed by the Taseerak team.', 'آپ کا ٹیکس نمبر تسعیرک کی ٹیم کے جائزے میں ہے۔', 'رقمك الضريبي قيد المراجعة لدى فريق تسعيرك.')}
+                        {L('Your VAT number is being reviewed by the Taseerak team. The «Issues a tax invoice» badge appears on your offers after it is checked.', 'آپ کا ٹیکس نمبر تسعیرک کی ٹیم کے جائزے میں ہے۔ چیک ہونے کے بعد آپ کی آفرز پر «ٹیکس انوائس جاری کرتا ہے» کا بیج دکھائی دے گا۔', 'رقمك الضريبي قيد المراجعة لدى فريق تسعيرك، وتظهر شارة «يُصدر فاتورة ضريبية» على عروضك بعد التحقق منه.')}
                       </p>
                     )}
                     {isSupplier && !independent && !!profile?.vat_number && !!cleanVat(vatNumber) && cleanVat(vatNumber) !== profile.vat_number && (
@@ -1011,10 +1037,9 @@ export default function SettingsPage() {
                         <span>{L('I confirm that my business is VAT-registered and the number is correct', 'میں تصدیق کرتا ہوں کہ میرا ادارہ VAT میں رجسٹرڈ ہے اور نمبر درست ہے', 'أؤكّد أن منشأتي مسجّلة في ضريبة القيمة المضافة وأن الرقم صحيح')}</span>
                       </label>
                     )}
-                    {isSupplier && <p className="text-[12px] font-semibold text-[#0B2438] mt-1">{L('Most company requests require a tax invoice.', 'کمپنیوں کی زیادہ تر درخواستوں میں ٹیکس انوائس شرط ہوتی ہے۔', 'أغلب طلبات الشركات تشترط فاتورة ضريبية.')}</p>}
                     <p id="set-vat-hint" className="text-[12px] text-gray-600 mt-1">
                       {isSupplier
-                        ? L('With a VAT number you choose, when pricing, whether your price includes VAT, and the buyer sees the price including 15% VAT. Without it, your price is shown as you type it, as a final price with no VAT.', 'ٹیکس نمبر کے ساتھ آپ قیمت دیتے وقت طے کرتے ہیں کہ آپ کی قیمت میں VAT شامل ہے یا نہیں، اور خریدار قیمت 15% VAT سمیت دیکھتا ہے۔ اس کے بغیر آپ کی قیمت جیسے آپ لکھیں ویسے ہی بغیر VAT کے حتمی قیمت کے طور پر دکھائی جاتی ہے۔', 'مع الرقم الضريبي تحدّد عند التسعير هل سعرك شامل الضريبة، ويرى المشتري السعر شاملاً ضريبة 15%. ومن دونه يُعرض سعرك كما تكتبه سعراً نهائياً بلا ضريبة.')
+                        ? L('Most company requests require a tax invoice. With a VAT number you choose, when pricing, whether your price includes VAT, and the buyer sees the price including 15% VAT. Without it, your price is shown as you type it, as a final price with no VAT.', 'کمپنیوں کی زیادہ تر درخواستوں میں ٹیکس انوائس شرط ہوتی ہے۔ ٹیکس نمبر کے ساتھ آپ قیمت دیتے وقت طے کرتے ہیں کہ آپ کی قیمت میں VAT شامل ہے یا نہیں، اور خریدار قیمت 15% VAT سمیت دیکھتا ہے۔ اس کے بغیر آپ کی قیمت جیسے آپ لکھیں ویسے ہی بغیر VAT کے حتمی قیمت کے طور پر دکھائی جاتی ہے۔', 'أغلب طلبات الشركات تشترط فاتورة ضريبية. ومع الرقم الضريبي تحدّد عند التسعير هل سعرك شامل الضريبة، ويرى المشتري السعر شاملاً ضريبة 15%. ومن دونه يُعرض سعرك كما تكتبه سعراً نهائياً بلا ضريبة.')
                         : L('Add it so your tax invoices are issued in your establishment’s name and VAT number, letting you recover the input VAT. It is shown with your request so the supplier writes it on your invoice.', 'اسے شامل کریں تاکہ آپ کی ٹیکس انوائسیں آپ کے ادارے کے نام اور ٹیکس نمبر پر جاری ہوں اور آپ ان پٹ VAT واپس لے سکیں۔ یہ آپ کی درخواست کے ساتھ دکھایا جاتا ہے تاکہ سپلائر اسے انوائس پر لکھے۔', 'أضِفه لتصدر فواتيرك الضريبية باسم منشأتك ورقمها الضريبي، فتستطيع استرداد ضريبة المدخلات. ويظهر مع طلبك ليكتبه المورد في فاتورتك.')}
                     </p>
                   </div>}
@@ -1040,7 +1065,8 @@ export default function SettingsPage() {
                   </div>
 
                   <div>
-                    {FEATURES.locationNav && <Link href="/location" className="inline-flex items-center gap-1 min-h-[44px] text-[13px] font-bold text-[#8F6820] hover:underline">{L('Set your location on the map (optional)', 'نقشے پر اپنا مقام منتخب کریں (اختیاری)', 'حدّد موقعك على الخريطة (اختياري)')}</Link>}
+                    {/* reachable from here even with the menu item off (round-8 UX-050) */}
+                    {!teamMember && <Link href="/location?from=settings" className="inline-flex items-center gap-1 min-h-[44px] text-[13px] font-bold text-[#8F6820] hover:underline">{isSupplier ? L('Set your business location on the map', 'نقشے پر اپنے ادارے کا مقام منتخب کریں', 'حدّد موقع منشأتك على الخريطة') : L('Set your location on the map (optional)', 'نقشے پر اپنا مقام منتخب کریں (اختیاری)', 'حدّد موقعك على الخريطة (اختياري)')}</Link>}
                   </div>
 
                   {/* Seller kind + company activity (the buyer-facing tier is derived from it) */}
@@ -1158,7 +1184,7 @@ export default function SettingsPage() {
                 {/* Locked-field change request modal */}
                 {crqModal && (
                   <div className="fixed inset-0 z-[60] bg-black/40 flex items-end sm:items-center justify-center p-0 sm:p-4" onClick={() => !crqSaving && setCrqModal(null)}>
-                    <div role="dialog" aria-modal="true" aria-labelledby="crq-title" className="bg-white rounded-t-2xl sm:rounded-2xl p-6 w-full max-w-md shadow-xl" dir={dir} onClick={e => e.stopPropagation()}
+                    <div ref={crqRef} role="dialog" aria-modal="true" aria-labelledby="crq-title" className="bg-white rounded-t-2xl sm:rounded-2xl p-6 w-full max-w-md shadow-xl" dir={dir} onClick={e => e.stopPropagation()}
                       onKeyDown={e => { if (e.key === 'Escape' && !crqSaving) setCrqModal(null) }}>
                       <h3 id="crq-title" className="text-lg font-bold mb-1" style={{ color: '#0B2438' }}>
                         {crqModal === 'name' ? L('Request a name change', 'نام بدلنے کی درخواست', 'طلب تعديل الاسم') : L('Request a classification change', 'درجہ بندی بدلنے کی درخواست', 'طلب تعديل التصنيف')}
@@ -1174,10 +1200,10 @@ export default function SettingsPage() {
                         <>
                           <label htmlFor="crq-value" className="block text-xs font-bold text-gray-600 mb-1">{L('New grade', 'نیا درجہ', 'الدرجة الجديدة')}</label>
                           <select id="crq-value" value={crqValue} onChange={e => setCrqValue(e.target.value)} className="input-field mb-3">
-                            <option value="A">درجة أ</option>
-                            <option value="B">درجة ب</option>
-                            <option value="C">درجة ج</option>
-                            <option value="D">درجة د</option>
+                            <option value="A">{L('Grade A', 'درجہ A', 'درجة أ')}</option>
+                            <option value="B">{L('Grade B', 'درجہ B', 'درجة ب')}</option>
+                            <option value="C">{L('Grade C', 'درجہ C', 'درجة ج')}</option>
+                            <option value="D">{L('Grade D', 'درجہ D', 'درجة د')}</option>
                           </select>
                         </>
                       )}
@@ -1191,7 +1217,7 @@ export default function SettingsPage() {
                         <button type="button" disabled={crqSaving} onClick={submitChangeRequest} className="btn-primary flex-1">
                           {crqSaving ? L('Sending…', 'بھیجا جا رہا ہے…', 'جارٍ الإرسال...') : L('Send to admin', 'انتظامیہ کو بھیجیں', 'إرسال الطلب إلى الإدارة')}
                         </button>
-                        <button type="button" onClick={() => setCrqModal(null)} className="min-h-[48px] px-5 rounded-xl text-sm font-bold border border-gray-200 text-[#0B2438]">{L('Cancel', 'منسوخ', 'إلغاء')}</button>
+                        <button type="button" onClick={() => setCrqModal(null)} className={buttonClass('ghost', 'text-sm')}>{L('Cancel', 'منسوخ', 'إلغاء')}</button>
                       </div>
                     </div>
                   </div>
@@ -1207,16 +1233,18 @@ export default function SettingsPage() {
                 {phoneAccount ? (
                   // a phone sign-up has no password to change (UX-040)
                   <div className="max-w-md rounded-xl border border-gray-200 bg-gray-50 p-4 text-sm text-gray-800 leading-relaxed">
-                    <Glyph e="🔑" /> {L('You sign in with a code sent to your mobile, so you do not need a password.', 'آپ اپنے موبائل پر آنے والے کوڈ سے سائن اِن کرتے ہیں، اس لیے پاسورڈ کی ضرورت نہیں۔', 'تدخل إلى حسابك برمز يصلك على جوالك، فلا تحتاج إلى كلمة مرور.')}
+                    <Glyph e="🔑" /> {smsDown
+                      ? L('You sign in with a code sent to your mobile, but the text message service is temporarily down, so the code cannot arrive now.', 'آپ اپنے موبائل پر آنے والے کوڈ سے سائن اِن کرتے ہیں، لیکن ٹیکسٹ میسج سروس عارضی طور پر بند ہے، اس لیے ابھی کوڈ نہیں پہنچ سکتا۔', 'تدخل إلى حسابك برمز يصلك على جوالك، لكن خدمة الرسائل النصية متوقفة مؤقتاً، فلا يصل الرمز الآن.')
+                      : L('You sign in with a code sent to your mobile. You can also sign in with a backup password if you set one.', 'آپ اپنے موبائل پر آنے والے کوڈ سے سائن اِن کرتے ہیں۔ اگر آپ نے متبادل پاسورڈ مقرر کیا ہو تو اس سے بھی سائن اِن کر سکتے ہیں۔', 'تدخل إلى حسابك برمز يصلك على جوالك، ويمكنك أيضاً الدخول بكلمة مرور احتياطية إن عيّنتها.')}
                     {/* the honest way in when the SMS does not arrive: a password set through the email
                         (there is no sign-in code by email), round-7 UX-015 / UX-094 */}
                     {!placeholderEmail && profile?.email_verified_at ? (<>
                       <p className="mt-2">{L('If the text message does not arrive, press «Forgot password» on the sign-in page and type your email, to set a password you can sign in with.', 'اگر ٹیکسٹ میسج نہ پہنچے تو سائن اِن کے صفحے پر «پاسورڈ بھول گئے» دبائیں اور اپنی ای میل لکھیں، تاکہ ایسا پاسورڈ مقرر کریں جس سے آپ سائن اِن کر سکیں۔', 'إذا لم تصلك الرسالة النصية فاضغط «نسيت كلمة المرور» في صفحة الدخول واكتب بريدك، لتعيين كلمة مرور تدخل بها.')}</p>
                       <Link href="/forgot-password?from=settings" className="btn-primary mt-3">
-                        {L('Set a backup password', 'متبادل پاسورڈ مقرر کریں', 'عيّن كلمة مرور احتياطية')}
+                        {L('Set or change the backup password', 'متبادل پاسورڈ مقرر کریں یا بدلیں', 'عيّن كلمة المرور الاحتياطية أو غيّرها')}
                       </Link>
                     </>) : (<>
-                      <p className="mt-2">{L('Add your email and verify it: if the text message ever does not arrive, you can set a password with it and sign in with that.', 'اپنی ای میل شامل کر کے اس کی تصدیق کریں: اگر کبھی ٹیکسٹ میسج نہ پہنچے تو آپ اس سے پاسورڈ مقرر کر کے سائن اِن کر سکیں گے۔', 'أضف بريدك الإلكتروني وثبّته، فإن لم تصلك الرسالة النصية يوماً أمكنك تعيين كلمة مرور به والدخول بها.')}</p>
+                      <p className="mt-2">{smsDown ? L('Add your email and verify it now, then set a password with it: that is how you sign in while texts are down.', 'ابھی اپنی ای میل شامل کر کے اس کی تصدیق کریں، پھر اس سے پاسورڈ مقرر کریں: ٹیکسٹ میسج بند ہونے کے دوران آپ اسی سے سائن اِن کریں گے۔', 'أضف بريدك الإلكتروني ووثّقه الآن، ثم عيّن به كلمة مرور، فبها تدخل ما دامت الرسائل النصية متوقفة.') : L('Add your email and verify it: if the text message ever does not arrive, you can set a password with it and sign in with that.', 'اپنی ای میل شامل کر کے اس کی تصدیق کریں: اگر کبھی ٹیکسٹ میسج نہ پہنچے تو آپ اس سے پاسورڈ مقرر کر کے سائن اِن کر سکیں گے۔', 'أضف بريدك الإلكتروني ووثّقه، فإن لم تصلك الرسالة النصية يوماً أمكنك تعيين كلمة مرور به والدخول بها.')}</p>
                       <button type="button" onClick={() => { setTab('profile'); setTimeout(() => document.getElementById('email')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50) }}
                         className="btn-primary mt-3">
                         {L('Add your email', 'اپنی ای میل شامل کریں', 'أضف بريدك الإلكتروني')}
@@ -1284,9 +1312,7 @@ export default function SettingsPage() {
                 {/* The CR NUMBER is required to price (companies and shops); only the certificate upload,
                     for the «Verified» badge, is optional (round-5 UX-006). «Later» only once the number is saved. */}
                 <div className="flex flex-wrap items-start justify-between gap-3 rounded-xl p-4 mb-6 bg-[#F5F7FA] border border-gray-200">
-                  <p className="text-sm text-gray-800 leading-relaxed flex-1 min-w-[220px]"><Glyph e="🛡" /> {!profile?.commercial_registration
-                    ? L('The commercial registration number (unified national number) is required to price requests. Uploading the certificate to get the «Verified» badge is optional.', 'درخواستوں کی قیمت دینے کے لیے تجارتی رجسٹریشن نمبر (متحدہ قومی نمبر) ضروری ہے۔ «تصدیق شدہ» بیج کے لیے سرٹیفکیٹ اپلوڈ کرنا اختیاری ہے۔', 'رقم السجل التجاري (الرقم الوطني الموحد) مطلوب لتسعير الطلبات. أما رفع الشهادة للحصول على شارة «موثّق» فاختياري.')
-                    : L('Uploading the certificate is optional. Once verified, buyers see a «Verified» badge next to your offers, which raises their trust and your chances of winning requests.', 'سرٹیفکیٹ اپلوڈ کرنا اختیاری ہے۔ تصدیق کے بعد خریدار آپ کی آفرز کے ساتھ «تصدیق شدہ» بیج دیکھتے ہیں، جس سے ان کا اعتماد اور آپ کے درخواستیں جیتنے کے امکانات بڑھتے ہیں۔', 'رفع الشهادة اختياري. بعد التوثيق تظهر شارة «موثّق» بجانب عروضك لدى المشترين، مما يرفع موثوقيتك وفرصك في الفوز بالطلبات.')}{supplierTier !== 'shop' && ' ' + L('Verified companies also appear under «Verified companies and factories».', 'تصدیق شدہ کمپنیاں «تصدیق شدہ کمپنیاں اور فیکٹریاں» کے حصے میں بھی دکھائی دیتی ہیں۔', 'وتظهر الشركات الموثّقة كذلك ضمن «شركات ومصانع موثّقة».')}</p>
+                  <p className="text-sm text-gray-800 leading-relaxed flex-1 min-w-[220px]"><Glyph e="🛡" /> {L('Once verified, buyers see a «Verified» badge next to your offers, which raises their trust and your chances of winning requests.', 'تصدیق کے بعد خریدار آپ کی آفرز کے ساتھ «تصدیق شدہ» بیج دیکھتے ہیں، جس سے ان کا اعتماد اور آپ کے درخواستیں جیتنے کے امکانات بڑھتے ہیں۔', 'بعد التوثيق تظهر شارة «موثّق» بجانب عروضك لدى المشترين، مما يرفع موثوقيتك وفرصك في الفوز بالطلبات.')}{supplierTier !== 'shop' && ' ' + L('Verified companies also appear under «Verified companies and factories».', 'تصدیق شدہ کمپنیاں «تصدیق شدہ کمپنیاں اور فیکٹریاں» کے حصے میں بھی دکھائی دیتی ہیں۔', 'وتظهر الشركات الموثّقة كذلك ضمن «شركات ومصانع موثّقة».')}</p>
                   {/* «لاحقاً» stays on this page: it goes back to the profile tab instead of leaving (UX-160) */}
                   {!!profile?.commercial_registration && (
                     <button type="button" onClick={() => setTab('profile')} className="min-h-[44px] inline-flex items-center text-sm font-bold px-4 rounded-xl border bg-white hover:bg-gray-50 shrink-0" style={{ borderColor: '#e5e7eb', color: '#0B2438' }}>{L('Later', 'بعد میں', 'لاحقاً')}</button>
@@ -1308,7 +1334,7 @@ export default function SettingsPage() {
                     </div>
                     <div className="text-[13px] text-gray-600 mt-0.5 mb-3">{wathqLive ? cv.sub : cv.subManual}</div>
                     <label htmlFor="set-cr" className="block text-xs font-bold text-gray-600 mb-1.5">
-                      {L('Unified national number (10 digits, starts with 7) (required)', 'متحدہ قومی نمبر (7 سے شروع، 10 ہندسے) (ضروری)', 'الرقم الوطني الموحد للمنشأة (10 أرقام يبدأ بـ7) (مطلوب)')}
+                      {L('Unified national number of the establishment (required): 10 digits starting with 7', 'ادارے کا متحدہ قومی نمبر (ضروری): 7 سے شروع ہونے والے 10 ہندسے', 'الرقم الوطني الموحد للمنشأة (مطلوب): 10 أرقام يبدأ بالرقم 7')}
                     </label>
                     <div className="flex flex-col sm:flex-row gap-2">
                       <input id="set-cr" value={crNumber} inputMode="numeric" dir="ltr" maxLength={14}
@@ -1317,10 +1343,9 @@ export default function SettingsPage() {
                         className="input-field font-mono disabled:opacity-60 flex-1 min-w-0" placeholder="7001234567" />
                       {profile?.verification_status === 'verified' && profile?.cr_verification_source === 'wathq' ? (
                         <span className="min-h-[48px] inline-flex items-center justify-center gap-1 text-sm px-4 rounded-xl font-bold text-white" style={{ background: '#0F6E56' }}><Glyph e="🛡" /> {t.verified}</span>
-                      ) : (
+                      ) : !wathqLive ? null : (
                         <button type="button" onClick={verifyCRSettings} disabled={crChecking || !crValid}
-                          className="min-h-[48px] text-sm px-5 rounded-xl font-bold text-white whitespace-nowrap disabled:opacity-50 transition-all hover:shadow"
-                          style={{ background: '#0B2438' }}>
+                          className={buttonClass('secondary', 'text-sm whitespace-nowrap')}>
                           {crChecking ? (wathqLive ? cv.checking : t.saving) : (wathqLive ? cv.btn : cv.btnManual)}
                         </button>
                       )}
@@ -1440,7 +1465,7 @@ export default function SettingsPage() {
                         <span>
                           <span className="block font-bold text-base text-[#0B2438]">{lang.name}</span>
                           {/* the second line names the language in the interface language, in one script (UX-142) */}
-                          <span className="block text-[13px] text-gray-600 mt-0.5">{lang.key === 'ar' ? L('Arabic', 'عربی', 'العربية') : lang.key === 'en' ? L('English', 'انگریزی', 'الإنجليزية') : L('Urdu', 'اردو', 'الأردية')}</span>
+                          {lang.key !== locale && <span className="block text-[13px] text-gray-600 mt-0.5">{lang.key === 'ar' ? L('Arabic', 'عربی', 'العربية') : lang.key === 'en' ? L('English', 'انگریزی', 'الإنجليزية') : L('Urdu', 'اردو', 'الأردية')}</span>}
                         </span>
                         {on && (
                           <span className="sm:mt-2 inline-flex items-center gap-1 text-[13px] font-bold text-[#0B2438]"><Check className="w-4 h-4" aria-hidden />{t.langSaved}</span>

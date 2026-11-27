@@ -15,7 +15,8 @@ import { paymentTermsLabel } from '@/lib/paymentTerms'
 import { offerComparable, sellerInvoiceLabel, invoiceGateText, isIndependentOffer, sarLabel, buyerBasisTag } from '@/lib/vat'
 import { buttonClass } from '@/components/shared/Button'
 import { agentCapText } from '@/lib/sellers'
-import { payDueAt, payDueSoon, expectedDeliveryDate, deliveryLate, deliveryDueAhead, deliveryDueToday } from '@/lib/dealStage'
+import { payDueAt, payDueSoon, expectedDeliveryDate, deliveryLate, deliveryDueAhead, deliveryDueToday, deliveryDaysText } from '@/lib/dealStage'
+import AutoTr from '@/components/shared/AutoTr'
 
 // حماية الصفقة: محضر استلام + تأكيد دفع + نزاع (للطرفين).
 // مكوّن مشترك يُعرض في صفحة الصفقة لكلٍّ من المشتري والمورد (كلٌّ يرى أزراره).
@@ -163,7 +164,8 @@ export default function DealProtection({
   const dueToday = deliveryDueToday(offer)
   const dueText = dueAt ? dueAt.toLocaleDateString(dloc, { weekday: 'long', day: 'numeric', month: 'long', timeZone: 'Asia/Riyadh' }) : ''
   const showDue = !closed && !!dueAt && deliveryDueAhead(offer) && !offer.supplier_delivered_at && !offer.received_at
-  const noFridays = L('(Fridays not counted)', '(جمعہ شامل نہیں)', '(دون احتساب أيام الجمعة)')
+  // round-8 UX-090: the agreed time in the one shared wording («خلال 3 أيام عمل (دون الجمعة)»)
+  const noFridays = hasDays ? `· ${deliveryDaysText(offer.delivery_days, locale)}` : L('(Fridays not counted)', '(جمعہ شامل نہیں)', '(دون الجمعة)')
   // «أضف إلى التقويم»: an all-day event on the expected day, UTF-8 with a BOM so Arabic titles open right (UX-099)
   function downloadIcs() {
     if (!dueAt) return
@@ -278,7 +280,7 @@ export default function DealProtection({
             : isSupplier
               ? (observer ? L('Waiting for the account owner to confirm delivery', 'اکاؤنٹ کے مالک کی طرف سے ڈیلیوری کی تصدیق کا انتظار', 'بانتظار تأكيد صاحب الحساب للتسليم')
                 : advanceDue ? L('Waiting for the buyer’s advance payment; then deliver the goods.', 'خریدار کی پیشگی ادائیگی کا انتظار؛ پھر سامان پہنچائیں۔', 'بانتظار دفعة المشتري المقدّمة، ثم تسلّم البضاعة.')
-                : offer.supplier_invoice_url ? L('Confirm once all the goods are delivered.', 'سارا مال پہنچنے پر تصدیق کریں۔', 'أكّد بعد تسليم كل البضاعة.') : invoiceGateText(vo, locale))
+                : offer.supplier_invoice_url ? L('Confirm once all the goods are delivered.', 'سارا مال پہنچنے پر تصدیق کریں۔', 'أكّد بعد تسليم كل البضاعة.') : L('Confirming delivery opens once the invoice is uploaded.', 'انوائس اپ لوڈ ہونے کے بعد ڈیلیوری کی تصدیق ممکن ہو گی۔', 'يُتاح تأكيد التسليم بعد رفع الفاتورة.'))
               : pickup ? L('Waiting for the supplier to prepare the order', 'سپلائر کی طرف سے آرڈر کی تیاری کا انتظار', 'بانتظار تجهيز المورد للطلب')
               : L('Waiting for the supplier to deliver and confirm', 'سپلائر کی ڈیلیوری اور تصدیق کا انتظار ہے', 'بانتظار تسليم المورد وتأكيده')}
         </div>
@@ -313,7 +315,7 @@ export default function DealProtection({
                 : L('Waiting for the buyer to confirm receipt of the goods', 'خریدار کی طرف سے مال کی وصولی کی تصدیق کا انتظار ہے', 'بانتظار تأكيد المشتري لاستلام البضاعة')}
         </div>
         {!offer.received_at && isContractor && (offer.supplier_delivered_at || deliverOverdue) && (
-          <div className="text-xs text-gray-600 mt-0.5">{L('Confirming means the material arrived as you ordered it.', 'تصدیق کا مطلب ہے کہ مال آپ کے آرڈر کے مطابق پہنچ گیا ہے۔', 'تأكيدك يعني أن المادة وصلت كما طلبت.')}</div>
+          <div className="text-xs text-gray-600 mt-0.5">{L('Confirming means the goods arrived complete and as you ordered.', 'تصدیق کا مطلب ہے کہ سامان پورا اور آپ کے آرڈر کے مطابق پہنچ گیا ہے۔', 'تأكيدك يعني أن البضاعة وصلت كاملة وكما طلبت.')}</div>
         )}
       </div>
       {!offer.received_at && isContractor && canAct && (
@@ -326,7 +328,7 @@ export default function DealProtection({
           </button>
           {offer.dispute_status !== 'open' && (offer.supplier_delivered_at || deliverOverdue) && (
             <button type="button" onClick={() => openDispute(L('The goods were not delivered or do not match the order', 'مال ڈیلیور نہیں ہوا یا آرڈر کے مطابق نہیں ہے', 'البضاعة لم تُسلَّم أو لم تتطابق مع المطلوب'))}
-              className={`${BTN} border border-red-300 text-[#B42318] bg-white hover:bg-red-50`}>
+              className={OUTLINE}>
               {L('Not received', 'وصول نہیں ہوا', 'لم يتم الاستلام')}
             </button>
           )}
@@ -373,7 +375,7 @@ export default function DealProtection({
         {!paid && isContractor && canAct && (
           <button type="button" onClick={async () => { if ((await askConfirm(dealAmount ? L(`Have you paid the supplier ${fmtAmt(dealAmount)} SAR for this order?${extrasPending ? '\n\nDelivery charges may still be added once the supplier confirms them, so it is better to pay after that.' : ''}\n\nThis confirmation is recorded with its date and cannot be undone.`, `کیا آپ نے اس آرڈر کے لیے سپلائر کو ${fmtAmt(dealAmount)} ریال ادا کر دیے ہیں؟${extrasPending ? '\n\nسپلائر کی تصدیق کے بعد ڈیلیوری چارجز شامل ہو سکتے ہیں، اس لیے بہتر ہے کہ اس کے بعد ادائیگی کریں۔' : ''}\n\nیہ تصدیق تاریخ کے ساتھ ریکارڈ ہو گی اور واپس نہیں لی جا سکتی۔`, `هل دفعت للمورد مبلغ ${fmtAmt(dealAmount)} ر.س لهذا الطلب؟${extrasPending ? '\n\nقد تُضاف رسوم التوصيل بعد تأكيد المورد لها، فيُفضّل الدفع بعد تأكيدها.' : ''}\n\nسيُسجَّل هذا التأكيد بتاريخه ولا يمكن التراجع عنه.`) : L('Have you paid the supplier the amount of this order?\n\nThis confirmation is recorded with its date and cannot be undone.', 'کیا آپ نے اس آرڈر کی رقم سپلائر کو ادا کر دی ہے؟\n\nیہ تصدیق تاریخ کے ساتھ ریکارڈ ہو گی اور واپس نہیں لی جا سکتی۔', 'هل دفعت للمورد مبلغ هذا الطلب؟\n\nسيُسجَّل هذا التأكيد بتاريخه ولا يمكن التراجع عنه.'), { okLabel: L('Yes, I paid', 'ہاں، ادا کر دیا', 'نعم، دفعت'), cancelLabel: L('Go back', 'واپس', 'تراجع') }))) callRpc('mark_paid', { p_offer_id: offer.id }, 'paid') }}
             disabled={busy === 'paid'} className={payIsNext ? PRIMARY : OUTLINE} style={payIsNext ? GOLD : undefined}>
-            <Check className="w-4 h-4" aria-hidden="true" /> {advanceDue ? L('Record the advance payment', 'پیشگی ادائیگی درج کریں', 'سجّل الدفع') : L('Confirm payment', 'ادائیگی کی تصدیق کریں', 'تأكيد الدفع')}
+            <Check className="w-4 h-4" aria-hidden="true" /> {advanceDue ? L('Record the advance payment', 'پیشگی ادائیگی درج کریں', 'سجّل الدفعة المقدّمة') : L('Record the payment', 'ادائیگی درج کریں', 'سجّل الدفع')}
           </button>
         )}
         {/* round-5 UX-008: cash at the door is common and a home buyer rarely comes back to record it, so the
@@ -412,7 +414,7 @@ export default function DealProtection({
       <p className="text-xs text-gray-500 mb-3">{L('The platform records each stage of the deal as proof that protects both sides; it never holds any money.', 'پلیٹ فارم ڈیل کے ہر مرحلے کو ریکارڈ کرتا ہے تاکہ دونوں فریقوں کا تحفظ ہو؛ یہ کوئی رقم اپنے پاس نہیں رکھتا۔', 'توثّق المنصة مراحل الصفقة دليلاً يحمي الطرفين، ولا تحتفظ بأي مبالغ.')}</p>
       {closed && (
         <div role="status" className="mb-4 rounded-xl bg-gray-100 border border-gray-300 text-gray-800 text-sm font-semibold px-3 py-2 leading-relaxed">
-          <Glyph e="ℹ" /> {L('This deal was cancelled by a decision of the Taseerak team', 'یہ ڈیل تسعیرک کی ٹیم کے فیصلے سے منسوخ کر دی گئی', 'أُلغيت هذه الصفقة بقرار فريق تسعيرك')}{offer.deal_closed_reason ? <>: <span dir="auto">{offer.deal_closed_reason}</span></> : '.'}
+          <Glyph e="ℹ" /> {L('This deal was cancelled by a decision of the Taseerak team', 'یہ ڈیل تسعیرک کی ٹیم کے فیصلے سے منسوخ کر دی گئی', 'أُلغيت هذه الصفقة بقرار فريق تسعيرك')}{offer.deal_closed_reason ? <>: <span dir="auto"><AutoTr text={offer.deal_closed_reason} locale={locale} /></span></> : '.'}
         </div>
       )}
       {/* a team member: the supplier page shows the one «يدير صاحب الحساب» note (round-4 UX-079) */}
@@ -420,7 +422,7 @@ export default function DealProtection({
         <div className="mb-4 rounded-xl bg-[#0B2438]/5 border border-[#0B2438]/15 text-[#0B2438] text-xs font-semibold px-3 py-2 leading-relaxed">
           {/* round-7 UX-032: a pricing agent's own address is private (migration 285): he sets the pickup place */}
           <Glyph e="📍" /> {isContractor && isIndependentOffer(vo)
-            ? L('The pricing agent sets the pickup place; message him to confirm the place and time.', 'وصولی کی جگہ پرائس ایجنٹ طے کرتا ہے؛ جگہ اور وقت کی تصدیق کے لیے اسے پیغام بھیجیں۔', 'مكان الاستلام يحدّده وسيط التسعير؛ راسله لتأكيد المكان والموعد.')
+            ? L('The pricing agent sets the pickup place; message him to confirm the place and time.', 'وصولی کی جگہ قیمت ایجنٹ طے کرتا ہے؛ جگہ اور وقت کی تصدیق کے لیے اسے پیغام بھیجیں۔', 'مكان الاستلام يحدّده وسيط التسعير؛ راسله لتأكيد المكان والموعد.')
             : pickupPlace
             ? L(`Pickup place: ${pickupPlace}`, `وصولی کی جگہ: ${pickupPlace}`, `مكان الاستلام: ${pickupPlace}`)
             : L('The buyer collects the goods from the supplier’s shop.', 'خریدار سامان سپلائر کی دکان سے لے گا۔', 'يستلم المشتري البضاعة من محل المورد.')}
@@ -511,7 +513,7 @@ export default function DealProtection({
             <div className="font-bold text-[#B42318]"><Glyph e="⚠" /> {L('Problem reported', 'مسئلہ رپورٹ ہوا', 'بلاغ عن مشكلة قيد المعالجة')}</div>
             {isSupplier && !reportedBySupplier ? (<>
               <div className="text-xs text-gray-800 mt-1 leading-relaxed">
-                {L('The buyer reported a problem with this deal: ', 'خریدار نے اس ڈیل میں ایک مسئلہ رپورٹ کیا: ', 'أبلغ المشتري عن مشكلة في هذه الصفقة: ')}<b className="text-[#B42318]" dir="auto">{offer.dispute_reason}</b>
+                {L('The buyer reported a problem with this deal: ', 'خریدار نے اس ڈیل میں ایک مسئلہ رپورٹ کیا: ', 'أبلغ المشتري عن مشكلة في هذه الصفقة: ')}<b className="text-[#B42318]" dir="auto"><AutoTr text={offer.dispute_reason} locale={locale} /></b>
               </div>
               <div className="text-xs text-gray-600 mt-1 leading-relaxed">{observer
                 ? L('The Taseerak team will contact the account owner.', 'تسعیرک کی ٹیم اکاؤنٹ کے مالک سے رابطہ کرے گی۔', 'سيتواصل فريق تسعيرك مع صاحب الحساب.')
@@ -522,13 +524,13 @@ export default function DealProtection({
               )}
             </>) : (<>
               <div className="text-xs text-[#B42318] mt-1" dir="auto">
-                {isContractor && reportedBySupplier ? L('The supplier reported: ', 'سپلائر نے رپورٹ کیا: ', 'أبلغ المورد: ') : isSupplier ? (observer ? L('The account owner reported: ', 'اکاؤنٹ کے مالک نے رپورٹ کیا: ', 'أبلغ صاحب الحساب: ') : L('You reported: ', 'آپ نے رپورٹ کیا: ', 'أبلغتَ: ')) : L('You reported: ', 'آپ نے رپورٹ کیا: ', 'أبلغتَ: ')}{offer.dispute_reason}
+                {isContractor && reportedBySupplier ? L('The supplier reported: ', 'سپلائر نے رپورٹ کیا: ', 'أبلغ المورد: ') : isSupplier ? (observer ? L('The account owner reported: ', 'اکاؤنٹ کے مالک نے رپورٹ کیا: ', 'أبلغ صاحب الحساب: ') : L('You reported: ', 'آپ نے رپورٹ کیا: ', 'أبلغتَ: ')) : L('You reported: ', 'آپ نے رپورٹ کیا: ', 'أبلغتَ: ')}<AutoTr text={offer.dispute_reason} locale={locale} />
               </div>
               <div className="text-xs text-gray-600 mt-1">{L('The Taseerak team will contact both sides to mediate.', 'تسعیرک کی ٹیم صلح کے لیے دونوں فریقوں سے رابطہ کرے گی۔', 'سيتواصل فريق تسعيرك مع الطرفين للوساطة.')}</div>
             </>)}
           </div>
         ) : offer.dispute_status === 'resolved' ? (
-          <div className="bg-[#E1F5EE] border border-[#0F6E56]/30 rounded-xl p-3 text-sm text-[#0F6E56]"><Check className="inline w-4 h-4" aria-hidden="true" /> {L('Problem resolved', 'شکایت حل ہو گئی', 'تم حل المشكلة')}{offer.dispute_resolution ? `: ${offer.dispute_resolution}` : ''}</div>
+          <div className="bg-[#E1F5EE] border border-[#0F6E56]/30 rounded-xl p-3 text-sm text-[#0F6E56]"><Check className="inline w-4 h-4" aria-hidden="true" /> {L('Problem resolved', 'شکایت حل ہو گئی', 'تم حل المشكلة')}{offer.dispute_resolution ? <>: <AutoTr text={offer.dispute_resolution} locale={locale} /></> : ''}</div>
         ) : !canAct ? null : !showDispute ? (
           <button type="button" onClick={() => openDispute()} className="text-xs font-semibold text-[#B42318] hover:underline min-h-11"><Glyph e="⚠" /> {L('Had a problem? Report it', 'کوئی مسئلہ ہوا؟ شکایت درج کریں', 'واجهت مشكلة؟ أبلغ عنها')}</button>
         ) : (

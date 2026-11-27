@@ -7,7 +7,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import PageLoader from '@/components/shared/PageLoader'
 import { createClient } from '@/lib/supabase/client'
-import { getProductLabel, getUnitLabelLong, getRegionLabel } from '@/types'
+import { getProductLabel, getUnitLabelLong } from '@/types'
 import { useTranslation } from '@/i18n'
 import AppShell from '@/components/shared/AppShell'
 import { getNav } from '@/lib/nav'
@@ -252,7 +252,7 @@ export default function ContractorDashboard() {
   const rfqsThisWeek = rfqs.filter((r: any) => r.created_at && (now - new Date(r.created_at).getTime()) < 7 * 864e5).length
   const awaitingReply = rfqs.filter(hasNew).length
   const completion = [
-    { ok: !!(profile?.region && profile?.city), label: L('Location', 'مقام', 'الموقع'), href: '/settings' },
+    { ok: !!profile?.city, label: L('Location', 'مقام', 'الموقع'), href: '/settings' },
     { ok: !!profile?.phone, label: L('Phone', 'فون نمبر', 'رقم الجوال'), href: '/settings' },
     { ok: !!(profile?.latitude || profile?.national_short_address), label: L('Map pin', 'نقشے پر مقام', 'الموقع على الخريطة'), href: '/location' },
     { ok: rfqs.length > 0, label: L('First price request', 'پہلی قیمت کی درخواست', 'أول طلب تسعير'), href: '/contractor/rfq/quick' },
@@ -499,7 +499,7 @@ export default function ContractorDashboard() {
         {/* السوق: «ماذا تحتاج اليوم؟» + الأقسام بالصور (التصميم المعتمد); the greeting lives in the hero */}
         {/* round-7 UX-108: a new home buyer sees the delivery address card and «how it works» right under the search */}
         <MarketHero locale={locale} homeBuyer={homeBuyer} greeting={greeting} belowSearch={newHome ? (<>
-          {profile && !profile.region && <Link href="/onboarding" className="flex items-center justify-between gap-3 rounded-2xl p-4 mb-3 bg-white border-2 border-[#D4A543]/60 hover:shadow-md transition-shadow">
+          {profile && !profile.city && <Link href="/onboarding" className="flex items-center justify-between gap-3 rounded-2xl p-4 mb-3 bg-white border-2 border-[#D4A543]/60 hover:shadow-md transition-shadow">
             <div>
               <div className="font-extrabold text-sm text-[#0B2438]"><Glyph e="📍" /> {homeBuyer ? L('Add your delivery address', 'ڈیلیوری کا پتہ شامل کریں', 'أضف عنوان التوصيل') : L('Complete your profile', 'اپنی پروفائل مکمل کریں', 'أكمل ملفك')}</div>
               <div className="text-[13px] text-gray-700 mt-0.5">{homeBuyer
@@ -551,7 +551,7 @@ export default function ContractorDashboard() {
 
         {/* one attention card at a time, by priority (UX-087) */}
         {/* round-6 UX-026: no «أكمل ملفك» before the profile has loaded */}
-        {!profile ? null : !profile.region && !newHome ? (
+        {!profile ? null : !profile.city && !newHome ? (
           <Link href="/onboarding" className="flex items-center justify-between gap-3 rounded-2xl p-4 mb-4 bg-white border-2 border-[#D4A543]/60 hover:shadow-md transition-shadow">
             <div>
               <div className="font-extrabold text-sm text-[#0B2438]"><Glyph e="📍" /> {homeBuyer ? L('Add your delivery address', 'ڈیلیوری کا پتہ شامل کریں', 'أضف عنوان التوصيل') : L('Complete your profile', 'اپنی پروفائل مکمل کریں', 'أكمل ملفك')}</div>
@@ -744,7 +744,7 @@ export default function ContractorDashboard() {
                     <div className="w-9 h-9 rounded-lg flex items-center justify-center text-base text-white" style={{ background: '#0B2438' }}><Glyph e="📋" /></div>
                     <div>
                       <div className="font-semibold text-sm" style={{ color: '#0B2438' }}>{p.title}</div>
-                      <div className="text-[12px] text-gray-500"><Glyph e="📍" /> {getRegionLabel(p.region || '', locale)} • {new Date(p.created_at).toLocaleDateString(dateLocale(locale))}</div>
+                      <div className="text-[12px] text-gray-500"><Glyph e="📍" /> {getPlaceLabel(p.city, p.region, locale) || '—'} • {new Date(p.created_at).toLocaleDateString(dateLocale(locale))}</div>
                     </div>
                   </div>
                   <div className="text-[12px] font-semibold" style={{ color: '#8F6820' }}>

@@ -51,7 +51,8 @@ const schema = z.object({
   // required for buyers and companies; an independent seller trades under their own name (checked in onSubmit)
   company_name_ar: z.string().optional(),
   // Saudi 05XXXXXXXX (kept as typed), or a UAE/Jordan mobile (owner 2026-11-18)
-  phone: z.string().refine((v) => /^05[0-9]{8}$/.test(v) || !!toE164(v), 'رقم الجوال مطلوب: رقم سعودي يبدأ بـ05، أو رقم إماراتي أو أردني'),
+  // round-8 UX-043: empty is allowed here only for a team member (onSubmit requires it for everyone else)
+  phone: z.string().refine((v) => v === '' || /^05[0-9]{8}$/.test(v) || !!toE164(v), 'رقم الجوال مطلوب: رقم سعودي يبدأ بـ05، أو رقم إماراتي أو أردني'),
   email: z.string().email('البريد الإلكتروني غير صحيح'),
   password: z.string().refine(v => passwordProblems(v).length === 0, 'كلمة المرور يجب أن تحتوي على 8 أحرف على الأقل، وحرف إنجليزي كبير، وحرف صغير، ورقم'),
 })
@@ -60,7 +61,7 @@ type FormData = z.infer<typeof schema>
 const TR = {
   ar: {
     title: 'أنشئ حسابك', sub: 'دقيقة واحدة وتبدأ',
-    supTitle: 'سجّل كمورد', supSub: 'أدخل بيانات نشاطك الأساسية الآن، وأكمل الموقع والأقسام والتوثيق بعد الدخول.',
+    supTitle: 'سجّل شركتك أو محلك', supSub: 'أدخل بيانات نشاطك الأساسية الآن، وأكمل الموقع والأقسام والتوثيق بعد الدخول.',
     toSupplier: 'صاحب محل أو مورد مواد؟', toSupplierCta: 'سجّل كمورد',
     toBuyer: 'تحتاج أسعار مواد البناء؟', toBuyerCta: 'سجّل لطلب الأسعار',
     supplier: 'أقدّم أسعار المواد', supplierDesc: 'شركة أو محل أو مصنع أو وسيط تسعير',
@@ -72,7 +73,7 @@ const TR = {
     corpQ: 'شركة لديها فريق مشتريات؟', corpA: 'نجهّز لك حساباً للشركة يضم موظفيك — تواصل معنا',
     copyright: '© 2026 تسعيرك · منصة التسعير والتوريد لمواد البناء',
     phone: 'رقم الجوال (واتساب)', email: 'البريد الإلكتروني', password: 'كلمة المرور', passwordPh: 'كلمة مرور قوية',
-    create: 'إنشاء الحساب ←', creating: 'جارٍ الإنشاء...', haveAccount: 'لديك حساب؟', login: 'تسجيل الدخول',
+    create: 'إنشاء الحساب', creating: 'جارٍ الإنشاء...', haveAccount: 'لديك حساب؟', login: 'تسجيل الدخول',
     chooseType: 'اختر نوع الحساب أولاً', phoneTaken: 'رقم الجوال هذا مسجّل لدينا. إن كان رقمك، فسجّل الدخول.',
     emailTaken: 'هذا البريد الإلكتروني مسجّل مسبقاً — ', signInInstead: 'سجّل الدخول.',
     agreePre: 'أوافق على ', terms: 'الشروط والأحكام', and: ' و', privacy: 'سياسة الخصوصية',
@@ -87,7 +88,7 @@ const TR = {
   },
   en: {
     title: 'Create your account', sub: 'One minute and you are in',
-    supTitle: 'Register as a supplier', supSub: 'Enter your basic business details now, and complete your location, sections and verification after signing in.',
+    supTitle: 'Register your company or shop', supSub: 'Enter your basic business details now, and complete your location, sections and verification after signing in.',
     toSupplier: 'Own a shop or supply materials?', toSupplierCta: 'Register as a supplier',
     toBuyer: 'Need building-material prices?', toBuyerCta: 'Sign up to request prices',
     supplier: 'I provide prices', supplierDesc: 'Company, shop, factory or independent seller',
@@ -99,7 +100,7 @@ const TR = {
     corpQ: 'A company with a procurement team?', corpA: 'We set up a company account for your staff — contact us',
     copyright: '© 2026 Taseerak · Procurement platform for construction materials',
     phone: 'Phone (WhatsApp)', email: 'Email address', password: 'Password', passwordPh: 'A strong password',
-    create: 'Create account →', creating: 'Creating...', haveAccount: 'Have an account?', login: 'Sign In',
+    create: 'Create account', creating: 'Creating...', haveAccount: 'Have an account?', login: 'Sign In',
     chooseType: 'Choose your account type first', phoneTaken: 'This mobile number is already registered with us. If it is yours, sign in.',
     emailTaken: 'This email is already registered — ', signInInstead: 'sign in.',
     agreePre: 'I agree to the ', terms: 'Terms & Conditions', and: ' and ', privacy: 'Privacy Policy',
@@ -114,7 +115,7 @@ const TR = {
   },
   ur: {
     title: 'اپنا اکاؤنٹ بنائیں', sub: 'ایک منٹ اور آپ اندر ہیں',
-    supTitle: 'سپلائر کے طور پر رجسٹر کریں', supSub: 'ابھی اپنے کاروبار کی بنیادی تفصیلات درج کریں، اور سائن اِن کے بعد مقام، سیکشن اور تصدیق مکمل کریں۔',
+    supTitle: 'اپنی کمپنی یا دکان رجسٹر کریں', supSub: 'ابھی اپنے کاروبار کی بنیادی تفصیلات درج کریں، اور سائن اِن کے بعد مقام، سیکشن اور تصدیق مکمل کریں۔',
     toSupplier: 'دکان ہے یا سامان سپلائی کرتے ہیں؟', toSupplierCta: 'سپلائر کے طور پر رجسٹر کریں',
     toBuyer: 'تعمیراتی سامان کی قیمتیں چاہییں؟', toBuyerCta: 'قیمتیں منگوانے کے لیے رجسٹر کریں',
     supplier: 'میں قیمتیں دیتا ہوں', supplierDesc: 'کمپنی، دکان، فیکٹری یا آزاد فروخت کنندہ',
@@ -126,7 +127,7 @@ const TR = {
     corpQ: 'خریداری ٹیم والی کمپنی؟', corpA: 'ہم آپ کے عملے کے لیے کمپنی اکاؤنٹ بناتے ہیں — رابطہ کریں',
     copyright: '© 2026 تسعیرک · تعمیراتی سامان کی قیمتوں کا پلیٹ فارم',
     phone: 'فون (واٹس ایپ)', email: 'ای میل', password: 'پاسورڈ', passwordPh: 'مضبوط پاسورڈ',
-    create: 'اکاؤنٹ بنائیں ←', creating: 'بن رہا ہے...', haveAccount: 'اکاؤنٹ ہے؟', login: 'سائن ان',
+    create: 'اکاؤنٹ بنائیں', creating: 'بن رہا ہے...', haveAccount: 'اکاؤنٹ ہے؟', login: 'سائن ان',
     chooseType: 'پہلے اکاؤنٹ کی قسم منتخب کریں', phoneTaken: 'یہ موبائل نمبر ہمارے پاس رجسٹرڈ ہے۔ اگر آپ کا ہے تو سائن اِن کریں۔',
     emailTaken: 'یہ ای میل پہلے سے رجسٹرڈ ہے — ', signInInstead: 'سائن اِن کریں۔',
     agreePre: 'میں متفق ہوں ', terms: 'شرائط و ضوابط', and: ' اور ', privacy: 'پرائیویسی پالیسی',
@@ -268,11 +269,19 @@ export default function RegisterPage() {
     if (asksBusiness && cr) {
       const r = await checkCr(cr)
       if (r === 'taken') { focusCr(); return } // the message and «تواصل مع الدعم» show under the field
-      if (r === 'error') { setFormError(crCheckFailedText); return } // UX-039: never sign up unchecked (the CR would be dropped silently)
+      if (r === 'error') { focusCr(); return } // UX-039: never sign up unchecked; round-8 UX-112 (3): the message shows once, under the field
     }
-    if (phoneDup) { setFormError(t.phoneTaken); return }
-    // check again at submit, whatever the format (owner 2026-11-21): never create an account on a taken number
-    try { const { data: taken } = await supabase.rpc('phone_exists', { p_phone: data.phone }); if (taken === true) { setPhoneDup(true); setFormError(t.phoneTaken); return } } catch {}
+    // round-8 UX-043: a team member may have only one number, already on his own account: the phone is optional
+    // for him, never checked against phone_exists, and kept only when no other account has it
+    let keepPhone = true
+    if (teamToken) {
+      if (data.phone) { try { const { data: taken } = await supabase.rpc('phone_exists', { p_phone: data.phone }); if (taken === true) keepPhone = false } catch { keepPhone = false } }
+    } else {
+      if (!data.phone) { setError('phone', { message: 'رقم الجوال مطلوب: رقم سعودي يبدأ بـ05، أو رقم إماراتي أو أردني' }); return }
+      if (phoneDup) { setFormError(t.phoneTaken); return }
+      // check again at submit, whatever the format (owner 2026-11-21): never create an account on a taken number
+      try { const { data: taken } = await supabase.rpc('phone_exists', { p_phone: data.phone }); if (taken === true) { setPhoneDup(true); setFormError(t.phoneTaken); return } } catch {}
+    }
     if (await checkEmailDup(data.email)) { setFormError(''); return }
     setSubmitting(true); setFormError('')
     try {
@@ -281,7 +290,7 @@ export default function RegisterPage() {
         role: data.role,
         full_name: data.full_name.trim(),
         company_name_ar: (asksBusiness ? (data.company_name_ar || '').trim() : '') || data.full_name.trim(),
-        phone: data.phone,
+        ...(data.phone && keepPhone ? { phone: data.phone } : {}),
         preferred_language: locale,
         ...(data.role === 'supplier' && !teamToken ? { seller_kind: sellerKind } : {}),
         ...(teamToken ? { team_invite: teamToken } : {}),
@@ -448,13 +457,13 @@ export default function RegisterPage() {
                 {errors.full_name && <p className="text-red-600 text-[13px] mt-1">{vmsg(errors.full_name.message, locale)}</p>}
               </div>
               <div>
-                <label htmlFor="reg-phone" className="block text-xs font-semibold text-gray-600 mb-1">{t.phone} *</label>
+                <label htmlFor="reg-phone" className="block text-xs font-semibold text-gray-600 mb-1">{t.phone} {teamToken ? <span className="font-normal text-gray-500">{locale === 'en' ? '(optional)' : locale === 'ur' ? '(اختیاری)' : '(اختياري)'}</span> : '*'}</label>
                 <input id="reg-phone" {...register('phone')} autoComplete="tel-national" className="input-field" placeholder="05XXXXXXXX" type="tel" inputMode="tel" maxLength={16} dir="ltr"
-                  onInput={(e: any) => { const raw = toLatinDigits(e.currentTarget.value); const plus = raw.trim().startsWith('+'); const d = raw.replace(/[^0-9]/g, '').slice(0, plus ? 15 : 12); const v = (plus ? '+' : '') + d; e.currentTarget.value = v; if (/^05[0-9]{8}$/.test(v) || toE164(v)) checkPhoneDup(v); else setPhoneDup(false) }} />
+                  onInput={(e: any) => { const raw = toLatinDigits(e.currentTarget.value); const plus = raw.trim().startsWith('+'); const d = raw.replace(/[^0-9]/g, '').slice(0, plus ? 15 : 12); const v = (plus ? '+' : '') + d; e.currentTarget.value = v; if (!teamToken && (/^05[0-9]{8}$/.test(v) || toE164(v))) checkPhoneDup(v); else setPhoneDup(false) }} />
                 {errors.phone && <p className="text-red-600 text-[13px] mt-1">{vmsg(errors.phone.message, locale)}</p>}
               </div>
             </div>
-            {phoneDup && (
+            {phoneDup && !teamToken && (
               <div role="alert" className="text-red-700 text-[13px] bg-red-50 border border-red-200 rounded-lg p-2">
                 <Glyph e="⚠" /> {t.phoneTaken}{' '}
                 <Link href={selectedType === 'supplier' ? '/login?m=email' : '/login'} className="font-bold underline">{t.login}</Link>
@@ -561,7 +570,7 @@ export default function RegisterPage() {
             <button type="submit" disabled={submitting}
               onClick={async () => { await trigger(); if (!agreedToTerms) setTermsErr(true) }}
               className="btn-orange w-full min-h-[48px] disabled:opacity-50">
-              {submitting ? t.creating : t.create}
+              {submitting ? t.creating : <>{t.create} <span aria-hidden="true">{locale === 'en' ? '→' : '←'}</span></>}
             </button>
             </div>
           </form>

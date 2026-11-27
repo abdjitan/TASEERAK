@@ -8,6 +8,7 @@ import { SELLER_KINDS, rememberedSignupKind, type SellerKind } from '@/lib/selle
 import SellerIcon from '@/components/shared/SellerIcon'
 import { Check } from 'lucide-react'
 import PageLoader from '@/components/shared/PageLoader'
+import { clearShellCard } from '@/components/shared/AppShell'
 
 // After the first WhatsApp OTP: "Do you need prices or provide them?", and for a provider
 // "independent or company?", plus a name. Everything else (location, categories, company
@@ -141,6 +142,12 @@ export default function WelcomePage() {
           <button type="button" onClick={save} disabled={saving} className="btn-orange w-full btn-lg">
             {saving ? L('Saving…', 'محفوظ ہو رہا ہے…', 'جارٍ الحفظ…') : L('Continue', 'جاری رکھیں', 'متابعة')}
           </button>
+          {/* a way out for someone signed in to the wrong account (round-8 UX-111) */}
+          <p className="text-center text-[13px] text-ink-2">
+            {L('Not your account?', 'یہ آپ کا اکاؤنٹ نہیں؟', 'لست صاحب هذا الحساب؟')}{' '}
+            <button type="button" onClick={async () => { clearShellCard(); try { await createClient().auth.signOut() } catch {} ; window.location.href = '/login' }}
+              className="inline-flex items-center min-h-[44px] font-bold text-[#8F6820] hover:underline">{L('Log out', 'لاگ آؤٹ', 'تسجيل الخروج')}</button>
+          </p>
         </div>
       </div>
     </div>

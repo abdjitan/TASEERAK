@@ -13,7 +13,8 @@ import Logo from '@/components/shared/Logo'
 import LanguageSwitcher from '@/components/shared/LanguageSwitcher'
 import AppShell from '@/components/shared/AppShell'
 import { getNav } from '@/lib/nav'
-import { SECTOR_LABELS, getSectorLabel, getProductLabel, getUnitLabel, getRegionLabel, getProductSpecs } from '@/types'
+import { getPlaceLabel } from '@/lib/displayName'
+import { SECTOR_LABELS, getSectorLabel, getProductLabel, getUnitLabel, getProductSpecs } from '@/types'
 import { fmtNum } from '@/components/tender/labels'
 import { tierLabel, tierIcon, sourceLabel, isDirectSource } from '@/lib/sellers'
 import SellerIcon from '@/components/shared/SellerIcon'
@@ -37,7 +38,7 @@ export default function ProjectResultsPage() {
   const [items, setItems] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [showAllOffers, setShowAllOffers] = useState<any>({})
-  const [filter, setFilter] = useState('all') // all | has_offers | pending | accepted
+  const [filter, setFilter] = useState('all') // all | has_offers | pending | accepted | not_chosen (the «لم يُختر بعد» card)
   const [sectorFilter, setSectorFilter] = useState('all')
   const [search, setSearch] = useState('')
   const [contactsById, setContactsById] = useState<any>({}) // أرقام الموردين المقبولين فقط
@@ -121,7 +122,7 @@ export default function ProjectResultsPage() {
                 <h1 className="text-xl font-bold" style={{ color: '#0B2438' }}>{project?.title}</h1>
               </div>
               <div className="flex items-center gap-3 text-xs text-gray-500">
-                <span><Glyph e="📍" /> {project?.city || (project?.region ? getRegionLabel(project.region, locale) : '')}</span>
+                <span><Glyph e="📍" /> {getPlaceLabel(project?.city, project?.city ? null : project?.region, locale)}</span>
                 {project?.created_at && <span><Glyph e="📅" /> {new Date(project.created_at).toLocaleDateString(dateLocale(locale))}</span>}
               </div>
               {project?.boq_url && (
@@ -135,7 +136,8 @@ export default function ProjectResultsPage() {
               <div className="text-2xl font-bold" style={{ color: '#8F6820' }}>
                 {totalAcceptedCost > 0 ? totalAcceptedCost.toLocaleString('en-US') + ' ' + SAR : '—'}
               </div>
-              <div className="text-xs text-gray-500">{L('Total of the chosen offers (final price incl. VAT)', 'منتخب پیشکشوں کا کل (حتمی قیمت، VAT سمیت)', 'إجمالي العروض المختارة (السعر النهائي شامل الضريبة)')}</div>
+              <div className="text-xs text-gray-500">{L('Final total of the chosen offers', 'منتخب پیشکشوں کا حتمی کل', 'الإجمالي النهائي للعروض المختارة')}
+                <span className="block">{L('Includes VAT where the supplier charges it', 'جہاں سپلائر VAT لیتا ہے وہاں شامل ہے', 'يشمل الضريبة حيث يفرضها المورد')}</span></div>
             </div>
           </div>
         </div>
@@ -157,7 +159,7 @@ export default function ProjectResultsPage() {
             { label: L('Total Offers', 'کل پیشکشیں', 'إجمالي العروض'), value: totalOffers, icon: <Glyph e="💬" />, bg: '#D4A543', f: 'has_offers' },
             { label: L('Chosen', 'منتخب', 'مختارة'), value: acceptedItems, icon: <Glyph e="✅" />, bg: '#0F6E56', f: 'accepted' },
             // not the same count as the «بانتظار العروض» filter (items with no offer): this one counts every item not accepted yet
-            { label: L('Not chosen yet', 'ابھی منتخب نہیں', 'لم يُختر بعد'), value: totalItems - acceptedItems, icon: <Glyph e="⏳" />, bg: '#435A70', f: '' },
+            { label: L('Not chosen yet', 'ابھی منتخب نہیں', 'لم يُختر بعد'), value: totalItems - acceptedItems, icon: <Glyph e="⏳" />, bg: '#435A70', f: 'not_chosen' },
           ].map(({ label, value, icon, bg, f }) => (
             // a card with a matching filter is a button: a tap shows those items (UX-136)
             <div key={label} role={f ? 'button' : undefined} tabIndex={f ? 0 : undefined} aria-pressed={f ? filter === f : undefined}
@@ -221,6 +223,7 @@ export default function ProjectResultsPage() {
               if (filter === 'has_offers' && (offers.length === 0 || hasAccepted)) return false
               if (filter === 'pending' && offers.length > 0) return false
               if (filter === 'accepted' && !hasAccepted) return false
+              if (filter === 'not_chosen' && hasAccepted) return false // round-8 UX-109(5)
               // sector filter
               if (sectorFilter !== 'all' && item.sector !== sectorFilter) return false
               // search
@@ -445,9 +448,10 @@ export default function ProjectResultsPage() {
                 )
               })}
               <div className="border-t border-[#0F6E56]/25 pt-2 flex justify-between font-bold">
-                <span style={{ color: '#0B2438' }}>{L('Total (incl. VAT)', 'کل (VAT سمیت)', 'الإجمالي (شامل الضريبة)')}</span>
+                <span style={{ color: '#0B2438' }}>{L('Final total of the chosen offers', 'منتخب پیشکشوں کا حتمی کل', 'الإجمالي النهائي للعروض المختارة')}</span>
                 <span style={{ color: '#8F6820' }}>{totalAcceptedCost.toLocaleString('en-US')} {SAR}</span>
               </div>
+              <p className="text-xs text-gray-600">{L('Includes VAT where the supplier charges it.', 'جہاں سپلائر VAT لیتا ہے وہاں شامل ہے۔', 'يشمل الضريبة حيث يفرضها المورد.')}</p>
             </div>
           </div>
         )}

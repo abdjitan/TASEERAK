@@ -8,6 +8,7 @@ import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import { useTranslation } from '@/i18n'
 import GateHeader from '../verify/GateHeader'
+import { formatTimeLeft } from '@/lib/deadline'
 
 export default function BannedPage() {
   const { locale, dir } = useTranslation()
@@ -75,6 +76,8 @@ export default function BannedPage() {
           {ban.permanent
             ? L('The suspension has no end date until the Taseerak team reviews it.', 'معطلی کی کوئی آخری تاریخ نہیں، جب تک تسعیرک ٹیم اس کا جائزہ نہ لے۔', 'الإيقاف مفتوح المدة إلى أن يراجعه فريق تسعيرك.')
             : L(`The suspension ends on ${until}.`, `معطلی ${until} کو ختم ہوگی۔`, `ينتهي الإيقاف في ${until}.`)}
+          {/* how long is left, in words (round-8 UX-143) */}
+          {!ban.permanent && formatTimeLeft(ban.until, locale) && new Date(ban.until).getTime() > Date.now() && <span className="block text-[13px] text-red-900/75 mt-0.5">{L(`(in ${formatTimeLeft(ban.until, 'en')})`, `(${formatTimeLeft(ban.until, 'ur')} بعد)`, `(بعد ${formatTimeLeft(ban.until, 'ar', { case: 'gen' })})`)}</span>}
         </p>
         {/* what a suspension means (UX-117) */}
         {buyer ? (<>
@@ -96,7 +99,8 @@ export default function BannedPage() {
             ? <Link href="/support?topic=deal" className="btn-orange text-sm">{buyer ? L(`Contact support about a purchase (${activeDeals})`, `خریداری کے بارے میں سپورٹ سے رابطہ (${activeDeals})`, `تواصل مع الدعم بخصوص شراء قائم (${activeDeals})`) : L(`Contact support about a deal (${activeDeals})`, `سودے کے بارے میں سپورٹ سے رابطہ (${activeDeals})`, `تواصل مع الدعم بخصوص صفقة (${activeDeals})`)}</Link>
             : <Link href="/support" className="btn-orange text-sm">{L('Contact support', 'سپورٹ سے رابطہ', 'تواصل مع الدعم')}</Link>}
           {/* the kept records can be opened read-only (round-7 UX-096; the middleware lets these pages through) */}
-          {activeDeals > 0 && <Link href={buyer ? '/contractor/orders' : '/supplier/deals'} className="inline-flex items-center min-h-[44px] px-2 text-sm font-bold text-[#0B2438] underline underline-offset-2">{buyer ? L('View my purchases and invoices', 'میری خریداریاں اور انوائسیں دیکھیں', 'عرض مشترياتي وفواتيرها') : L('View my deals and invoices', 'میرے سودے اور انوائسیں دیکھیں', 'عرض صفقاتي وفواتيرها')}</Link>}
+          {/* always: finished deals keep their invoices too (round-8 UX-125) */}
+          {<Link href={buyer ? '/contractor/orders' : '/supplier/deals'} className="inline-flex items-center min-h-[44px] px-2 text-sm font-bold text-[#0B2438] underline underline-offset-2">{buyer ? L('View my purchases and invoices', 'میری خریداریاں اور انوائسیں دیکھیں', 'عرض مشترياتي وفواتيرها') : L('View my deals and invoices', 'میرے سودے اور انوائسیں دیکھیں', 'عرض صفقاتي وفواتيرها')}</Link>}
           {/* deleting the account is a right (PDPL) and a store requirement, also while suspended (UX-024) */}
           <a href="/account/delete" className="inline-flex items-center min-h-[44px] px-2 text-sm font-bold text-red-800 underline underline-offset-2">{L('Delete my account', 'میرا اکاؤنٹ حذف کریں', 'حذف حسابي')}</a>
         </div>

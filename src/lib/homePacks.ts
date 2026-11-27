@@ -32,6 +32,8 @@ export type HomePack = {
   ar: string; en: string; ur: string
   sub: { ar: string; en: string; ur: string }
   items: PackItem[]
+  // round-8 UX-055: what «with installation» means for this pack (none = no installation option, e.g. paint)
+  install?: { label: Tri; on?: boolean } | null
 }
 
 const AREA = { ar: 'المساحة بالمتر المربع، أو احسبها من مقاس الغرفة', en: 'The area in square metres, or work it out from the room size', ur: 'رقبہ مربع میٹر میں، یا کمرے کے سائز سے حساب کریں' }
@@ -64,6 +66,7 @@ const OUT_AREA = { ar: 'اكتب المساحة بالمتر المربع (مث�
 export const HOME_PACKS: HomePack[] = [
   {
     id: 'bathroom', img: 'plumbing', cover: 'مغسلة Wash Basin', photo: '/images/packs/bathroom.webp', ar: 'تجديد حمّام', en: 'Bathroom renovation', ur: 'باتھ روم کی تجدید',
+    install: { label: { ar: 'اطلب السعر مع التنفيذ (التبليط والتركيب)', en: 'Ask for the price with the work (tiling and fitting)', ur: 'کام سمیت قیمت مانگیں (ٹائلنگ اور فٹنگ)' } },
     sub: { ar: 'أدوات صحية وخلاطات وبلاط', en: 'Fixtures, mixers and tiles', ur: 'سینیٹری، مکسر اور ٹائل' },
     items: [
       { name: 'مرحاض WC مع خزان', sector: 'mechanical', qty: 1 },
@@ -82,6 +85,7 @@ export const HOME_PACKS: HomePack[] = [
   },
   {
     id: 'paint', img: 'finishing', cover: 'رولة دهان', photo: '/images/packs/paint.webp', ar: 'دهان شقة', en: 'Paint an apartment', ur: 'اپارٹمنٹ پینٹ',
+    install: { label: { ar: 'اطلب السعر مع أجرة الدهان', en: 'Ask for the price with the painting labour', ur: 'پینٹ کی مزدوری سمیت قیمت مانگیں' } },
     sub: { ar: 'دهان ومعجون وأدوات', en: 'Paint, filler and tools', ur: 'پینٹ، پٹی اور اوزار' },
     items: [
       { name: 'دهان داخلي', sector: 'supply_store', qty: null, unit: 'جالون', calc: 'room', cover: 30, coats: 2, hint: { ar: 'جالون لكل 15 متراً مربعاً من الجدران تقريباً (وجهان)، أو احسبها من مقاس الغرفة', en: 'About one gallon per 15 square metres of wall (two coats), or work it out from the room size', ur: 'تقریباً ہر 15 مربع میٹر دیوار کے لیے ایک گیلن (دو کوٹ)' } },
@@ -96,6 +100,7 @@ export const HOME_PACKS: HomePack[] = [
   },
   {
     id: 'lighting', img: 'lighting', cover: 'إنارة سقف مودرن (بلافونيير)', photo: '/images/packs/lighting.webp', ar: 'إنارة غرفة', en: 'Light a room', ur: 'کمرے کی روشنی',
+    install: { label: { ar: 'اطلب السعر مع التركيب', en: 'Ask for the price with installation', ur: 'تنصیب سمیت قیمت مانگیں' } },
     sub: { ar: 'مصابيح سبوت وثريا ومفاتيح', en: 'Spotlights, ceiling light, switches', ur: 'اسپاٹ، چھت کی لائٹ، سوئچ' },
     items: [
       { name: 'إنارة سقف مودرن (بلافونيير)', sector: 'electrical', qty: 1 },
@@ -109,6 +114,7 @@ export const HOME_PACKS: HomePack[] = [
   },
   {
     id: 'ac', img: 'hvac_fire', cover: 'مكيف سبليت', photo: '/images/packs/ac.webp', ar: 'تكييف غرفة', en: 'Air-condition a room', ur: 'کمرے کا اے سی',
+    install: { label: { ar: 'اطلب السعر مع التركيب', en: 'Ask for the price with installation', ur: 'تنصیب سمیت قیمت مانگیں' }, on: true },
     sub: { ar: 'مكيف سبليت وملحقات تركيبه', en: 'Split AC and its mounting parts', ur: 'اسپلٹ اے سی اور اس کی فٹنگ' },
     items: [
       { name: 'مكيف سبليت', sector: 'mechanical', qty: 1, choose: AC_CHOICES },
@@ -118,6 +124,7 @@ export const HOME_PACKS: HomePack[] = [
   },
   {
     id: 'heater', img: 'plumbing', cover: 'سخانات مياه كهربائية', photo: '/images/packs/heater.webp', ar: 'تغيير سخان', en: 'Replace a water heater', ur: 'گیزر بدلیں',
+    install: { label: { ar: 'اطلب السعر مع التركيب', en: 'Ask for the price with installation', ur: 'تنصیب سمیت قیمت مانگیں' }, on: true },
     sub: { ar: 'سخان وصمام أمان وتوصيلات', en: 'Heater, safety valve, hoses', ur: 'گیزر، سیفٹی والو، پائپ' },
     items: [
       { name: 'سخانات مياه كهربائية', sector: 'mechanical', qty: 1, choose: HEATER_CHOICES },
@@ -128,6 +135,7 @@ export const HOME_PACKS: HomePack[] = [
   },
   {
     id: 'curtains', img: 'furniture', cover: 'ستائر قماش', photo: '/images/packs/curtains.webp', ar: 'ستائر غرفة', en: 'Curtains for a room', ur: 'کمرے کے پردے',
+    install: { label: { ar: 'اطلب السعر مع التركيب', en: 'Ask for the price with installation', ur: 'تنصیب سمیت قیمت مانگیں' } },
     sub: { ar: 'ستائر وحوامل', en: 'Curtains and rails', ur: 'پردے اور ریلیں' },
     items: [
       { name: 'ستائر قماش', sector: 'architectural', qty: null, unit: 'م.ط', calc: 'none', hint: { ar: 'اكتب عرض النوافذ بالمتر', en: 'Write the window width in metres', ur: 'کھڑکی کی چوڑائی میٹر میں لکھیں' } },
@@ -139,6 +147,7 @@ export const HOME_PACKS: HomePack[] = [
   {
     // owner 2026-11-22: an outdoor sitting area with a shade or pergola
     id: 'outdoor', img: 'outdoor', cover: 'برجولات ومظلات حدائق', photo: '/images/packs/outdoor.webp', ar: 'جلسة خارجية', en: 'Outdoor sitting area', ur: 'بیرونی بیٹھک',
+    install: { label: { ar: 'اطلب السعر مع التركيب', en: 'Ask for the price with installation', ur: 'تنصیب سمیت قیمت مانگیں' } },
     sub: { ar: 'مظلة أو برجولا وجلسة وإنارة', en: 'Shade or pergola, seating, lights', ur: 'سائبان یا پرگولا، بیٹھک، روشنی' },
     items: [
       { name: 'برجولات ومظلات حدائق', sector: 'civil', qty: null, unit: 'م²', hint: OUT_AREA, calc: 'area' },
@@ -153,6 +162,7 @@ export const HOME_PACKS: HomePack[] = [
   {
     // owner 2026-11-22: turning an office into something elegant: shelves, a new desk, decor
     id: 'office', img: 'furniture', cover: 'مكتب خشبي حسب الطلب', photo: '/images/packs/office.webp', ar: 'تجهيز مكتب فخم', en: 'An elegant office', ur: 'شاندار دفتر',
+    install: { label: { ar: 'اطلب السعر مع التركيب', en: 'Ask for the price with installation', ur: 'تنصیب سمیت قیمت مانگیں' } },
     sub: { ar: 'مكتب ورفوف وقواطع وديكور', en: 'Desk, shelving, partitions, decor', ur: 'میز، شیلف، پارٹیشن، سجاوٹ' },
     items: [
       { name: 'مكتب خشبي حسب الطلب', sector: 'architectural', qty: 1 },
@@ -240,6 +250,43 @@ const HOME_NAMES_I18N: Record<string, { en: string; ur: string }> = {
   'ستائر شرائح (Blinds)': { en: 'Slat blinds', ur: 'پٹیوں والے پردے' },
   'بلاط سيراميك جدار': { en: 'Wall tiles (ceramic)', ur: 'دیوار کی ٹائلیں (سیرامک)' },
   'بلاط سيراميك': { en: 'Floor tiles (ceramic)', ur: 'فرش کی ٹائلیں (سیرامک)' },
+  // round-8 UX-127: every pack item has a plain English/Urdu name (never the literal catalog label)
+  'خلاط مغسلة': { en: 'Basin mixer tap', ur: 'واش بیسن کا مکسر نل' },
+  'خلاط دش': { en: 'Shower mixer', ur: 'شاور مکسر' },
+  'خلاط شطاف': { en: 'Bidet spray mixer', ur: 'شطاف کا مکسر' },
+  'رأس دش': { en: 'Shower head', ur: 'شاور ہیڈ' },
+  'سيفون مغسلة': { en: 'Basin drain trap', ur: 'واش بیسن کا سائفن' },
+  'سيليكون صحي مضاد للفطريات (حمامات ومطابخ)': { en: 'Bathroom and kitchen silicone', ur: 'باتھ روم اور کچن کا سلیکون' },
+  'دهان داخلي': { en: 'Interior paint', ur: 'اندرونی پینٹ' },
+  'دهان أساس (برايمر)': { en: 'Primer', ur: 'پرائمر' },
+  'معجون جدران جاهز (أكريليك – سطل)': { en: 'Ready-mixed wall filler', ur: 'تیار دیوار پٹی' },
+  'معجون حشو شقوق جاهز (أنبوب/علبة)': { en: 'Crack filler', ur: 'دراڑ بھرنے کی پٹی' },
+  'ورق صنفرة': { en: 'Sandpaper', ur: 'ریگمال' },
+  'رولة دهان': { en: 'Paint roller', ur: 'پینٹ رولر' },
+  'فرشاة دهان': { en: 'Paint brush', ur: 'پینٹ برش' },
+  'شريط لاصق': { en: 'Masking tape', ur: 'ماسکنگ ٹیپ' },
+  'مفتاح إنارة': { en: 'Light switch', ur: 'لائٹ سوئچ' },
+  'فيش كهرباء': { en: 'Wall socket', ur: 'دیوار کا ساکٹ' },
+  'مكيف سبليت': { en: 'Split air conditioner', ur: 'اسپلٹ اے سی' },
+  'حامل وقاعدة مكيف': { en: 'AC bracket and stand', ur: 'اے سی اسٹینڈ اور بریکٹ' },
+  'صمام أمان السخان (Water Heater Safety Valve)': { en: 'Water heater safety valve', ur: 'گیزر کا حفاظتی والو' },
+  'خرطوم سخان مرن': { en: 'Flexible heater hose', ur: 'گیزر کا لچکدار پائپ' },
+  'ستائر قماش': { en: 'Fabric curtains', ur: 'کپڑے کے پردے' },
+  'مجاري وحوامل الستائر': { en: 'Curtain rails and brackets', ur: 'پردوں کی ریلیں اور ہولڈر' },
+  'برجولات ومظلات حدائق': { en: 'Pergolas and garden shades', ur: 'پرگولا اور باغ کے سائبان' },
+  'مظلات شراع (شد إنشائي)': { en: 'Shade sails', ur: 'بادبانی سائبان' },
+  'أثاث خارجي (جلسات حدائق)': { en: 'Garden seating set', ur: 'باغ کا بیٹھنے کا سیٹ' },
+  'إنارة حدائق وممرات': { en: 'Garden and path lights', ur: 'باغ اور راستے کی لائٹس' },
+  'عشب صناعي': { en: 'Artificial grass', ur: 'مصنوعی گھاس' },
+  'إنترلوك رصف': { en: 'Interlocking paving', ur: 'انٹرلاک فرش' },
+  'مكتب خشبي حسب الطلب': { en: 'Custom wooden desk', ur: 'آرڈر پر لکڑی کی میز' },
+  'أثاث مكتبي (كراسي ومكاتب وخزائن ملفات)': { en: 'Office furniture (chairs, desks, file cabinets)', ur: 'دفتری فرنیچر (کرسیاں، میزیں، فائل الماریاں)' },
+  'مكتبة ورفوف حسب الطلب': { en: 'Custom bookcase and shelves', ur: 'آرڈر پر کتابوں کی الماری اور شیلف' },
+  'رفوف حائط ديكور': { en: 'Decorative wall shelves', ur: 'دیوار کی سجاوٹی شیلف' },
+  'قواطع زجاجية للمكاتب': { en: 'Glass office partitions', ur: 'دفتر کے شیشے کے پارٹیشن' },
+  'ورق جدران': { en: 'Wallpaper', ur: 'وال پیپر' },
+  'باركيه خشبي': { en: 'Wooden parquet', ur: 'لکڑی کا پارکیٹ' },
+  'مصباح طاولة ومكتب LED': { en: 'LED desk lamp', ur: 'ایل ای ڈی ٹیبل لیمپ' },
 }
 
 /** A product name as a home buyer reads it: the plain name above (Arabic, or English/Urdu), else the catalog label. */

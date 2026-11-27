@@ -17,7 +17,7 @@ import PageLoader from '@/components/shared/PageLoader'
 
 const txt = {
   ar: {
-    title: 'مؤشر أسعار السوق', sub: 'متوسط أسعار المواد بناءً على العروض الفعلية في المنصة، شاملة ضريبة القيمة المضافة',
+    title: 'أسعار المواد', sub: 'متوسط أسعار المواد بناءً على العروض الفعلية في المنصة، شاملة ضريبة القيمة المضافة',
     sector: 'القطاع', material: 'المادة', avgPrice: 'متوسط السعر', minPrice: 'أدنى سعر',
     maxPrice: 'أعلى سعر', offers: 'عدد العروض', unit: 'الوحدة', all: 'الكل',
     noData: 'لا توجد بيانات كافية بعد', noDataSub: 'ستظهر الأسعار بعد تراكم العروض في المنصة',
@@ -25,7 +25,7 @@ const txt = {
     trend: 'الاتجاه', updated: 'آخر تحديث',
   },
   en: {
-    title: 'Market Price Index', sub: 'Average material prices based on actual platform offers, including VAT',
+    title: 'Material prices', sub: 'Average material prices based on actual platform offers, including VAT',
     sector: 'Sector', material: 'Material', avgPrice: 'Avg Price', minPrice: 'Min Price',
     maxPrice: 'Max Price', offers: 'Offers', unit: 'Unit', all: 'All',
     noData: 'No data yet', noDataSub: 'Prices will appear as offers accumulate on the platform',
@@ -33,7 +33,7 @@ const txt = {
     trend: 'Trend', updated: 'Last updated',
   },
   ur: {
-    title: 'مارکیٹ پرائس انڈیکس', sub: 'پلیٹ فارم کی اصل پیشکشوں کی بنیاد پر اوسط قیمتیں، ویلیو ایڈڈ ٹیکس سمیت',
+    title: 'سامان کی قیمتیں', sub: 'پلیٹ فارم کی اصل پیشکشوں کی بنیاد پر اوسط قیمتیں، ویلیو ایڈڈ ٹیکس سمیت',
     sector: 'شعبہ', material: 'مواد', avgPrice: 'اوسط قیمت', minPrice: 'کم قیمت',
     maxPrice: 'زیادہ قیمت', offers: 'پیشکشیں', unit: 'اکائی', all: 'سب',
     noData: 'ابھی ڈیٹا نہیں', noDataSub: 'قیمتیں پیشکشوں کے جمع ہونے پر ظاہر ہوں گی',

@@ -21,6 +21,7 @@ import { storedBuyerType } from '@/lib/buyerType'
 import GateHeader from '../verify/GateHeader'
 import { isSellerVerified } from '@/components/shared/verifyRule'
 import { crSupportMessage, crSupportNote } from '@/lib/cr'
+import { OPERATOR } from '@/lib/legal'
 
 const SUPPORT_WHATSAPP = '12135614366'
 
@@ -74,9 +75,12 @@ function Support() {
     : topic === 'deal' ? L('I need to coordinate a deal in progress. Request number: ', 'مجھے ایک جاری سودے میں رابطہ کرنا ہے۔ درخواست نمبر: ', 'أحتاج إلى التنسيق في صفقة جارية. رقم الطلب: ')
     // round-7 UX-221: while SMS is down the email code is the way in, so its own topic
     : topic === 'email' ? L('The email verification code does not reach my inbox. ', 'ای میل کا تصدیقی کوڈ میری ای میل پر نہیں پہنچ رہا۔ ', 'لا يصل رمز توثيق البريد إلى بريدي. ')
+    // a phone-only account that cannot get in while texts are down: support links an email (round-8 UX-016)
+    : topic === 'login' ? L('I signed up with my mobile number and the sign-in message does not arrive, and there is no email on my account. My registered mobile number: ', 'میں نے اپنے موبائل نمبر سے رجسٹر کیا تھا اور سائن اِن کا پیغام نہیں پہنچ رہا، اور میرے اکاؤنٹ میں کوئی ای میل نہیں۔ میرا رجسٹرڈ موبائل نمبر: ', 'سجّلت برقم جوالي ولا تصلني رسالة الدخول، ولا يوجد بريد في حسابي. رقم جوالي المسجّل: ')
     : topic === 'sms' ? L('The verification text message does not reach my mobile. ', 'تصدیقی ٹیکسٹ میسج میرے موبائل پر نہیں پہنچ رہا۔ ', 'لا تصل رسالة رمز التحقق إلى جوالي. ')
     : ''
-  const waText = encodeURIComponent(L('Hello Taseerak, I need help with: ', 'السلام علیکم تسعیرک، مجھے مدد چاہیے: ', 'مرحباً تسعيرك، أحتاج مساعدة بخصوص: '))
+  // the WhatsApp text carries the topic, so a signed-out visitor does not retype it (round-8 UX-016)
+  const waText = encodeURIComponent(L('Hello Taseerak, I need help with: ', 'السلام علیکم تسعیرک، مجھے مدد چاہیے: ', 'مرحباً تسعيرك، أحتاج مساعدة بخصوص: ') + prefill)
 
   if (!loaded) return <PageLoader variant="thread" />
 
@@ -108,7 +112,7 @@ function Support() {
         )}
         {userId
           ? <SupportThread userId={userId} viewerRole="user" initialText={prefill} />
-          : <p className="text-sm text-gray-600">{L('Sign in to message the team, or use WhatsApp below.', 'ٹیم کو پیغام بھیجنے کے لیے سائن اِن کریں، یا نیچے واٹس ایپ استعمال کریں۔', 'سجّل الدخول لمراسلة الفريق، أو استخدم واتساب أدناه.')}</p>}
+          : <p className="text-sm text-gray-600">{L('Sign in to message the team, use WhatsApp below, or email us at', 'ٹیم کو پیغام بھیجنے کے لیے سائن اِن کریں، نیچے واٹس ایپ استعمال کریں، یا ہمیں ای میل کریں:', 'سجّل الدخول لمراسلة الفريق، أو استخدم واتساب أدناه، أو راسلنا بالبريد على')} <a href={'mailto:' + OPERATOR.email} dir="ltr" className="inline-flex items-center min-h-[44px] font-bold text-[#8F6820] underline">{OPERATOR.email}</a></p>}
       </div>
 
       <a href={`https://wa.me/${SUPPORT_WHATSAPP}?text=${waText}`} target="_blank" rel="noopener noreferrer"

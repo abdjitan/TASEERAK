@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { Check, LocateFixed, Minus, Plus, MapPin } from 'lucide-react'
 import Glyph from '@/components/shared/Glyph'
+import { SA_CITY_COORDS } from '@/lib/saCityCoords'
 
 interface LocationPickerProps {
   lat: number | null
@@ -13,6 +14,10 @@ interface LocationPickerProps {
   simple?: boolean
   /** a line under the GPS button, e.g. «إذا كنت في البيت الآن نملأ المنطقة والمدينة تلقائياً» */
   detectHint?: string
+  /** round-8 UX-079: the chosen city (Arabic): with no pin yet, the map opens on its centre; the pin is saved only after the first drag */
+  city?: string
+  /** round-8 UX-105: a district was written, so the empty state says the map is optional */
+  hasDistrict?: boolean
 }
 
 const txt = {
@@ -20,7 +25,8 @@ const txt = {
     title: 'الموقع الجغرافي', detect: 'استخدم موقعي الحالي', detecting: 'جارٍ تحديد الموقع...',
     orPaste: 'أو الصق رابط الموقع من خرائط Google', pasteHint: 'انسخ رابط الموقع من تطبيق خرائط Google والصقه هنا',
     extract: 'استخدم الرابط', coords: 'الإحداثيات', set: 'تم تحديد الموقع', viewMap: 'عرض على الخريطة', openGoogle: 'فتح في خرائط Google',
-    noLocation: 'لم يُحدَّد الموقع بعد', denied: 'لم تسمح بالوصول إلى موقعك. فعّله من إعدادات المتصفح، أو الصق رابط الموقع.',
+    noLocation: 'لم يُحدَّد الموقع بعد', districtEnough: 'يكفي ذكر الحي، وتحديد الموقع على الخريطة اختياري.',
+    dragToSet: 'اسحب الخريطة حتى يقع الدبوس على مكان التسليم', denied: 'لم تسمح بالوصول إلى موقعك. فعّله من إعدادات المتصفح، أو الصق رابط الموقع.',
     unavailable: 'تعذّر تحديد موقعك الآن. حاول مرة أخرى أو الصق رابط الموقع.',
     notSupported: 'هذا المتصفح لا يتيح تحديد الموقع. الصق رابط الموقع بدلاً من ذلك.',
     invalidLink: 'لم نجد إحداثيات في هذا الرابط. افتح الموقع في خرائط Google ثم انسخ الرابط من شريط العنوان.',
@@ -33,7 +39,8 @@ const txt = {
     title: 'Location', detect: 'Use my current location', detecting: 'Finding your location...',
     orPaste: 'Or paste a Google Maps link', pasteHint: 'Copy the location link from Google Maps and paste it here',
     extract: 'Use the link', coords: 'Coordinates', set: 'Location set', viewMap: 'View on map', openGoogle: 'Open in Google Maps',
-    noLocation: 'Location not set yet', denied: 'Location access was not allowed. Enable it in the browser settings, or paste a map link.',
+    noLocation: 'Location not set yet', districtEnough: 'The district is enough; setting the location on the map is optional.',
+    dragToSet: 'Drag the map until the pin sits on the delivery spot', denied: 'Location access was not allowed. Enable it in the browser settings, or paste a map link.',
     unavailable: 'We could not find your location right now. Try again or paste a map link.',
     notSupported: 'This browser cannot share your location. Paste a map link instead.',
     invalidLink: 'No coordinates found in this link. Open the place in Google Maps and copy the link from the address bar.',
@@ -46,7 +53,8 @@ const txt = {
     title: 'مقام', detect: 'میرا موجودہ مقام استعمال کریں', detecting: 'مقام تلاش ہو رہا ہے...',
     orPaste: 'یا Google Maps کا لنک پیسٹ کریں', pasteHint: 'Google Maps سے مقام کا لنک کاپی کرکے یہاں پیسٹ کریں',
     extract: 'لنک استعمال کریں', coords: 'کوآرڈینیٹس', set: 'مقام مقرر ہو گیا', viewMap: 'نقشے پر دیکھیں', openGoogle: 'Google Maps میں کھولیں',
-    noLocation: 'مقام ابھی مقرر نہیں', denied: 'مقام تک رسائی کی اجازت نہیں دی گئی۔ براؤزر کی ترتیبات میں فعال کریں یا لنک پیسٹ کریں۔',
+    noLocation: 'مقام ابھی مقرر نہیں', districtEnough: 'محلہ کافی ہے؛ نقشے پر مقام بتانا اختیاری ہے۔',
+    dragToSet: 'نقشہ کھینچیں یہاں تک کہ پن ڈیلیوری کی جگہ پر ہو', denied: 'مقام تک رسائی کی اجازت نہیں دی گئی۔ براؤزر کی ترتیبات میں فعال کریں یا لنک پیسٹ کریں۔',
     unavailable: 'ابھی آپ کا مقام معلوم نہیں ہو سکا۔ دوبارہ کوشش کریں یا لنک پیسٹ کریں۔',
     notSupported: 'یہ براؤزر مقام نہیں بتا سکتا۔ لنک پیسٹ کریں۔',
     invalidLink: 'اس لنک میں مقام نہیں ملا۔ Google Maps میں جگہ کھول کر ایڈریس بار سے لنک کاپی کریں۔',
@@ -57,7 +65,7 @@ const txt = {
   },
 }
 
-export default function LocationPicker({ lat, lng, onChange, locale = 'ar', simple = false, detectHint }: LocationPickerProps) {
+export default function LocationPicker({ lat, lng, onChange, locale = 'ar', simple = false, detectHint, city, hasDistrict = false }: LocationPickerProps) {
   const T = (txt as any)[locale] || txt.ar
   const [detecting, setDetecting] = useState(false)
   const [error, setError] = useState('')
@@ -129,6 +137,8 @@ export default function LocationPicker({ lat, lng, onChange, locale = 'ar', simp
   }
 
   const hasLocation = lat != null && lng != null
+  // round-8 UX-079: no pin yet but a known city: a draggable map on the city centre (nothing is saved until a drag)
+  const fallbackCenter = !hasLocation && city ? SA_CITY_COORDS.find(c => c.city === city) || null : null
 
   const linkBox = (
     <div>
@@ -178,7 +188,7 @@ export default function LocationPicker({ lat, lng, onChange, locale = 'ar', simp
           <div className="flex items-center justify-between mb-2">
             <div className="text-[13px] font-bold text-[#0F6E56] inline-flex items-center gap-1"><Check className="w-4 h-4" aria-hidden /> {T.set}</div>
             <a href={`https://www.google.com/maps?q=${lat},${lng}`} target="_blank" rel="noopener noreferrer"
-              className="text-[13px] font-semibold hover:underline" style={{ color: '#8F6820' }}>
+              className="min-h-[44px] inline-flex items-center text-[13px] font-semibold hover:underline" style={{ color: '#8F6820' }}>
               {T.openGoogle}
             </a>
           </div>
@@ -193,9 +203,15 @@ export default function LocationPicker({ lat, lng, onChange, locale = 'ar', simp
             </p>
           ) : <p className="text-[12px] text-gray-600 mt-1.5">{T.drag}</p>}
         </div>
+      ) : fallbackCenter ? (
+        <div className="bg-[#f4f6f9] rounded-xl p-3">
+          <PinMap lat={fallbackCenter.lat} lng={fallbackCenter.lng} label={T.viewMap} zoomIn={T.zoomIn} zoomOut={T.zoomOut} twoFingers={T.twoFingers} startZoom={13}
+            onMove={(a, b) => { setPrevPin(null); setAccuracy(null); onChange(a, b) }} />
+          <p className="text-[12px] text-gray-600 mt-1.5">{T.dragToSet}{hasDistrict ? ' · ' + T.districtEnough : ''}</p>
+        </div>
       ) : (
         <div className="bg-gray-50 rounded-xl p-4 text-center text-gray-500 text-sm border border-dashed border-gray-200">
-          <Glyph e="📍" /> {T.noLocation}
+          <Glyph e="📍" /> {hasDistrict ? T.districtEnough : T.noLocation}
         </div>
       )}
     </div>
@@ -217,11 +233,11 @@ const unproject = (x: number, y: number, z: number) => {
   return { lat: parseFloat(lat.toFixed(7)), lng: parseFloat(lng.toFixed(7)) }
 }
 
-function PinMap({ lat, lng, onMove, label, zoomIn, zoomOut, twoFingers }: { lat: number; lng: number; onMove: (lat: number, lng: number) => void; label: string; zoomIn: string; zoomOut: string; twoFingers: string }) {
+function PinMap({ lat, lng, onMove, label, zoomIn, zoomOut, twoFingers, startZoom = 17 }: { lat: number; lng: number; onMove: (lat: number, lng: number) => void; label: string; zoomIn: string; zoomOut: string; twoFingers: string; startZoom?: number }) {
   const H = 220
   const box = useRef<HTMLDivElement>(null)
   const [w, setW] = useState(320)
-  const [z, setZ] = useState(17)
+  const [z, setZ] = useState(startZoom)
   const [off, setOff] = useState({ dx: 0, dy: 0 })
   const drag = useRef<{ x: number; y: number; id: number } | null>(null)
   // round-6 UX-027: on a touch screen one finger scrolls the page; the map moves with two fingers

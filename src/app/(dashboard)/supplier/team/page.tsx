@@ -144,7 +144,7 @@ export default function SupplierTeamPage() {
             <p className="text-[13px] text-gray-600">{L('Each link works once and expires after 7 days. Send it to the employee on WhatsApp.', 'ہر لنک ایک بار استعمال ہوتا ہے اور 7 دن بعد ختم ہو جاتا ہے۔ اسے واٹس ایپ پر ملازم کو بھیجیں۔', 'كل رابط يُستخدم مرة واحدة وينتهي بعد 7 أيام. أرسله إلى الموظف عبر واتساب.')}</p>
             {INVITE_LABEL_LIVE && <div>
               <label htmlFor="inv-for" className="block text-xs font-bold text-gray-600 mb-1">{L('Who is this link for? (employee name, optional)', 'یہ لنک کس کے لیے ہے؟ (ملازم کا نام، اختیاری)', 'لمن هذا الرابط؟ (اسم الموظف، اختياري)')}</label>
-              <input id="inv-for" value={inviteFor} onChange={e => setInviteFor(e.target.value.slice(0, 60))} className="input-field" placeholder={L('e.g. Ahmed, sales', 'مثلاً احمد، سیلز', 'مثال: أحمد، المبيعات')} />
+              <input id="inv-for" value={inviteFor} onChange={e => setInviteFor(e.target.value.slice(0, 60))} className="input-field" placeholder={L('e.g. Ahmed', 'مثلاً احمد', 'مثال: أحمد')} />
             </div>}
             <div className="flex flex-wrap items-center gap-2">
               <select value={newRole} onChange={e => setNewRole(e.target.value as any)} className="input-field w-auto" aria-label={L('Role', 'کردار', 'الدور')}>
@@ -223,7 +223,8 @@ export default function SupplierTeamPage() {
         )}
 
         {/* what a team member can and cannot do (persona review: the old note contradicted the deal page) */}
-        <div className="text-[12px] text-gray-600 leading-relaxed rounded-xl bg-gray-50 border border-gray-200 p-3">
+        {/* round-8 UX-112 (6): only for a company account with a team */}
+        {team && <div className="text-[12px] text-gray-600 leading-relaxed rounded-xl bg-gray-50 border border-gray-200 p-3">
           <div className="font-bold mb-1" style={{ color: '#0B2438' }}>{L('What team members can do', 'ٹیم ممبر کیا کر سکتے ہیں', 'ما يستطيعه أعضاء الفريق')}</div>
           <ul className="list-disc ps-5 space-y-0.5">
             <li>{L('Price requests in the company name; each offer shows who sent it.', 'کمپنی کے نام سے قیمت دینا؛ ہر آفر پر بھیجنے والے کا نام۔', 'تسعير الطلبات باسم الشركة، ويظهر على كل عرض من أرسله.')}</li>
@@ -231,7 +232,7 @@ export default function SupplierTeamPage() {
             <li>{L('See the company deals and their stages.', 'کمپنی کے سودے اور ان کے مراحل دیکھنا۔', 'الاطّلاع على صفقات الشركة ومراحلها.')}</li>
             <li>{L('Only the account owner: managing a deal after the buyer chooses (delivery charges, invoice, delivery), conversations with buyers, specialties, branches, the company map location and the company profile.', 'صرف اکاؤنٹ کا مالک: خریدار کے انتخاب کے بعد سودے کا انتظام (ڈیلیوری فیس، انوائس، ڈیلیوری)، خریداروں سے بات چیت، تخصصات، شاخیں، نقشے پر کمپنی کا مقام اور کمپنی پروفائل۔', 'لصاحب الحساب فقط: إدارة الصفقة بعد اختيار المشتري (رسوم التوصيل والفاتورة والتسليم)، والمحادثات مع المشترين، والتخصصات، والفروع، وموقع الشركة على الخريطة، وملف الشركة.')}</li>
           </ul>
-        </div>
+        </div>}
       </div>
     </AppShell>
   )

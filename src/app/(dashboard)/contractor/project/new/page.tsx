@@ -10,6 +10,10 @@ import { createClient } from '@/lib/supabase/client'
 import { useTranslation } from '@/i18n'
 import Logo from '@/components/shared/Logo'
 import CityPicker from '@/components/shared/CityPicker'
+import VatInvoiceToggle from '@/components/shared/VatInvoiceToggle'
+import { ALL_CITIES } from '@/lib/cityList'
+import { normalizeText } from '@/lib/normalize'
+import { getPlaceLabel } from '@/lib/displayName'
 import LanguageSwitcher from '@/components/shared/LanguageSwitcher'
 import AppShell from '@/components/shared/AppShell'
 import { getNav } from '@/lib/nav'
@@ -109,6 +113,13 @@ export default function NewProjectPage() {
   const L = (en: string, ur: string, ar: string) => (locale === 'en' ? en : locale === 'ur' ? ur : ar)
   const [loading, setLoading] = useState(false)
   const [parsing, setParsing] = useState(false)
+  // round-8 UX-109(3): after 8 s of reading, say how long a scanned file or a photo can take
+  const [parseSlow, setParseSlow] = useState(false)
+  useEffect(() => {
+    if (!parsing) { setParseSlow(false); return }
+    const t = setTimeout(() => setParseSlow(true), 8000)
+    return () => clearTimeout(t)
+  }, [parsing])
   const [step, setStep] = useState<'setup' | 'items' | 'review'>('setup')
 
   // Project info
@@ -141,32 +152,36 @@ export default function NewProjectPage() {
     navigator.geolocation.getCurrentPosition(
       async (pos: any) => {
         const { latitude, longitude } = pos.coords
-        const link = `https://maps.google.com/?q=${latitude},${longitude}`
         setGeoMsg(L('Reading city…', 'شہر پڑھا جا رہا ہے…', 'جارٍ قراءة المدينة…'))
         try {
           const r = await fetch(`/api/reverse-geocode?lat=${latitude}&lng=${longitude}`)
           const d = await r.json()
           if (d.ok) {
+            // round-8 UX-081: the city is matched against EVERY city and the region comes from it; no silent
+            // fallback to the capital or the first city, and «الحي» takes only a real district (never an address/link)
             const geoR = String(d.region || '').replace('منطقة', '').trim()
-            const matchedRegion = REGIONS.find((rr: string) => geoR.includes(rr) || rr.includes(geoR) || String(d.region || '').includes(rr))
-            let cityName = ''
-            if (matchedRegion) {
-              const cities = CITIES_BY_REGION[matchedRegion] || []
-              const geoCity = String(d.city || '').replace(/^(محافظة|بلدية)\s*/, '').trim()
-              const mc = cities.find((c: any) => c.ar === geoCity || (geoCity && (geoCity.includes(c.ar) || c.ar.includes(geoCity))))
-                || cities.find((c: any) => c.ar === matchedRegion) || cities[0]
-              setRegion(matchedRegion); setCity(mc ? mc.ar : '')
-              cityName = mc ? mc.ar : matchedRegion
-            } else { cityName = d.city || d.region || '' }
+            const matchedRegion = REGIONS.find((rr: string) => geoR && (geoR.includes(rr) || rr.includes(geoR) || String(d.region || '').includes(rr)))
+            const geoCity = normalizeText(String(d.city || '').replace(/^(محافظة|بلدية|مدينة)\s*/, '').trim())
+            const hits = geoCity ? ALL_CITIES.filter(c => normalizeText(c.ar) === geoCity || normalizeText(c.en) === geoCity) : []
+            const mc = hits.find(c => c.region === matchedRegion) || hits[0]
+              || (geoCity.length >= 3 ? ALL_CITIES.find(c => c.region === matchedRegion && (geoCity.includes(normalizeText(c.ar)) || normalizeText(c.ar).includes(geoCity))) : undefined)
             setDeliveryRequired(true)
-            setDeliveryLocation(d.formatted || link)
-            setGeoMsg(`${L('Location set', 'مقام طے ہو گیا', 'تم تحديد موقعك')}${cityName ? ` — ${cityName}` : ''}`)
+            const district = String(d.district || '').trim()
+            if (district && !deliveryLocation.trim()) setDeliveryLocation(district.slice(0, 300))
+            if (!mc) {
+              setGeoMsg(L('We could not recognise your city, so choose it from the list.', 'ہم آپ کا شہر نہیں پہچان سکے، اس لیے فہرست سے منتخب کریں۔', 'لم نتعرّف على مدينتك، فاخترها من القائمة.'))
+              return
+            }
+            setRegion(mc.region); setCity(mc.ar)
+            const cityName = getPlaceLabel(mc.ar, null, locale)
+            setGeoMsg(district
+              ? `${L('Location set', 'مقام طے ہو گیا', 'تم تحديد موقعك')}: ${cityName}`
+              : L(`Location set (${cityName}). Type the district name.`, `مقام طے ہو گیا (${cityName})۔ محلے کا نام لکھیں۔`, `تم تحديد موقعك (${cityName})، فاكتب اسم الحي.`))
             return
           }
         } catch {}
         setDeliveryRequired(true)
-        setDeliveryLocation(link)
-        setGeoMsg(L('Location pin saved', 'مقام محفوظ ہو گیا', 'تم حفظ موقعك'))
+        setGeoMsg(L('We could not read your city, so choose it from the list and type the district name.', 'ہم آپ کا شہر نہیں پڑھ سکے، اس لیے فہرست سے منتخب کریں اور محلے کا نام لکھیں۔', 'لم نتعرّف على مدينتك، فاخترها من القائمة واكتب اسم الحي.'))
       },
       () => setGeoMsg(L('Location access denied', 'مقام تک رسائی مسترد — براؤزر کی ترتیبات سے اجازت دیں', 'تم رفض الوصول للموقع — فعّله من إعدادات المتصفح')),
       { enableHighAccuracy: true, timeout: 10000 },
@@ -244,7 +259,8 @@ export default function NewProjectPage() {
   const [needDays, setNeedDays] = useState<number | null>(null)
   // the buyer's identity is always hidden from suppliers until an offer is chosen (no option: UX-077)
   const [vatRequired, setVatRequired] = useState(true)
-  const [nearbyOnly, setNearbyOnly] = useState(false)
+  // round-8 UX-080: the same default as the request page («الموردون الأقرب إليّ»)
+  const [nearbyOnly, setNearbyOnly] = useState(true)
   const submittingRef = useRef(false)
   const [homeMode, setHomeMode] = useState(false)
   // after a send: the confirmation screen (what was sent, to how many suppliers, what is left)
@@ -294,9 +310,12 @@ export default function NewProjectPage() {
         .then(({ data: p }: any) => {
           if (p?.buyer_type === 'individual') { toHomeRequest(); return }
           if (!p?.region || !REGIONS.includes(p.region)) return
+          // round-8 UX-017: the region is filled from the profile only together with a valid city in it, so the
+          // picker never shows a region that looks like a chosen city while city stays empty
+          if (!p.city || !(CITIES_BY_REGION[p.region] || []).some((c: any) => c.ar === p.city)) return
           setRegion(r => {
             if (r) return r
-            if (p.city && (CITIES_BY_REGION[p.region] || []).some((c: any) => c.ar === p.city)) setCity(c => c || p.city)
+            setCity(c => c || p.city)
             return p.region
           })
         })
@@ -734,7 +753,8 @@ export default function NewProjectPage() {
   // what step 3 still needs before sending (shown above the button; each name takes you to its field)
   const missingFields: { key: string; label: string; ref: { current: HTMLElement | null } }[] = []
   // the list name is optional (round-5 UX-156): an empty one becomes «قائمة <date>»
-  if (!region) missingFields.push({ key: 'region', label: L('City', 'شہر', 'المدينة'), ref: regionRef })
+  // round-8 UX-017: validated on the CITY (a region alone, e.g. from an old draft, is not enough)
+  if (!city) missingFields.push({ key: 'region', label: L('City', 'شہر', 'المدينة'), ref: regionRef })
   if (deliveryRequired && !deliveryLocation.trim()) missingFields.push({ key: 'delivery', label: L('District', 'محلہ', 'الحي'), ref: deliveryRef })
   function goToField(ref: { current: HTMLElement | null }) {
     const el = ref.current
@@ -1081,6 +1101,8 @@ export default function NewProjectPage() {
   }
 
   const hasItems = items.length > 0
+  // round-8 UX-109(2): no step numbers when step 1 is folded (from a tender), so the page never starts at «2.»
+  const stepNo = (n: number) => (tenderId && hasItems && !showAddMore ? '' : n + '. ')
   // the file's own count (manual additions do not change it); an older draft without it counts the file's lines
   const extractedN = extracted || items.filter(isFileItem).length
 
@@ -1182,7 +1204,7 @@ export default function NewProjectPage() {
               <span className="text-xs text-gray-600"><Glyph e="📑" /> {L('Approved items only.', 'صرف منظور شدہ آئٹمز۔', 'البنود المعتمدة فقط.')}</span>
             </div>
           ) : (
-            <Link href="/contractor/tender/new" className="mt-2 inline-block text-xs font-bold text-[#8F6820] hover:underline">
+            <Link href="/contractor/tender/new" className="mt-1 inline-flex items-center min-h-[44px] py-1 text-[13px] font-bold text-[#8F6820] hover:underline">
               <Glyph e="📑" /> {L('A full tender in Excel with drawings and specifications? Use «Tender pricing», which checks every number against its source', 'ڈرائنگز اور تفصیلات کے ساتھ Excel میں پورا ٹینڈر؟ «ٹینڈر کی قیمت» استعمال کریں، جو ہر عدد کو اس کے ماخذ سے ملاتا ہے', 'لديك مناقصة كاملة بصيغة Excel مع مخططات ومواصفات؟ استخدم «تسعير مناقصة» الذي يطابق كل رقم مع مصدره')}
             </Link>
           )}
@@ -1242,6 +1264,11 @@ export default function NewProjectPage() {
                 <div className="text-xs text-gray-500 mt-1">
                   {L('Extracting materials and quantities', 'مواد اور مقداریں نکالی جا رہی ہیں', 'استخراج المواد والكميات')}
                 </div>
+                {parseSlow && (
+                  <div className="text-[13px] font-semibold text-[#0B2438] mt-2 max-w-sm">
+                    {L('Reading scanned files and photos can take up to a minute, so stay on this page.', 'اسکین شدہ فائلیں اور تصاویر پڑھنے میں ایک منٹ تک لگ سکتا ہے، اس لیے اسی صفحے پر رہیں۔', 'قد تستغرق قراءة الملفات الممسوحة والصور حتى دقيقة، فابقَ في هذه الصفحة.')}
+                  </div>
+                )}
               </div>
             ) : boqFile ? (
               <div className="text-center">
@@ -1307,7 +1334,7 @@ export default function NewProjectPage() {
           <div className="space-y-3 mb-5">
             <div className="flex items-center justify-between">
               <h2 className="font-bold flex items-center gap-2" style={{ color: '#0B2438' }}>
-                {L(`2. Review the items (${items.length})`, `2. آئٹمز کا جائزہ لیں (${items.length})`, `2. راجع البنود (${items.length})`)}
+                {stepNo(2)}{L(`Review the items (${items.length})`, `آئٹمز کا جائزہ لیں (${items.length})`, `راجع البنود (${items.length})`)}
                 {aiUsed && (
                   <span className="text-xs font-semibold px-2 py-0.5 rounded-full border border-[#0B2438]/15 bg-[#0B2438]/5 text-[#0B2438]">
                     <Glyph e="✨" /> {L('Read automatically', 'خودکار پڑھا گیا', 'قُرئ تلقائياً')}
@@ -1674,7 +1701,7 @@ export default function NewProjectPage() {
         {hasItems && (
           <div id="boq-send" className="bg-white rounded-2xl p-5 sm:p-6 border border-gray-100 shadow-sm scroll-mt-20">
             <h2 className="font-bold mb-4" style={{ color: '#0B2438' }}>
-              {L('3. List details and sending', '3. فہرست کی معلومات اور بھیجنا', '3. بيانات القائمة والإرسال')}
+              {stepNo(3)}{L('List details and sending', 'فہرست کی معلومات اور بھیجنا', 'بيانات القائمة والإرسال')}
             </h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4 pb-4 border-b border-gray-100">
               <div className="sm:col-span-2">
@@ -1685,25 +1712,42 @@ export default function NewProjectPage() {
                   className="input-field" placeholder={L(`e.g. Building A. Left empty: «${defaultListName(locale)}»`, `مثلاً: عمارت A۔ خالی چھوڑیں تو: «${defaultListName(locale)}»`, `مثال: مبنى A. إن تركته فارغاً: «${defaultListName(locale)}»`)} />
                 <p className="text-xs text-gray-500 mt-1"><Glyph e="🔒" /> {L('Only you see this name; it is not shown to suppliers.', 'یہ نام صرف آپ دیکھتے ہیں؛ سپلائرز کو نہیں دکھایا جاتا۔', 'يظهر هذا الاسم لك وحدك ولا يُعرض على الموردين.')}</p>
               </div>
-              {/* owner 2026-11-26: one searchable «المدينة» picker (the region comes from the city) + «الحي», always shown */}
+              {/* owner 2026-11-26: one searchable «المدينة» picker (the region comes from the city) + «الحي», always shown.
+                  round-8 UX-017: validated on the city; UX-109(1): delivery or pickup comes right after the city */}
               <div ref={regionRef}>
                 <label htmlFor="boq-city" className="block text-xs font-bold text-gray-600 mb-1.5">{L('City *', 'شہر *', 'المدينة *')}</label>
-                <CityPicker id="boq-city" city={city} region={region} locale={locale} invalid={showMissing && !region}
+                <CityPicker id="boq-city" city={city} region={city ? region : ''} locale={locale} invalid={showMissing && !city}
                   onPick={c => { setRegion(c.region); setCity(c.ar) }} />
-                {showMissing && !region && <p className="text-xs font-bold text-red-600 mt-1">{L('This field is required', 'یہ خانہ ضروری ہے', 'هذا الحقل مطلوب')}</p>}
+                {showMissing && !city
+                  ? <p className="text-xs font-bold text-[#8F6820] mt-1">{L('Choose your city.', 'اپنا شہر منتخب کریں۔', 'اختر مدينتك.')}</p>
+                  : !city && region && <p className="text-xs font-semibold text-[#0B2438] mt-1">{L(`Your region: ${getRegionLabel(region, 'en')}. Choose the city.`, `آپ کا علاقہ: ${getRegionLabel(region, 'ur')}۔ شہر منتخب کریں۔`, `منطقتك: ${getRegionLabel(region, 'ar')}، اختر المدينة.`)}</p>}
               </div>
               <div>
+                <div id="boq-delivery-q" className="block text-xs font-bold text-gray-600 mb-1.5">{L('How do you receive the materials?', 'آپ سامان کیسے وصول کریں گے؟', 'كيف تستلم المواد؟')}</div>
+                <div role="radiogroup" aria-labelledby="boq-delivery-q" className="grid grid-cols-2 gap-2">
+                  {([[true, L('Delivery to the site', 'سائٹ پر ڈیلیوری', 'توصيل إلى الموقع')], [false, L('I will pick it up', 'میں خود وصول کروں گا', 'سأستلم بنفسي')]] as const).map(([v, t]) => (
+                    <button key={String(v)} type="button" role="radio" aria-checked={deliveryRequired === v} onClick={() => setDeliveryRequired(v)}
+                      className={`min-h-[44px] rounded-xl border-2 px-3 text-sm font-bold text-start text-[#0B2438] ${deliveryRequired === v ? 'border-[#D4A543] bg-[#D4A543]/10' : 'border-gray-200 bg-white hover:border-gray-300'}`}>
+                      {deliveryRequired === v && <Glyph e="✓" />} {t}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div className="sm:col-span-2">
                 <label htmlFor="boq-district" className="block text-xs font-bold text-gray-600 mb-1.5">
                   {L('District', 'محلہ', 'الحي')}{' '}
                   <span className={deliveryRequired ? 'font-semibold text-[#8F6820]' : 'font-normal text-gray-500'}>{deliveryRequired
                     ? L('(required for delivery)', '(ڈیلیوری کے لیے ضروری)', '(مطلوب للتوصيل)')
                     : L('(optional)', '(اختیاری)', '(اختياري)')}</span>
                 </label>
+                {/* round-8 UX-119: a missing field stays gold (data-missing), not red */}
                 <input id="boq-district" ref={deliveryRef} value={deliveryLocation} onChange={(e: any) => setDeliveryLocation(e.target.value)} maxLength={300}
-                  aria-invalid={(showMissing && deliveryRequired && !deliveryLocation.trim()) || undefined}
-                  className={`input-field min-h-[44px] ${showMissing && deliveryRequired && !deliveryLocation.trim() ? 'border-red-400 bg-red-50/40' : ''}`}
+                  data-missing={(showMissing && deliveryRequired && !deliveryLocation.trim()) || undefined}
+                  className={`input-field min-h-[44px] ${showMissing && deliveryRequired && !deliveryLocation.trim() ? 'border-2 border-[#D4A543] bg-[#D4A543]/5' : ''}`}
                   placeholder={L('District, street, landmark', 'محلہ، گلی، نشانی', 'الحي، الشارع، علامة مميزة')} />
-                {showMissing && deliveryRequired && !deliveryLocation.trim() && <p className="text-xs font-bold text-red-600 mt-1">{L('This field is required', 'یہ خانہ ضروری ہے', 'هذا الحقل مطلوب')}</p>}
+                {showMissing && deliveryRequired && !deliveryLocation.trim()
+                  ? <p className="text-xs font-bold text-[#8F6820] mt-1">{L('Type the district name.', 'محلے کا نام لکھیں۔', 'اكتب اسم الحي.')}</p>
+                  : deliveryRequired && <p className="text-xs text-gray-600 mt-1">{L('The district helps suppliers calculate the shipping cost.', 'محلہ سپلائرز کو ترسیل کا خرچ نکالنے میں مدد دیتا ہے۔', 'يساعد الحيّ الموردين على حساب تكلفة الشحن.')}</p>}
               </div>
               <div className="sm:col-span-2 -mt-1 flex flex-wrap items-center gap-2">
                 <button type="button" onClick={geolocate}
@@ -1712,21 +1756,22 @@ export default function NewProjectPage() {
                 </button>
                 {geoMsg && <span className="text-xs text-gray-600" role="status">{geoMsg}</span>}
               </div>
-              <div className="sm:col-span-2 bg-[#D4A543]/[.06] border border-[#D4A543]/30 rounded-xl p-3">
-                {/* the whole row is the switch (44px target: UX-107) */}
-                <button type="button" role="switch" aria-checked={deliveryRequired} onClick={() => setDeliveryRequired(!deliveryRequired)}
-                  className="w-full min-h-11 flex items-center justify-between gap-2 text-start">
-                  <span className="text-sm font-semibold text-[#0B2438]"><Glyph e="🚚" /> {L('Delivery required (for the whole list)', 'ڈیلیوری درکار ہے (پوری فہرست کے لیے)', 'التوصيل مطلوب (لكل القائمة)')}</span>
-                  <span aria-hidden className={`w-12 h-7 rounded-full flex items-center px-1 shrink-0 transition-all ${deliveryRequired ? 'justify-end' : 'justify-start'}`} style={{ background: deliveryRequired ? '#0B2438' : '#e5e7eb' }}>
-                    <span className="w-5 h-5 bg-white rounded-full shadow-sm" />
-                  </span>
-                </button>
-                {deliveryRequired && (
-                  <p className="text-xs text-gray-600 mt-1">
-                    {L('The district helps suppliers calculate the shipping cost.', 'محلہ سپلائرز کو ترسیل کا خرچ نکالنے میں مدد دیتا ہے۔', 'يساعد الحيّ الموردين على حساب تكلفة الشحن.')}
-                  </p>
-                )}
-              </div>
+              {/* round-8 UX-080: the same two cards and the same default (nearest) as the request page, after the city */}
+              {city && (
+                <div className="sm:col-span-2">
+                  <div id="boq-reach-q" className="text-xs font-bold text-gray-600 mb-1.5">{L('Who should receive your request?', 'آپ کی درخواست کس کو بھیجی جائے؟', 'لمن نرسل طلبك؟')}</div>
+                  <div role="radiogroup" aria-labelledby="boq-reach-q" className="grid grid-cols-2 gap-2">
+                    {([[true, L('Suppliers nearest to me', 'میرے قریب ترین سپلائرز', 'الموردون الأقرب إليّ'), L('The closest ones that sell your materials', 'آپ کا سامان بیچنے والے قریب ترین', 'الأقرب ممن يبيعون موادك')],
+                       [false, L('The whole region', 'پورا علاقہ', 'المنطقة كلها'), L(`Suppliers across all of ${getRegionLabel(region, 'en')}`, `پورے ${getRegionLabel(region, 'ur')} کے سپلائرز`, `موردون من كل أنحاء ${getRegionLabel(region, 'ar')}`)]] as const).map(([v, t, sub]) => (
+                      <button key={String(v)} type="button" role="radio" aria-checked={nearbyOnly === v} onClick={() => setNearbyOnly(v)}
+                        className={`text-start rounded-xl border-2 px-3 py-2 min-h-[56px] ${nearbyOnly === v ? 'border-[#D4A543] bg-[#D4A543]/10 text-[#0B2438]' : 'border-gray-200 bg-white text-gray-700 hover:border-gray-300'}`}>
+                        <span className="block text-sm font-bold text-[#0B2438]">{nearbyOnly === v && <Glyph e="✓" />} {t}</span>
+                        <span className="block text-[12px] text-gray-600">{sub}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Target supplier types + verified-only (applies to all items) */}
@@ -1751,16 +1796,6 @@ export default function NewProjectPage() {
                   <span className="block text-xs text-gray-500">{L('Receive offers only from suppliers whose commercial registration was verified', 'صرف ان سپلائرز سے پیشکشیں جن کی تجارتی رجسٹریشن کی تصدیق ہو چکی ہے', 'استقبل العروض من الموردين الذين تحقّقنا من سجلهم التجاري فقط')}</span>
                 </span>
                 <span aria-hidden className={`w-12 h-7 rounded-full flex items-center px-1 shrink-0 transition-all ${verifiedOnly ? 'justify-end' : 'justify-start'}`} style={{ background: verifiedOnly ? '#0B2438' : '#e5e7eb' }}>
-                  <span className="w-5 h-5 bg-white rounded-full shadow-sm" />
-                </span>
-              </button>
-              <button type="button" role="switch" aria-checked={nearbyOnly} onClick={() => setNearbyOnly(!nearbyOnly)}
-                className="w-full min-h-11 flex items-center justify-between gap-2 bg-gray-50 rounded-xl px-3 py-2.5 mt-2 text-start">
-                <span>
-                  <span className="block text-sm font-semibold text-gray-800"><Glyph e="📍" /> {L('Nearby only (same region)', 'صرف قریب (اسی علاقہ)', 'القريبون فقط (المنطقة نفسها)')}</span>
-                  <span className="block text-xs text-gray-500">{L('Only suppliers in your region: closer and cheaper shipping', 'صرف آپ کے علاقے کے سپلائرز: قریب اور سستی ترسیل', 'موردو منطقتك فقط، والشحن أقرب وأرخص')}</span>
-                </span>
-                <span aria-hidden className={`w-12 h-7 rounded-full flex items-center px-1 shrink-0 transition-all ${nearbyOnly ? 'justify-end' : 'justify-start'}`} style={{ background: nearbyOnly ? '#0B2438' : '#e5e7eb' }}>
                   <span className="w-5 h-5 bg-white rounded-full shadow-sm" />
                 </span>
               </button>
@@ -1802,16 +1837,8 @@ export default function NewProjectPage() {
               <p className="flex items-start gap-2 text-sm text-gray-700">
                 <Glyph e="🔒" /> {L('Your name and contact details are hidden from suppliers until you choose an offer.', 'آپ کا نام اور رابطے کی تفصیل آفر منتخب کرنے تک سپلائرز سے چھپی رہتی ہے۔', 'اسمك وبيانات تواصلك مخفية عن الموردين حتى تختار عرضاً.')}
               </p>
-              <label className="flex items-center gap-2 min-h-11 text-sm text-gray-700 cursor-pointer select-none">
-                <input type="checkbox" checked={vatRequired} onChange={(e: any) => setVatRequired(e.target.checked)} aria-describedby={!vatRequired ? 'boq-vat-warn' : undefined} className="w-5 h-5 accent-[#0B2438]" />
-                {L('I need a VAT tax invoice', 'مجھے VAT ٹیکس انوائس چاہیے', 'أحتاج فاتورة ضريبية')}
-              </label>
-              {/* round-7 UX-018: the same warning as the request page when the tax invoice is turned off (owner 2026-11-25) */}
-              {!vatRequired && (
-                <p id="boq-vat-warn" role="status" className="-mt-1 rounded-xl border border-[#D4A543]/50 bg-[#D4A543]/10 px-3 py-2 text-[13px] font-semibold text-[#6C531F] leading-relaxed">
-                  <Glyph e="⚠" /> {L('You may receive offers from suppliers without a VAT number, who do not issue a tax invoice.', 'آپ کو ایسے سپلائرز کی آفرز بھی مل سکتی ہیں جن کے پاس VAT نمبر نہیں، اس لیے وہ ٹیکس انوائس جاری نہیں کرتے۔', 'قد تصلك عروض من موردين ليس لديهم رقم ضريبي، فلا يُصدرون فاتورة ضريبية.')}
-                </p>
-              )}
+              {/* round-8: the shared «أحتاج فاتورة ضريبية» toggle (same wording and on/off notes as the request page) */}
+              <VatInvoiceToggle id="boq-need-tax-invoice" checked={vatRequired} onChange={setVatRequired} locale={locale} />
               <p className="text-xs text-gray-600">{L('Every price you receive includes VAT where the supplier charges it; a supplier not registered for VAT shows a final price.', 'آپ کو ملنے والی ہر قیمت میں VAT شامل ہوتا ہے جہاں سپلائر اسے لیتا ہے؛ VAT میں غیر رجسٹرڈ سپلائر حتمی قیمت دکھاتا ہے۔', 'كل سعر يصلك شامل ضريبة القيمة المضافة حين يفرضها المورد، والمورد غير المسجّل في الضريبة يعرض سعراً نهائياً.')}</p>
             </div>
 
@@ -1858,7 +1885,8 @@ export default function NewProjectPage() {
                 ...(vatRequired ? [L('Tax invoice', 'ٹیکس انوائس', 'فاتورة ضريبية')] : []),
                 ...(verifiedOnly ? [L('Verified suppliers only', 'صرف تصدیق شدہ سپلائرز', 'الموثّقون فقط')] : []),
                 ...(targetTiers.length === 1 ? [tierLabel(targetTiers[0] as any, locale, false)] : []),
-                ...(nearbyOnly ? [L('Nearby only', 'صرف قریب', 'القريبون فقط')] : []),
+                // round-8 UX-080: the same wording as the request page's cards
+                ...(city ? [nearbyOnly ? L('Suppliers nearest to me', 'میرے قریب ترین سپلائرز', 'الموردون الأقرب إليّ') : L('The whole region', 'پورا علاقہ', 'المنطقة كلها')] : []),
               ]
               return <p className="mb-3 rounded-xl bg-[#0B2438]/[.04] border border-[#0B2438]/10 px-3 py-2 text-[13px] text-[#0B2438] leading-relaxed" role="status">{parts.join(' · ')}</p>
             })()}

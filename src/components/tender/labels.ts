@@ -51,4 +51,10 @@ export const AREA_TONE: Record<string, string> = {
 }
 
 export const fmtNum =(n: number | null | undefined) => (n == null ? '—' : Number(n).toLocaleString('en-US', { maximumFractionDigits: 3 }))
-export const fmtSize = (b: number) => (b >= 1024 * 1024 ? `${(b / 1024 / 1024).toFixed(1)} MB` : `${Math.max(1, Math.round(b / 1024))} KB`)
+/** A file size in the reader's language (round-8 UX-110: «2.4 ميجابايت», «2.4 میگا بائٹ»). */
+export const fmtSize = (b: number, locale: string = 'en') => {
+  const mb = b >= 1024 * 1024
+  const n = mb ? (b / 1024 / 1024).toFixed(1) : String(Math.max(1, Math.round(b / 1024)))
+  const unit = locale === 'ar' ? (mb ? 'ميجابايت' : 'كيلوبايت') : locale === 'ur' ? (mb ? 'میگا بائٹ' : 'کلو بائٹ') : (mb ? 'MB' : 'KB')
+  return `${n} ${unit}`
+}

@@ -8,7 +8,9 @@ import Logo from '@/components/shared/Logo'
 import LanguageSwitcher from '@/components/shared/LanguageSwitcher'
 import AppShell from '@/components/shared/AppShell'
 import { getNav } from '@/lib/nav'
-import { SECTOR_LABELS, UNIT_OPTIONS, REGIONS, SUB_CATEGORIES, getGroupedSubCategories, getUnitLabel, getRegionLabel, getDefaultUnit } from '@/types'
+import { SECTOR_LABELS, UNIT_OPTIONS, SUB_CATEGORIES, getGroupedSubCategories, getUnitLabel, getRegionLabel, getDefaultUnit } from '@/types'
+import CityPicker from '@/components/shared/CityPicker'
+import CatIcon from '@/components/shared/CatIcon'
 import LoadError from '@/components/shared/LoadError'
 import Glyph from '@/components/shared/Glyph'
 import { timeAgo as timeAgoText } from '@/lib/text'
@@ -22,37 +24,37 @@ const latinNum = (v: string) => String(v ?? '').replace(/[٠-٩]/g, d => String(
 
 const txt = {
   ar: {
-    title: 'أسعاري', sub: 'أسعارك المحفوظة خاصة بك، لا يراها المشترون ولا المنافسون، وتُعبَّأ عند تسعير المادة نفسها أو فئتها بالوحدة نفسها',
+    title: 'أسعاري', sub: 'أسعارك المحفوظة خاصة بك، لا يراها المشترون ولا المنافسون، وتظهر لك اقتراحاً عند تسعير المادة نفسها أو فئتها بالوحدة نفسها، فتعتمده بلمسة',
     back: '→ رجوع', addPrice: '+ إضافة مادة', myPrices: 'أسعاري المحفوظة',
     product: 'اسم المادة', sector: 'القسم', unit: 'الوحدة', price: 'السعر شامل ضريبة القيمة المضافة (ر.س)',
     region: 'المنطقة', selectSector: 'اختر القسم', selectUnit: 'الوحدة', selectRegion: 'كل المناطق',
     save: 'حفظ السعر', saving: 'جارٍ الحفظ...', update: 'تحديث', updated: 'تم التحديث',
-    noPrices: 'لم تحفظ أي أسعار بعد', noPricesSub: 'احفظ أسعار ما تبيعه لتُعبَّأ في عروضك عند تسعير المادة نفسها أو فئتها بالوحدة نفسها',
+    noPrices: 'لم تحفظ أي أسعار بعد', noPricesSub: 'احفظ أسعار ما تبيعه، وتظهر لك اقتراحاً عند تسعير المادة نفسها أو فئتها بالوحدة نفسها، فتعتمده بلمسة',
     lastUpdate: 'آخر تحديث', delete: 'حذف', edit: 'تعديل', loading: 'جارٍ التحميل...',
     justNow: 'الآن', minsAgo: 'دقيقة', hoursAgo: 'ساعة', daysAgo: 'يوم', ago: 'قبل',
-    confirmDelete: 'حذف سعر هذه المادة؟',
+    confirmDelete: 'حذف سعر هذه المادة؟', allCities: 'كل المدن', oneCity: 'مدينة محددة', appliesTo: 'يسري السعر على',
   },
   en: {
-    title: 'My prices', sub: 'Your saved prices are private: buyers and competitors never see them. They fill in when you price the same material or its category in the same unit',
+    title: 'My prices', sub: 'Your saved prices are private: buyers and competitors never see them. They appear as a suggestion when you price the same material or its category in the same unit, so you accept it in one tap',
     back: '← Back', addPrice: '+ Add a material', myPrices: 'My saved prices',
     product: 'Material', sector: 'Section', unit: 'Unit', price: 'Price incl. VAT (SAR)',
     region: 'Region', selectSector: 'Select a section', selectUnit: 'Unit', selectRegion: 'All regions',
     save: 'Save price', saving: 'Saving...', update: 'Update', updated: 'Updated',
-    noPrices: 'No saved prices yet', noPricesSub: 'Save the prices of what you sell; they fill in when you price the same material or its category in the same unit',
+    noPrices: 'No saved prices yet', noPricesSub: 'Save the prices of what you sell; they appear as a suggestion when you price the same material or its category in the same unit, so you accept it in one tap',
     lastUpdate: 'Last update', delete: 'Delete', edit: 'Edit', loading: 'Loading...',
     justNow: 'now', minsAgo: 'min', hoursAgo: 'h', daysAgo: 'd', ago: '',
-    confirmDelete: 'Delete the price of this material?',
+    confirmDelete: 'Delete the price of this material?', allCities: 'All cities', oneCity: 'A specific city', appliesTo: 'The price applies to',
   },
   ur: {
-    title: 'میری قیمتیں', sub: 'آپ کی محفوظ قیمتیں نجی ہیں: خریدار اور حریف نہیں دیکھتے۔ یہ اسی مال یا اس کے زمرے کی اسی یونٹ میں قیمت دیتے وقت بھر جاتی ہیں',
+    title: 'میری قیمتیں', sub: 'آپ کی محفوظ قیمتیں نجی ہیں: خریدار اور حریف نہیں دیکھتے۔ یہ اسی مال یا اس کے زمرے کی اسی یونٹ میں قیمت دیتے وقت تجویز کے طور پر ظاہر ہوتی ہیں، جسے آپ ایک ٹچ میں قبول کرتے ہیں',
     back: '→ واپس', addPrice: '+ آئٹم شامل کریں', myPrices: 'میری محفوظ قیمتیں',
     product: 'مال', sector: 'سیکشن', unit: 'یونٹ', price: 'قیمت VAT سمیت (ریال)',
     region: 'علاقہ', selectSector: 'سیکشن منتخب کریں', selectUnit: 'یونٹ', selectRegion: 'تمام علاقے',
     save: 'قیمت محفوظ کریں', saving: 'محفوظ ہو رہا ہے...', update: 'اپ ڈیٹ', updated: 'اپ ڈیٹ ہو گیا',
-    noPrices: 'ابھی کوئی محفوظ قیمت نہیں', noPricesSub: 'جو بیچتے ہیں اس کی قیمتیں محفوظ کریں؛ یہ اسی مال یا زمرے کی اسی یونٹ میں قیمت دیتے وقت بھر جائیں گی',
+    noPrices: 'ابھی کوئی محفوظ قیمت نہیں', noPricesSub: 'جو بیچتے ہیں اس کی قیمتیں محفوظ کریں؛ یہ اسی مال یا زمرے کی اسی یونٹ میں قیمت دیتے وقت تجویز کے طور پر ظاہر ہوں گی، جسے آپ ایک ٹچ میں قبول کرتے ہیں',
     lastUpdate: 'آخری اپ ڈیٹ', delete: 'حذف', edit: 'ترمیم', loading: 'لوڈ ہو رہا ہے...',
     justNow: 'ابھی', minsAgo: 'منٹ', hoursAgo: 'گھنٹہ', daysAgo: 'دن', ago: 'پہلے',
-    confirmDelete: 'یہ آئٹم حذف کریں؟',
+    confirmDelete: 'یہ آئٹم حذف کریں؟', allCities: 'تمام شہر', oneCity: 'ایک مخصوص شہر', appliesTo: 'قیمت لاگو ہے',
   },
 }
 
@@ -81,6 +83,13 @@ export default function SupplierPricesPage() {
   const [unit, setUnit] = useState('')
   const [price, setPrice] = useState('')
   const [region, setRegion] = useState('')
+  // round-8 UX-094 (5): «يسري السعر على: كل المدن / مدينة محددة»; the city picks the region that is stored
+  const [scope, setScope] = useState<'all' | 'city'>('all')
+  const [scopeCity, setScopeCity] = useState('')
+  // round-8 UX-094 (2): editing a saved row in place (unit, place, price)
+  const [editingId, setEditingId] = useState<string | null>(null)
+  // round-8 UX-027: a VAT number on the profile now (to warn about prices saved as final before it was added)
+  const [hasVatNumber, setHasVatNumber] = useState(false)
   // UX-121: a team member saves prices for the company (acting_uid), and every result is said
   const [actId, setActId] = useState('')
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null)
@@ -131,7 +140,7 @@ export default function SupplierPricesPage() {
     const { data: act } = await supabase.rpc('acting_uid')
     const aid: string = (act as any) || session.user.id
     setActId(aid)
-    supabase.from('profiles').select('vat_number').eq('id', aid).maybeSingle().then(({ data: pr }: any) => setNoVat(!String(pr?.vat_number || '').trim()), () => setNoVat(false))
+    supabase.from('profiles').select('vat_number').eq('id', aid).maybeSingle().then(({ data: pr }: any) => { const has = !!String(pr?.vat_number || '').trim(); setNoVat(!has); setHasVatNumber(has) }, () => setNoVat(false))
     const { data, error } = await supabase.from('live_prices').select('*')
       .eq('supplier_id', aid).order('updated_at', { ascending: false })
     setLoadFailed(!!error)
@@ -146,25 +155,56 @@ export default function SupplierPricesPage() {
     e.preventDefault()
     setMsg(null)
     if (!product || !sector || !unit || !(parseFloat(price) > 0)) { setMsg({ ok: false, text: L('Choose the material, its section, the unit and the price.', 'مال، اس کا سیکشن، یونٹ اور قیمت منتخب کریں۔', 'اختر المادة وقسمها والوحدة والسعر.') }); return }
+    if (scope === 'city' && !region) { setMsg({ ok: false, text: L('Choose the city, or apply the price to all cities.', 'شہر منتخب کریں، یا قیمت تمام شہروں پر لاگو کریں۔', 'اختر المدينة، أو اجعل السعر يسري على كل المدن.') }); return }
     setSaving(true)
-    const supabase = createClient()
+    const reg = scope === 'city' ? region : ''
     // UX-083: the same item, unit and region already saved: update that row instead of adding a copy
-    const dup = prices.find((p: any) => p.product_name === product && (p.unit || '') === unit && (p.region || '') === (region || ''))
+    const editing = editingId ? prices.find((p: any) => p.id === editingId) : null
+    const dup = prices.find((p: any) => p.id !== editingId && p.product_name === product && (p.unit || '') === unit && (p.region || '') === (reg || ''))
+    // round-8 UX-094 (2): an edit that would copy another saved row is refused (no duplicates)
+    if (editing && dup) { setSaving(false); setMsg({ ok: false, text: L('You already saved a price for this material with this unit and place. Update that one instead.', 'اس مال کی اسی یونٹ اور جگہ کے لیے آپ پہلے ہی قیمت محفوظ کر چکے ہیں۔ وہی اپ ڈیٹ کریں۔', 'لديك سعر محفوظ لهذه المادة بالوحدة والمكان نفسيهما، فحدّثه بدلاً من ذلك.') }); return }
     const np = parseFloat(price)
-    const { error } = dup
-      ? await supabase.from('live_prices').update({ price: np, previous_price: dup.price, updated_at: new Date().toISOString() }).eq('id', dup.id)
-      : await supabase.from('live_prices').insert({
+    const target = editing || dup
+    const { error } = target
+      ? await writePrice('update', { price: np, previous_price: Number(target.price) !== np ? target.price : (target.previous_price ?? null), updated_at: new Date().toISOString(), ...(editing ? { product_name: product, sector, unit, region: reg || null } : {}) }, target.id)
+      : await writePrice('insert', {
         supplier_id: actId || user.id, product_name: product, sector, unit,
-        price: np, region: region || null,
+        price: np, region: reg || null,
       })
     setSaving(false)
     if (error) { console.error('live_prices save', error); failMsg(); return }
-    setProduct(''); setSector(''); setUnit(''); setPrice(''); setRegion(''); setPgroup(''); setPsearch(''); setPsection(''); setProductOther(false); setManualSection('')
-    setShowForm(false)
-    setMsg({ ok: true, text: dup ? L('The current price was updated.', 'موجودہ قیمت اپ ڈیٹ ہو گئی۔', 'حُدّث السعر الحالي.') : (productOther
-      ? L('Price saved. A typed name fills in only when it matches the material name in the request exactly.', 'قیمت محفوظ ہو گئی۔ ہاتھ سے لکھا نام صرف تب بھرتا ہے جب وہ درخواست میں مال کے نام سے بالکل ملے۔', 'حُفظ السعر. الاسم المكتوب يدوياً لا يُعبَّأ إلا إذا طابق اسم المادة في الطلب تماماً.')
-      : L('Price saved. It fills in when you price this material or its category in the same unit.', 'قیمت محفوظ ہو گئی۔ یہ اس مال یا اس کے زمرے کی اسی یونٹ میں قیمت دیتے وقت بھر جائے گی۔', 'حُفظ السعر، ويُعبَّأ عند تسعير هذه المادة أو فئتها بالوحدة نفسها.')) })
+    const wasOther = productOther
+    resetForm()
+    setMsg({ ok: true, text: editing ? L('The price was updated.', 'قیمت اپ ڈیٹ ہو گئی۔', 'حُدّث السعر.') : dup ? L('The current price was updated.', 'موجودہ قیمت اپ ڈیٹ ہو گئی۔', 'حُدّث السعر الحالي.') : (wasOther
+      ? L('Price saved. A typed name is suggested only when it matches the material name in the request exactly.', 'قیمت محفوظ ہو گئی۔ ہاتھ سے لکھا نام صرف تب تجویز ہوتا ہے جب وہ درخواست میں مال کے نام سے بالکل ملے۔', 'حُفظ السعر. الاسم المكتوب يدوياً لا يظهر اقتراحاً إلا إذا طابق اسم المادة في الطلب تماماً.')
+      : L('Price saved. It appears as a suggestion when you price this material or its category in the same unit.', 'قیمت محفوظ ہو گئی۔ یہ اس مال یا اس کے زمرے کی اسی یونٹ میں قیمت دیتے وقت تجویز کے طور پر ظاہر ہوگی۔', 'حُفظ السعر، ويظهر لك اقتراحاً عند تسعير هذه المادة أو فئتها بالوحدة نفسها.')) })
     load()
+  }
+  function resetForm() {
+    setProduct(''); setSector(''); setUnit(''); setPrice(''); setRegion(''); setPgroup(''); setPsearch(''); setPsection(''); setProductOther(false); setManualSection('')
+    setScope('all'); setScopeCity(''); setEditingId(null)
+    setShowForm(false)
+  }
+  // round-8 UX-094 (2): fill the form from a saved row; saving updates that same row
+  function startEdit(p: any) {
+    setMsg(null)
+    setEditingId(p.id)
+    setProductOther(!keyOf(p))
+    setProduct(p.product_name || ''); setSector(p.sector || ''); setUnit(p.unit || ''); setPrice(String(p.price ?? ''))
+    setRegion(p.region || ''); setScope(p.region ? 'city' : 'all'); setScopeCity('')
+    setPsearch(''); setPsection(''); setManualSection('')
+    setShowForm(true)
+    setTimeout(() => document.getElementById('lp-form')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50)
+  }
+  // round-8 UX-027: every save keeps the price's VAT basis on the row (vat_basis 'incl' / 'final'); until that
+  // column exists the write is retried without it, so saving never breaks.
+  async function writePrice(kind: 'insert' | 'update', row: any, id?: string): Promise<{ error: any }> {
+    const supabase = createClient()
+    const basis = noVat ? 'final' : 'incl'
+    const run = (r: any) => (kind === 'insert' ? supabase.from('live_prices').insert(r) : supabase.from('live_prices').update(r).eq('id', id as string))
+    let { error } = await run({ ...row, vat_basis: basis })
+    if (error && /vat_basis|PGRST204/i.test(String(error.message || '') + ' ' + String((error as any).code || ''))) ({ error } = await run(row))
+    return { error }
   }
 
   async function updatePrice(id: any, oldPrice: any, newPrice: any) {
@@ -172,22 +212,23 @@ export default function SupplierPricesPage() {
     const np = parseFloat(latinNum(newPrice))
     if (!(np > 0)) { setUpdMsg(m => ({ ...m, [id]: { ok: false, text: L('Enter a new price greater than zero.', 'صفر سے زیادہ نئی قیمت درج کریں۔', 'أدخل سعراً جديداً أكبر من صفر.') } })); return }
     if (np === Number(oldPrice)) { setUpdMsg(m => ({ ...m, [id]: { ok: false, text: L('This is already the current price.', 'یہی موجودہ قیمت ہے۔', 'هذا هو السعر الحالي نفسه.') } })); return }
-    const supabase = createClient()
-    const { error } = await supabase.from('live_prices').update({
-      price: np, previous_price: oldPrice, updated_at: new Date().toISOString(),
-    }).eq('id', id)
+    const { error } = await writePrice('update', { price: np, previous_price: oldPrice, updated_at: new Date().toISOString() }, id)
     if (error) { console.error('live_prices update', error); setUpdMsg(m => ({ ...m, [id]: { ok: false, text: L('Could not update the price. Check your connection and try again.', 'قیمت اپ ڈیٹ نہیں ہو سکی۔ کنکشن چیک کر کے دوبارہ کوشش کریں۔', 'تعذّر تحديث السعر. تحقّق من اتصالك وحاول مرة أخرى.') } })); return }
     setUpd(u => ({ ...u, [id]: '' }))
     setUpdMsg(m => ({ ...m, [id]: { ok: true, text: L('Updated', 'اپ ڈیٹ ہو گیا', 'حُدّث') } }))
     load()
   }
 
-  async function deletePrice(id: any) {
-    if (!(await askConfirm(T.confirmDelete, { danger: true, okLabel: L('Yes, delete', 'ہاں، حذف کریں', 'نعم، احذف'), cancelLabel: L('Go back', 'واپس', 'تراجع') }))) return
+  async function deletePrice(id: any, name?: string) {
+    // round-8 UX-094 (3): the confirmation names the material, and success is said
+    const q = name ? L(`Delete the price of ${name}?`, `${name} کی قیمت حذف کریں؟`, `حذف سعر ${name}؟`) : T.confirmDelete
+    if (!(await askConfirm(q, { danger: true, okLabel: L('Yes, delete', 'ہاں، حذف کریں', 'نعم، احذف'), cancelLabel: L('Go back', 'واپس', 'تراجع') }))) return
     setMsg(null)
     const supabase = createClient()
     const { error } = await supabase.from('live_prices').delete().eq('id', id)
     if (error) { failMsg('delete'); return }
+    if (editingId === id) resetForm()
+    setMsg({ ok: true, text: L('The price was deleted.', 'قیمت حذف ہو گئی۔', 'حُذف السعر.') })
     load()
   }
 
@@ -219,7 +260,8 @@ export default function SupplierPricesPage() {
 
         {/* Add form */}
         {showForm && (
-          <form onSubmit={handleSave} className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm mb-5 animate-fade-in">
+          <form id="lp-form" onSubmit={handleSave} className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm mb-5 animate-fade-in" style={{ scrollMarginTop: '70px' }}>
+            {editingId && <p className="mb-3 text-sm font-bold text-[#0B2438]">{L('Edit the saved price', 'محفوظ قیمت میں ترمیم', 'تعديل السعر المحفوظ')}</p>}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
               {/* round-4 UX-066: search every material first, then browse the 10 sections, or type it with its section */}
               <div className="sm:col-span-2">
@@ -231,7 +273,7 @@ export default function SupplierPricesPage() {
                         placeholder={L('Material name', 'مال کا نام', 'اسم المادة')} required />
                       <button type="button" onClick={() => { setProductOther(false); setProduct(''); setManualSection('') }} className="inline-flex items-center min-h-[44px] text-xs text-gray-600 whitespace-nowrap px-3"><Glyph e="↩" /> {L('List', 'فہرست', 'القائمة')}</button>
                     </div>
-                    <p className="text-[12px] text-gray-600 leading-relaxed">{L('A price with a typed name is saved for you, but it fills in only when the name matches the material name in the request exactly.', 'ہاتھ سے لکھے نام والی قیمت آپ کے لیے محفوظ ہو جاتی ہے، لیکن یہ صرف تب بھرتی ہے جب نام درخواست میں مال کے نام سے بالکل ملے۔', 'السعر المكتوب يدوياً يُحفظ لك، لكنه لا يُعبَّأ تلقائياً إلا إذا طابق الاسم اسم المادة في الطلب تماماً.')}</p>
+                    <p className="text-[12px] text-gray-600 leading-relaxed">{L('A price with a typed name is saved for you, but it is suggested only when the name matches the material name in the request exactly.', 'ہاتھ سے لکھے نام والی قیمت آپ کے لیے محفوظ ہو جاتی ہے، لیکن یہ صرف تب بھرتی ہے جب نام درخواست میں مال کے نام سے بالکل ملے۔', 'السعر المكتوب يدوياً يُحفظ لك، لكنه لا يظهر اقتراحاً إلا إذا طابق الاسم اسم المادة في الطلب تماماً.')}</p>
                     <div className="block text-xs font-bold text-gray-600" id="lp-sector-label">{T.sector}</div>
                     <div className="flex flex-wrap gap-2" role="radiogroup" aria-labelledby="lp-sector-label">
                       {BROWSE_SECTIONS.map(sec => {
@@ -240,7 +282,7 @@ export default function SupplierPricesPage() {
                           <button key={sec.key} type="button" role="radio" aria-checked={on}
                             onClick={() => { const first: any = subsOfSection(sec.key as any)[0]; setManualSection(sec.key); setSector(first?.sector || '') }}
                             className={`min-h-[44px] px-3 rounded-lg text-[13px] font-semibold border-2 transition-all ${on ? 'border-[#D4A543] bg-[#D4A543]/10 text-[#071827]' : 'bg-white border-gray-200 text-gray-600 hover:border-gray-300'}`}>
-                            <span className="me-1"><Glyph e={sec.icon} /></span>{L(sec.en, sec.ur, sec.ar)}
+                            <span className="me-1 inline-flex align-middle">{sec.cat ? <CatIcon k={sec.cat} className="w-4 h-4" /> : <Glyph e={sec.icon} />}</span>{L(sec.en, sec.ur, sec.ar)}
                           </button>
                         )
                       })}
@@ -257,8 +299,16 @@ export default function SupplierPricesPage() {
                       <div className="flex flex-wrap gap-2">
                         {subResults.length ? subResults.map((x: any) => {
                           const on = product === x.ar && sector === x.sector
-                          return <button key={x.sector + x.key} type="button" onClick={() => pick(x)} className={chipCls(on)}>{on ? <Check className="w-4 h-4" aria-hidden /> : <Glyph e={x.icon || '📦'} />} {subLabel(x)}</button>
-                        }) : <p className="text-xs text-gray-600">{L('No match. Type it manually.', 'کوئی نتیجہ نہیں، خود لکھیں۔', 'لا نتائج، اكتبها يدوياً.')}</p>}
+                          return <button key={x.sector + x.key} type="button" onClick={() => pick(x)} className={chipCls(on)}>{on ? <Check className="w-4 h-4" aria-hidden /> : <CatIcon k={(SUB_CATEGORIES as any)[x.sector]?.[x.key]?.group || x.sector} className="w-4 h-4" />} {subLabel(x)}</button>
+                        }) : (
+                          <div className="flex flex-wrap items-center gap-2">
+                            <p className="text-xs text-gray-600">{L('No match.', 'کوئی نتیجہ نہیں۔', 'لا نتائج.')}</p>
+                            <button type="button" onClick={() => { setProduct(psearch.trim()); setProductOther(true); setSector(''); setManualSection('') }}
+                              className="inline-flex items-center min-h-[44px] px-3 rounded-lg text-[13px] font-bold text-[#0B2438] border border-[#0B2438]/30 bg-white">
+                              {L(`Type «${psearch.trim()}» manually`, `«${psearch.trim()}» خود لکھیں`, `اكتب «${psearch.trim()}» يدوياً`)}
+                            </button>
+                          </div>
+                        )}
                       </div>
                     ) : (
                       <>
@@ -266,7 +316,7 @@ export default function SupplierPricesPage() {
                           {BROWSE_SECTIONS.map(sec => (
                             <button key={sec.key} type="button" aria-pressed={psection === sec.key} onClick={() => setPsection(psection === sec.key ? '' : sec.key)}
                               className={`min-h-[44px] px-3 rounded-lg text-[13px] font-semibold border-2 transition-all ${psection === sec.key ? 'border-[#D4A543] bg-[#D4A543]/10 text-[#071827]' : 'bg-white border-gray-200 text-gray-600 hover:border-gray-300'}`}>
-                              <span className="me-1"><Glyph e={sec.icon} /></span>{L(sec.en, sec.ur, sec.ar)}
+                              <span className="me-1 inline-flex align-middle">{sec.cat ? <CatIcon k={sec.cat} className="w-4 h-4" /> : <Glyph e={sec.icon} />}</span>{L(sec.en, sec.ur, sec.ar)}
                             </button>
                           ))}
                         </div>
@@ -274,8 +324,8 @@ export default function SupplierPricesPage() {
                           <div className="flex flex-wrap gap-2 pt-2 border-t border-gray-100">
                             {sectionSubs.map((x: any) => {
                               const on = product === x.ar && sector === x.sector
-                              const ic = (SUB_CATEGORIES as any)[x.sector]?.[x.key]?.icon || '📦'
-                              return <button key={x.sector + x.key} type="button" onClick={() => pick(x)} className={chipCls(on)}>{on ? <Check className="w-4 h-4" aria-hidden /> : <Glyph e={ic} />} {subLabel(x)}</button>
+                              const grp = (SUB_CATEGORIES as any)[x.sector]?.[x.key]?.group || x.sector
+                              return <button key={x.sector + x.key} type="button" onClick={() => pick(x)} className={chipCls(on)}>{on ? <Check className="w-4 h-4" aria-hidden /> : <CatIcon k={grp} className="w-4 h-4" />} {subLabel(x)}</button>
                             })}
                           </div>
                         )}
@@ -302,11 +352,21 @@ export default function SupplierPricesPage() {
                 <p id="lp-price-hint" className="text-[12px] text-gray-500 mt-1">{noVat ? L('Enter the final price the buyer pays; nothing is added to it.', 'وہ حتمی قیمت درج کریں جو خریدار ادا کرے گا؛ اس پر کچھ شامل نہیں ہوگا۔', 'أدخل السعر النهائي الذي يدفعه المشتري، ولا يُضاف إليه شيء.') : L('Enter the final price the buyer pays, including 15% VAT.', 'وہ حتمی قیمت درج کریں جو خریدار ادا کرے گا، 15% VAT سمیت۔', 'أدخل السعر النهائي الذي يدفعه المشتري، شاملاً الضريبة 15%.')}</p>
               </div>
               <div className="sm:col-span-2">
-                <label htmlFor="lp-region" className="block text-xs font-bold text-gray-600 mb-1">{T.region}</label>
-                <select id="lp-region" value={region} onChange={e => setRegion(e.target.value)} className="input-field">
-                  <option value="">{T.selectRegion}</option>
-                  {REGIONS.map(r => <option key={r} value={r}>{getRegionLabel(r, locale)}</option>)}
-                </select>
+                <div id="lp-scope-label" className="block text-xs font-bold text-gray-600 mb-1">{T.appliesTo}</div>
+                <div className="grid grid-cols-2 gap-2" role="radiogroup" aria-labelledby="lp-scope-label">
+                  {(['all', 'city'] as const).map(k => (
+                    <button key={k} type="button" role="radio" aria-checked={scope === k} onClick={() => { setScope(k); if (k === 'all') { setRegion(''); setScopeCity('') } }}
+                      className={`min-h-[44px] px-3 rounded-lg text-[13px] font-semibold border-2 transition-all ${scope === k ? 'border-[#D4A543] bg-[#D4A543]/10 text-[#071827]' : 'bg-white border-gray-200 text-gray-600 hover:border-gray-300'}`}>
+                      {k === 'all' ? T.allCities : T.oneCity}
+                    </button>
+                  ))}
+                </div>
+                {scope === 'city' && (
+                  <div className="mt-2">
+                    <CityPicker city={scopeCity} region={region} locale={locale} onPick={(c) => { setScopeCity(c.ar); setRegion(c.region) }} ariaLabel={T.oneCity} />
+                    {region && <p className="text-[12px] text-gray-500 mt-1">{L(`Applies to requests in ${getRegionLabel(region, 'en')}.`, `${getRegionLabel(region, 'ur')} کی درخواستوں پر لاگو ہوگی۔`, `يسري على طلبات ${getRegionLabel(region, 'ar')}.`)}</p>}
+                  </div>
+                )}
               </div>
             </div>
             <div className="flex gap-2">
@@ -315,7 +375,7 @@ export default function SupplierPricesPage() {
                 style={{ background: 'linear-gradient(135deg,#F5C55B,#D4A543)' }}>
                 {saving ? T.saving : T.save}
               </button>
-              <button type="button" onClick={() => setShowForm(false)} aria-label={L('Close', 'بند کریں', 'إغلاق')}
+              <button type="button" onClick={resetForm} aria-label={L('Close', 'بند کریں', 'إغلاق')}
                 className="min-h-[44px] px-5 rounded-xl font-semibold text-sm border border-gray-200 text-gray-600"><X className="w-4 h-4" aria-hidden /></button>
             </div>
           </form>
@@ -332,6 +392,11 @@ export default function SupplierPricesPage() {
           </div>
         ) : (
           <div className="space-y-3">
+            {hasVatNumber && prices.some((p: any) => p.vat_basis === 'final') && (
+              <p role="status" className="rounded-xl border border-[#D4A543]/50 bg-[#D4A543]/10 px-3 py-2 text-[13px] text-[#6C531F] leading-relaxed">
+                {L('You added a VAT number after saving some of these prices; review them so they include 15% VAT.', 'آپ نے ان میں سے کچھ قیمتیں محفوظ کرنے کے بعد VAT نمبر شامل کیا؛ ان کا جائزہ لیں تاکہ ان میں 15% VAT شامل ہو۔', 'أضفتَ رقماً ضريبياً بعد حفظ بعض هذه الأسعار؛ راجعها لتشمل الضريبة 15%.')}
+              </p>
+            )}
             <h2 className="text-sm font-bold" style={{ color: '#0B2438' }}>{T.myPrices} <span className="ms-1 inline-grid place-items-center min-w-[1.4rem] h-[1.4rem] px-1 rounded-full bg-[#0B2438]/10 text-[12px]">{prices.length}</span></h2>
             {prices.length > 8 && (
               <input type="search" value={listQ} onChange={e => setListQ(e.target.value)} className="input-field text-base sm:text-sm"
@@ -347,15 +412,18 @@ export default function SupplierPricesPage() {
                     <div className="flex-1 min-w-0">
                       <div className="font-bold" style={{ color: '#0B2438' }}>{nameOf(p)}</div>
                       <div className="flex items-center gap-2 mt-1 flex-wrap text-xs text-gray-500">
-                        <span className="badge text-[12px] bg-[#0B2438]/5 text-[#0B2438]">{sectionLabelOf(p.sector, keyOf(p), locale) || secLabel(p.sector)}</span>
+                        {keyOf(p) && <span className="badge text-[12px] bg-[#0B2438]/5 text-[#0B2438]">{sectionLabelOf(p.sector, keyOf(p), locale) || secLabel(p.sector)}</span>}
                         {p.region && <span><Glyph e="📍" /> {getRegionLabel(p.region, locale)}</span>}
                         <span><Glyph e="🕐" /> {T.lastUpdate}: {timeAgoText(p.updated_at, locale)}</span>
+                        {/* round-8 UX-142: a price saved more than 30 days ago may be out of date */}
+                        {p.updated_at && Date.now() - new Date(p.updated_at).getTime() > 30 * 86400000 && <span className="badge text-[12px] font-semibold bg-[#D4A543]/10 text-[#8F6820]">{L('May need an update', 'اپ ڈیٹ کی ضرورت ہو سکتی ہے', 'قد يحتاج تحديثاً')}</span>}
                       </div>
                     </div>
                     <div className="text-end flex-shrink-0">
                       <div className="text-xl font-bold" style={{ color: '#0B2438' }}>{p.price?.toLocaleString('en-US')}</div>
                       <div className="text-[12px] text-gray-500">{L('SAR', 'ریال', 'ر.س')} / {getUnitLabel(p.unit, locale) || p.unit}</div>
-                      {noVat != null && <div className="text-[12px] text-gray-500">{noVat ? L('final price', 'حتمی قیمت', 'سعر نهائي') : L('incl. VAT', 'VAT سمیت', 'شامل الضريبة')}</div>}
+                      {/* round-8 UX-027: the tag reads the row's own basis when it was saved with one */}
+                      {(p.vat_basis || noVat != null) && <div className="text-[12px] text-gray-500">{(p.vat_basis ? p.vat_basis === 'final' : noVat) ? L('final price', 'حتمی قیمت', 'سعر نهائي') : L('incl. VAT', 'VAT سمیت', 'شامل الضريبة')}</div>}
                       {p.previous_price && Number(p.previous_price) !== Number(p.price) && <div className="text-[12px] text-gray-500">{L('was', 'پہلے', 'كان')} {Number(p.previous_price).toLocaleString('en-US')}</div>}
                     </div>
                   </div>
@@ -368,7 +436,8 @@ export default function SupplierPricesPage() {
                       className="min-h-[44px] px-4 rounded-lg text-[13px] font-semibold text-white" style={{ background: '#0B2438' }}>
                       {T.update}
                     </button>
-                    <button onClick={() => deletePrice(p.id)} aria-label={L('Delete price', 'قیمت حذف کریں', 'حذف السعر')}
+                    <button type="button" onClick={() => startEdit(p)} className="min-h-[44px] px-3 rounded-lg text-[13px] font-semibold text-[#0B2438] border border-[#0B2438]/30 bg-white">{T.edit}</button>
+                    <button onClick={() => deletePrice(p.id, nameOf(p))} aria-label={L('Delete price', 'قیمت حذف کریں', 'حذف السعر')}
                       className="min-h-[44px] w-11 grid place-items-center rounded-lg text-sm border border-red-200 text-[#B42318] hover:bg-red-50"><Glyph e="🗑" /></button>
                   </div>
                   {updMsg[p.id] && <p role={updMsg[p.id].ok ? 'status' : 'alert'} className={`mt-1.5 text-[13px] font-semibold ${updMsg[p.id].ok ? 'text-[#0F6E56]' : 'text-[#B42318]'}`}>{updMsg[p.id].text}</p>}

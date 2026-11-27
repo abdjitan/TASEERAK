@@ -6,19 +6,32 @@ import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { sarLabel } from '@/lib/vat'
 import { agentCapText } from '@/lib/sellers'
+import CityPicker from '@/components/shared/CityPicker'
+import DistrictField from '@/components/shared/DistrictField'
 
 type Loc = 'ar' | 'en' | 'ur' | string
 const tr = (locale: Loc) => (en: string, ur: string, ar: string) => (locale === 'en' ? en : locale === 'ur' ? ur : ar)
 
 export type SourceValue = { name: string; city: string; area: string; phone: string }
 
-/** Seller side: the fields on the pricing form. */
-export function SourceShopFields({ value, onChange, locale }: { value: SourceValue; onChange: (v: SourceValue) => void; locale: Loc }) {
+/** round-8 UX-112 (4): one wording for what the buyer sees of the source shop (pricing page, onboarding, /join). */
+export function sourceShopVisibilityText(locale: Loc): string {
+  return tr(locale)('Before the buyer chooses your offer they see only the city and the district; after it they see the shop’s name without its phone number.', 'خریدار کے آپ کی آفر چننے سے پہلے وہ صرف شہر اور محلہ دیکھتا ہے، اور اس کے بعد دکان کا نام دیکھتا ہے مگر اس کا فون نمبر نہیں۔', 'قبل أن يختار المشتري عرضك لا يرى إلا المدينة والحي، وبعده يرى اسم المحل دون رقم هاتفه.')
+}
+
+/** Seller side: the fields on the pricing form.
+ *  round-8 UX-092: showCap={false} where the page already shows the per-deal limit (the pricing form).
+ *  round-8 UX-040: the city is the shared CityPicker (the request's city pre-chosen via defaultCity), with
+ *  visible labels on every field. */
+export function SourceShopFields({ value, onChange, locale, showCap = true, defaultCity, defaultRegion }: { value: SourceValue; onChange: (v: SourceValue) => void; locale: Loc; showCap?: boolean; defaultCity?: string | null; defaultRegion?: string | null }) {
   const L = tr(locale)
   // this agent's current deal cap (migration 214): 15,000 → 50,000 after 3 good deals → none after 10
   const [cap, setCap] = useState<{ cap: number | null; deals: number } | null>(null)
-  useEffect(() => { createClient().rpc('my_agent_deal_cap').then(({ data }: any) => setCap(data || null)) }, [])
+  useEffect(() => { if (showCap) createClient().rpc('my_agent_deal_cap').then(({ data }: any) => setCap(data || null)) }, [showCap])
+  // the request's city is chosen in advance (the agent usually buys in the buyer's city)
+  useEffect(() => { if (!value.city && defaultCity) onChange({ ...value, city: defaultCity }) }, [defaultCity]) // eslint-disable-line react-hooks/exhaustive-deps
   const set = (k: keyof SourceValue) => (e: any) => onChange({ ...value, [k]: e.target.value })
+  const lbl = 'block text-[12px] font-bold text-gray-700 mb-1'
   return (
     <div className="mt-3 rounded-xl border border-[#D4A543]/40 bg-[#D4A543]/5 p-3">
       <div className="text-xs font-bold text-[#071827] mb-1">
@@ -26,30 +39,40 @@ export function SourceShopFields({ value, onChange, locale }: { value: SourceVal
       </div>
       {/* UX-144: the rules as five short points instead of one long paragraph */}
       <ul className="text-[12px] text-gray-700 mb-2 leading-relaxed list-disc ps-5 space-y-0.5">
-        <li>{L('Before the buyer chooses your offer, they see only the district and the city.', 'خریدار کے آپ کی آفر چننے سے پہلے وہ صرف محلہ اور شہر دیکھتا ہے۔', 'قبل أن يختار المشتري عرضك لا يرى إلا الحي والمدينة.')}</li>
-        <li>{L('After choosing, they see the shop’s name, never its phone.', 'انتخاب کے بعد وہ دکان کا نام دیکھتا ہے، فون کبھی نہیں۔', 'بعد اختياره يرى اسم المحل، ولا يرى رقم هاتفه أبداً.')}</li>
+        <li>{sourceShopVisibilityText(locale)}</li>
         {/* round-7 UX-039: the invoice line matches the VAT answer (no «tax invoice» promise here) */}
-        <li>{L('The invoice is issued by this shop in the buyer’s name at your offer’s price; attach it at delivery.', 'انوائس اسی دکان سے خریدار کے نام آپ کی آفر کی قیمت پر جاری ہوتی ہے؛ ڈیلیوری پر اسے منسلک کریں۔', 'تصدر الفاتورة من هذا المحل باسم المشتري وبسعر عرضك نفسه، وأرفقها عند التسليم.')}</li>
+        {/* round-8 UX-093 (8): no «attach it at delivery»: the invoice is uploaded BEFORE confirming delivery (said below) */}
+        <li>{L('The invoice is issued by this shop in the buyer’s name at your offer’s price.', 'انوائس اسی دکان سے خریدار کے نام آپ کی آفر کی قیمت پر جاری ہوتی ہے۔', 'تصدر الفاتورة من هذا المحل باسم المشتري وبسعر عرضك نفسه.')}</li>
         {/* UX-135: the shop rule said plainly */}
         <li>{L('The shop must have a commercial registration, and its invoice carries the same price as your offer.', 'دکان کی تجارتی رجسٹریشن ہونا ضروری ہے، اور اس کی انوائس میں وہی قیمت ہو جو آپ کی آفر میں ہے۔', 'يجب أن يكون للمحل سجل تجاري، وأن تحمل فاتورته السعر نفسه الذي في عرضك.')}</li>
         <li>{L('Upload the invoice in the invoice step first, then confirm the delivery.', 'پہلے انوائس کے مرحلے میں انوائس اپ لوڈ کریں، پھر ڈیلیوری کی تصدیق کریں۔', 'ارفع الفاتورة في خطوة الفاتورة أولاً، ثم أكّد التسليم.')}</li>
       </ul>
       {/* UX-090: the current limit and the progress towards the next one */}
-      {cap && (
+      {showCap && cap && (
         <p className="text-[12px] mb-2 font-semibold text-[#071827] leading-relaxed">
           {agentCapText(cap, locale, sarLabel(locale))}
           {cap.cap != null && ' ' + L('A successful deal: the buyer confirmed receipt and no problem was reported.', 'کامیاب سودا: خریدار نے وصولی کی تصدیق کی اور کوئی شکایت نہیں ہوئی۔', 'الصفقة الناجحة: أكّد المشتري استلامها ولم يُفتح عليها بلاغ.')}
         </p>
       )}
+      {/* round-8 UX-040: visible labels (the «required» mark no longer disappears once typing starts) */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-        {/* id="shop-name": the pricing page's «why can't I send» link scrolls here (UX-032) */}
-        <input id="shop-name" value={value.name} onChange={set('name')} maxLength={120} className="input-field text-base sm:text-sm sm:col-span-2"
-          aria-label={L('Shop name (required)', 'دکان کا نام (لازمی)', 'اسم المحل (مطلوب)')} placeholder={L('Shop name (required)', 'دکان کا نام (لازمی)', 'اسم المحل (مطلوب)')} />
-        <input value={value.city} onChange={set('city')} maxLength={60} className="input-field text-base sm:text-sm" aria-label={L('City', 'شہر', 'المدينة')} placeholder={L('City', 'شہر', 'المدينة')} />
-        <input value={value.area} onChange={set('area')} maxLength={120} className="input-field text-base sm:text-sm"
-          aria-label={L('District / approximate location', 'محلہ / تقریبی مقام', 'الحي / الموقع التقريبي')} placeholder={L('District / approximate location', 'محلہ / تقریبی مقام', 'الحي / الموقع التقريبي')} />
-        <input value={value.phone} onChange={set('phone')} maxLength={30} inputMode="tel" dir="ltr" className="input-field text-base sm:text-sm sm:col-span-2"
-          aria-label={L('Shop phone (optional, never shown to the buyer)', 'دکان کا فون (اختیاری، خریدار کو کبھی نہیں دکھایا جاتا)', 'رقم المحل (اختياري، ولا يظهر للمشتري)')} placeholder={L('Shop phone (optional, never shown to the buyer)', 'دکان کا فون (اختیاری، خریدار کو نہیں دکھتا)', 'رقم المحل (اختياري، ولا يظهر للمشتري)')} />
+        <div className="sm:col-span-2">
+          {/* id="shop-name": the pricing page's «why can't I send» link scrolls here (UX-032) */}
+          <label htmlFor="shop-name" className={lbl}>{L('Shop name', 'دکان کا نام', 'اسم المحل')} <span className="text-red-500">*</span></label>
+          <input id="shop-name" value={value.name} onChange={set('name')} maxLength={120} className="input-field text-base sm:text-sm" />
+        </div>
+        <div>
+          <label htmlFor="shop-city" className={lbl}>{L('City', 'شہر', 'المدينة')}</label>
+          <CityPicker id="shop-city" city={value.city} region={value.city && value.city === defaultCity ? (defaultRegion || '') : ''} locale={locale} onPick={(c) => onChange({ ...value, city: c.ar, area: value.city === c.ar ? value.area : '' })} />
+        </div>
+        <div>
+          <label className={lbl}>{L('District or approximate location (optional)', 'محلہ یا تقریبی مقام (اختیاری)', 'الحي أو الموقع التقريبي (اختياري)')}</label>
+          <DistrictField city={value.city} value={value.area} onChange={(v: string) => onChange({ ...value, area: v })} locale={locale} className="input-field text-base sm:text-sm min-h-[44px]" />
+        </div>
+        <div className="sm:col-span-2">
+          <label htmlFor="shop-phone" className={lbl}>{L('Shop phone (optional, never shown to the buyer)', 'دکان کا فون (اختیاری، خریدار کو کبھی نہیں دکھایا جاتا)', 'رقم المحل (اختياري، ولا يظهر للمشتري)')}</label>
+          <input id="shop-phone" value={value.phone} onChange={set('phone')} maxLength={30} inputMode="tel" dir="ltr" className="input-field text-base sm:text-sm" />
+        </div>
       </div>
     </div>
   )

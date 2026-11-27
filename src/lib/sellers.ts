@@ -184,7 +184,12 @@ export function offerNeedsSupplier(o: any, now: number = Date.now(), rfqStatus?:
   if (!o || o.status !== 'pending' || rfqClosed(o, rfqStatus)) return false
   const discountOpen = !!o.reduction_deadline && new Date(o.reduction_deadline).getTime() > now
   const openQuestion = !!String(o.info_request || '').trim() && !String(o.info_response || '').trim()
-  return discountOpen || openQuestion
+  return discountOpen || openQuestion || offerPriceExpired(o, now, rfqStatus)
+}
+/** round-8 UX-007: a pending offer whose price commitment (price_valid_until) has passed: the buyer can no
+ *  longer choose it until the supplier renews the price. Needs offers.price_valid_until in the query. */
+export function offerPriceExpired(o: any, now: number = Date.now(), rfqStatus?: string | null): boolean {
+  return !!o && o.status === 'pending' && !rfqClosed(o, rfqStatus) && !!o.price_valid_until && new Date(o.price_valid_until).getTime() < now
 }
 export function offerHasOpenDiscount(o: any, now: number = Date.now(), rfqStatus?: string | null): boolean {
   return !!o && o.status === 'pending' && !rfqClosed(o, rfqStatus) && !!o.reduction_deadline && new Date(o.reduction_deadline).getTime() > now
@@ -222,7 +227,7 @@ export const OUTCOME_TITLE: Record<OfferOutcome, T3> = {
   lost: { ar: 'انتهى التسعير، واختار المشتري عرضاً آخر', en: 'Pricing closed: the buyer chose another offer', ur: 'قیمتیں بند: خریدار نے دوسری آفر چن لی' },
   cancelled: { ar: 'ألغى المشتري الطلب، ولم يُختر أي عرض', en: 'The buyer cancelled the request; no offer was chosen', ur: 'خریدار نے درخواست منسوخ کر دی؛ کوئی آفر منتخب نہیں ہوئی' },
   expired: { ar: 'انتهت مهلة الطلب دون اختيار أي عرض', en: 'The request ended without any offer being chosen', ur: 'درخواست کی مہلت کسی آفر کے انتخاب کے بغیر ختم ہو گئی' },
-  closed: { ar: 'أُلغيت هذه الصفقة بقرار الإدارة', en: 'This deal was cancelled by an admin decision', ur: 'یہ سودا انتظامیہ کے فیصلے سے منسوخ کر دیا گیا' },
+  closed: { ar: 'أُلغيت هذه الصفقة بقرار فريق تسعيرك', en: 'This deal was cancelled by the Taseerak team', ur: 'یہ سودا تسعیرک ٹیم کے فیصلے سے منسوخ کر دیا گیا' },
 }
 export function outcomeLabel(k: OfferOutcome, locale: Locale): string { return pick(OUTCOME_LABEL[k], locale) }
 export function outcomeTitle(k: OfferOutcome, locale: Locale): string { return pick(OUTCOME_TITLE[k], locale) }

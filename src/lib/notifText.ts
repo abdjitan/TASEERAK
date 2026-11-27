@@ -24,6 +24,8 @@
 //   note         the buyer's note (reduction request)        by          'buyer' | 'supplier' (dispute, payment_confirmed)
 //   sender_name  who sent a message / question               source_invoice  true = agent's source-shop invoice
 //   only_new     true = materials added to a request the supplier already had (new_rfq)
+//   resolution   the recorded outcome (dispute_resolved)     material_name  suggested material (material_rejected)
+//   reason       why (deal_closed, material_rejected)        until        also the suspension end (account_banned)
 
 export type NotifLocale = 'ar' | 'en' | 'ur'
 export type NotifLike = { type?: string | null; title?: string | null; body?: string | null; data?: any }
@@ -139,6 +141,11 @@ const TITLES: Record<string, Tri> = {
   uncovered: { ar: 'طلب بلا مورد مطابق', en: 'A request with no matching supplier', ur: 'ایسی درخواست جس کا کوئی مطابق سپلائر نہیں' },
   deal_closed: { ar: 'أُلغيت الصفقة بقرار فريق تسعيرك', en: 'The deal was cancelled by the Taseerak team', ur: 'تسعیرک ٹیم نے ڈیل منسوخ کر دی' },
   dispute_opened: { ar: 'بلاغ عن مشكلة في صفقة', en: 'A problem was reported in a deal', ur: 'ڈیل میں مسئلے کی اطلاع' },
+  // round-8 UX-011: types that had no template
+  dispute_resolved: { ar: 'سُجّلت نتيجة البلاغ', en: 'The report’s outcome was recorded', ur: 'شکایت کا نتیجہ درج ہو گیا' },
+  account_banned: { ar: 'أُوقف حسابك مؤقتاً', en: 'Your account is suspended', ur: 'آپ کا اکاؤنٹ عارضی طور پر معطل ہے' },
+  account_unbanned: { ar: 'أُعيد تفعيل حسابك', en: 'Your account is active again', ur: 'آپ کا اکاؤنٹ دوبارہ فعال ہو گیا' },
+  material_rejected: { ar: 'لم تُعتمد المادة التي اقترحتها', en: 'The material you suggested was not approved', ur: 'آپ کی تجویز کردہ چیز منظور نہیں ہوئی' },
 }
 
 /** Which template a notice uses: its kind first, then its type (a few types carry no kind). */
@@ -148,7 +155,7 @@ export function notifKey(n: NotifLike): string {
   const type = str(n?.type) || ''
   if (kind) return kind
   // types whose meaning is the same whatever the content
-  if (['new_rfq', 'rfq_deadline', 'price_expiring', 'rfq_changed', 'dispute_opened', 'new_message'].includes(type)) return type
+  if (['new_rfq', 'rfq_deadline', 'price_expiring', 'rfq_changed', 'dispute_opened', 'new_message', 'dispute_resolved', 'account_banned', 'account_unbanned', 'material_rejected'].includes(type)) return type
   // a plain rfq_offer is a new offer; old reduction notices had no kind, so the stored title decides
   if (type === 'rfq_offer' && (!str(n?.title) || String(n?.title).trim() === 'عرض سعر جديد')) return 'rfq_offer'
   // older notices written before their kind was stored: the exact stored title identifies them
@@ -340,6 +347,29 @@ function body(key: string, d: any, l: NotifLocale): string | null {
       return by === 'buyer'
         ? pick({ ar: `أبلغ المشتري عن مشكلة في صفقة ${L}. سيتواصل فريق تسعيرك مع الطرفين.`, en: `The buyer reported a problem in the deal ${L}. The Taseerak team will contact both sides.`, ur: `خریدار نے ڈیل ${L} میں مسئلے کی اطلاع دی۔ تسعیرک ٹیم دونوں فریقوں سے رابطہ کرے گی۔` })
         : pick({ ar: `أبلغ المورد عن مشكلة في صفقة ${L}. سيتواصل فريق تسعيرك مع الطرفين.`, en: `The supplier reported a problem in the deal ${L}. The Taseerak team will contact both sides.`, ur: `سپلائر نے ڈیل ${L} میں مسئلے کی اطلاع دی۔ تسعیرک ٹیم دونوں فریقوں سے رابطہ کرے گی۔` })
+    }
+    case 'dispute_resolved': {
+      if (!L) return null
+      const note = (str(d?.resolution ?? d?.note) || '').replace(/[\s.。۔!؟?،,;:]+$/u, '')
+      return note
+        ? pick({ ar: `سجّل فريق تسعيرك نتيجة البلاغ في صفقة ${L}: ${note}.`, en: `The Taseerak team recorded the outcome of the report in the deal ${L}: ${note}.`, ur: `تسعیرک ٹیم نے ڈیل ${L} میں شکایت کا نتیجہ درج کیا: ${note}۔` })
+        : pick({ ar: `سجّل فريق تسعيرك نتيجة البلاغ في صفقة ${L}. افتح الصفقة لتراها.`, en: `The Taseerak team recorded the outcome of the report in the deal ${L}. Open the deal to see it.`, ur: `تسعیرک ٹیم نے ڈیل ${L} میں شکایت کا نتیجہ درج کیا۔ اسے دیکھنے کے لیے ڈیل کھولیں۔` })
+    }
+    case 'account_banned':
+      return until
+        ? pick({ ar: `أوقف فريق تسعيرك حسابك حتى ${until}. افتح صفحة حالة الحساب لمعرفة التفاصيل.`, en: `The Taseerak team suspended your account until ${until}. Open the account status page for the details.`, ur: `تسعیرک ٹیم نے آپ کا اکاؤنٹ ${until} تک معطل کر دیا۔ تفصیل کے لیے اکاؤنٹ کی حالت کا صفحہ کھولیں۔` })
+        : pick({ ar: 'أوقف فريق تسعيرك حسابك. افتح صفحة حالة الحساب لمعرفة التفاصيل.', en: 'The Taseerak team suspended your account. Open the account status page for the details.', ur: 'تسعیرک ٹیم نے آپ کا اکاؤنٹ معطل کر دیا۔ تفصیل کے لیے اکاؤنٹ کی حالت کا صفحہ کھولیں۔' })
+    case 'account_unbanned':
+      return pick({ ar: 'يمكنك الآن استخدام تسعيرك كالمعتاد.', en: 'You can use Taseerak as usual again.', ur: 'اب آپ تسعیرک معمول کے مطابق استعمال کر سکتے ہیں۔' })
+    case 'material_rejected': {
+      const name = str(d?.material_name ?? d?.item_name ?? d?.product_name)
+      if (!name) return null
+      const reason = (str(d?.reason) || '').replace(/[\s.。۔!؟?،,;:]+$/u, '')
+      return pick({
+        ar: `لم يعتمد فريق تسعيرك ${q(name, 'ar')}${reason ? `: ${reason}` : ''}.`,
+        en: `The Taseerak team did not approve ${q(name, 'en')}${reason ? `: ${reason}` : ''}.`,
+        ur: `تسعیرک ٹیم نے ${q(name, 'ur')} منظور نہیں کیا${reason ? `: ${reason}` : ''}۔`,
+      })
     }
   }
   return null

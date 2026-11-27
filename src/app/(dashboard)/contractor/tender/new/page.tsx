@@ -65,7 +65,7 @@ export default function NewTenderPage() {
   const [saveMsg, setSaveMsg] = useState('')
   const [error, setError] = useState('') // save errors
   const [boqError, setBoqError] = useState('') // shown in the BOQ section
-  const [boqNotExcel, setBoqNotExcel] = useState(false) // a PDF/photo: point to «إضافة جدول الكميات»
+  const [boqNotExcel, setBoqNotExcel] = useState(false) // a PDF/photo: point to «جدول الكميات»
   const [pdfError, setPdfError] = useState<Record<string, string>>({}) // per PDF section
   const busyRef = useRef(false)
   const stopRef = useRef(false)
@@ -271,8 +271,8 @@ export default function NewTenderPage() {
   // an unreadable workbook or one without items is never a dead end (UX-077)
   const otherFormatHelp = (
     <div className="mt-2 rounded-xl border border-[#D4A543]/40 bg-[#D4A543]/[.06] p-3 text-[13px] text-[#0B2438] leading-relaxed">
-      {L('Tender pricing reads tables that have a «Unit» column and a «Quantity» column. If your table has another layout, try «Add a bill of quantities»: it reads Excel, PDF and photos.', 'ٹینڈر کی قیمت وہ جدول پڑھتی ہے جن میں «یونٹ» اور «مقدار» کے کالم ہوں۔ اگر آپ کا جدول کسی اور ترتیب میں ہے تو «مقداروں کا جدول شامل کریں» آزمائیں: یہ Excel، PDF اور تصاویر پڑھتا ہے۔', 'يقرأ تسعير المناقصات الجداول التي تحتوي عمودَي «الوحدة» و«الكمية». إن كان جدولك بتنسيق آخر، فجرّب «إضافة جدول الكميات»، فهي تقرأ ملفات Excel وPDF والصور.')}
-      <Link href="/contractor/project/new" className="mt-1 flex items-center min-h-11 font-bold text-[#8F6820] underline">{L('Open «Add a bill of quantities» →', '«مقداروں کا جدول شامل کریں» کھولیں ←', 'افتح «إضافة جدول الكميات» ←')}</Link>
+      {L('Tender pricing reads tables that have a «Unit» column and a «Quantity» column. If your table has another layout, try «Bill of quantities»: it reads Excel, PDF and photos.', 'ٹینڈر کی قیمت وہ جدول پڑھتی ہے جن میں «یونٹ» اور «مقدار» کے کالم ہوں۔ اگر آپ کا جدول کسی اور ترتیب میں ہے تو «مقداروں کا جدول» آزمائیں: یہ Excel، PDF اور تصاویر پڑھتا ہے۔', 'يقرأ تسعير المناقصات الجداول التي تحتوي عمودَي «الوحدة» و«الكمية». إن كان جدولك بتنسيق آخر، فجرّب «جدول الكميات»، فهو يقرأ ملفات Excel وPDF والصور.')}
+      <Link href="/contractor/project/new" className="mt-1 flex items-center min-h-11 font-bold text-[#8F6820] underline">{L('Open «Bill of quantities» →', '«مقداروں کا جدول» کھولیں ←', 'افتح «جدول الكميات» ←')}</Link>
     </div>
   )
   const byKind = boq?.stats?.by_kind
@@ -292,7 +292,7 @@ export default function NewTenderPage() {
           </p>
           <p className="text-sm text-gray-600 mt-2">
             {L('Is your table a PDF or a photo? ', 'آپ کا جدول PDF یا تصویر ہے؟ ', 'الجدول بصيغة PDF أو صورة؟ ')}
-            <Link href="/contractor/project/new" className="font-bold text-[#8F6820] underline">{L('Use «Add a bill of quantities»', '«مقداروں کا جدول شامل کریں» استعمال کریں', 'استخدم «إضافة جدول الكميات»')}</Link>
+            <Link href="/contractor/project/new" className="font-bold text-[#8F6820] underline">{L('Use «Bill of quantities»', '«مقداروں کا جدول» استعمال کریں', 'استخدم «جدول الكميات»')}</Link>
           </p>
         </div>
 
@@ -306,7 +306,7 @@ export default function NewTenderPage() {
         {allowed !== false && (<>
           <label className="block bg-white rounded-2xl border border-gray-200 p-4">
             {/* round-7 UX-144: a required field says so (mark, hint, aria-required) */}
-            <span className="block text-sm font-bold text-[#0B2438] mb-1.5">{L('Tender name', 'ٹینڈر کا نام', 'اسم المناقصة')} <span className="text-red-700" aria-hidden>*</span></span>
+            <span className="block text-sm font-bold text-[#0B2438] mb-1.5">{L('Tender name', 'ٹینڈر کا نام', 'اسم المناقصة')} <span aria-hidden>*</span></span>
             <input value={title} onChange={(e: any) => setTitle(e.target.value.slice(0, 200))} required aria-required="true" aria-describedby="tender-name-hint" className="input-field" placeholder={L('e.g. Energy centre, stage 4', 'مثلاً: انرجی سینٹر، چوتھا مرحلہ', 'مثال: مركز الطاقة، المرحلة الرابعة')} />
             {!title.trim() && <span id="tender-name-hint" className="block text-xs text-[#8F6820] mt-1">{L('Write the tender name.', 'ٹینڈر کا نام لکھیں۔', 'اكتب اسم المناقصة.')}</span>}
             <span className="block text-xs text-gray-500 mt-1"><Glyph e="🔒" /> {L('Only you see this name; it is never sent to suppliers.', 'یہ نام صرف آپ دیکھتے ہیں؛ یہ کبھی سپلائرز کو نہیں بھیجا جاتا۔', 'يظهر هذا الاسم لك وحدك، ولا يُرسل إلى الموردين أبداً.')}</span>
@@ -329,7 +329,7 @@ export default function NewTenderPage() {
                 {boqError}
                 {boqNotExcel && (
                   <Link href="/contractor/project/new" className="block mt-1.5 font-bold text-[#0B2438] underline">
-                    {L('For a PDF or a photo, use «Add a bill of quantities» →', 'PDF یا تصویر کے لیے «مقداروں کا جدول شامل کریں» استعمال کریں ←', 'للملف PDF أو الصورة استخدم «إضافة جدول الكميات» ←')}
+                    {L('For a PDF or a photo, use «Bill of quantities» →', 'PDF یا تصویر کے لیے «مقداروں کا جدول» استعمال کریں ←', 'للملف PDF أو الصورة استخدم «جدول الكميات» ←')}
                   </Link>
                 )}
               </div>
@@ -337,7 +337,7 @@ export default function NewTenderPage() {
             {boq && (
               <div className="rounded-xl bg-gray-50 p-3 text-sm">
                 <div className="flex items-center justify-between gap-2">
-                  <div className="font-semibold text-gray-800 break-all">{boq.file.name} <span className="text-gray-500 font-normal">· {fmtSize(boq.file.size)}</span></div>
+                  <div className="font-semibold text-gray-800 break-all">{boq.file.name} <span className="text-gray-500 font-normal">· {fmtSize(boq.file.size, locale)}</span></div>
                   {boq.status !== 'reading' && !saving && (
                     <button type="button" onClick={() => { setBoq(null); setBoqError('') }} className="min-h-11 px-2 text-xs font-bold text-gray-600 hover:underline shrink-0">{L('Remove', 'ہٹائیں', 'إزالة')}</button>
                   )}
@@ -374,7 +374,7 @@ export default function NewTenderPage() {
               {jobs.filter(j => j.kind === kind).map(j => (
                 <div key={j.id} className="rounded-xl bg-gray-50 p-3 text-sm">
                   <div className="flex items-center justify-between gap-2">
-                    <span className="font-semibold text-gray-800 break-all">{j.file.name} <span className="text-gray-500 font-normal">· {fmtSize(j.file.size)}</span></span>
+                    <span className="font-semibold text-gray-800 break-all">{j.file.name} <span className="text-gray-500 font-normal">· {fmtSize(j.file.size, locale)}</span></span>
                     {j.status !== 'reading' && !saving && (
                       <button type="button" onClick={() => setJobs(js => js.filter(x => x.id !== j.id))} className="min-h-11 px-2 text-xs font-bold text-gray-600 hover:underline shrink-0">
 {L('Remove', 'ہٹائیں', 'إزالة')}</button>
@@ -438,7 +438,7 @@ export default function NewTenderPage() {
                   {!title.trim()
                     ? L('Write the tender name to continue.', 'جاری رکھنے کے لیے ٹینڈر کا نام لکھیں۔', 'اكتب اسم المناقصة للمتابعة.')
                     : !(boq?.status === 'done' && boq.items.length > 0)
-                      ? <>{L('Upload a bill of quantities in Excel with priced rows to continue.', 'جاری رکھنے کے لیے Excel میں مقداروں کا جدول اپ لوڈ کریں جس میں آئٹمز ہوں۔', 'ارفع جدول كميات بصيغة Excel يحتوي بنوداً للمتابعة.')}{boq && boq.status !== 'reading' && <> <Link href="/contractor/project/new" className="underline">{L('Or use «Add a bill of quantities».', 'یا «مقداروں کا جدول شامل کریں» استعمال کریں۔', 'أو استخدم «إضافة جدول الكميات».')}</Link></>}</>
+                      ? <>{L('Upload a bill of quantities in Excel with priced rows to continue.', 'جاری رکھنے کے لیے Excel میں مقداروں کا جدول اپ لوڈ کریں جس میں آئٹمز ہوں۔', 'ارفع جدول كميات بصيغة Excel يحتوي بنوداً للمتابعة.')}{boq && boq.status !== 'reading' && <> <Link href="/contractor/project/new" className="underline">{L('Or use «Bill of quantities».', 'یا «مقداروں کا جدول» استعمال کریں۔', 'أو استخدم «جدول الكميات».')}</Link></>}</>
                       : ''}
                 </span>
               )}

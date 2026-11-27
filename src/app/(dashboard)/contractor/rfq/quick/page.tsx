@@ -33,6 +33,7 @@ import { askConfirm } from '@/lib/askConfirm'
 import { canUseProjects } from '@/lib/plans'
 import QuantityCalc, { calcSupported } from '@/components/buyer/QuantityCalc'
 import { nearestSaCity } from '@/lib/saCityCoords'
+import { detectSectorsFromText } from '@/lib/classify'
 
 // The one request page, for anyone: write, dictate, photograph or pick from the catalog; we turn
 // it into lines the buyer can fix, then send. Each line can open its specifications (PRODUCT_SPECS)
@@ -43,6 +44,9 @@ import { readPageCache, writePageCache } from '@/lib/pageCache'
 import { realtimeTopic } from '@/lib/realtimeTopic'
 import { getPlaceLabel } from '@/lib/displayName'
 import CityPicker from '@/components/shared/CityPicker'
+import SuccessCheck from '@/components/shared/SuccessCheck'
+import { findCityOption } from '@/lib/cityList'
+import { districtsFor, districtLabel } from '@/lib/districts'
 import { useFocusTrap } from '@/components/shared/useFocusTrap'
 
 // Every catalog product name — a line outside it gets the «which specialty?» chooser.
@@ -63,6 +67,7 @@ type Line = {
   details: string
   brand?: string // «الماركة أو اسم المنتج» (optional)
   photoId?: string
+  photoName?: string // round-8 UX-087: the name the photo suggested (dropped when the photo is replaced)
   done?: boolean   // «تم» pressed: shown as a compact row until tapped again
   original?: string // what the buyer wrote, when it differs from the Arabic name suppliers see
   suggestion?: { name: string; sector: string } | null
@@ -89,8 +94,13 @@ type Photo = {
   id: string
   file: File
   url: string
-  status: 'identifying' | 'done' | 'failed'
+  // round-8 UX-063: 'limited' = refused by the hourly limit (429) or an ended session (401), never «take a clearer photo»
+  status: 'identifying' | 'done' | 'failed' | 'limited'
+  limitedWhy?: 'rate' | 'session'
   share: boolean
+  // round-8 UX-003: what the photo shows when it is not one of our usual materials (in the reader's language);
+  // shown inside the line, kept with the photo, cleared on retry/replace
+  notItem?: string
   confidence?: string
   localName?: string // the AI's name in the buyer's language (the line itself keeps the Arabic trade name)
   question?: string // one short question from the AI when it is not sure what the photo shows
@@ -195,6 +205,8 @@ export default function QuickRequestPage() {
   const [geo, setGeo] = useState<{ lat: number; lng: number } | null>(null) // delivery point (map / GPS)
   const [address, setAddress] = useState('')                                // district, street, landmark
   const [geoFromProfile, setGeoFromProfile] = useState(false) // pre-filled: say so, so the buyer checks it
+  const [profileRegion, setProfileRegion] = useState('') // round-8 UX-017: a region known without a city (hint only)
+  const [geoMiss, setGeoMiss] = useState(false) // round-8 UX-105: the pin is too far from any listed city
   const [geoFilled, setGeoFilled] = useState('') // «حدّدنا المنطقة والمدينة من موقعك»
   const [specsOpen, setSpecsOpen] = useState<string | null>(null) // line key whose specifications are open
   const [calcFor, setCalcFor] = useState<string | null>(null)     // line key whose «احسبها من مقاس الغرفة» is open
@@ -298,8 +310,9 @@ export default function QuickRequestPage() {
       setCanProjects(canUseProjects(p)) // the bill-of-quantities tool only for accounts that can use it (round-2 UX-143)
       setBuyerType(p?.buyer_type === 'individual' || p?.buyer_type === 'business' ? p.buyer_type : null)
       rememberBuyerType(p?.buyer_type)
-      if (p?.region) setRegion(p.region)
-      if (p?.city) setCity(p.city)
+      // round-8 UX-017: take the profile's place only with a valid city (a region alone looked chosen)
+      { const co = p?.city ? findCityOption(p.city, p.region || '') : null
+        if (co) { setRegion(co.region); setCity(co.ar) } else if (p?.region) setProfileRegion(p.region) }
       if (p?.latitude != null && p?.longitude != null) { setGeo({ lat: p.latitude, lng: p.longitude }); setGeoFromProfile(true) }
       loadPastItems(supabase, user.id)
 
@@ -574,8 +587,8 @@ export default function QuickRequestPage() {
       setInfoWarn(false)
       if (template) { setTplOpen(false); setTplName('') }
       setInfo(template
-        ? L('The list was saved; you will find it under «My lists» on your home page.', 'فہرست محفوظ ہو گئی؛ یہ آپ کے ہوم پیج پر «میری فہرستیں» میں ملے گی۔', 'حُفظت القائمة، تجدها في «قوائمي» في لوحتك.')
-        : L('The draft was saved; you will find it on your home page.', 'مسودہ محفوظ ہو گیا؛ یہ آپ کے ہوم پیج پر ملے گا۔', 'حُفظت المسودة، تجدها في لوحتك.'))
+        ? L('The list was saved; you will find it under «My lists» on your home page.', 'فہرست محفوظ ہو گئی؛ یہ آپ کے ہوم پیج پر «میری فہرستیں» میں ملے گی۔', 'حُفظت القائمة، تجدها في «قوائمي» في صفحتك الرئيسية.')
+        : L('Your request was saved in your account; you will find it on your home page under «Drafts».', 'آپ کی درخواست آپ کے اکاؤنٹ میں محفوظ ہو گئی؛ یہ آپ کے ہوم پیج پر «مسودے» میں ملے گی۔', 'حُفظ طلبك في حسابك، تجده في صفحتك الرئيسية تحت «المسودّات».'))
     } catch {
       showError(L('Could not save. Check your connection and try again.', 'محفوظ نہیں ہو سکا۔ کنکشن چیک کریں اور دوبارہ کوشش کریں۔', 'تعذّر الحفظ. تحقّق من اتصالك وحاول مرة أخرى.'))
     } finally { setSavingDraft(false) }
@@ -712,25 +725,32 @@ export default function QuickRequestPage() {
     fetch('/api/quick-request/identify', { method: 'POST', body: fd, signal: ac?.signal })
       .finally(() => { if (timer) clearTimeout(timer) })
       .then(r => {
-        // say why instead of a silent failure (UX-133)
-        if (r.status === 401) showError(sessionMsg())
-        else if (r.status === 429) showError(L('You have sent many photos in the last hour. Try again a little later, or write the material name.', 'آپ نے پچھلے گھنٹے میں بہت سی تصاویر بھیجیں۔ تھوڑی دیر بعد کوشش کریں یا سامان کا نام لکھیں۔', 'أرسلت صوراً كثيرة خلال الساعة الأخيرة. حاول بعد قليل، أو اكتب اسم المادة.'))
+        // round-8 UX-063: a limit or an ended session is said inside the line (status 'limited'), not as «not recognised»
+        if (r.status === 401 || r.status === 429) {
+          const why: 'rate' | 'session' = r.status === 401 ? 'session' : 'rate'
+          setPhotos(prev => prev.map(p => p.id === id ? { ...p, status: 'limited', limitedWhy: why } : p))
+          return null
+        }
         return r.json()
       })
       .then(j => {
+        if (j === null) return
         const s = j?.suggestion
         // owner 2026-11-26: the photo shows something outside our usual materials (a mouse…): name it, say it is
         // not one of our usual materials, and still let the buyer send it (the line takes the name; he picks the closest section)
         if (!s && j?.not_item && j?.seen) {
           const seen = locale === 'en' ? (j.seen.en || j.seen.ar) : locale === 'ur' ? (j.seen.ur || j.seen.ar) : j.seen.ar
-          setPhotos(prev => prev.map(p => p.id === id ? { ...p, status: 'done', confidence: 'low' } : p))
-          setLines(prev => prev.map(l => l.photoId === id && !l.product_name ? { ...l, product_name: String(j.seen.ar || seen).slice(0, 120), suggestion: null } : l))
-          showError(L(`This looks like «${seen}», which is not one of our usual materials. You can still send it for pricing: pick the closest section, or change the name.`, `یہ «${seen}» لگتا ہے، جو ہمارے عام مال میں شامل نہیں۔ پھر بھی قیمت کے لیے بھیج سکتے ہیں: قریب ترین شعبہ چنیں یا نام بدلیں۔`, `يبدو أنها «${seen}»، وليست من المواد المعتادة لدينا. يمكنك إرسالها للتسعير مع ذلك: اختر أقرب قسم لها، أو عدّل الاسم.`))
+          // round-8 UX-003: the note lives inside the line (kept with the photo), never the red box at the top
+          // round-8 UX-086: guess the section from the name (like the app), and keep the reader's-language name
+          const arName = String(j.seen.ar || seen).slice(0, 120)
+          const guess = detectSectorsFromText(arName)[0]?.sector
+          setPhotos(prev => prev.map(p => p.id === id ? { ...p, status: 'done', confidence: 'low', notItem: String(seen), localName: locale !== 'ar' && seen !== arName ? String(seen) : undefined } : p))
+          setLines(prev => prev.map(l => l.photoId === id && !l.product_name ? { ...l, product_name: arName, ...(guess ? { sector: guess } : {}), suggestion: null } : l))
           return
         }
         setPhotos(prev => prev.map(p => p.id === id ? { ...p, status: s ? 'done' : 'failed', confidence: s?.confidence, localName: s?.local_name || undefined, question: s?.question || undefined } : p))
         if (s) setLines(prev => prev.map(l => l.photoId === id && !l.product_name ? {
-          ...l, product_name: s.product_name, sector: s.sector, details: s.details || '', unit: s.unit || l.unit, suggestion: s.catalog_suggestion || null,
+          ...l, product_name: s.product_name, photoName: s.product_name, sector: s.sector, details: s.details || '', unit: s.unit || l.unit, suggestion: s.catalog_suggestion || null,
           // read off the label: spec fields of the catalog item, and the brand
           ...(s.specs && Object.keys(s.specs).length ? { specs: s.specs } : {}),
           ...(s.brand && !l.brand ? { brand: String(s.brand).slice(0, 80) } : {}),
@@ -741,7 +761,7 @@ export default function QuickRequestPage() {
   function retryIdentify(id: string) {
     const ph = photos.find(p => p.id === id)
     if (!ph) return
-    setPhotos(prev => prev.map(p => p.id === id ? { ...p, status: 'identifying' } : p))
+    setPhotos(prev => prev.map(p => p.id === id ? { ...p, status: 'identifying', notItem: undefined, limitedWhy: undefined } : p))
     identify(id, ph.file)
   }
   function retakePhoto(id: string) {
@@ -761,17 +781,47 @@ export default function QuickRequestPage() {
     const url = URL.createObjectURL(file)
     try { URL.revokeObjectURL(old.url) } catch { /* already released */ }
     putDraftBlob(id, file)
-    setPhotos(prev => prev.map(p => p.id === id ? { ...p, file, url, status: 'identifying', confidence: undefined, localName: undefined, question: undefined } : p))
+    setPhotos(prev => prev.map(p => p.id === id ? { ...p, file, url, status: 'identifying', confidence: undefined, localName: undefined, question: undefined, notItem: undefined, limitedWhy: undefined } : p))
+    // round-8 UX-087: a new photo drops the old suggested name (a name the buyer typed by hand stays)
+    setLines(prev => prev.map(l => l.photoId === id && l.photoName && l.product_name === l.photoName ? { ...l, product_name: '', details: '', suggestion: null, specs: undefined, photoName: undefined } : l))
     identify(id, file)
   }
 
   // a home project pack: every ticked material becomes a line (saved when it has a quantity)
+  // round-8 UX-056: a material already in the request is never dropped: the same size adds the quantities,
+  // another size becomes its own line; then one gold note says what was added and what grew
   function addPack(items: PackLine[]) {
-    setLines(prev => [...foldDone(prev), ...items.filter(it => !prev.some(l => l.product_name === it.name)).map(it => ({
-      key: uid(), product_name: it.name, sector: it.sector, quantity: it.quantity, unit: it.unit, details: it.details || '', done: parseFloat(it.quantity) > 0, // round-7 UX-007: the chosen size
-      // round-6 UX-084: «اطلب السعر مع التركيب» from the pack, on the items that can be installed
-      ...(it.with_install && isInstallable(it.sector, detectSubCategory(it.name, it.sector)) ? { with_install: true } : {}),
-    }))])
+    const inst = (it: PackLine) => (it.with_install && isInstallable(it.sector, detectSubCategory(it.name, it.sector)) ? { with_install: true } : {})
+    const same = (l: Line, it: PackLine) => l.product_name === it.name && (l.details || '').trim() === (it.details || '').trim() && (l.unit || '') === (it.unit || '')
+    const grown: string[] = []
+    let added = 0
+    {
+      const next = foldDone(lines).map(l => ({ ...l }))
+      for (const it of items) {
+        const hit = next.find(l => same(l, it))
+        if (hit) {
+          const a = parseFloat(hit.quantity) || 0, b = parseFloat(it.quantity) || 0
+          hit.quantity = a + b > 0 ? String(a + b) : hit.quantity
+          Object.assign(hit, inst(it))
+          if (!grown.includes(it.name)) grown.push(it.name)
+        } else {
+          added++
+          next.push({
+            key: uid(), product_name: it.name, sector: it.sector, quantity: it.quantity, unit: it.unit, details: it.details || '', done: parseFloat(it.quantity) > 0, // round-7 UX-007: the chosen size
+            // round-6 UX-084: «اطلب السعر مع التركيب» from the pack, on the items that can be installed
+            ...inst(it),
+          })
+        }
+      }
+      setLines(next)
+    }
+    if (!grown.length) { setInfoWarn(false); setInfo(L(`We added ${countLabel(added, 'en', arMaterials, 'item', '')}.`, `ہم نے ${added} ${added === 1 ? 'چیز' : 'اشیاء'} شامل کیں۔`, `أضفنا ${arMaterials(added)}.`)) } else {
+      const names = grown.map(n => `«${nameLabel(n)}»`).join(locale === 'en' ? ', ' : '، ')
+      setInfoWarn(true)
+      setInfo(added
+        ? L(`We added ${countLabel(added, 'en', arMaterials, 'item', '')}, and increased the quantity of ${names} already in your request.`, `ہم نے ${added} ${added === 1 ? 'چیز' : 'اشیاء'} شامل کیں، اور آپ کی درخواست میں پہلے سے موجود ${names} کی مقدار بڑھا دی۔`, `أضفنا ${arMaterials(added)}، وزدنا كمية ${names} الموجود في طلبك.`)
+        : L(`We increased the quantity of ${names} already in your request.`, `ہم نے آپ کی درخواست میں پہلے سے موجود ${names} کی مقدار بڑھا دی۔`, `زدنا كمية ${names} الموجود في طلبك.`))
+    }
     setPack(null)
     setTimeout(() => document.getElementById('request-list')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 200)
   }
@@ -902,7 +952,7 @@ export default function QuickRequestPage() {
 
   // a photo line whose recognition failed and still has no name does not block the request: it is
   // left out (shown as such) until the buyer retries, names it or removes it
-  const photoFailed = (l: Line) => !!l.photoId && !l.product_name.trim() && photos.find(p => p.id === l.photoId)?.status === 'failed'
+  const photoFailed = (l: Line) => { const st = l.photoId ? photos.find(p => p.id === l.photoId)?.status : undefined; return !!l.photoId && !l.product_name.trim() && (st === 'failed' || st === 'limited') }
   const sendable = lines.filter(l => !photoFailed(l))
   const skipped = lines.length - sendable.length
   const identifying = photos.some(p => p.status === 'identifying')
@@ -934,7 +984,7 @@ export default function QuickRequestPage() {
     // an item written by hand needs at least its main section (owner 2026-10-24)
     const lost = sendable.find(l => !CATALOG_NAMES.has(l.product_name.trim()) && (l.spec ? !choiceDone(l.spec) : !detectSubCategory(l.product_name, l.sector as any)))
     if (lost) return { key: lost.key, msg: L(`Choose the section of «${l2n(lost)}» so it reaches the right suppliers.`, `«${l2n(lost)}» کا شعبہ منتخب کریں تاکہ صحیح سپلائرز تک پہنچے۔`, `اختر قسم «${l2n(lost)}» ليصل إلى الموردين المختصين.`), hint: L(`Choose the section of «${l2n(lost)}»`, `«${l2n(lost)}» کا شعبہ منتخب کریں`, `اختر قسم «${l2n(lost)}»`) }
-    if (!region) return { field: 'region', msg: L('Choose your city.', 'اپنا شہر منتخب کریں۔', 'اختر مدينتك.'), hint: L('Choose the city', 'شہر منتخب کریں', 'حدّد المدينة') }
+    if (!city || !region) return { field: 'region', msg: L('Choose your city.', 'اپنا شہر منتخب کریں۔', 'اختر مدينتك.'), hint: L('Choose the city', 'شہر منتخب کریں', 'حدّد المدينة') }
     if (!pickup && !geo && !address.trim()) return { field: 'location', msg: L('Set the delivery location: use your current location, paste a Google Maps link, or write the district.', 'ڈیلیوری کا مقام بتائیں: موجودہ مقام استعمال کریں، Google Maps کا لنک پیسٹ کریں، یا محلہ لکھیں۔', 'حدّد موقع التوصيل: باستخدام موقعك الحالي، أو بلصق رابط خرائط Google، أو بكتابة الحي.'), hint: L('Set the delivery location', 'ڈیلیوری کا مقام بتائیں', 'حدّد موقع التوصيل') }
     return null
   }
@@ -1152,7 +1202,7 @@ export default function QuickRequestPage() {
         sub_category: first.sub_category, specification: first.specification, quantity: first.quantity, unit: first.unit,
         items,
         region, city: city || null, delivery_required: !pickup, vat_invoice_required: !simple && vatRequired,
-        delivery_location: pickup ? null : (address.trim().slice(0, 300) || null),
+        delivery_location: address.trim().slice(0, 300) || null, // round-8 UX-085: what the buyer wrote is never dropped (pickup too)
         delivery_geo: pickup || !geo ? null : `${geo.lat},${geo.lng}`,
         // the buyer's identity is always hidden from suppliers until an offer is accepted (UX-077)
         hide_identity: true, verified_only: verifiedOnly, nearby_only: simple || nearbyOnly,
@@ -1274,9 +1324,9 @@ export default function QuickRequestPage() {
     setGeo({ lat: a, lng: b }); setGeoFromProfile(false); if (errField) { setErrField(null); setError('') }
     const n = nearestSaCity(a, b)
     if (n && n.km < 80) {
-      setRegion(n.region); setCity(n.city)
+      setRegion(n.region); setCity(n.city); setGeoMiss(false)
       setGeoFilled(L('We set the city from your location.', 'ہم نے آپ کے مقام سے شہر منتخب کیا۔', 'حدّدنا المدينة من موقعك'))
-    }
+    } else if (!city) { setGeoFilled(''); setGeoMiss(true) }
   }
 
   // round-7 UX-238: an invite for a shop the buyer knows, shared by the buyer (Arabic text, the shop's language)
@@ -1337,7 +1387,7 @@ export default function QuickRequestPage() {
     const suppliersAr = (n: number) => arCount(n, 'مورد واحد', 'موردَين', 'موردين', 'مورداً')
     return shell(
       <div className="max-w-lg mx-auto bg-white rounded-3xl p-6 sm:p-10 text-center border border-gray-100 shadow-sm">
-        <div className="text-5xl mb-4"><Glyph e="✅" /></div>
+        <div className="mb-4 flex justify-center"><SuccessCheck size={64} /></div>
         <h2 className="text-2xl font-extrabold text-navy mb-2">{L('Request sent', 'درخواست بھیج دی گئی', 'تم إرسال طلبك')}</h2>
         {sent?.stale && (
           <p className="mb-3 rounded-xl border-2 border-[#D4A543] bg-[#D4A543]/10 px-3 py-2 text-[13px] font-bold text-[#0B2438]" role="status">
@@ -1620,9 +1670,9 @@ export default function QuickRequestPage() {
         {lines.length > 0 && (
           <div className="flex flex-wrap items-center justify-between gap-2 rounded-2xl bg-[#0B2438]/5 border border-[#0B2438]/10 px-4 py-2">
             <span className="text-[13px] font-bold text-[#0B2438]" dir="auto">
-              {countLabel(sendable.length || lines.length, locale, arMaterials, 'item', 'اشیاء')}
+              {countLabel(sendable.length || lines.length, locale, arMaterials, 'item', (sendable.length || lines.length) === 1 ? 'چیز' : 'اشیاء')}
               {' · '}{pickup ? L('Pickup from the supplier', 'سپلائر سے خود وصولی', 'استلام من المورد')
-                : region ? L(`Delivery to ${getPlaceLabel(city, city ? null : region, 'en')}`, `${getPlaceLabel(city, city ? null : region, 'ur')} تک ڈیلیوری`, `التوصيل إلى ${getPlaceLabel(city, city ? null : region, 'ar')}`)
+                : city ? L(`Delivery to ${getPlaceLabel(city, null, 'en')}${address.trim() ? ', ' + address.trim() : ''}`, `${getPlaceLabel(city, null, 'ur')}${address.trim() ? '، ' + address.trim() : ''} تک ڈیلیوری`, `التوصيل إلى ${getPlaceLabel(city, null, 'ar')}${address.trim() ? '، ' + address.trim() : ''}`)
                 : L('Delivery place not set yet', 'ڈیلیوری کی جگہ ابھی طے نہیں', 'لم يُحدَّد مكان التوصيل بعد')}
             </span>
             {!ready && (
@@ -1725,14 +1775,38 @@ export default function QuickRequestPage() {
                           {L('Recognising the photo…', 'تصویر پہچان رہے ہیں…', 'جارٍ التعرّف على الصورة…')}
                         </p>
                       )}
-                      {ph && ph.status === 'done' && (
-                        <p className="text-[12px] text-gray-600"><Glyph e="🤖" /> {L('Suggested from the photo, please check it', 'تصویر سے تجویز، چیک کریں', 'اقتراح من الصورة، تأكّد منه')}{ph.confidence === 'low' ? ' · ' + L('not sure', 'یقینی نہیں', 'غير متأكد') : ''}
+                      {/* round-8 UX-003: «not one of our usual materials» inside the line, gold frame, navy text */}
+                      {ph && ph.status === 'done' && ph.notItem && (
+                        <div className="rounded-lg border-2 border-[#D4A543] bg-[#D4A543]/[.07] p-2" role="status">
+                          <p className="text-[13px] font-semibold text-[#0B2438]" dir="auto">{L(`This looks like «${ph.notItem}», which is not one of our usual materials. You can still send it for pricing: pick the closest section, or change the name.`, `یہ «${ph.notItem}» لگتا ہے، جو ہمارے عام سامان میں شامل نہیں۔ پھر بھی قیمت کے لیے بھیج سکتے ہیں: قریب ترین شعبہ چنیں یا نام بدلیں۔`, `يبدو أنها «${ph.notItem}»، وليست من المواد المعتادة لدينا. يمكنك إرسالها للتسعير مع ذلك: اختر أقرب قسم لها، أو عدّل الاسم.`)}</p>
+                        </div>
+                      )}
+                      {ph && ph.status === 'done' && !ph.notItem && (
+                        <p className="text-[12px] text-gray-600"><Glyph e="🤖" /> {L('Suggested from the photo, please check it', 'تصویر سے تجویز، چیک کریں', 'اقتراح من الصورة، تأكّد منه')}{ph.confidence === 'low' ? ' · ' + L('may not be accurate', 'شاید درست نہ ہو', 'قد لا يكون دقيقاً') : ''}
                           {locale !== 'ar' && ph.localName && <span className="block font-semibold text-gray-700" dir="auto">= {ph.localName}</span>}
                           {ph.question && ph.confidence !== 'high' && <span className="block font-semibold text-[#8F6820]" dir="auto"><Glyph e="❓" /> {ph.question}</span>}
+                          {/* round-8 UX-087: a low-confidence suggestion can be replaced by a clearer photo */}
+                          {ph.confidence === 'low' && <button type="button" onClick={() => retakePhoto(ph.id)} className="mt-1 min-h-[44px] px-3 rounded-lg border border-[#0B2438]/40 text-[#0B2438] bg-white text-[13px] font-bold inline-flex items-center gap-1"><Glyph e="📷" /> {L('Take a clearer photo', 'زیادہ واضح تصویر لیں', 'التقط صورة أوضح')}</button>}
                         </p>
                       )}
+                      {/* round-8 UX-063: the hourly limit or an ended session: say so, no photo tips */}
+                      {ph && ph.status === 'limited' && (
+                        <div className="rounded-lg border border-[#D4A543]/50 bg-[#D4A543]/10 p-2 space-y-1.5" role="status">
+                          <p className="text-[13px] font-bold text-[#0B2438]">{ph.limitedWhy === 'session'
+                            ? sessionMsg()
+                            : L('You have sent many photos in the last hour, so this one was not read. Write the item name, or try again later.', 'آپ نے پچھلے گھنٹے میں بہت سی تصاویر بھیجیں، اس لیے یہ تصویر نہیں پڑھی گئی۔ چیز کا نام لکھیں، یا بعد میں دوبارہ کوشش کریں۔', 'أرسلت صوراً كثيرة خلال الساعة الأخيرة، فلم تُقرأ هذه الصورة. اكتب اسم المادة، أو أعد المحاولة لاحقاً.')}</p>
+                          <div className="flex flex-wrap gap-2">
+                            {ph.limitedWhy === 'session'
+                              ? <Link href="/login?next=/contractor/rfq/quick" className="min-h-[44px] px-3 rounded-lg text-[13px] font-extrabold text-[#071827] inline-flex items-center" style={{ background: '#D4A543' }}>{L('Sign in', 'سائن ان کریں', 'تسجيل الدخول')}</Link>
+                              : <button type="button" onClick={() => retryIdentify(ph.id)} className="min-h-[44px] px-3 rounded-lg border border-[#0B2438]/40 text-[#0B2438] bg-white text-[13px] font-bold"><Glyph e="🔁" /> {L('Try again later', 'بعد میں دوبارہ کوشش کریں', 'أعد المحاولة لاحقاً')}</button>}
+                          </div>
+                        </div>
+                      )}
                       {ph && ph.status === 'failed' && (l.product_name.trim()
-                        ? <p className="text-[12px] text-gray-600">{L('We could not recognise what is in the photo; check the name you wrote.', 'تصویر میں موجود چیز پہچانی نہیں جا سکی؛ لکھا ہوا نام چیک کریں۔', 'لم نتمكّن من التعرّف على ما في الصورة؛ تأكّد من الاسم الذي كتبته.')}</p>
+                        ? <div className="text-[12px] text-gray-600">{L('We could not recognise what is in the photo; check the name you wrote.', 'تصویر میں موجود چیز پہچانی نہیں جا سکی؛ لکھا ہوا نام چیک کریں۔', 'لم نتمكّن من التعرّف على ما في الصورة؛ تأكّد من الاسم الذي كتبته.')}
+                            {/* round-8 UX-087: a clearer photo also for a failed photo that already has a name */}
+                            <button type="button" onClick={() => retakePhoto(ph.id)} className="mt-1 min-h-[44px] px-3 rounded-lg border border-[#0B2438]/40 text-[#0B2438] bg-white text-[13px] font-bold flex items-center gap-1"><Glyph e="📷" /> {L('Take a clearer photo', 'زیادہ واضح تصویر لیں', 'التقط صورة أوضح')}</button>
+                          </div>
                         : <div className="rounded-lg border border-[#D4A543]/50 bg-[#D4A543]/10 p-2 space-y-1.5" role="status">
                             <p className="text-[13px] font-bold text-[#8F6820]"><Glyph e="⚠" /> {L('We could not recognise what is in the photo. Write the item name, try again, or remove the line. You can send the rest of the request.', 'تصویر میں موجود چیز پہچانی نہیں جا سکی۔ چیز کا نام لکھیں، دوبارہ کوشش کریں، یا لائن ہٹا دیں۔ باقی درخواست بھیجی جا سکتی ہے۔', 'لم نتمكّن من التعرّف على ما في الصورة. اكتب اسم المادة، أو أعد المحاولة، أو احذف السطر. يمكنك إرسال بقية الطلب.')}</p>
                             <p className="text-[12px] text-[#0B2438]"><Glyph e="💡" /> {L('Photograph the item on its own, up close, with its label if it has one.', 'چیز کی اکیلے قریب سے تصویر لیں، اور اگر لیبل ہو تو وہ بھی۔', 'صوّر المادة وحدها عن قرب، والملصق إن وُجد.')}</p>
@@ -1926,7 +2000,8 @@ export default function QuickRequestPage() {
                   <button type="button" onClick={() => { setSpecsOpen(null); updateLine(l.key, { done: true, review: undefined }) }}
                     disabled={!lineOk(l) || noSection(l) || (!simple && missingSpecs(l.product_name, l.sector as any, l.specs, l.details, !!l.fileId).length > 0)}
                     className="w-full min-h-[44px] rounded-xl text-sm font-bold border-2 border-[#0B2438]/30 bg-white text-[#0B2438] disabled:opacity-50 inline-flex items-center justify-center gap-1.5">
-                    {!(parseFloat(l.quantity) > 0) ? L('Enter the quantity', 'مقدار لکھیں', 'أدخل الكمية')
+                    {!l.product_name.trim() ? L('Write the item name', 'چیز کا نام لکھیں', 'اكتب اسم المادة')
+                      : !(parseFloat(l.quantity) > 0) ? L('Enter the quantity', 'مقدار لکھیں', 'أدخل الكمية')
                       : !l.unit ? L('Choose the unit', 'یونٹ منتخب کریں', 'اختر الوحدة')
                       : noSection(l) ? L('Choose the section', 'شعبہ منتخب کریں', 'اختر القسم')
                       : !simple && missingSpecs(l.product_name, l.sector as any, l.specs, l.details, !!l.fileId).length ? L('Enter the specifications', 'تفصیلات لکھیں', 'أدخل المواصفات')
@@ -1995,20 +2070,24 @@ export default function QuickRequestPage() {
                 </button>
               ))}
             </div>
-            {/* a home buyer: «استخدم موقعي الحالي» first, it fills the region and city (UX-073) */}
-            {!pickup && simple && (
+            {/* «استخدم موقعي الحالي» first, it fills the city (UX-073); round-8 UX-105: the map first in both modes */}
+            {!pickup && (
               <div id="quick-location" className="space-y-2 scroll-mt-28">
-                <LocationPicker simple lat={geo?.lat ?? null} lng={geo?.lng ?? null} locale={locale} onChange={onGeo}
-                  detectHint={L('If you are at home now, we fill the city for you.', 'اگر آپ ابھی گھر پر ہیں تو ہم شہر خود بھر دیں گے۔', 'إذا كنت في البيت الآن نملأ المدينة تلقائياً.')} />
+                <LocationPicker simple={simple} lat={geo?.lat ?? null} lng={geo?.lng ?? null} locale={locale} onChange={onGeo} city={city} hasDistrict={!!address.trim()}
+                  detectHint={simple ? L('If you are at home now, we set your city for you.', 'اگر آپ ابھی گھر پر ہیں تو ہم آپ کا شہر خود منتخب کر دیں گے۔', 'إذا كنت في البيت الآن نحدّد مدينتك تلقائياً.') : undefined} />
               </div>
             )}
             {/* owner 2026-11-26: «المدينة» and «الحي» side by side, «الحي» always shown (optional with a map pin, required otherwise) */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div id="quick-region" className="scroll-mt-28">
-                <label htmlFor="quick-city" className="block text-[12px] font-bold text-gray-700 mb-1">{simple && !pickup ? L('Or choose the city by hand', 'یا شہر خود منتخب کریں', 'أو اختر المدينة يدوياً') : L('City', 'شہر', 'المدينة')}</label>
+                <label htmlFor="quick-city" className="block text-[12px] font-bold text-gray-700 mb-1">{simple && !pickup && !city ? L('Or choose the city by hand', 'یا شہر خود منتخب کریں', 'أو اختر المدينة يدوياً') : L('City', 'شہر', 'المدينة')}</label>
                 <CityPicker id="quick-city" city={city} region={region} locale={locale} invalid={errField === 'region'}
                   onPick={c => { setRegion(c.region); setCity(c.ar); setGeoFilled(''); if (errField === 'region') { setErrField(null); setError('') } }} />
                 {geoFilled && <p className="text-[12px] text-[#0F6E56] mt-1" role="status">{geoFilled}</p>}
+                {/* round-8 UX-105: the pin did not match a listed city */}
+                {geoMiss && !city && <p className="text-[12px] font-semibold text-[#8F6820] mt-1" role="status">{L('We could not tell your city from the location; choose it from the list.', 'ہم مقام سے آپ کا شہر نہیں پہچان سکے؛ فہرست سے منتخب کریں۔', 'لم نتعرّف على مدينتك من الموقع، اخترها من القائمة.')}</p>}
+                {/* round-8 UX-017: a region known from the profile without a city: a hint, never a chosen value */}
+                {!city && (region || profileRegion) && <p className="text-[12px] font-semibold text-[#0B2438] mt-1">{L(`Your region: ${getRegionLabel(region || profileRegion, 'en')}. Choose the city.`, `آپ کا علاقہ: ${getRegionLabel(region || profileRegion, 'ur')}، شہر منتخب کریں۔`, `منطقتك: ${getRegionLabel(region || profileRegion, 'ar')}، اختر المدينة.`)}</p>}
                 {errField === 'region' && error && <p role="alert" className="mt-1.5 rounded-lg border-2 border-[#D4A543] bg-[#D4A543]/10 px-3 py-2 text-[13px] font-bold text-[#0B2438]">{error}</p>}
               </div>
               <div id="quick-location-box" className="scroll-mt-28">
@@ -2019,18 +2098,15 @@ export default function QuickRequestPage() {
                     ? L('(optional)', '(اختیاری)', '(اختياري)')
                     : L('(required if you do not set the location)', '(ضروری اگر آپ مقام نہ بتائیں)', '(مطلوب إن لم تحدّد الموقع)')}</span>
                 </label>
-                <input id="quick-address" value={address} onChange={e => { setAddress(e.target.value); if (errField === 'location') { setErrField(null); setError('') } }} maxLength={300}
+                <input id="quick-address" list={districtsFor(city).length ? 'quick-districts' : undefined} value={address} onChange={e => { setAddress(e.target.value); if (errField === 'location') { setErrField(null); setError('') } }} maxLength={300}
                   aria-invalid={errField === 'location' || undefined}
                   className={`input-field min-h-[44px] text-[16px] sm:text-sm ${errField === 'location' ? 'border-2 border-[#D4A543] bg-[#D4A543]/5' : ''}`}
                   placeholder={L('District, street, landmark', 'محلہ، گلی، نشانی', 'الحي، الشارع، علامة مميزة')} />
+                {/* round-8 UX-009: the city's districts as suggestions; any other district can still be typed */}
+                {districtsFor(city).length > 0 && <datalist id="quick-districts">{districtsFor(city).map((d: any) => <option key={d.ar} value={d.ar}>{districtLabel(d, locale)}</option>)}</datalist>}
                 {errField === 'location' && error && <p role="alert" className="mt-1.5 rounded-lg border-2 border-[#D4A543] bg-[#D4A543]/10 px-3 py-2 text-[13px] font-bold text-[#0B2438]">{error}</p>}
               </div>
             </div>
-            {!pickup && !simple && (
-              <div id="quick-location" className="space-y-2 scroll-mt-28">
-                <LocationPicker lat={geo?.lat ?? null} lng={geo?.lng ?? null} locale={locale} onChange={onGeo} />
-              </div>
-            )}
             {!pickup && (
               <div className="space-y-2">
                 {geo && geoFromProfile && <p className="text-[12px] text-gray-600">{L('Location filled from your profile. Change it if this delivery goes elsewhere.', 'مقام آپ کی پروفائل سے لیا گیا۔ ضرورت ہو تو بدلیں۔', 'عُبّئ الموقع من ملفك الشخصي. غيّره إن كان التوصيل إلى مكان آخر.')}</p>}
@@ -2038,7 +2114,7 @@ export default function QuickRequestPage() {
               </div>
             )}
             {/* round-6 UX-092: «لمن نرسل طلبك؟» after the address */}
-            {region && !simple && (
+            {city && region && !simple && (
               <div>
                 <div className="text-[12px] font-bold text-gray-600 mb-1.5">{L('Who should receive your request?', 'آپ کی درخواست کس کو بھیجی جائے؟', 'لمن نرسل طلبك؟')}</div>
                 <div role="radiogroup" className="grid grid-cols-2 gap-2">
@@ -2112,7 +2188,7 @@ export default function QuickRequestPage() {
         <div className="sticky z-30 bottom-[calc(3.9rem_+_env(safe-area-inset-bottom))] lg:bottom-0 -mx-4 sm:-mx-6 lg:-mx-7 bg-white border-t border-gray-200 px-4 pt-3 print:hidden" style={{ paddingBottom: 'calc(12px + env(safe-area-inset-bottom, 0px))' }}>
           <div className="max-w-[1700px] mx-auto flex items-center justify-between gap-3">
             <div className="min-w-0 flex-1">
-              <span className="block text-sm text-gray-600">{countLabel(sendable.length, locale, arMaterials, 'item', 'اشیاء')}</span>
+              <span className="block text-sm text-gray-600">{countLabel(sendable.length, locale, arMaterials, 'item', sendable.length === 1 ? 'چیز' : 'اشیاء')}</span>
               {error && errKey ? <span className={'block text-[13px] font-bold ' + (errSoft ? 'text-[#0B2438]' : 'text-red-700')} role="alert">{error}</span>
                 : sendHint ? (problem?.key
                   // round-6 UX-091: «أدخل الكمية …» is a button that jumps to the line
@@ -2222,8 +2298,12 @@ export default function QuickRequestPage() {
               <dl className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-2">
                 <dt className="text-gray-600">{L('Receiving', 'وصولی', 'الاستلام')}</dt>
                 <dd className="font-semibold"><span className="inline-flex items-center gap-1.5"><SellerIcon name={pickup ? 'store' : 'truck'} className="w-4 h-4 text-[#0B2438]" />{pickup ? L('Pickup from the supplier', 'سپلائر سے خود', 'استلام من المورد') : L('Delivery', 'ڈیلیوری', 'توصيل')}</span></dd>
-                <dt className="text-gray-600">{L('Area', 'علاقہ', 'المنطقة')}</dt>
+                <dt className="text-gray-600">{L('City', 'شہر', 'المدينة')}</dt>
                 <dd className="font-semibold">{getPlaceLabel(city, region, locale)}</dd>
+                {pickup && address.trim() && (<>
+                  <dt className="text-gray-600">{L('District', 'محلہ', 'الحي')}</dt>
+                  <dd className="font-semibold" dir="auto">{address.trim()}</dd>
+                </>)}
                 {!pickup && (<>
                   <dt className="text-gray-600">{L('Location', 'مقام', 'الموقع')}</dt>
                   <dd className="font-semibold" dir="auto">
@@ -2237,7 +2317,7 @@ export default function QuickRequestPage() {
                   <dt className="text-gray-600">{L('Delivery needed', 'ڈیلیوری', 'التسليم')}</dt>
                   <dd className="font-semibold">{needDays === 1 ? L('Within a day', 'ایک دن میں', 'خلال يوم') : needDays === 7 ? L('Within a week', 'ایک ہفتے میں', 'خلال أسبوع') : L(`Within ${needDays} days`, `${needDays} دن میں`, `خلال ${needDays} ${needDays <= 10 ? 'أيام' : 'يوماً'}`)}</dd>
                 </>)}
-                {!simple && region && (<>
+                {!simple && city && region && (<>
                   <dt className="text-gray-600">{L('Sent to', 'کس کو', 'يصل إلى')}</dt>
                   <dd className="font-semibold">{(simple || nearbyOnly) ? L('The suppliers nearest to you', 'آپ کے قریب ترین سپلائرز', 'الموردين الأقرب إليك') : L(`Suppliers across all of ${getRegionLabel(region, 'en')}`, `پورے ${getRegionLabel(region, 'ur')} کے سپلائرز`, `الموردين في كل أنحاء ${getRegionLabel(region, 'ar')}`)}{tier !== 'all' ? ' · ' + tierLabel(tier, locale as any, false) : ''}</dd>
                 </>)}

@@ -14,8 +14,8 @@ import type { Sector } from '@/types'
 import { toLatinNumber } from '@/lib/number' // «2,500» = 2500: commas are thousands separators (round-4 UX-002)
 
 export type PackLine = { name: string; sector: Sector; quantity: string; unit: string; with_install?: boolean; details?: string }
-// round-6 UX-084: these packs are usually bought with the installation: the price is asked with it by default
-const INSTALL_PACKS = ['ac', 'heater']
+// round-6 UX-084 / round-8 UX-055: each pack says what «with installation» means (pack.install); the AC and the
+// heater ask for it by default (install.on), and a pack without it (none) shows no installation option
 
 // development check (UX-005): every measured item's hint must speak about the unit it is ordered in
 if (process.env.NODE_ENV !== 'production') {
@@ -35,7 +35,7 @@ export default function PackSheet({ pack, locale, onAdd, onClose }: {
     ...it, on: it.on !== false, quantity: it.qty != null ? String(it.qty) : '', unit: it.unit || getDefaultUnit(it.name, it.sector) || 'حبة', edited: false, picked: {} as Record<string, string>,
   })))
   const [dirty, setDirty] = useState(false) // something changed: closing asks first (round-4 UX-025)
-  const [withInstall, setWithInstall] = useState(INSTALL_PACKS.includes(pack.id))
+  const [withInstall, setWithInstall] = useState(!!pack.install?.on)
   const chosen = rows.filter(r => r.on)
   // a derived row (tile adhesive) follows its source rows until the buyer edits it (round-4 UX-185)
   const set = (i: number, patch: Partial<(typeof rows)[number]>) => {
@@ -122,6 +122,7 @@ export default function PackSheet({ pack, locale, onAdd, onClose }: {
               <div className="flex flex-col items-center shrink-0 w-[84px]">
                 <input type="text" inputMode="decimal" value={r.quantity} disabled={!r.on}
                   onChange={e => set(i, { quantity: toLatinNumber(e.target.value).slice(0, 8) })}
+                  data-missing={r.on && !(parseFloat(r.quantity) > 0) ? 'true' : undefined}
                   className={`w-full input-field text-[16px] sm:text-sm text-center py-1.5 min-h-[44px] ${r.on && !(parseFloat(r.quantity) > 0) ? 'border-[#D4A543] bg-[#D4A543]/5' : ''}`}
                   placeholder={L('Qty', 'مقدار', 'الكمية')} aria-label={L(`Quantity of ${name(r.name)}`, `${name(r.name)} کی مقدار`, `كمية ${name(r.name)}`)} />
                 <span className="text-[12px] text-gray-600 w-full text-center truncate mt-0.5">{getUnitLabelLong(r.unit, locale)}</span>
@@ -134,7 +135,7 @@ export default function PackSheet({ pack, locale, onAdd, onClose }: {
                     <label className="block text-[12px] font-bold text-[#0B2438] mb-0.5" htmlFor={`pk-${i}-${c.key}`}>{pick(c.label)}</label>
                     {c.hint && <span className="block text-[12px] text-gray-600 mb-1">{pick(c.hint)}</span>}
                     <select id={`pk-${i}-${c.key}`} value={r.picked[c.key] || ''} onChange={e => set(i, { picked: { ...r.picked, [c.key]: e.target.value } })}
-                      aria-invalid={miss} className={`w-full input-field text-[16px] sm:text-sm min-h-[44px] ${miss ? 'border-[#D4A543] bg-[#D4A543]/10 ring-1 ring-[#D4A543]' : ''}`}>
+                      aria-invalid={miss} data-missing={miss ? 'true' : undefined} className={`w-full input-field text-[16px] sm:text-sm min-h-[44px] ${miss ? 'border-[#D4A543] bg-[#D4A543]/10 ring-1 ring-[#D4A543]' : ''}`}>
                       <option value="">{L('Choose…', 'منتخب کریں…', 'اختر…')}</option>
                       {c.options.map(o => <option key={o.value} value={o.value}>{pick(o.label)}</option>)}
                     </select>
@@ -161,19 +162,23 @@ export default function PackSheet({ pack, locale, onAdd, onClose }: {
               `${noQty} اشیاء بغیر مقدار؛ آپ انہیں درخواست میں مکمل کر سکتے ہیں۔`,
               `${arMaterials(noQty)} بلا كمية، يمكنك إكمالها في طلبك.`)}</p>
           )}
-          <label className="flex items-start gap-2 min-h-[44px] mb-1.5 cursor-pointer select-none">
+          {pack.install && <label className="flex items-start gap-2 min-h-[44px] mb-1.5 cursor-pointer select-none">
             <input type="checkbox" checked={withInstall} onChange={e => setWithInstall(e.target.checked)} className="w-5 h-5 mt-0.5 accent-[#0B2438] shrink-0" />
             <span>
-              <span className="block text-sm font-bold text-[#0B2438]">{L('Ask for the price with installation', 'تنصیب سمیت قیمت مانگیں', 'اطلب السعر مع التركيب')}</span>
-              <span className="block text-[12px] text-gray-600">{L('The supplier gives the installation price separately in the offer.', 'سپلائر آفر میں تنصیب کی قیمت الگ بتاتا ہے۔', 'يذكر المورد سعر التركيب منفصلاً في عرضه.')}</span>
+              <span className="block text-sm font-bold text-[#0B2438]">{pick(pack.install.label)}</span>
+              <span className="block text-[12px] text-gray-600">{L('The supplier gives this price separately in the offer.', 'سپلائر آفر میں یہ قیمت الگ بتاتا ہے۔', 'يذكر المورد هذا السعر منفصلاً في عرضه.')}</span>
             </span>
-          </label>
+          </label>}
           <p className="text-[12px] text-gray-600 mb-2">{L('Each material goes to the suppliers who sell it. You can still edit everything in your request.', 'ہر چیز اس کے سپلائرز تک جاتی ہے۔ درخواست میں سب بدل سکتے ہیں۔', 'تصل كل مادة إلى الموردين المختصين بها، ويمكنك تعديل كل شيء في طلبك.')}</p>
+          {/* round-8 UX-127: say why the button is disabled */}
+          {!chosen.length && (
+            <p className="text-[13px] font-bold text-[#8F6820] mb-1.5" role="status">{L('Choose at least one item to add to your request.', 'اپنی درخواست میں شامل کرنے کے لیے کم از کم ایک چیز منتخب کریں۔', 'اختر مادة واحدة على الأقل لإضافتها إلى طلبك.')}</p>
+          )}
           {missingPick.length > 0 && (
             <p className="text-[13px] font-bold text-[#8F6820] mb-1.5" role="status">{L(`Choose the size of: ${missingPick.map(r => name(r.name)).join(', ')}`, `ان کا سائز چنیں: ${missingPick.map(r => name(r.name)).join('، ')}`, `اختر المقاس أولاً لـ: ${missingPick.map(r => name(r.name)).join('، ')}`)}</p>
           )}
           <button type="button" disabled={!chosen.length || missingPick.length > 0}
-            onClick={() => onAdd(chosen.map(r => ({ name: r.name, sector: r.sector, quantity: r.quantity, unit: r.unit, ...(withInstall ? { with_install: true } : {}), ...(r.choose?.length ? { details: r.choose.map(c => r.picked[c.key]).filter(Boolean).join('، ') } : {}) })))}
+            onClick={() => onAdd(chosen.map(r => ({ name: r.name, sector: r.sector, quantity: r.quantity, unit: r.unit, ...(withInstall && pack.install ? { with_install: true } : {}), ...(r.choose?.length ? { details: r.choose.map(c => r.picked[c.key]).filter(Boolean).join('، ') } : {}) })))}
             className="w-full min-h-12 rounded-xl font-extrabold text-sm disabled:opacity-40" style={{ background: 'linear-gradient(135deg,#F5C55B,#D4A543)', color: '#071827' }}>
             {noQty > 0
               ? L(`Add to my request (${ready} ready, ${noQty} without quantity)`, `میری درخواست میں شامل کریں (${ready} تیار، ${noQty} بغیر مقدار)`, `أضف إلى طلبي (${ready} جاهزة، ${noQty} بلا كمية)`)

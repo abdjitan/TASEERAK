@@ -22,6 +22,7 @@ import { CONTRACTOR_FEATURES } from '@/lib/features'
 import Glyph from '@/components/shared/Glyph'
 import { takePostSignupNext } from '@/lib/postSignupNext'
 import { toast } from 'sonner'
+import { sourceShopVisibilityText } from '@/components/rfq/SourceShop'
 import { normalizeCrInput, isUnifiedCr, crTakenText, isCrTaken, crSupportHref } from '@/lib/cr'
 import BuyerTypeCards, { BuyerTypeSummary } from '@/components/auth/BuyerTypeCards'
 
@@ -42,9 +43,9 @@ const TR = {
     classTitle: 'نوع الحساب', classHint: 'هل تمثّل شركة أو محلاً، أم تعمل وسيط تسعير؟ لا يمكن تغييره لاحقاً إلا بطلب من الدعم وموافقة الإدارة.',
     minOrder: 'الحد الأدنى لقيمة الطلب (ر.س) — اختياري', minOrderPh: 'مثال: 50000', minOrderHint: 'اتركه فارغاً لقبول كل الطلبات، أو حدّده لتصفية الطلبات حسب قدرتك التوريدية.',
     gradeTitle: 'درجة تصنيف شركتك (للمقاولين)', gradeSub: 'من رخصتك (وزارة الشؤون البلدية) — يستخدمها الموردون لتصفية الطلبات حسب حجم المشروع. اختياري.',
-    verifyTitle: 'وثّق نشاطك التجاري', verifyBody: 'أرفق مستندات منشأتك ليراجعها الفريق، فتظهر شارة «موثّق» على عروضك لدى المشترين وترتفع فرصك في الفوز بالطلبات.', verifyCta: 'احفظ وابدأ التوثيق ←', verifyLocked: 'أكمل موقعك وما تبيعه أعلاه لتُفتح خطوة التوثيق.',
+    verifyTitle: 'وثّق نشاطك التجاري', verifyBody: 'أرفق مستندات منشأتك ليراجعها الفريق، فتظهر شارة «موثّق» على عروضك لدى المشترين وترتفع فرصك في الفوز بالطلبات.', verifyCta: 'احفظ وابدأ التوثيق', verifyLocked: 'أكمل موقعك وما تبيعه أعلاه لتُفتح خطوة التوثيق.',
     addMatTitle: 'لا تجد مادة تورّدها في القائمة؟', addMatPh: 'اسم المادة...', addMatBtn: 'إضافة', remove: 'إزالة',
-    save: 'حفظ ومتابعة ←', saving: 'جارٍ الحفظ...', later: 'لاحقاً', selected: 'محدد',
+    save: 'حفظ ومتابعة', saving: 'جارٍ الحفظ...', later: 'لاحقاً', selected: 'محدد',
     needLoc: 'اختر المدينة', needSector: 'اختر قطاعاً واحداً على الأقل', saved: 'تم حفظ ملفك',
     progress: 'اكتمال ملفك', stepKind: 'نوع الحساب', stepActivity: 'النشاط الرئيسي', stepLocation: 'الموقع', stepSectors: 'القطاعات', stepSpecialties: 'ما تبيعه', stepVerify: 'التوثيق (لاحقاً)', stepMap: 'الموقع على الخريطة', stepBiz: 'اسم المحل', stepCr: 'السجل التجاري', left: 'باقٍ',
     warn: 'بدون موقعك وما تبيعه لن تظهر للمشترين ولن تصلك أي طلبات.',
@@ -65,9 +66,9 @@ const TR = {
     classTitle: 'Account type', classHint: 'Do you represent a company or shop, or work as a pricing agent? It can only be changed later through Support, with admin approval.',
     minOrder: 'Min order value (SAR) — optional', minOrderPh: 'e.g. 50000', minOrderHint: 'Leave empty to accept all requests — or set it to filter by your supply capacity.',
     gradeTitle: 'Company grade (contractors)', gradeSub: 'From your license (Ministry of Municipal Affairs) — suppliers use it to filter by project size. Optional.',
-    verifyTitle: 'Verify your business', verifyBody: 'Attach your business documents for the team to review; a «Verified» badge then shows on your offers and raises your chance of winning requests.', verifyCta: 'Save & start verification →', verifyLocked: 'Complete your location and what you sell above to unlock verification.',
+    verifyTitle: 'Verify your business', verifyBody: 'Attach your business documents for the team to review; a «Verified» badge then shows on your offers and raises your chance of winning requests.', verifyCta: 'Save & start verification', verifyLocked: 'Complete your location and what you sell above to unlock verification.',
     addMatTitle: "Can't find a material you supply?", addMatPh: 'Material name...', addMatBtn: 'Add', remove: 'Remove',
-    save: 'Save & continue →', saving: 'Saving...', later: 'Later', selected: 'selected',
+    save: 'Save & continue', saving: 'Saving...', later: 'Later', selected: 'selected',
     needLoc: 'Choose the city', needSector: 'Select at least one sector', saved: 'Profile saved',
     progress: 'Profile completion', stepKind: 'Account type', stepActivity: 'Main activity', stepLocation: 'Location', stepSectors: 'Sectors', stepSpecialties: 'What you sell', stepVerify: 'Verification (later)', stepMap: 'Map location', stepBiz: 'Shop name', stepCr: 'Commercial registration', left: 'Left',
     warn: "Without your location and what you sell you won't appear to buyers and won't receive any requests.",
@@ -88,9 +89,9 @@ const TR = {
     classTitle: 'اکاؤنٹ کی قسم', classHint: 'کیا آپ کمپنی یا دکان کی نمائندگی کرتے ہیں یا قیمت ایجنٹ ہیں؟ بعد میں صرف سپورٹ کے ذریعے، انتظامیہ کی منظوری سے بدلا جا سکتا ہے۔',
     minOrder: 'کم از کم آرڈر قیمت (ریال) — اختیاری', minOrderPh: 'مثال: 50000', minOrderHint: 'تمام درخواستوں کے لیے خالی چھوڑیں یا اپنی صلاحیت کے مطابق مقرر کریں۔',
     gradeTitle: 'کمپنی کا درجہ (ٹھیکیداروں کے لیے)', gradeSub: 'آپ کے لائسنس سے — سپلائرز پروجیکٹ سائز کے مطابق فلٹر کرتے ہیں۔ اختیاری۔',
-    verifyTitle: 'اپنے کاروبار کی تصدیق کریں', verifyBody: 'اپنے ادارے کی دستاویزات منسلک کریں تاکہ ٹیم جائزہ لے؛ پھر آپ کی آفرز پر «تصدیق شدہ» بیج دکھے گا۔', verifyCta: 'محفوظ کریں اور تصدیق شروع کریں ←', verifyLocked: 'تصدیق کھولنے کے لیے اوپر اپنا مقام اور آپ کیا بیچتے ہیں مکمل کریں۔',
+    verifyTitle: 'اپنے کاروبار کی تصدیق کریں', verifyBody: 'اپنے ادارے کی دستاویزات منسلک کریں تاکہ ٹیم جائزہ لے؛ پھر آپ کی آفرز پر «تصدیق شدہ» بیج دکھے گا۔', verifyCta: 'محفوظ کریں اور تصدیق شروع کریں', verifyLocked: 'تصدیق کھولنے کے لیے اوپر اپنا مقام اور آپ کیا بیچتے ہیں مکمل کریں۔',
     addMatTitle: 'فہرست میں کوئی مواد نہیں؟', addMatPh: 'مواد کا نام...', addMatBtn: 'شامل کریں', remove: 'ہٹائیں',
-    save: 'محفوظ کریں اور جاری رکھیں ←', saving: 'محفوظ ہو رہا ہے...', later: 'بعد میں', selected: 'منتخب',
+    save: 'محفوظ کریں اور جاری رکھیں', saving: 'محفوظ ہو رہا ہے...', later: 'بعد میں', selected: 'منتخب',
     needLoc: 'شہر منتخب کریں', needSector: 'کم از کم ایک شعبہ منتخب کریں', saved: 'پروفائل محفوظ',
     progress: 'پروفائل تکمیل', stepKind: 'اکاؤنٹ کی قسم', stepActivity: 'بنیادی سرگرمی', stepLocation: 'مقام', stepSectors: 'شعبے', stepSpecialties: 'آپ کیا بیچتے ہیں', stepVerify: 'تصدیق (بعد میں)', stepMap: 'نقشے پر مقام', stepBiz: 'دکان کا نام', stepCr: 'تجارتی رجسٹریشن', left: 'باقی',
     warn: 'اپنے مقام اور آپ کیا بیچتے ہیں، اس کے بغیر آپ خریداروں کو نظر نہیں آئیں گے اور کوئی درخواست موصول نہیں ہوگی۔',
@@ -152,9 +153,9 @@ export default function OnboardingPage() {
   // round-7 UX-069: a pricing agent «prices» (he sells nothing himself) and nobody sees his location
   const ta = !isIndividual ? t : {
     ...t,
-    subS: locale === 'en' ? 'Add your region and the kinds of materials you price so the right requests reach you' : locale === 'ur' ? 'اپنا علاقہ اور وہ اقسام شامل کریں جن کی آپ قیمت دیتے ہیں تاکہ مناسب درخواستیں آپ تک پہنچیں' : 'أضف منطقتك وأنواع المواد التي تسعّرها لتصلك الطلبات المناسبة',
+    subS: locale === 'en' ? 'Add your city and the kinds of materials you price so the right requests reach you' : locale === 'ur' ? 'اپنا شہر اور وہ اقسام شامل کریں جن کی آپ قیمت دیتے ہیں تاکہ مناسب درخواستیں آپ تک پہنچیں' : 'أضف مدينتك وأنواع المواد التي تسعّرها لتصلك الطلبات المناسبة',
     stepSpecialties: locale === 'en' ? 'What you price' : locale === 'ur' ? 'آپ کس چیز کی قیمت دیتے ہیں' : 'ما تسعّره',
-    warn: locale === 'en' ? 'Without your region and what you price, no requests will reach you.' : locale === 'ur' ? 'اپنے علاقے اور آپ کس چیز کی قیمت دیتے ہیں، اس کے بغیر کوئی درخواست نہیں پہنچے گی۔' : 'بدون منطقتك وما تسعّره لن تصلك أي طلبات.',
+    warn: locale === 'en' ? 'Without your city and what you price, no requests will reach you.' : locale === 'ur' ? 'اپنے شہر اور آپ کس چیز کی قیمت دیتے ہیں، اس کے بغیر کوئی درخواست نہیں پہنچے گی۔' : 'بدون مدينتك وما تسعّره لن تصلك أي طلبات.',
     needSpec: locale === 'en' ? 'Pick at least one kind of material you price so requests can reach you' : locale === 'ur' ? 'کم از کم ایک قسم منتخب کریں جس کی آپ قیمت دیتے ہیں تاکہ درخواستیں آپ تک پہنچیں' : 'اختر نوعاً واحداً على الأقل مما تسعّره حتى تصلك الطلبات',
     sectorsHintS: locale === 'en' ? 'Choose what you price; your sectors follow from it' : locale === 'ur' ? 'منتخب کریں کہ آپ کس چیز کی قیمت دیتے ہیں؛ شعبے اسی سے طے ہوں گے' : 'اختر ما تسعّره، وتُحدَّد قطاعاتك منه تلقائياً',
   }
@@ -440,6 +441,8 @@ export default function OnboardingPage() {
       ]
     : [{ label: t.stepLocation, done: !!(region && city), target: 'ob-region' }] // المشتري: الموقع فقط مطلوب، والقطاعات اختيارية
   const firstMissing = steps.find(s => !s.done) || null
+  // round-8 UX-111 (4): a step in the list goes to its field
+  const goToStep = (target: string) => { const el = document.getElementById(target); if (el) { el.scrollIntoView({ behavior: 'smooth', block: 'center' }); if (/^(INPUT|SELECT)$/.test(el.tagName)) (el as HTMLElement).focus({ preventScroll: true }) } }
   const pct = Math.round((steps.filter(s => s.done).length / steps.length) * 100)
   const canSave = !loadFailed && !!(region && city) && (role === 'supplier' ? (!!providerType && (isIndividual || hasActivity) && specialties.length > 0 && (isIndividual || (bizName.trim().length >= 2 && !!crNo && lat != null && lng != null))) : !!buyerType)
   // اكتمال كل المطلوب أعلاه (يفتح خطوة التوثيق للمورّد)
@@ -450,7 +453,7 @@ export default function OnboardingPage() {
   const SaveBtn = ({ full }: { full?: boolean }) => (
     <button type="button" onClick={() => save()} disabled={saving || loadFailed}
       className={`${full ? 'w-full' : 'w-full'} btn-primary btn-lg min-h-[44px] rounded-xl font-bold disabled:opacity-50 disabled:cursor-not-allowed`}>
-      {saving ? t.saving : t.save}
+      {saving ? t.saving : <>{t.save} <span aria-hidden="true">{locale === 'en' ? '→' : '←'}</span></>}
     </button>
   )
   const cardCls = 'bg-white rounded-2xl p-5 sm:p-6 shadow-sm border border-gray-100'
@@ -554,7 +557,7 @@ export default function OnboardingPage() {
           </a>
           <div className="flex items-center gap-3">
             <LanguageSwitcher variant="minimal" />
-            <button type="button" onClick={leaveLater} className="inline-flex items-center min-h-[44px] px-1 text-sm font-medium text-gray-600 hover:text-navy">{t.later}</button>
+            <button type="button" onClick={leaveLater} className="hidden lg:inline-flex items-center min-h-[44px] px-1 text-sm font-medium text-gray-600 hover:text-navy">{t.later}</button>
           </div>
         </div>
       </header>
@@ -609,7 +612,7 @@ export default function OnboardingPage() {
                     ? <span> *</span>
                     : <span className="font-normal text-gray-500"> ({locale === 'en' ? 'optional, recommended' : locale === 'ur' ? 'اختیاری، تجویز کردہ' : 'اختياري، ويُنصح به'})</span>}
                 </label>
-                <LocationPicker lat={lat} lng={lng} locale={locale} simple={role !== 'supplier' && homeBuyer} detectHint={role !== 'supplier' && homeBuyer ? (locale === 'en' ? 'If you are at home now, we fill in the region and city for you.' : locale === 'ur' ? 'اگر آپ ابھی گھر پر ہیں تو ہم علاقہ اور شہر خود بھر دیں گے۔' : 'إذا كنت في البيت الآن نملأ المنطقة والمدينة تلقائياً.') : undefined} onChange={(a: number, b: number) => {
+                <LocationPicker lat={lat} lng={lng} locale={locale} simple={role !== 'supplier' && homeBuyer} detectHint={role !== 'supplier' && homeBuyer ? (locale === 'en' ? 'If you are at home now, we find your city for you.' : locale === 'ur' ? 'اگر آپ ابھی گھر پر ہیں تو ہم آپ کا شہر خود معلوم کر لیں گے۔' : 'إذا كنت في البيت الآن نحدّد مدينتك تلقائياً.') : undefined} onChange={(a: number, b: number) => {
                   setLat(a); setLng(b)
                   // owner 2026-11-21: the pin fills the region and city by itself (still editable)
                   const near = nearestSaCity(a, b)
@@ -681,7 +684,9 @@ export default function OnboardingPage() {
                 <div className="mt-4 space-y-4">
                   {/* الطريقة السريعة: باقات جاهزة حسب نوع النشاط */}
                   <div>
-                    <p className="text-sm font-bold text-navy mb-0.5">{locale === 'en' ? 'What do you sell? Pick one or more' : locale === 'ur' ? 'آپ کیا بیچتے ہیں؟ ایک یا زیادہ منتخب کریں' : 'ماذا تبيع؟ اختر نوعاً أو أكثر'}</p>
+                    <p className="text-sm font-bold text-navy mb-0.5">{isIndividual
+                      ? (locale === 'en' ? 'What kinds of materials do you price? Pick one or more' : locale === 'ur' ? 'آپ کس قسم کے مال کی قیمت دیتے ہیں؟ ایک یا زیادہ منتخب کریں' : 'ما أنواع المواد التي تسعّرها؟ اختر نوعاً أو أكثر')
+                      : (locale === 'en' ? 'What do you sell? Pick one or more' : locale === 'ur' ? 'آپ کیا بیچتے ہیں؟ ایک یا زیادہ منتخب کریں' : 'ماذا تبيع؟ اختر نوعاً أو أكثر')}</p>
                     <p className="text-xs text-gray-500 mb-2.5">{locale === 'en' ? 'One tap selects everything that kind of business sells. You can fine-tune below.' : locale === 'ur' ? 'ایک کلک میں سب منتخب، نیچے تبدیل کر سکتے ہیں۔' : 'بضغطة واحدة تُختار كل المواد التي يبيعها هذا النوع من المحلات، ويمكنك التعديل في الأسفل.'}</p>
                     <SupplierPackPicker sectors={sectors} specialties={specialties} locale={locale}
                       onChange={(n: any) => { setSectors(n.sectors); setSpecialties(n.specialties) }} />
@@ -726,14 +731,14 @@ export default function OnboardingPage() {
             </div>
 
             {CONTRACTOR_FEATURES && role === 'contractor' && (
-              <div className={cardCls} style={{ borderInlineStartWidth: 4, borderInlineStartColor: '#0F6E56' }}>
+              <div className={cardCls} style={{ borderInlineStartWidth: 4, borderInlineStartColor: '#D4A543' }}>
                 <div className="flex items-center justify-between mb-1">
                   <h2 className="text-sm font-bold text-navy"><Glyph e="🏅" /> {t.gradeTitle}</h2>
                   <span className="text-[12px] font-bold text-gray-600 bg-gray-100 rounded-full px-2 py-0.5">{t.optional}</span>
                 </div>
                 <p className="text-xs text-gray-500 mb-3 leading-relaxed">{t.gradeSub}</p>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                  {[{ grade: 'A', label: locale === 'ar' ? 'أ' : 'A', desc: locale === 'en' ? 'Over SAR 100 million' : locale === 'ur' ? '100 ملین ریال سے زیادہ' : 'أكثر من 100 مليون ريال', color: '#9D7425' }, { grade: 'B', label: locale === 'ar' ? 'ب' : 'B', desc: locale === 'en' ? 'SAR 30–100 million' : locale === 'ur' ? '30 سے 100 ملین ریال' : 'من 30 إلى 100 مليون ريال', color: '#0B2438' }, { grade: 'C', label: locale === 'ar' ? 'ج' : 'C', desc: locale === 'en' ? 'SAR 5–30 million' : locale === 'ur' ? '5 سے 30 ملین ریال' : 'من 5 إلى 30 مليون ريال', color: '#0F6E56' }, { grade: 'D', label: locale === 'ar' ? 'د' : 'D', desc: locale === 'en' ? 'Under SAR 5 million' : locale === 'ur' ? '5 ملین ریال سے کم' : 'أقل من 5 ملايين ريال', color: '#888780' }].map((g: any) => (
+                  {[{ grade: 'A', label: locale === 'ar' ? 'أ' : 'A', desc: locale === 'en' ? 'Over SAR 100 million' : locale === 'ur' ? '100 ملین ریال سے زیادہ' : 'أكثر من 100 مليون ريال', color: '#0B2438' }, { grade: 'B', label: locale === 'ar' ? 'ب' : 'B', desc: locale === 'en' ? 'SAR 30–100 million' : locale === 'ur' ? '30 سے 100 ملین ریال' : 'من 30 إلى 100 مليون ريال', color: '#0B2438' }, { grade: 'C', label: locale === 'ar' ? 'ج' : 'C', desc: locale === 'en' ? 'SAR 5–30 million' : locale === 'ur' ? '5 سے 30 ملین ریال' : 'من 5 إلى 30 مليون ريال', color: '#0B2438' }, { grade: 'D', label: locale === 'ar' ? 'د' : 'D', desc: locale === 'en' ? 'Under SAR 5 million' : locale === 'ur' ? '5 ملین ریال سے کم' : 'أقل من 5 ملايين ريال', color: '#0B2438' }].map((g: any) => (
                     <button key={g.grade} type="button" onClick={() => setContractorGrade(contractorGrade === g.grade ? '' : g.grade)}
                       aria-pressed={contractorGrade === g.grade} className={`min-h-[44px] p-3 rounded-xl border-2 text-center transition-all ${contractorGrade === g.grade ? 'border-current' : 'border-gray-200 hover:border-gray-300'}`}
                       style={contractorGrade === g.grade ? { borderColor: g.color, background: g.color + '10' } : {}}>
@@ -752,7 +757,7 @@ export default function OnboardingPage() {
                 {/* UX-144: five short points instead of one long paragraph */}
                 <ul className="text-xs text-gray-600 leading-relaxed list-disc ps-5 space-y-0.5">
                   <li>{locale === 'en' ? 'You bring shop prices to buyers without a shop of your own.' : locale === 'ur' ? 'آپ اپنی دکان کے بغیر دکانوں کی قیمتیں خریداروں تک لاتے ہیں۔' : 'تجلب أسعار المحلات للمشترين دون أن تملك محلاً.'}</li>
-                  <li>{locale === 'en' ? 'Before choosing your offer the buyer sees only the district; after it, the shop name (never its phone).' : locale === 'ur' ? 'آپ کی آفر چننے سے پہلے خریدار صرف علاقہ دیکھتا ہے؛ بعد میں دکان کا نام (فون کبھی نہیں)۔' : 'قبل اختيار عرضك لا يرى المشتري إلا الحي، وبعده يرى اسم المحل دون رقم هاتفه.'}</li>
+                  <li>{sourceShopVisibilityText(locale)}</li>
                   <li>{locale === 'en' ? 'The shop issues the invoice in the buyer’s name at your quoted price.' : locale === 'ur' ? 'دکان آپ کی قیمت پر خریدار کے نام انوائس جاری کرتی ہے۔' : 'يُصدر المحل الفاتورة باسم المشتري بالسعر نفسه الذي في عرضك.'}</li>
                   <li>{locale === 'en' ? 'Your limit starts at 15,000 SAR per deal, rises to 50,000 SAR after 3 successful deals, and has no cap after 10.' : locale === 'ur' ? 'آپ کی حد فی سودا 15,000 ریال سے شروع ہوتی ہے، 3 کامیاب سودوں کے بعد 50,000 ریال ہو جاتی ہے، اور 10 کے بعد کوئی حد نہیں۔' : 'يبدأ حدّك بـ 15,000 ر.س للصفقة الواحدة، ويرتفع إلى 50,000 ر.س بعد 3 صفقات ناجحة، ثم بلا حد بعد 10 صفقات.'}</li>
                   <li>{locale === 'en' ? 'After every deal the buyer rates your price accuracy and service.' : locale === 'ur' ? 'ہر سودے کے بعد خریدار آپ کی قیمت کی درستی اور سروس کو ریٹ کرتا ہے۔' : 'بعد كل صفقة يقيّم المشتري دقة سعرك وخدمتك.'}</li>
@@ -798,7 +803,7 @@ export default function OnboardingPage() {
                       <p className="text-xs text-gray-600 mt-1 leading-relaxed">{t.verifyBody}</p>
                       <button type="button" onClick={() => save('/settings?tab=docs')} disabled={saving}
                         className="inline-flex items-center mt-2 min-h-[44px] text-sm font-bold text-white px-4 rounded-lg disabled:opacity-60" style={{ background: '#0B2438' }}>
-                        {saving ? t.saving : t.verifyCta}
+                        {saving ? t.saving : <>{t.verifyCta} <span aria-hidden="true">{locale === 'en' ? '→' : '←'}</span></>}
                       </button>
                     </div>
                   </div>
@@ -828,7 +833,7 @@ export default function OnboardingPage() {
               <div className={`flex items-center gap-4 mb-4 ${role === 'supplier' ? '' : 'hidden'}`}>
                 <svg width="60" height="60" viewBox="0 0 56 56" className="shrink-0">
                   <circle cx="28" cy="28" r="24" fill="none" stroke="rgba(255,255,255,0.18)" strokeWidth="6" />
-                  <circle cx="28" cy="28" r="24" fill="none" stroke={pct === 100 ? '#0F6E56' : '#D4A543'} strokeWidth="6" strokeLinecap="round"
+                  <circle cx="28" cy="28" r="24" fill="none" stroke={pct === 100 ? '#F5C55B' : '#D4A543'} strokeWidth="6" strokeLinecap="round"
                     strokeDasharray={ringC} strokeDashoffset={ringC * (1 - pct / 100)} transform="rotate(-90 28 28)" style={{ transition: 'stroke-dashoffset .4s' }} />
                   <text x="28" y="33" textAnchor="middle" className="fill-white font-extrabold" style={{ fontSize: 15 }}>{pct}%</text>
                 </svg>
@@ -840,10 +845,10 @@ export default function OnboardingPage() {
 
               <div className={`space-y-2 mb-3 ${role === 'supplier' ? '' : 'hidden'}`}>
                 {steps.map((s, i) => (
-                  <div key={i} className="flex items-center gap-2 text-sm">
+                  <button key={i} type="button" onClick={() => goToStep(s.target)} className="w-full min-h-[44px] flex items-center gap-2 text-sm text-start rounded-lg px-1 hover:bg-white/10">
                     <span className={`w-5 h-5 grid place-items-center rounded-full shrink-0 ${s.done ? 'bg-[#0F6E56]' : 'bg-white/15'}`}>{s.done ? <Check className="w-3.5 h-3.5" aria-hidden /> : ''}</span>
                     <span className={s.done ? 'text-white' : 'text-white/70'}>{s.label}</span>
-                  </div>
+                  </button>
                 ))}
                 {role === 'supplier' && !isIndividual && (
                   <div className="flex items-center gap-2 text-sm">
@@ -854,6 +859,7 @@ export default function OnboardingPage() {
               </div>
 
               {role === 'supplier' && pct < 100 && <div className="text-[12px] text-white bg-white/10 rounded-lg p-2.5 mb-4 leading-relaxed"><Glyph e="⚠" /> {ta.warn}</div>}
+              {role !== 'supplier' && <p className="text-sm text-white/90 mb-4 leading-relaxed">{locale === 'en' ? 'After saving: write what you need or take a photo, and suppliers’ prices reach you.' : locale === 'ur' ? 'محفوظ کرنے کے بعد: جو چاہیے لکھیں یا تصویر لیں، اور سپلائرز کی قیمتیں آپ تک پہنچیں گی۔' : 'بعد الحفظ: اكتب ما تحتاجه أو صوّره، وتصلك أسعار الموردين.'}</p>}
 
               <SaveBtn full />
               <button type="button" onClick={leaveLater} className="w-full flex items-center justify-center min-h-[44px] text-sm text-white/80 hover:text-white mt-1">{t.later}</button>
@@ -867,7 +873,7 @@ export default function OnboardingPage() {
         <div className="bg-white/95 backdrop-blur border-t border-line" style={{ boxShadow: '0 -8px 24px -12px rgba(15,27,52,.18)' }}>
           {/* شريط تقدّم رفيع (المورد فقط: المشتري له خطوة واحدة، UX-037) */}
           {role === 'supplier' && <div className="h-1 w-full bg-canvas-2">
-            <div className="h-full transition-all duration-300" style={{ width: pct + '%', background: pct === 100 ? '#0F6E56' : '#D4A543' }} />
+            <div className="h-full transition-all duration-300" style={{ width: pct + '%', background: pct === 100 ? '#9D7425' : '#D4A543' }} />
           </div>}
           {role === 'supplier' && pct < 100 && firstMissing && (
             <div className="max-w-6xl mx-auto px-4 pt-2">
@@ -879,7 +885,7 @@ export default function OnboardingPage() {
                 <ul className="pb-1 space-y-1 max-h-[45vh] overflow-y-auto">
                   {steps.map((s, i) => (
                     <li key={i}>
-                      <button type="button" onClick={() => { setStepsOpen(false); const el = document.getElementById(s.target); if (el) { el.scrollIntoView({ behavior: 'smooth', block: 'center' }); if (/^(INPUT|SELECT)$/.test(el.tagName)) (el as HTMLElement).focus({ preventScroll: true }) } }}
+                      <button type="button" onClick={() => { setStepsOpen(false); goToStep(s.target) }}
                         className="w-full min-h-[44px] flex items-center gap-2 text-start text-sm rounded-lg px-2 hover:bg-gray-50">
                         <span className={`w-5 h-5 grid place-items-center rounded-full shrink-0 ${s.done ? 'bg-[#0F6E56] text-white' : 'border-2 border-gray-300'}`}>{s.done ? <Check className="w-3.5 h-3.5" aria-hidden /> : null}</span>
                         <span className={s.done ? 'text-gray-500' : 'font-semibold text-navy'}>{s.label}</span>
@@ -901,7 +907,7 @@ export default function OnboardingPage() {
             {/* حفظ — الزر الأساسي الوحيد ذو البرتقالي القوي على الموبايل */}
             <button type="button" onClick={() => save()} disabled={saving || loadFailed}
               className="flex-1 btn-primary min-h-[44px] rounded-xl font-bold text-sm disabled:cursor-not-allowed disabled:opacity-50">
-              {saving ? t.saving : t.save}
+              {saving ? t.saving : <>{t.save} <span aria-hidden="true">{locale === 'en' ? '→' : '←'}</span></>}
             </button>
           </div>
         </div>

@@ -35,23 +35,35 @@ export default function SupplierAnalyticsPage() {
       // by section, from my own offers (quiet: the sector rows stay as a fallback)
       Promise.resolve(supabase.rpc('acting_uid')).then(async ({ data: act }: any) => {
         const sid = (act as string) || session.user.id
-        const { data: offs, error: oe } = await supabase.from('offers').select('status, item_prices, deal_closed_at, rfq:rfqs(status, sector, sub_category, product_name)').eq('supplier_id', sid).limit(500)
+        const { data: offs, error: oe } = await supabase.from('offers').select('id, status, item_prices, deal_closed_at, rfq:rfqs(status, sector, sub_category, product_name)').eq('supplier_id', sid).limit(500)
         if (oe || !Array.isArray(offs)) return
+        // round-8 UX-097: a partly chosen offer wins only in the sections that hold an awarded line
+        const accIds = (offs as any[]).filter((o: any) => o.status === 'accepted').map((o: any) => o.id)
+        const awardedIdx: Record<string, Set<number>> = {}
+        if (accIds.length) {
+          const { data: aw } = await supabase.from('rfq_item_awards').select('offer_id, item_index').in('offer_id', accIds)
+          for (const r of (aw || []) as any[]) (awardedIdx[r.offer_id] = awardedIdx[r.offer_id] || new Set<number>()).add(Number(r.item_index))
+        }
         const m: Record<string, { name: string; total: number; won: number; lost: number; pending: number; ended: number }> = {}
         for (const o of offs as any[]) {
           const lines: any[] = Array.isArray(o.item_prices) && o.item_prices.length ? o.item_prices : [{ sector: o.rfq?.sector, sub_category: o.rfq?.sub_category, product_name: o.rfq?.product_name }]
           const names = new Set<string>()
-          for (const ln of lines) {
+          const wonNames = new Set<string>()
+          const aw = awardedIdx[o.id]
+          lines.forEach((ln: any, k: number) => {
             const sub = ln.sub_category || (ln.product_name && ln.sector ? detectSubCategory(ln.product_name, ln.sector) : null)
             const nm = sectionLabelOf(ln.sector, sub, locale as any)
-            if (nm) names.add(nm)
-          }
+            if (!nm) return
+            names.add(nm)
+            // no award rows (a single-material request) = the whole offer was chosen
+            if (!aw || aw.has(Number(ln.item_index ?? k))) wonNames.add(nm)
+          })
           // round-7: an admin-closed deal is not a win (same rule as get_my_supplier_analytics, migration 290)
           const oc = offerOutcome(o.status, o.rfq?.status, o.deal_closed_at)
           for (const nm of names) {
             const r = (m[nm] = m[nm] || { name: nm, total: 0, won: 0, lost: 0, pending: 0, ended: 0 })
             // round-7 UX-154: «waiting» and «ended without a choice» are counted apart
-            r.total++; if (oc === 'won') r.won++; else if (oc === 'lost') r.lost++; else if (oc === 'pending') r.pending++; else r.ended++
+            r.total++; if (oc === 'won') { if (wonNames.has(nm)) r.won++; else r.lost++ } else if (oc === 'lost') r.lost++; else if (oc === 'pending') r.pending++; else r.ended++
           }
         }
         const rows = Object.values(m).sort((x, y) => y.total - x.total)
@@ -131,7 +143,8 @@ export default function SupplierAnalyticsPage() {
             {/* حسب القطاع — صفوف نصية بدل الأشرطة (UX-034: لا أعمدة للموردين) */}
             {bySection && bySection.length > 0 && (
               <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 mb-4">
-                <h2 className="text-sm font-bold mb-3" style={{ color: '#0B2438' }}>{L('By section', 'شعبے کے لحاظ سے', 'حسب القسم')}</h2>
+                <h2 className="text-sm font-bold mb-1" style={{ color: '#0B2438' }}>{L('By section', 'سیکشن کے لحاظ سے', 'حسب القسم')}</h2>
+                <p className="text-[12px] text-gray-500 mb-3">{L('An offer that covers more than one section is counted in each of its sections.', 'جو آفر ایک سے زیادہ سیکشن پر مشتمل ہو وہ اپنے ہر سیکشن میں شمار ہوتی ہے۔', 'العرض الذي يشمل أكثر من قسم يُحتسب في كل قسم منه.')}</p>
                 <ul className="divide-y divide-gray-100">
                   {bySection.map((s) => {
                     const dec = s.won + s.lost
@@ -139,7 +152,7 @@ export default function SupplierAnalyticsPage() {
                       <li key={s.name} className="py-2.5 flex items-center justify-between gap-3 text-sm">
                         <span className="font-semibold text-[#0B2438]">{s.name}</span>
                         <span className="text-gray-700">{dec
-                          ? L(`Chosen in ${s.won} of ${dec}`, `${dec} میں سے ${s.won} منتخب`, `اختيرت ${s.won} من ${dec}`)
+                          ? L(`${s.won} of ${dec} chosen`, `${dec} میں سے ${s.won} منتخب`, `اختيرت ${s.won} من ${dec}`)
                           : s.pending > 0
                             ? L('Waiting for the buyer', 'خریدار کے فیصلے کی منتظر', 'بانتظار قرار المشتري')
                             : L('Ended without a choice', 'کسی انتخاب کے بغیر ختم', 'انتهت دون اختيار')}
@@ -152,7 +165,7 @@ export default function SupplierAnalyticsPage() {
             )}
             {!(bySection && bySection.length > 0) && sectors.length > 0 && (
               <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 mb-4">
-                <h2 className="text-sm font-bold mb-3" style={{ color: '#0B2438' }}>{L('By field', 'شعبے کے لحاظ سے', 'حسب المجال')}</h2>
+                <h2 className="text-sm font-bold mb-3" style={{ color: '#0B2438' }}>{L('By section', 'سیکشن کے لحاظ سے', 'حسب القسم')}</h2>
                 <ul className="divide-y divide-gray-100">
                   {sectors.map((s: any) => {
                     const t = Number(s.total) || 0, w = Number(s.won) || 0, l = Number(s.lost) || 0

@@ -69,6 +69,12 @@ export default function SupplierBranchesPage() {
     setLoading(false)
   }
 
+  // round-8 UX-112 (8): closing the form with typed changes asks first
+  async function cancelForm() {
+    const dirty = !!(name.trim() || city || district || phone.trim() || address.trim() || lat != null)
+    if (dirty && !(await askConfirm(L('The branch was not saved. Close the form and drop your changes?', 'شاخ محفوظ نہیں ہوئی۔ فارم بند کر کے تبدیلیاں چھوڑ دیں؟', 'لم يُحفظ الفرع. هل تغلق النموذج وتتخلّى عن تعديلاتك؟'), { okLabel: L('Close without saving', 'محفوظ کیے بغیر بند کریں', 'أغلق دون حفظ'), cancelLabel: L('Keep editing', 'ترمیم جاری رکھیں', 'تابِع التعديل') }))) return
+    reset()
+  }
   function reset() { setFormErr(''); setName(''); setRegion(''); setCity(''); setDistrict(''); setPhone(''); setAddress(''); setLat(null); setLng(null); setEditId(null); setShowForm(false) }
   function startEdit(b: any) {
     setEditId(b.id); setName(b.name || ''); setRegion(b.region || ''); setCity(b.city || ''); setDistrict(b.district || '')
@@ -87,7 +93,7 @@ export default function SupplierBranchesPage() {
   async function save(e: any) {
     e.preventDefault()
     if (!name.trim()) return failAt(L('Write the branch name.', 'شاخ کا نام لکھیں۔', 'اكتب اسم الفرع.'), 'br-name')
-    if (!region) return failAt(L('Choose the branch city.', 'شاخ کا شہر منتخب کریں۔', 'اختر مدينة الفرع.'), 'br-city')
+    if (!city) return failAt(L('Choose the branch city.', 'شاخ کا شہر منتخب کریں۔', 'اختر مدينة الفرع.'), 'br-city') // validate on the city, not the region
     if (lat == null || lng == null) return failAt(L('Set the branch location on the map, so requests near it reach you.', 'شاخ کا مقام نقشے پر مقرر کریں تاکہ اس کے قریب کی درخواستیں آپ تک پہنچیں۔', 'حدّد موقع الفرع على الخريطة لتصلك الطلبات القريبة منه.'), 'br-map')
     // round-4 UX-141: the branch mobile is normalised and checked (05XXXXXXXX)
     const ph = phone.trim() ? toLocalSa(phone) : null
@@ -140,7 +146,7 @@ export default function SupplierBranchesPage() {
         <div className="bg-white rounded-2xl p-4 border border-gray-100 shadow-sm mb-5 flex items-start justify-between gap-3">
           <div className="min-w-0">
             <div className="text-[13px] font-bold text-gray-600">{L('Main location', 'مرکزی مقام', 'الموقع الرئيسي')}</div>
-            <div className="font-bold text-[#0B2438] mt-0.5">{mainLoc?.region ? <><Glyph e="📍" /> {getRegionLabel(mainLoc.region, locale)}{mainLoc.city ? ' - ' + cityLabel(mainLoc.region, mainLoc.city) : ''}{mainLoc.district ? ' - ' + mainLoc.district : ''}</> : L('Not set yet', 'ابھی مقرر نہیں', 'لم يُحدَّد بعد')}</div>
+            <div className="font-bold text-[#0B2438] mt-0.5">{mainLoc?.region ? <><Glyph e="📍" /> {mainLoc.city ? cityLabel(mainLoc.region, mainLoc.city) : getRegionLabel(mainLoc.region, locale)}{mainLoc.district ? L(', ', '، ', '، ') + mainLoc.district : ''}</> : L('Not set yet', 'ابھی مقرر نہیں', 'لم يُحدَّد بعد')}</div>
             {mainLoc && !mainLoc.latitude && <div className="text-[13px] text-warn-text mt-0.5">{L('No map pin yet.', 'ابھی نقشے پر نشان نہیں۔', 'لم تحدّد موقعك على الخريطة بعد.')}</div>}
           </div>
           {!readOnly && <a href="/location" className="inline-flex items-center min-h-[44px] px-4 rounded-xl text-sm font-bold text-[#0B2438] border border-[#0B2438]/30 shrink-0">{L('Edit', 'ترمیم', 'تعديل')}</a>}
@@ -192,7 +198,7 @@ export default function SupplierBranchesPage() {
               <button type="submit" disabled={saving} className="flex-1 min-h-[44px] py-2.5 rounded-xl font-extrabold text-[#071827] text-sm disabled:opacity-50" style={{ background: 'linear-gradient(135deg,#F5C55B,#D4A543)' }}>
                 {saving ? L('Saving…', 'محفوظ ہو رہا ہے…', 'جارٍ الحفظ…') : L('Save branch', 'شاخ محفوظ کریں', 'حفظ الفرع')}
               </button>
-              <button type="button" onClick={reset} aria-label={L('Close without saving', 'محفوظ کیے بغیر بند کریں', 'إغلاق دون حفظ')} className="min-h-[44px] px-5 rounded-xl font-semibold text-sm border border-gray-200 text-gray-600"><X className="w-4 h-4" aria-hidden /></button>
+              <button type="button" onClick={cancelForm} className="min-h-[44px] px-5 rounded-xl font-semibold text-sm border border-gray-200 text-gray-600">{L('Cancel', 'منسوخ کریں', 'إلغاء')}</button>
             </div>
           </form>
         )}
@@ -205,7 +211,7 @@ export default function SupplierBranchesPage() {
               <h3 className="font-bold mb-1" style={{ color: '#0B2438' }}>{L('Your company has not added branches yet.', 'آپ کی کمپنی نے ابھی شاخیں شامل نہیں کیں۔', 'لم تُضف شركتك فروعاً بعد.')}</h3>
             ) : (<>
               <h3 className="font-bold mb-1" style={{ color: '#0B2438' }}>{L('You have not added other branches yet', 'آپ نے ابھی دوسری شاخیں شامل نہیں کیں', 'لم تُضف فروعاً أخرى بعد')}</h3>
-              <p className="text-sm text-gray-500">{L('Add your branches to receive price requests from their regions.', 'اپنی شاخیں شامل کریں تاکہ ان علاقوں کی درخواستیں آپ کو ملیں۔', 'أضف فروعك لتصلك طلبات التسعير من مناطقها.')}</p>
+              <p className="text-sm text-gray-500">{L('Add your branches to receive price requests from their cities.', 'اپنی شاخیں شامل کریں تاکہ ان شہروں کی درخواستیں آپ کو ملیں۔', 'أضف فروعك لتصلك طلبات التسعير من مدنها.')}</p>
             </>)}
           </div>
         ) : (
@@ -216,7 +222,7 @@ export default function SupplierBranchesPage() {
                 <div className="min-w-0">
                   <div className="font-bold" style={{ color: '#0B2438' }}>{b.name}</div>
                   <div className="flex items-center gap-2 mt-1 flex-wrap text-xs text-gray-500">
-                    <span className="badge text-[12px] bg-[#0B2438]/5 text-[#0B2438]"><Glyph e="📍" /> {getRegionLabel(b.region, locale)}{b.city ? ' - ' + cityLabel(b.region, b.city) : ''}</span>
+                    <span className="badge text-[12px] bg-[#0B2438]/5 text-[#0B2438]"><Glyph e="📍" /> {b.city ? cityLabel(b.region, b.city) : getRegionLabel(b.region, locale)}</span>
                     {b.latitude == null && <span className="text-warn-text font-semibold">{L('No map pin', 'نقشے پر نشان نہیں', 'بلا موقع على الخريطة')}</span>}
                     {b.district && <span><Glyph e="🏘" /> {b.district}</span>}
                     {b.phone && <span dir="ltr"><Glyph e="📞" /> {b.phone}</span>}

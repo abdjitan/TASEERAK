@@ -482,12 +482,13 @@ export default function TenderReviewPage() {
               {!sent && (<>
               <button type="button" disabled={busy || !bulkIds.length} onClick={bulkApprove} className="min-h-11 px-4 py-2.5 rounded-xl text-sm font-bold border border-[#0B2438] text-[#0B2438] disabled:opacity-40">
                 {bulkIds.length
-                  ? L(`Approve ${bulkIds.length} items without flags among the items shown`, `دکھائے گئے آئٹمز میں سے بغیر انتباہ ${bulkIds.length} آئٹمز منظور کریں`, `اعتماد ${arItems(bulkIds.length)} بلا تنبيهات من البنود الظاهرة`)
-                  : L('Approve the materials without flags among the items shown', 'دکھائے گئے آئٹمز میں سے بغیر انتباہ مواد منظور کریں', 'اعتماد المواد بلا تنبيهات من البنود الظاهرة')}
+                  ? L(`Approve the items without flags (${bulkIds.length})`, `بغیر انتباہ آئٹمز منظور کریں (${bulkIds.length})`, `اعتماد البنود بلا تنبيهات (${bulkIds.length})`)
+                  : L('Approve the items without flags', 'بغیر انتباہ آئٹمز منظور کریں', 'اعتماد البنود بلا تنبيهات')}
               </button>
-              <button type="button" disabled={busy || !approvedMaterials.length} onClick={sendApproved} aria-describedby={!approvedMaterials.length ? 'tender-send-why' : undefined} className="min-h-11 px-4 py-2.5 rounded-xl text-sm font-bold text-[#071827] disabled:opacity-40" style={{ background: 'linear-gradient(135deg,#F5C55B,#D4A543)' }}>
+              {/* round-8 UX-110: one gold send button: the banner below carries it once every material is approved */}
+              {!allApproved && <button type="button" disabled={busy || !approvedMaterials.length} onClick={sendApproved} aria-describedby={!approvedMaterials.length ? 'tender-send-why' : undefined} className="min-h-11 px-4 py-2.5 rounded-xl text-sm font-bold text-[#071827] disabled:opacity-40" style={{ background: 'linear-gradient(135deg,#F5C55B,#D4A543)' }}>
                 {L(`Continue to the sending page (${approvedMaterials.length}) →`, `بھیجنے کے صفحے پر جائیں (${approvedMaterials.length}) ←`, `متابعة إلى صفحة الإرسال (${approvedMaterials.length}) ←`)}
-              </button>
+              </button>}
               </>)}
             </div>
           </div>
@@ -652,7 +653,8 @@ export default function TenderReviewPage() {
           <div id="tender-table" className="grid lg:grid-cols-[1fr_440px] gap-4 items-start scroll-mt-20">
             {/* table */}
             <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
-              <div className="px-3 py-2 text-xs text-gray-500 border-b border-gray-100">{L(`${filtered.length} items`, `${filtered.length} آئٹمز`, filtered.length ? arItems(filtered.length) : 'لا توجد بنود تطابق التصفية الحالية')}</div>
+              {/* round-8 UX-110: the count only when there are results (the empty state below says it once) */}
+              {filtered.length > 0 && <div className="px-3 py-2 text-xs text-gray-500 border-b border-gray-100">{L(`${filtered.length} items`, `${filtered.length} آئٹمز`, arItems(filtered.length))}</div>}
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead className="bg-gray-50 text-xs text-gray-600">
@@ -715,7 +717,7 @@ export default function TenderReviewPage() {
                 {sel && edit && (<>
                   <div className="flex items-start justify-between gap-2">
                     <div>
-                      <div id="tender-sheet-title" className="text-xs text-gray-500" dir="ltr">{sel.sheet} · {L('row', 'قطار', 'صف')} {sel.row_no}{sel.ref ? ` · ${sel.ref}` : ''}</div>
+                      <div id="tender-sheet-title" className="text-xs text-gray-500"><bdi>{sel.sheet}</bdi> · {L('row', 'قطار', 'صف')} <bdi>{sel.row_no}</bdi>{sel.ref ? <> · <bdi>{sel.ref}</bdi></> : null}</div>
                       <span className={`inline-block mt-1 text-xs font-bold px-1.5 py-0.5 rounded ${KIND_TONE[sel.kind]}`}>{kindLabel(sel.kind, L)}{sel.kind_reason ? ` («${sel.kind_reason}»)` : ''}</span>
                     </div>
                     <button type="button" onClick={() => setSelId(null)} className="min-h-11 px-2 text-sm font-bold text-gray-500">{L('Close', 'بند کریں', 'إغلاق')}</button>
@@ -818,7 +820,9 @@ export default function TenderReviewPage() {
                     <label className="block">
                       <span className="block text-xs font-semibold text-gray-600 mb-0.5">{L('Material name (Arabic catalog name)', 'مواد کا نام (عربی کیٹلاگ نام)', 'اسم المادة (كما في دليل المواد)')}</span>
                       <input list="tender-catalog" value={edit.product_name} disabled={locked} onChange={(e: any) => setEdit((d: any) => ({ ...d, product_name: e.target.value }))} className="input-field text-sm" dir="auto" />
-                      <datalist id="tender-catalog">{catalogNames.map(n => <option key={n} value={n} />)}</datalist>
+                      <datalist id="tender-catalog">{catalogNames.map(n => <option key={n} value={n} label={locale === 'ar' ? undefined : getProductLabel(n, locale)} />)}</datalist>
+                      {/* round-8 UX-110: a free name is allowed, but it may reach no supplier */}
+                      {!!edit.product_name.trim() && !catalogSet.has(edit.product_name.trim()) && <span className="block text-xs text-[#8F6820] mt-1">{L('A name that is not in the catalog may not reach any supplier. Choose one from the list.', 'جو نام کیٹلاگ میں نہیں وہ شاید کسی سپلائر تک نہ پہنچے۔ فہرست سے منتخب کریں۔', 'اسم غير موجود في الدليل قد لا يصل إلى أي مورد، فاختر اسماً من القائمة.')}</span>}
                     </label>
                     )}
                     {candidates.length > 0 && !locked && !(nameLocked && catalogSet.has(edit.product_name)) && (

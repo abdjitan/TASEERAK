@@ -17,6 +17,7 @@ import { realtimeTopic } from '@/lib/realtimeTopic'
 import PhoneVerifyBanner from '@/components/shared/PhoneVerifyBanner'
 import { storedBuyerType, rememberBuyerType } from '@/lib/buyerType'
 import { askConfirm } from '@/lib/askConfirm'
+import { signOutLocksOut, lockOutText } from '@/components/shared/signOutGuard'
 import { LogOut, ShieldCheck, Plus, WifiOff } from 'lucide-react'
 import { fetchNavBadges, cachedNavBadges, type NavBadges } from '@/components/shared/navBadges'
 
@@ -141,7 +142,12 @@ export default function AppShell({
   const L = (en: string, ur: string, ar: string) => (locale === 'en' ? en : locale === 'ur' ? ur : ar)
   // Sign-out deletes the unsent request saved on this device (with its photos): confirm first.
   async function signOut() {
-    if (hasLocalDraft()) {
+    // a phone-only account with no verified email cannot get back in while texts are down (round-8 UX-002)
+    if (await signOutLocksOut()) {
+      const ok = await askConfirm(lockOutText(locale), { danger: true, okLabel: L('Log out anyway', 'پھر بھی لاگ آؤٹ کریں', 'تسجيل الخروج رغم ذلك'), cancelLabel: L('Add my email first', 'پہلے ای میل شامل کریں', 'أضف بريدي أولاً'), dismissValue: null })
+      if (ok === null) return
+      if (!ok) { setOpen(false); if (!pathname?.startsWith('/settings')) window.location.href = '/settings'; return }
+    } else if (hasLocalDraft()) {
       const ok = await askConfirm(L(
         'Log out? The unsent request saved on this device will be deleted with its photos.',
         'لاگ آؤٹ کریں؟ اس ڈیوائس پر محفوظ نہ بھیجی گئی درخواست اپنی تصاویر سمیت حذف ہو جائے گی۔',
@@ -435,14 +441,15 @@ export default function AppShell({
               </button>
             </div>
           </div>
+          {/* inside the sticky bar, so it stays right under it at every width (round-8 UX-122) */}
+          {offline && (
+            <div role="status" className="flex items-center gap-2 px-4 py-2 text-sm font-semibold bg-warn-bg text-warn-text border-t border-warn-border">
+              <WifiOff className="w-4 h-4 shrink-0" aria-hidden />
+              {L('No internet connection. Check the network, then try again.', 'انٹرنیٹ کنکشن نہیں ہے۔ نیٹ ورک چیک کریں، پھر دوبارہ کوشش کریں۔', 'لا يوجد اتصال بالإنترنت، تحقّق من الشبكة ثم أعد المحاولة.')}
+            </div>
+          )}
         </header>
 
-        {offline && (
-          <div role="status" className="print:hidden sticky top-[61px] sm:top-[69px] z-30 flex items-center gap-2 px-4 py-2.5 text-sm font-semibold bg-warn-bg text-warn-text border-b border-warn-border">
-            <WifiOff className="w-4 h-4 shrink-0" aria-hidden />
-            {L('No internet connection. Check the network, then try again.', 'انٹرنیٹ کنکشن نہیں ہے۔ نیٹ ورک چیک کریں، پھر دوبارہ کوشش کریں۔', 'لا يوجد اتصال بالإنترنت، تحقّق من الشبكة ثم أعد المحاولة.')}
-          </div>
-        )}
         <main id="main" tabIndex={-1} ref={mainRef} className="ts-dashboard-main flex-1 p-4 sm:p-6 lg:p-7 pb-[calc(96px+env(safe-area-inset-bottom))] lg:pb-7 focus:outline-none"><PhoneVerifyBanner />{children}</main>
       </div>
 

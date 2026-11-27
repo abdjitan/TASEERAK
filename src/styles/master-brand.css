@@ -9,7 +9,9 @@
   --ts-silver-300: #C7CED6;
   --ts-silver-100: #E8EDF2;
   --ts-border-dark: #263746;
-  --ts-shadow-panel: 0 16px 44px rgba(5, 11, 18, .12);
+  --ts-shadow-panel: 0 16px 44px rgba(7, 24, 39, .12);
+  --ts-radius-card: 16px;
+  --ts-shadow-card: 0 6px 22px rgba(7,24,39,.045);
   --ts-focus-ring: 0 0 0 3px rgba(212, 165, 67, .28);
   --ts-font-ar: "IBM Plex Sans Arabic", "Tajawal", "Cairo", "Segoe UI", Tahoma, sans-serif;
   --ts-font-en: "Inter", "IBM Plex Sans Arabic", "Segoe UI", Arial, sans-serif;
@@ -34,40 +36,17 @@ a { text-decoration: none; }
   border-color: #CBD4DE;
   transition: border-color .18s ease, box-shadow .18s ease, background .18s ease;
 }
-.input-field:focus { border-color: var(--ts-gold-500); box-shadow: var(--ts-focus-ring); }
+/* focus (round-8 UX-119): a navy border with a gold halo; gold alone was 2.1:1 on white */
+.input-field:focus { border-color: var(--ts-navy-850); box-shadow: 0 0 0 4px rgba(212,165,67,.32); }
 .btn-orange, .btn-primary { color: var(--ts-navy-950); font-weight: 800; }
 .btn-orange:hover, .btn-primary:hover { color: var(--ts-navy-950); }
 .text-orange { color: #8F6820; }
 .auth-brand-panel .text-orange, .ts-dashboard aside .text-orange { color: #F5C55B !important; }
-.card { border-radius: 18px; border-color: #D9E0E8; box-shadow: 0 6px 22px rgba(7,24,39,.045); }
+.card { border-radius: 16px; border-color: #D9E0E8; box-shadow: 0 6px 22px rgba(7,24,39,.045); }
 .badge-orange { color: var(--ts-navy-950); }
 
 /* Compact public routes share the landing page's brand without using its hero image. */
-.public-header {
-  color: var(--ts-silver-100);
-  background: rgba(7, 24, 39, .97);
-  border-bottom: 1px solid var(--ts-border-dark);
-  box-shadow: 0 10px 34px rgba(5,11,18,.12);
-  backdrop-filter: blur(18px);
-}
-.public-header img {
-  width: 46px;
-  height: 46px;
-  padding: 3px;
-  object-fit: contain;
-  border-radius: 12px;
-  background: #fff;
-}
-.public-header .taseerak-header-lockup {
-  width: auto;
-  height: 66px;
-  max-width: 86px;
-  padding: 0;
-  object-fit: contain;
-  border-radius: 11px;
-  background: transparent;
-}
-.public-header a:first-child span { color: #fff !important; font-size: 16px; }
+/* the old .public-header block was removed (round-8 UX-121): no page uses it, PublicTopBar has its own styles */
 .public-nav { scrollbar-width: none; }
 .public-nav::-webkit-scrollbar { display: none; }
 .public-nav-link { color: #C7CED6; transition: color .18s ease, background .18s ease; }
@@ -116,7 +95,7 @@ a { text-decoration: none; }
 }
 .public-page-head h1 { color: #0B2438 !important; font-size: clamp(30px, 4vw, 44px); line-height: 1.3; }
 .public-page-head p { color: #526277; font-size: clamp(15px, 1.5vw, 18px); line-height: 1.9; }
-.public-page .bg-white { border-color: #D9E0E8; border-radius: 18px; box-shadow: 0 10px 28px rgba(7,24,39,.045); }
+.public-page .bg-white { border-color: #D9E0E8; border-radius: 16px; box-shadow: 0 10px 28px rgba(7,24,39,.045); }
 .public-empty-state { padding: clamp(30px, 5vw, 64px) 24px; }
 .public-empty-icon {
   display: grid;
@@ -153,7 +132,7 @@ a { text-decoration: none; }
   isolation: isolate;
   overflow: hidden;
   border-inline-end: 1px solid rgba(245,197,91,.22);
-  box-shadow: 14px 0 42px rgba(5,11,18,.18);
+  box-shadow: 14px 0 42px rgba(7,24,39,.18);
 }
 .ts-dashboard-sidebar::before {
   content: "";
@@ -303,7 +282,7 @@ input[type="checkbox"]:focus-visible, input[type="radio"]:focus-visible { outlin
 @media (max-width: 640px) {
   .ts-dashboard-topbar > div { padding-block: 10px; }
   .ts-dashboard-topbar h1, .ts-dashboard-topbar .ts-topbar-title { font-size: 15px; }
-  .ts-dashboard main .bg-white.rounded-2xl { border-radius: 17px; }
+  .ts-dashboard main .bg-white.rounded-2xl { border-radius: 16px; }
 }
 
 @media (max-width: 640px) {
@@ -353,8 +332,6 @@ input[type="checkbox"]:focus-visible, input[type="radio"]:focus-visible { outlin
 .register-screen main, .register-screen section { max-width: 1120px; }
 
 @media (max-width: 760px) {
-  .public-header-inner { min-height: 68px; gap: 12px; }
-  .public-header .taseerak-header-lockup { width: auto; height: 56px; max-width: 72px; }
   .public-footer-lockup { height: 76px; max-width: 98px; }
   .public-nav { gap: 2px; }
   .public-nav-link { padding-inline: 9px; font-size: 12px; }
@@ -375,7 +352,7 @@ input[type="checkbox"]:focus-visible, input[type="radio"]:focus-visible { outlin
     radial-gradient(ellipse at 75% -90%, rgba(245,197,91,.25), transparent 48%),
     linear-gradient(105deg, #07131E 0%, #0B2438 58%, #123B53 100%) !important;
   border-bottom: 1px solid rgba(245,197,91,.42) !important;
-  box-shadow: 0 12px 30px rgba(5,11,18,.2) !important;
+  box-shadow: 0 12px 30px rgba(7,24,39,.2) !important;
 }
 .ts-dashboard-topbar::after {
   content: "";
@@ -420,15 +397,18 @@ input[type="checkbox"]:focus-visible, input[type="radio"]:focus-visible { outlin
   box-shadow: 0 0 0 4px rgba(212,165,67,.16), 0 6px 18px rgba(7,24,39,.08);
 }
 /* One error state for every form (round-4 UX-019): set aria-invalid="true" on the field that is wrong or missing. */
-:is(input, select, textarea)[aria-invalid="true"] { border-color: #B42318 !important; background-color: #FEF2F2 !important; }
-:is(input, select, textarea)[aria-invalid="true"]:focus { border-color: #B42318 !important; box-shadow: 0 0 0 4px rgba(180,35,24,.16) !important; }
+:is(input, select, textarea)[aria-invalid="true"]:not([data-missing="true"]):not([data-missing=""]) { border-color: #B42318 !important; background-color: #FEF2F2 !important; }
+:is(input, select, textarea)[aria-invalid="true"]:not([data-missing="true"]):not([data-missing=""]):focus { border-color: #B42318 !important; box-shadow: 0 0 0 4px rgba(180,35,24,.16) !important; }
+/* a MISSING value (data-missing on the field) stays gold everywhere, never red (round-8 UX-119) */
+:is(input, select, textarea, button):is([data-missing="true"], [data-missing=""]) { border-color: #D4A543 !important; background-color: #FFFBF2 !important; }
+:is(input, select, textarea, button):is([data-missing="true"], [data-missing=""]):focus { border-color: var(--ts-navy-850) !important; box-shadow: 0 0 0 4px rgba(212,165,67,.32) !important; }
 .ts-dashboard-brand img { filter: drop-shadow(0 8px 20px rgba(245,197,91,.18)); }
 .ts-company-card { background: linear-gradient(120deg, rgba(245,197,91,.13), rgba(255,255,255,.045)) !important; }
 .ts-mobile-nav {
   color: #fff;
   background: rgba(7,24,39,.97) !important;
   border-color: rgba(245,197,91,.28) !important;
-  box-shadow: 0 -12px 30px rgba(5,11,18,.24) !important;
+  box-shadow: 0 -12px 30px rgba(7,24,39,.24) !important;
 }
 .ts-mobile-nav-link { color: rgba(232,237,242,.7) !important; }
 .ts-mobile-nav-link.is-active { color: #F5C55B !important; }
@@ -459,7 +439,7 @@ input[type="checkbox"]:focus-visible, input[type="radio"]:focus-visible { outlin
 }
 /* (a later white top bar override was removed: the approved design keeps it dark navy, and its
    text rules above are white — together they produced white-on-white) */
-.ts-dashboard-topbar { border-bottom-color: rgba(212,165,67,.28) !important; box-shadow: 0 8px 26px rgba(5,11,18,.18) !important; }
+.ts-dashboard-topbar { border-bottom-color: rgba(212,165,67,.28) !important; box-shadow: 0 8px 26px rgba(7,24,39,.18) !important; }
 .ts-dashboard-topbar .bg-gray-100, .ts-dashboard-topbar .bg-white { background: rgba(255,255,255,.08) !important; border-color: rgba(255,255,255,.14) !important; }
 .ts-dashboard-topbar .bg-gray-100:hover { background: rgba(255,255,255,.16) !important; }
 .ts-dashboard-topbar .text-gray-700, .ts-dashboard-topbar .text-gray-600, .ts-dashboard-topbar .text-gray-500 { color: #E8EDF2 !important; }

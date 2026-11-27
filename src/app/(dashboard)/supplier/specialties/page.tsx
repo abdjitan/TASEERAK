@@ -111,8 +111,11 @@ export default function SpecialtiesPage() {
   const [myRequests, setMyRequests] = useState<any[]>([])
   const [matchCount, setMatchCount] = useState<number | null>(null) // round-6 UX-145
   const [openSector, setOpenSector] = useState<any>(null) // single-open accordion (Step 2)
-  const [showDetailed, setShowDetailed] = useState(true)
-  useEffect(() => { if (storedSellerKind() === 'independent') setShowDetailed(false) }, [])
+  // round-8 UX-112 (5): the detailed list (~130 specialties) starts folded for everyone; the cards come first
+  const [showDetailed, setShowDetailed] = useState(false)
+  // round-8 UX-041: a pricing agent «prices» materials, he does not «sell» them
+  const [indep, setIndep] = useState(false)
+  useEffect(() => { setIndep(storedSellerKind() === 'independent') }, [])
   // auto-analysis of the CR commercial activity (Wathq)
   const [crActivity, setCrActivity] = useState('')
   const [companyName, setCompanyName] = useState('')
@@ -366,7 +369,9 @@ export default function SpecialtiesPage() {
 
         {/* اختيار القطاعات + التخصصات — منتقي موحّد مع «أكمل ملفك» (نفس التصنيفات والأيقونات) */}
         <fieldset disabled={isMember} className="bg-white rounded-2xl p-5 sm:p-6 border border-gray-100 shadow-sm mb-5 min-w-0">
-          <p className="text-sm font-bold mb-0.5" style={{ color: '#0B2438' }}>{locale === 'en' ? 'Quick pick: what do you sell?' : locale === 'ur' ? 'فوری انتخاب: آپ کیا بیچتے ہیں؟' : 'اختيار سريع: ماذا تبيع؟'}</p>
+          <p className="text-sm font-bold mb-0.5" style={{ color: '#0B2438' }}>{indep
+            ? (locale === 'en' ? 'Quick pick: what do you price?' : locale === 'ur' ? 'فوری انتخاب: آپ کس چیز کی قیمت دیتے ہیں؟' : 'اختيار سريع: ما الذي تسعّره؟')
+            : (locale === 'en' ? 'Quick pick: what do you sell?' : locale === 'ur' ? 'فوری انتخاب: آپ کیا بیچتے ہیں؟' : 'اختيار سريع: ماذا تبيع؟')}</p>
           <p className="text-xs text-gray-500 mb-2.5">{locale === 'en' ? 'One tap selects a whole kind of business.' : locale === 'ur' ? 'ایک کلک میں پورا کاروبار۔' : 'بضغطة واحدة تختار جميع مواد هذا النوع من المحلات.'}</p>
           <div className="mb-6"><SupplierPackPicker sectors={mySectors} specialties={mySpecialties} locale={locale} onChange={(n: any) => { setMySectors(n.sectors); setMySpecialties(n.specialties) }} /></div>
           {/* The detailed list (6 sectors, ~130 specialties): open for companies; an independent seller
@@ -413,7 +418,9 @@ export default function SpecialtiesPage() {
           </div>
         ) : !loadFailed && (
           <div role="status" className="bg-warn-bg rounded-2xl p-5 border border-warn-border text-center text-warn-text text-sm font-semibold mb-5">
-            {locale === 'en' ? 'You have not chosen what you sell yet, so no requests will reach you. Pick a kind of business above or your exact specialties.' : locale === 'ur' ? 'آپ نے ابھی منتخب نہیں کیا کہ آپ کیا بیچتے ہیں، اس لیے کوئی درخواست نہیں آئے گی۔ اوپر کاروبار کی قسم یا تخصصات منتخب کریں۔' : 'لم تختر بعد ما تبيعه، ولن تصلك طلبات حتى تختار. اختر نوع ما تبيعه من الأعلى أو تخصصاتك الدقيقة.'}
+            {indep
+              ? (locale === 'en' ? 'You have not chosen what you price yet, so no requests will reach you until you choose. Pick a kind of material above or your exact specialties.' : locale === 'ur' ? 'آپ نے ابھی منتخب نہیں کیا کہ آپ کس چیز کی قیمت دیتے ہیں، اس لیے انتخاب تک کوئی درخواست نہیں آئے گی۔ اوپر مال کی قسم یا تخصصات منتخب کریں۔' : 'لم تختر بعد ما تسعّره، ولن تصلك طلبات حتى تختار. اختر نوع المواد من الأعلى أو تخصصاتك الدقيقة.')
+              : (locale === 'en' ? 'You have not chosen what you sell yet, so no requests will reach you. Pick a kind of business above or your exact specialties.' : locale === 'ur' ? 'آپ نے ابھی منتخب نہیں کیا کہ آپ کیا بیچتے ہیں، اس لیے کوئی درخواست نہیں آئے گی۔ اوپر کاروبار کی قسم یا تخصصات منتخب کریں۔' : 'لم تختر بعد ما تبيعه، ولن تصلك طلبات حتى تختار. اختر نوع ما تبيعه من الأعلى أو تخصصاتك الدقيقة.')}
           </div>
         )}
 

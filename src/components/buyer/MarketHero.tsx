@@ -144,9 +144,15 @@ export default function MarketHero({ locale, homeBuyer = false, greeting, belowS
         )}
         </div>
         <div className="relative z-10 mt-4 flex flex-wrap items-center gap-x-4 gap-y-2">
-          <Link href="/contractor/rfq/quick" className="inline-flex items-center gap-1.5 rounded-xl px-5 py-3 text-sm font-extrabold text-[#071827] shadow-md hover:brightness-105 transition" style={{ background: 'linear-gradient(135deg,#F5C55B,#D4A543)' }}>
+          <Link href="/contractor/rfq/quick" className="inline-flex items-center gap-1.5 rounded-xl px-5 py-3 min-h-[44px] text-sm font-extrabold text-[#071827] shadow-md hover:brightness-105 transition" style={{ background: 'linear-gradient(135deg,#F5C55B,#D4A543)' }}>
             <Plus className="w-4 h-4" aria-hidden />{L('Ask a price for any product', 'کسی بھی چیز کی قیمت پوچھیں', 'اطلب سعر أي منتج')}
           </Link>
+          {/* round-8 UX-134: a home buyer sees the photo request as words, not only the small camera */}
+          {homeBuyer && (
+            <Link href="/contractor/rfq/quick?start=photo" className="inline-flex items-center gap-1.5 min-h-[44px] text-sm font-bold text-white/90 hover:text-[#F5C55B] transition-colors">
+              <Camera className="w-4 h-4" aria-hidden />{touch ? L('Take a photo of what you need', 'جو چاہیے اس کی تصویر لیں', 'صوّر ما تحتاجه') : L('Upload a photo of what you need', 'جو چاہیے اس کی تصویر اپ لوڈ کریں', 'ارفع صورة ما تحتاجه')}
+            </Link>
+          )}
           {/* business buyers: the two list tools, with one consistent name each (UX-144) */}
           {!homeBuyer && (<>
             <Link href="/contractor/project/new" className="inline-flex items-center gap-1.5 min-h-[44px] text-sm font-semibold text-white/90 hover:text-[#F5C55B] transition-colors">
@@ -228,7 +234,7 @@ export default function MarketHero({ locale, homeBuyer = false, greeting, belowS
             </Link>
           ))}
         </div>
-        <span aria-hidden className="sm:hidden pointer-events-none absolute inset-y-0 end-0 w-10 bg-gradient-to-r rtl:bg-gradient-to-l from-transparent to-white" />
+        <span aria-hidden className="sm:hidden pointer-events-none absolute inset-y-0 end-0 w-10 bg-gradient-to-r rtl:bg-gradient-to-l from-transparent to-[var(--bg)]" />
         </div>
       </div>
     </div>

@@ -186,7 +186,8 @@ export default function ResetPasswordPage() {
                     </div>
                     {/* the match is shown while typing, not only on submit (round-7 UX-164) */}
                     <p aria-live="polite" className={`mt-1.5 text-[13px] flex items-center gap-1.5 ${confirm && confirm === password ? 'text-emerald-700' : 'text-red-700'}`}>
-                      {confirm ? (confirm === password ? <><Check className="w-3.5 h-3.5" aria-hidden /> {t.match}</> : t.mismatch) : null}
+                      {/* the mismatch waits until the confirmation is as long as the password (round-8 UX-113) */}
+                      {confirm ? (confirm === password ? <><Check className="w-3.5 h-3.5" aria-hidden /> {t.match}</> : confirm.length >= password.length ? t.mismatch : null) : null}
                     </p>
                   </div>
                 </div>

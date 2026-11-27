@@ -8,7 +8,6 @@ import PageLoader from '@/components/shared/PageLoader'
 import { getNav } from '@/lib/nav'
 import { inviteLink } from '@/lib/referral'
 import { MessageCircle, Copy, Share2, Check, UserPlus } from 'lucide-react'
-import { arCount } from '@/lib/text'
 
 // «ادعُ من تعرفه» (owner 2026-10-17): buyers and suppliers invite people they know. The link opens
 // the signup page with the account type chosen; the new account is linked to the inviter
@@ -121,7 +120,7 @@ export default function InviteFriendsPage() {
               <div className="text-sm font-bold" style={{ color: '#0B2438' }}>{L('Joined through your invite', 'آپ کی دعوت سے شامل ہوئے', 'انضمّوا عن طريق دعوتك')}</div>
               {/* a thank-you, not a bare number (UX-155) */}
               <div className="text-[13px] text-[#0B2438] mt-0.5">{joined > 0
-                ? L(`Thank you: ${joined === 1 ? '1 person' : `${joined} people`} joined through your invite.`, `شکریہ، آپ کی دعوت سے ${joined} افراد شامل ہوئے۔`, `شكراً لك، انضمّ ${arCount(joined, 'شخص واحد', 'شخصان', 'أشخاص', 'شخصاً')} عن طريق دعوتك.`)
+                ? L('Thank you for inviting them.', 'انہیں دعوت دینے کا شکریہ۔', 'شكراً لك على دعوتهم.')
                 : who === 'supplier' ? L('Every new supplier means more price offers on everyone’s requests.', 'ہر نیا سپلائر یعنی سب کی درخواستوں پر زیادہ قیمتیں۔', 'كل مورد جديد يعني عروض أسعار أكثر على طلبات الجميع.')
                 : L('Every new buyer means more price requests for suppliers.', 'ہر نیا خریدار یعنی سپلائرز کے لیے زیادہ درخواستیں۔', 'كل مشتري جديد يعني طلبات تسعير أكثر للموردين.')}</div>
               <div className="text-[12px] text-gray-600">{L('Counted when the new account signs in for the first time.', 'نیا اکاؤنٹ پہلی بار لاگ ان ہونے پر شمار ہوتا ہے۔', 'يُحتسب عند أول دخول للحساب الجديد.')}</div>

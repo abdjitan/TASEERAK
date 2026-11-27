@@ -15,6 +15,7 @@ import CityPicker from '@/components/shared/CityPicker'
 import { Check } from 'lucide-react'
 import Glyph from '@/components/shared/Glyph'
 import { friendlyError } from '@/lib/friendlyError'
+import { askConfirm } from '@/lib/askConfirm'
 
 const txt = {
   ar: {
@@ -119,6 +120,30 @@ export default function LocationPage() {
   }
   useEffect(() => { load() }, [])
 
+  // leaving with unsaved changes asks first (round-8 UX-113): a closed tab, and a link inside the site
+  const dirty = !!profile && !loadFailed && (
+    (shortAddr || '') !== (profile.national_short_address || '') || (buildingNo || '') !== (profile.building_number || '')
+    || (street || '') !== (profile.street_name || '') || (district || '') !== (profile.district || '')
+    || (city || '') !== (profile.city || '') || (postalCode || '') !== (profile.postal_code || '')
+    || (additionalNo || '') !== (profile.additional_number || '')
+    || String(lat ?? '') !== String(profile.latitude ?? '') || String(lng ?? '') !== String(profile.longitude ?? ''))
+  useEffect(() => {
+    if (!dirty) return
+    const onUnload = (e: BeforeUnloadEvent) => { e.preventDefault(); e.returnValue = '' }
+    const onClick = async (e: MouseEvent) => {
+      const a = (e.target as HTMLElement | null)?.closest?.('a[href]') as HTMLAnchorElement | null
+      if (!a || a.target === '_blank' || e.defaultPrevented || e.metaKey || e.ctrlKey || e.shiftKey) return
+      const href = a.getAttribute('href') || ''
+      if (!href.startsWith('/') || href.startsWith('//')) return
+      e.preventDefault(); e.stopPropagation()
+      const ok = await askConfirm(L('Leave without saving? Your changes will be lost.', 'محفوظ کیے بغیر جائیں؟ آپ کی تبدیلیاں ضائع ہو جائیں گی۔', 'المغادرة دون حفظ؟ ستضيع تعديلاتك.'), { okLabel: L('Leave', 'چھوڑ دیں', 'غادر'), cancelLabel: L('Stay', 'رکیں', 'ابقَ'), dismissValue: null })
+      if (ok) { window.removeEventListener('beforeunload', onUnload); window.location.href = href }
+    }
+    window.addEventListener('beforeunload', onUnload)
+    document.addEventListener('click', onClick, true)
+    return () => { window.removeEventListener('beforeunload', onUnload); document.removeEventListener('click', onClick, true) }
+  }, [dirty]) // eslint-disable-line react-hooks/exhaustive-deps
+
   async function handleSave() {
     if (!profile || loadFailed) return
     setSaving(true); setMsg('')
@@ -136,10 +161,13 @@ export default function LocationPage() {
       longitude: lng,
     }).eq('id', user.id)
     setSaving(false)
+    // saved: the form now matches the profile, so leaving no longer asks
+    if (!error) setProfile((p: any) => ({ ...p, national_short_address: shortAddr || null, building_number: buildingNo || null, street_name: street || null, district: district || null, region: region || null, city: city || null, postal_code: postalCode || null, additional_number: additionalNo || null, latitude: lat, longitude: lng }))
     setMsgOk(!error)
     setMsg(error ? friendlyError(error.message, L('Could not save, please try again.', 'محفوظ نہیں ہو سکا، دوبارہ کوشش کریں۔', 'تعذّر الحفظ، حاول مرة أخرى.'), locale) : T.saved)
-    if (!error && typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('from') === 'home') {
-      setTimeout(() => { window.location.href = homeHref }, 1200)
+    const from = typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('from') : null
+    if (!error && (from === 'home' || from === 'settings')) {
+      setTimeout(() => { window.location.href = from === 'settings' ? '/settings' : homeHref }, 1200)
       return
     }
     // the success line stays (with its «back home» link) until the next change; an error clears after a while
@@ -163,7 +191,7 @@ export default function LocationPage() {
         <h2 className="font-bold" style={{ color: '#0B2438' }}>{T.locationSection}</h2>
       </div>
       <LocationPicker lat={lat} lng={lng} locale={locale} onChange={onPin} />
-      {pinNote && <p role="status" className="mt-2 text-[13px] font-semibold text-[#0F6E56]">{pinNote}</p>}
+      {pinNote && <p role="status" className="mt-2 text-[13px] font-semibold text-[#8F6820]">{pinNote}</p>}
     </div>
   )
 

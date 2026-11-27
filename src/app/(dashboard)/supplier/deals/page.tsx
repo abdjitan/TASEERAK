@@ -7,8 +7,9 @@ import { useTranslation } from '@/i18n'
 import AppShell from '@/components/shared/AppShell'
 import PageLoader from '@/components/shared/PageLoader'
 import { getNav } from '@/lib/nav'
-import { dealStage, expectedDeliveryDate, deliveryLate } from '@/lib/dealStage'
-import { rfqDisplayName } from '@/lib/rfqName'
+import { dealStage, expectedDeliveryDate, deliveryLate, supplierDealNeedsMe, buyerDisputeOpen, buyerDisputeChip, memberDealLabel, memberDealsNote } from '@/lib/dealStage'
+import { rfqDisplayName, rfqRefLine } from '@/lib/rfqName'
+import { buyerBasisTag } from '@/lib/vat'
 import Glyph from '@/components/shared/Glyph'
 import { arCount } from '@/lib/text'
 import { readPageCache, writePageCache } from '@/lib/pageCache'
@@ -19,12 +20,9 @@ import { getProductLabel } from '@/types'
 
 // «صفقاتي» للمورّد — الصفقات المُرساة عليه (عروضه المقبولة) مع مرحلتها، وترتبط بصفحة إدارة
 // الصفقة (حماية الصفقة: تسليم/استلام/دفع). الهوية تُكشف بعد الترسية فقط.
-// round-5 UX-057: a deal waiting on the owner (deliver it, or confirm the buyer's payment arrived), the same
-// rule as the app's supplierDealNeedsMe (to move into a shared lib). A closed deal never needs anyone.
-function dealNeedsMe(d: any): boolean {
-  const st = dealStage(d)
-  return st.key === 'accepted' || (st.key === 'paid' && !st.done)
-}
+// round-8 UX-030: a deal waiting on the owner comes from the shared rule (deliver it, confirm a payment the
+// buyer recorded, or answer a problem the buyer reported); the same function as the app.
+const dealNeedsMe = (d: any): boolean => supplierDealNeedsMe(d)
 // round-6 UX-001/UX-113: the expected delivery day and the «late» check come from one shared rule
 // (working days in Riyadh, Fridays skipped; late only after that whole day, never after delivery or receipt)
 const deliveryDue = (d: any): Date | null => expectedDeliveryDate(d)
@@ -42,6 +40,7 @@ export default function SupplierDealsPage() {
   const [failed, setFailed] = useState(false)
   // round-4 UX-080: a team member follows the company's deals; the owner does the steps
   const [isMember, setIsMember] = useState(false)
+  const [sellerInfo, setSellerInfo] = useState<{ supplier_tier?: string; provider_type?: string } | null>(null)
   const L = (en: string, ur: string, ar: string) => (locale === 'en' ? en : locale === 'ur' ? ur : ar)
   const FWD = dir === 'rtl' ? '←' : '→'
 
@@ -57,9 +56,11 @@ export default function SupplierDealsPage() {
       const { data: actRaw } = await supabase.rpc('acting_uid') // a team member sees the company's deals
       const actId: string = (actRaw as any) || session.user.id
       setIsMember(actId !== session.user.id)
+      // round-8 UX-020: the seller kind feeds buyerBasisTag (one basis tag for the same offer on every screen)
+      Promise.resolve(supabase.from('profiles').select('supplier_tier, provider_type').eq('id', actId).maybeSingle()).then(({ data: sp }: any) => { if (sp) setSellerInfo(sp) }, () => {})
       const { data, error } = await supabase
         .from('offers')
-        .select('*, rfq:rfqs(id, product_name, ref_no, items, contractor:profiles!contractor_id(company_name_ar, full_name))')
+        .select('*, rfq:rfqs(id, product_name, ref_no, items, created_at, contractor:profiles!contractor_id(company_name_ar, full_name))')
         .eq('supplier_id', actId)
         .eq('status', 'accepted')
         .order('accepted_at', { ascending: false })
@@ -102,16 +103,8 @@ export default function SupplierDealsPage() {
 
   if (loading) return <PageLoader />
 
-  // round-4 UX-080: the stage in the third person for a team member (the owner invoices, delivers and confirms payment)
-  const memberLabel = (d: any, st: any): string => {
-    if (st.key === 'disputed' || st.key === 'closed' || st.done) return st.label
-    if (st.key === 'paid') return L('The buyer paid; waiting for the account owner to confirm the payment', 'خریدار نے ادائیگی کر دی؛ اکاؤنٹ کے مالک کی تصدیق کا انتظار', 'دفع المشتري، وبانتظار تأكيد صاحب الحساب لاستلام المبلغ')
-    if (st.key === 'received') return L('The buyer received the goods; waiting for payment', 'خریدار کو سامان مل گیا؛ ادائیگی کا انتظار', 'استلم المشتري البضاعة، وبانتظار الدفع')
-    if (st.key === 'delivered') return L('The account owner delivered; waiting for the buyer to confirm', 'اکاؤنٹ کے مالک نے ڈیلیور کر دیا؛ خریدار کی تصدیق کا انتظار', 'سلّم صاحب الحساب البضاعة، وبانتظار تأكيد المشتري')
-    return (d.invoice_url || d.supplier_invoice_url)
-      ? L('The account owner uploaded the invoice; waiting for delivery', 'اکاؤنٹ کے مالک نے انوائس اپ لوڈ کر دی؛ ڈیلیوری کا انتظار', 'رفع صاحب الحساب الفاتورة، وبانتظار التسليم')
-      : L('The buyer chose the company; waiting for the account owner to upload the invoice', 'خریدار نے کمپنی کو منتخب کیا؛ اکاؤنٹ کے مالک کی انوائس کا انتظار', 'اختار المشتري الشركة، وبانتظار رفع صاحب الحساب للفاتورة')
-  }
+  // round-4 UX-080 / round-8 UX-032: the stage in the third person for a team member (shared with the app, handles advance_due)
+  const memberLabel = (d: any): string => memberDealLabel(d, locale)
 
   const shown = deals.filter((d: any) => {
     const st = dealStage(d, 'supplier', locale)
@@ -128,8 +121,9 @@ export default function SupplierDealsPage() {
     return true
   })
   // round-5 UX-057: deals waiting on the owner first (the rest keep their newest-first order)
+  // round-8 UX-030: a problem the buyer reported comes first of all
   if (!isMember) {
-    const w = (d: any) => (dealNeedsMe(d) ? 0 : 1)
+    const w = (d: any) => (buyerDisputeOpen(d) ? 0 : dealNeedsMe(d) ? 1 : 2)
     shown.sort((a: any, b: any) => w(a) - w(b))
   }
   const dloc = locale === 'en' ? 'en-GB' : locale === 'ur' ? 'ur-PK-u-nu-latn' : 'ar-SA-u-ca-gregory-nu-latn'
@@ -146,6 +140,7 @@ export default function SupplierDealsPage() {
             {L('Offers waiting for the buyer', 'خریدار کے فیصلے کی منتظر آفرز', 'عروض بانتظار قرار المشتري')} <span aria-hidden="true">{FWD}</span>
           </Link>
         </div>
+        {isMember && <p className="mb-3 rounded-xl border border-[#0B2438]/15 bg-[#0B2438]/5 px-3 py-2 text-[13px] text-[#0B2438] leading-relaxed">{memberDealsNote(locale)}</p>}
         <input value={search} onChange={(e: any) => setSearch(e.target.value)} aria-label={L('Search deals', 'ڈیلز تلاش کریں', 'ابحث في الصفقات')}
           className="input-field text-base sm:text-sm mb-3" placeholder={locale === 'en' ? 'Search deals (material, buyer, request or invoice no.)…' : locale === 'ur' ? 'ڈیلز تلاش کریں (مال، خریدار، انوائس نمبر)…' : 'ابحث في الصفقات (المادة، المشتري، رقم الطلب أو الفاتورة)…'} />
         <div className="flex items-center gap-2 mb-5 flex-wrap">
@@ -161,11 +156,11 @@ export default function SupplierDealsPage() {
             }
             const chips: { k: 'all' | 'active' | 'done' | 'disputed' | 'closed'; l: string }[] = [
               { k: 'all', l: L('All', 'سب', 'الكل') }, { k: 'active', l: L('Active', 'جاری', 'جارية') }, { k: 'done', l: L('Completed', 'مکمل', 'مكتملة') }, { k: 'disputed', l: L('Problems', 'مسائل', 'مشكلات') },
-              ...(n.closed > 0 ? [{ k: 'closed' as const, l: L('Cancelled', 'منسوخ', 'ملغاة') }] : []),
+              { k: 'closed' as const, l: L('Cancelled', 'منسوخ', 'ملغاة') }, // round-8 UX-102 (1): always listed, with its count
             ]
             return chips.map((f) => (
               <button key={f.k} onClick={() => setFilter(f.k)} aria-pressed={filter === f.k}
-                className={`min-h-[44px] px-3 rounded-xl text-sm font-semibold border-2 transition-all ${filter === f.k ? 'border-[#D4A543] bg-[#D4A543]/10 text-[#071827]' : 'border-gray-200 text-gray-600 hover:border-gray-300'}`}>{f.l}{n[f.k] > 0 ? ` (${n[f.k]})` : ''}</button>
+                className={`min-h-[44px] px-3 rounded-xl text-sm font-semibold border-2 transition-all ${filter === f.k ? 'border-[#D4A543] bg-[#D4A543]/10 text-[#071827]' : 'border-gray-200 text-gray-600 hover:border-gray-300'}`}>{f.l} ({n[f.k]})</button>
             ))
           })()}
           <span className="text-[13px] text-gray-600 ms-auto">{locale === 'en' ? `${shown.length} deals` : locale === 'ur' ? `${shown.length} ڈیلز` : shown.length === 0 ? 'لا توجد صفقات' : arCount(shown.length, 'صفقة واحدة', 'صفقتان', 'صفقات', 'صفقة')}</span>
@@ -192,26 +187,32 @@ export default function SupplierDealsPage() {
               const late = deliveryLate(d)
               const amount = Number(d.deal_total ?? dealTotal(d)) || 0
               return (
-                <Link key={d.id} href={`/supplier/dashboard/rfq/${d.rfq?.id}#deal`}
+                <Link key={d.id} href={`/supplier/dashboard/rfq/${d.rfq?.id || d.rfq_id}#deal`}
                   className={`flex items-center justify-between gap-3 bg-white rounded-2xl p-4 border shadow-sm hover:border-[#D4A543]/50 transition-colors ${mine ? 'border-[#D4A543] border-2' : 'border-gray-100'}`}>
                   <div className="min-w-0 flex-1">
                     <div className="flex items-start gap-2 flex-wrap">
                       <div className="font-bold text-sm line-clamp-2 min-w-0 flex-1" style={{ color: '#0B2438' }}>{d.rfq ? rfqDisplayName({ ...d.rfq, title: null }, locale) : L('Deal', 'ڈیل', 'صفقة')}</div>
-                      {mine && <span className="shrink-0 text-[12px] font-bold px-2.5 py-0.5 rounded-full text-[#071827]" style={{ background: '#D4A543' }}>{L('Action needed', 'آپ کی کارروائی درکار', 'مطلوب منك')}</span>}
+                      {!isMember && buyerDisputeOpen(d)
+                        ? <span className="shrink-0 text-[12px] font-bold px-2.5 py-0.5 rounded-full border-2 border-red-300 bg-white text-red-800">{buyerDisputeChip(locale)}</span>
+                        : mine && <span className="shrink-0 text-[12px] font-bold px-2.5 py-0.5 rounded-full text-[#071827]" style={{ background: '#D4A543' }}>{L('Action needed', 'آپ کی کارروائی درکار', 'مطلوب منك')}</span>}
                     </div>
                     {/* round-5 UX-072: the fallback is «المشتري» (never «مشتري فرد» for a name we could not read) */}
-                    <div className="text-[13px] text-gray-600 mt-0.5 flex flex-wrap gap-x-1 min-w-0"><Glyph e="👤" /> {d.rfq?.contractor?.company_name_ar || d.rfq?.contractor?.full_name || L('The buyer', 'خریدار', 'المشتري')} · {(+amount.toFixed(2)).toLocaleString('en-US')} {L('SAR', 'ریال', 'ر.س')} <span className="text-gray-500">{d.vat_status === 'not_registered' ? L('(final price)', '(حتمی قیمت)', '(سعر نهائي)') : L('incl. VAT', 'VAT سمیت', 'شامل الضريبة')}</span></div>
+                    <div className="text-[13px] text-gray-600 mt-0.5 flex flex-wrap gap-x-1 min-w-0"><Glyph e="👤" /> {d.rfq?.contractor?.company_name_ar || d.rfq?.contractor?.full_name || L('The buyer', 'خریدار', 'المشتري')} · {(+amount.toFixed(2)).toLocaleString('en-US')} {L('SAR', 'ریال', 'ر.س')} <span className="text-gray-500">{buyerBasisTag({ ...d, supplier: sellerInfo || undefined }, locale)}</span></div>
+                    {/* round-8 UX-102 (7): the request number and the day the offer was chosen */}
+                    <div className="text-[12px] text-gray-500 mt-0.5 flex flex-wrap gap-x-1">
+                      {d.rfq && rfqRefLine(d.rfq, locale) && <span>{rfqRefLine(d.rfq, locale)}</span>}
+                      {d.accepted_at && <span>{d.rfq ? '· ' : ''}{L(`Offer chosen on ${new Date(d.accepted_at).toLocaleDateString(dloc, { day: 'numeric', month: 'long', timeZone: 'Asia/Riyadh' })}`, `آفر ${new Date(d.accepted_at).toLocaleDateString(dloc, { day: 'numeric', month: 'long', timeZone: 'Asia/Riyadh' })} کو منتخب ہوئی`, `اختير العرض في ${new Date(d.accepted_at).toLocaleDateString(dloc, { day: 'numeric', month: 'long', timeZone: 'Asia/Riyadh' })}`)}</span>}
+                    </div>
                     <div className="mt-1.5 flex items-center gap-1.5 text-[13px] font-bold" style={{ color: st.tone === '#D4A543' ? '#0B2438' : st.tone }}>
                       {/* round-5 UX-178: the stage's own tone (a cancelled deal is grey, never a gold dot) */}
                       <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: st.tone }} aria-hidden />
-                      {isMember ? memberLabel(d, st) : st.label}
+                      {isMember ? memberLabel(d) : st.label}
                     </div>
                     {late ? (
                       <div className="mt-1 inline-flex items-center gap-1 text-[12px] font-bold text-warn-text bg-warn-bg border border-warn-border rounded-full px-2 py-0.5"><Glyph e="⚠" /> {L('Past the delivery date', 'ڈیلیوری کی تاریخ گزر گئی', 'متأخر عن موعد التوصيل')}{due ? ` · ${due.toLocaleDateString(dloc, { day: 'numeric', month: 'long', timeZone: 'Asia/Riyadh' })}` : ''}</div>
                     ) : due && !d.supplier_delivered_at && !d.received_at ? (
                       <div className="mt-1 text-[12px] text-gray-600">{L('Delivery date:', 'ڈیلیوری کی تاریخ:', 'موعد التوصيل:')} {due.toLocaleDateString(dloc, { weekday: 'long', day: 'numeric', month: 'long', timeZone: 'Asia/Riyadh' })}</div>
                     ) : null}
-                    {isMember && !st.done && st.key !== 'closed' && <span className="inline-block mt-1 text-[12px] font-semibold px-2 py-0.5 rounded-full bg-gray-100 text-gray-600">{L('Managed by the account owner', 'اکاؤنٹ کا مالک سنبھالتا ہے', 'يديرها صاحب الحساب')}</span>}
                     {/* round-5 UX-178: the statement number as the deal page prints it */}
                     <div className="text-[12px] text-gray-500 mt-0.5">{L('Statement no.:', 'بیان نمبر:', 'رقم البيان:')} <span className="font-mono" dir="ltr">{statementNo(d)}</span></div>
                   </div>

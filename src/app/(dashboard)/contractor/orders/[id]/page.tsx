@@ -15,7 +15,7 @@ import { useTranslation } from '@/i18n'
 import { rfqRef, rfqDesc } from '@/lib/rfqName'
 import { storedBuyerType, rememberBuyerType } from '@/lib/buyerType'
 import AutoTr from '@/components/shared/AutoTr'
-import { cleanArName } from '@/lib/displayName'
+import { cleanArName, getPlaceLabel } from '@/lib/displayName'
 import Glyph from '@/components/shared/Glyph'
 import { paymentTermsLabel } from '@/lib/paymentTerms'
 import { showsVatBreakdown, totalLabel, vatTag, offerComparable, isIndependentOffer, sellerInvoiceLabel, sarLabel, priceBasisLabel } from '@/lib/vat'
@@ -26,7 +26,8 @@ import { waLink } from '@/lib/wa'
 import { SourceShopBadge } from '@/components/rfq/SourceShop'
 import { realtimeTopic } from '@/lib/realtimeTopic'
 import { dealStage } from '@/lib/dealStage'
-import { REVIEW_TAGS, splitReview } from '@/lib/reviews'
+import { REVIEW_TAGS, NEG_TAGS, splitReview, joinReview, reviewTagsFor } from '@/lib/reviews'
+import { deliveryDaysText } from '@/lib/dealStage'
 
 const SECTOR_I18N: Record<string, Record<string, string>> = {
   en: { civil: 'Civil', architectural: 'Architectural', electrical: 'Electrical', mechanical: 'Mechanical', equipment: 'Machinery', supply_store: 'Supply Store' },
@@ -34,12 +35,7 @@ const SECTOR_I18N: Record<string, Record<string, string>> = {
 }
 // the optional rating chips: stored in one form (Arabic) whatever the reader's language, so every
 // review reads the same on the supplier's profile (UX-141)
-// round-7 UX-133: chips for a low rating (stored in Arabic with the comment, like REVIEW_TAGS)
-const NEG_TAGS: { key: string; ar: string; en: string; ur: string }[] = [
-  { key: 'late', ar: 'تأخّر التسليم', en: 'Late delivery', ur: 'ڈیلیوری میں تاخیر' },
-  { key: 'low_quality', ar: 'جودة أقل من المتوقع', en: 'Lower quality than expected', ur: 'توقع سے کم معیار' },
-  { key: 'bad_dealing', ar: 'سوء التعامل', en: 'Poor dealing', ur: 'برا برتاؤ' },
-]
+// round-8 UX-005: the low-rating chips (NEG_TAGS) and the comment format live in src/lib/reviews.ts
 const REVIEW_MAX = 500 // round-7 UX-138
 const STAR_WORDS: Record<string, string[]> = {
   ar: ['ضعيف', 'مقبول', 'جيد', 'جيد جداً', 'ممتاز'],
@@ -60,6 +56,8 @@ export default function OrderDetailPage() {
   const SAR = sarLabel(locale) // one currency name per language (UX-140)
   const [offer, setOffer] = useState<any>(null)
   const [rfq, setRfq] = useState<any>(null)
+  // round-8 UX-060: the district / pin of the delivery place (rfq_private: owner, admin, chosen supplier)
+  const [priv, setPriv] = useState<any>(null)
   const [supplier, setSupplier] = useState<any>(null)
   const [contractor, setContractor] = useState<any>(null)
   const [loading, setLoading] = useState(true)
@@ -97,17 +95,19 @@ export default function OrderDetailPage() {
 
       // one round for everything that only needs the offer (was 6 sequential requests, ~1 s each on mobile)
       setMyId(session.user.id)
-      const [{ data: rfqData, error: rfqErr }, { data: supplierData }, { data: awardRows }, { data: rev }] = await Promise.all([
+      const [{ data: rfqData, error: rfqErr }, { data: supplierData }, { data: awardRows }, { data: rev }, { data: privData }] = await Promise.all([
         supabase.from('rfqs').select('*').eq('id', offerData.rfq_id).maybeSingle(),
         supabase.from('profiles').select('*').eq('id', offerData.supplier_id).maybeSingle(),
         // ترسية بند-بند: المواد المُرساة على هذا المورد في هذا الطلب
         supabase.from('rfq_item_awards').select('*')
           .eq('rfq_id', offerData.rfq_id).eq('supplier_id', offerData.supplier_id).order('item_index'),
         supabase.from('reviews').select('*').eq('offer_id', id).eq('reviewer_id', session.user.id).maybeSingle(),
+        supabase.from('rfq_private').select('delivery_location, delivery_geo').eq('rfq_id', offerData.rfq_id).maybeSingle(),
       ])
       if (rfqErr) throw rfqErr
       setRfq(rfqData); setSupplier(supplierData); if (supplierData) setOffer({ ...offerData, supplier: supplierData }); setAwards(awardRows || [])
       if (rev) setExistingReview(rev)
+      setPriv(privData || null)
       if (rfqData) {
         const buyer = rfqData.contractor_id === session.user.id
         const [{ data: contractorData }, { data: others }] = await Promise.all([
@@ -197,18 +197,19 @@ export default function OrderDetailPage() {
     return () => window.removeEventListener('hashchange', onHash)
   }, [id])
 
+  // round-8 UX-088: moving between a low (1–2) and a high rating clears the chips (they are different lists)
+  function pickRating(n: number) {
+    setRating(prev => { if (prev && (prev <= 2) !== (n <= 2)) setReviewTags([]); return n })
+  }
   async function submitReview() {
     if (!rating || !myId || !supplier) return
     setReviewSubmitting(true); setReviewMsg('')
     const supabase = createClient()
     // the optional chips are kept with the comment (no separate column)
     // round-7 UX-133: a 1–2 star rating offers «what was not good» chips instead of strengths
-    const low = rating <= 2
-    const tagsLine = !reviewTags.length ? ''
-      : low ? `ملاحظات: ${NEG_TAGS.filter(t => reviewTags.includes(t.key)).map(t => t.ar).join('، ')}`
-      : `نقاط القوة: ${REVIEW_TAGS.filter(t => reviewTags.includes(t.key)).map(t => t.ar).join('، ')}`
+    // round-8 UX-005: one shared format (joinReview), so an edit never repeats the chip line
     // round-7 UX-138: the comment is capped at 500 characters
-    const comment = [tagsLine, reviewComment.trim().slice(0, REVIEW_MAX)].filter(Boolean).join('\n') || null
+    const comment = joinReview(rating, reviewTags, reviewComment.trim().slice(0, REVIEW_MAX)) || null
     const saveErr = L('Could not save the rating. Check your connection and try again.', 'ریٹنگ محفوظ نہیں ہو سکی۔ کنکشن چیک کریں اور دوبارہ کوشش کریں۔', 'تعذّر حفظ التقييم. تحقّق من اتصالك وحاول مرة أخرى.')
     // «عدّل تقييمك» (round-4 UX-132): an update of the buyer's own review within 24 hours
     if (editingReview && existingReview?.id) {
@@ -371,15 +372,10 @@ export default function OrderDetailPage() {
     if (e.key === fwd || e.key === 'ArrowUp') v = Math.min(5, n + 1)
     else if (e.key === back || e.key === 'ArrowDown') v = Math.max(1, n - 1)
     if (!v) return
-    e.preventDefault(); setRating(v)
+    e.preventDefault(); pickRating(v)
     setTimeout(() => (document.getElementById(`star-${v}`) as HTMLButtonElement | null)?.focus(), 0)
   }
-  // round-7 UX-132: the delivery date is counted in working days (no Friday); after «خلال» the genitive
-  const workDaysText = (d: any, gen = false) => {
-    const n = Number(d) || 0
-    return L(`${n} working day${n === 1 ? '' : 's'} (Friday not counted)`, `${n} کاروباری دن (جمعہ کے علاوہ)`,
-      `${arCount(n, 'يوم عمل واحد', gen ? 'يومَي عمل' : 'يوما عمل', 'أيام عمل', 'يوم عمل')} (دون الجمعة)`)
-  }
+  // round-7 UX-132 / round-8 UX-090: the delivery time reads «خلال 3 أيام عمل (دون الجمعة)» (deliveryDaysText)
   const rowName = (it: any) => it.installOf ? `${L('Installation', 'تنصیب', 'تركيب')}: ${pname(it.installOf)}` : it.isExtra ? it.product_name : pname(it.product_name)
   // round-6 UX-099: quantities with thousands separators
   const qtyText = (it: any) => it.quantity === '' || it.quantity == null ? '—' : `${Number.isFinite(Number(it.quantity)) ? Number(it.quantity).toLocaleString('en-US', { maximumFractionDigits: 3 }) : it.quantity} ${getUnitLabelLong(it.unit, locale)}`
@@ -730,15 +726,23 @@ export default function OrderDetailPage() {
                 <span className="text-[#0B2438]">{!pickupDeal ? <Glyph e="🚚" /> : <Glyph e="🏪" />}</span>
                 <span>{!pickupDeal
                   ? (isBuyer ? L('Delivery to your site', 'آپ کی جگہ پر ڈیلیوری', 'التوصيل إلى موقعك') : L('Delivery to the buyer’s site', 'خریدار کی جگہ پر ڈیلیوری', 'التوصيل إلى موقع المشتري'))
-                  : independent && isBuyer ? L('The pricing agent sets the pickup place; message him to confirm the place and time.', 'وصولی کی جگہ پرائس ایجنٹ طے کرتا ہے؛ جگہ اور وقت کی تصدیق کے لیے اسے پیغام بھیجیں۔', 'مكان الاستلام يحدّده وسيط التسعير؛ راسله لتأكيد المكان والموعد.')
+                  : independent && isBuyer ? L('The pricing agent sets the pickup place; message him to confirm the place and time.', 'وصولی کی جگہ قیمت ایجنٹ طے کرتا ہے؛ جگہ اور وقت کی تصدیق کے لیے اسے پیغام بھیجیں۔', 'مكان الاستلام يحدّده وسيط التسعير؛ راسله لتأكيد المكان والموعد.')
                   : L('Pickup from the supplier’s shop', 'سپلائر کی دکان سے وصولی', 'الاستلام من محل المورد')}</span>
               </div>
-              {!pickupDeal && (rfq.city || rfq.region) && (
-                <div className="flex items-center gap-2">
-                  <span className="text-[#0B2438]"><Glyph e="📍" /></span>
-                  <span>{L('Delivery location:', 'ڈیلیوری کی جگہ:', 'موقع التسليم:')} {rfq.city || rfq.region}</span>
-                </div>
-              )}
+              {/* round-8 UX-060: the city and the district, with the pin as a map link (hidden on print) */}
+              {!pickupDeal && (rfq.city || rfq.region) && (() => {
+                const geo = String(priv?.delivery_geo || '').split(',').map((x: string) => parseFloat(x.trim()))
+                const hasGeo = geo.length === 2 && geo.every((n: number) => Number.isFinite(n))
+                const district = String(priv?.delivery_location || '').trim()
+                return (
+                  <div className="flex items-start gap-2 sm:col-span-2">
+                    <span className="text-[#0B2438] mt-0.5"><Glyph e="📍" /></span>
+                    <span>{L('Delivery location:', 'ڈیلیوری کی جگہ:', 'موقع التسليم:')} {[rfq.city ? getPlaceLabel(rfq.city, null, locale) : getPlaceLabel(null, rfq.region, locale), district].filter(Boolean).join(locale === 'en' ? ', ' : '، ')}
+                      {hasGeo && <a href={`https://www.google.com/maps?q=${geo[0]},${geo[1]}`} target="_blank" rel="noopener noreferrer" className="print:hidden ms-2 inline-flex items-center min-h-[44px] text-sm font-bold text-[#8F6820] underline">{L('View the place on the map', 'جگہ نقشے پر دیکھیں', 'عرض الموقع على الخريطة')}</a>}
+                    </span>
+                  </div>
+                )
+              })()}
               {pickupDeal && supplierPlace && !independent && (
                 <div className="flex items-center gap-2">
                   <span className="text-[#0B2438]"><Glyph e="📍" /></span>
@@ -765,7 +769,7 @@ export default function OrderDetailPage() {
               {offer.delivery_days && (
                 <div className="flex items-center gap-2">
                   <span className="text-[#0B2438]"><Glyph e="📦" /></span>
-                  <span>{pickupDeal ? L('Ready for pickup within', 'وصولی کے لیے تیار', 'جاهز للاستلام خلال') : L('Delivery time:', 'ڈیلیوری کا وقت:', 'مدة التوصيل:')} {workDaysText(offer.delivery_days, pickupDeal)}</span>
+                  <span>{pickupDeal ? L('Ready for pickup', 'وصولی کے لیے تیار', 'جاهز للاستلام') : L('Delivery time:', 'ڈیلیوری کا وقت:', 'مدة التوصيل:')} {deliveryDaysText(offer.delivery_days, locale)}</span>
                 </div>
               )}
             </div>
@@ -876,7 +880,10 @@ export default function OrderDetailPage() {
                 </div>
                 {reviewParts.tags.length > 0 && (
                   <div className="flex flex-wrap justify-center gap-1.5 mt-2">
-                    {REVIEW_TAGS.filter(t => reviewParts.tags.includes(t.key)).map(t => (
+                    {/* round-8 UX-005: «ملاحظات» chips read neutral (grey, no check mark), never red */}
+                    {(reviewParts.negative ? NEG_TAGS : REVIEW_TAGS).filter(t => reviewParts.tags.includes(t.key)).map(t => reviewParts.negative ? (
+                      <span key={t.key} className="inline-flex items-center px-3 py-1 rounded-full text-[13px] font-semibold border border-gray-300 bg-gray-50 text-gray-700">{L(t.en, t.ur, t.ar)}</span>
+                    ) : (
                       <span key={t.key} className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-[13px] font-semibold border border-[#D4A543] bg-[#D4A543]/10 text-[#071827]"><Check aria-hidden="true" className="w-3.5 h-3.5" />{L(t.en, t.ur, t.ar)}</span>
                     ))}
                   </div>
@@ -910,7 +917,7 @@ export default function OrderDetailPage() {
                     <button key={n} id={`star-${n}`} type="button" role="radio" aria-checked={rating === n}
                       tabIndex={(rating || 1) === n ? 0 : -1} onKeyDown={(e: any) => onStarKey(e, n)}
                       aria-label={`${n} / 5 · ${(STAR_WORDS[locale] || STAR_WORDS.ar)[n - 1]}`}
-                      onClick={() => setRating(n)}
+                      onClick={() => pickRating(n)}
                       onMouseEnter={() => setHoverRating(n)}
                       onMouseLeave={() => setHoverRating(0)}
                       className="w-11 h-11 grid place-items-center text-[34px] leading-none transition-transform hover:scale-110">
@@ -920,11 +927,12 @@ export default function OrderDetailPage() {
                 </div>
                 <div className="text-sm font-bold text-[#8F6820] min-h-[20px] mb-3">{(hoverRating || rating) ? (STAR_WORDS[locale] || STAR_WORDS.ar)[(hoverRating || rating) - 1] : ''}</div>
                 {/* round-6 UX-099: the chips get a visible heading */}
-                <div id="rate-tags-h" className="text-sm font-bold text-gray-800 mb-1.5">{rating > 0 && rating <= 2
+                {/* round-8 UX-088: no chips before a star is chosen */}
+                {rating > 0 && <><div id="rate-tags-h" className="text-sm font-bold text-gray-800 mb-1.5">{rating > 0 && rating <= 2
                   ? L('What was not good? (optional)', 'کیا اچھا نہیں تھا؟ (اختیاری)', 'ما الذي لم يكن جيداً؟ (اختياري)')
                   : L('What did you like? (optional)', 'آپ کو کیا اچھا لگا؟ (اختیاری)', 'ما الذي أعجبك؟ (اختياري)')}</div>
                 <div className="flex flex-wrap gap-2 mb-3" role="group" aria-labelledby="rate-tags-h">
-                  {(rating > 0 && rating <= 2 ? NEG_TAGS : REVIEW_TAGS).map(t => {
+                  {reviewTagsFor(rating).map(t => {
                     const on = reviewTags.includes(t.key)
                     return (
                       <button key={t.key} type="button" aria-pressed={on} onClick={() => setReviewTags(p => on ? p.filter(x => x !== t.key) : [...p, t.key])}
@@ -933,7 +941,7 @@ export default function OrderDetailPage() {
                       </button>
                     )
                   })}
-                </div>
+                </div></>}
                 <textarea value={reviewComment} onChange={(e: any) => setReviewComment(e.target.value.slice(0, REVIEW_MAX))} maxLength={REVIEW_MAX} aria-label={L('Comment (optional)', 'تبصرہ (اختیاری)', 'تعليق (اختياري)')} aria-describedby="rate-count"
                   className="w-full border border-gray-200 rounded-xl p-3 text-base sm:text-sm focus:border-[#D4A543] outline-none" rows={2}
                   placeholder={L('Optional comment on product quality and service...', 'پروڈکٹ کی کوالٹی اور معاملے کے بارے میں اختیاری تبصرہ...', 'تعليق اختياري عن جودة المنتج والتعامل...')} />

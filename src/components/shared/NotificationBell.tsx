@@ -45,6 +45,10 @@ export function notifGlyph(type: any, data?: any, title?: any): string {
   const t = String(type || '')
   // a settled problem is good news: a check, not the warning sign (UX-128)
   if (t === 'dispute_resolved' || kind === 'dispute_resolved') return '✅'
+  // account and catalog notices had no icon of their own (round-8 UX-124)
+  if (t === 'account_unbanned' || kind === 'account_unbanned') return '✅'
+  if (t === 'account_banned' || kind === 'account_banned') return '⚠'
+  if (t === 'material_approved' || kind === 'material_approved') return '📋'
   // deal steps stored without a kind used to show the handshake: read the step from the title (UX-128)
   if (ti && (t === 'offer_accepted' || t.includes('deal'))) {
     if (ti.includes(normalizeText('فاتورة'))) return '🧾'

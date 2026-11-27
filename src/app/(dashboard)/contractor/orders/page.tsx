@@ -12,7 +12,7 @@ import LoadError from '@/components/shared/LoadError'
 import { getNav } from '@/lib/nav'
 import { dealStage, buyerTodo } from '@/lib/dealStage'
 import { useHomeBuyer } from '@/components/buyer/useHomeBuyer'
-import { offerComparable, vatTag, sarLabel } from '@/lib/vat'
+import { offerComparable, buyerBasisTag, sarLabel } from '@/lib/vat'
 import SellerIcon from '@/components/shared/SellerIcon'
 import Glyph from '@/components/shared/Glyph'
 import { readPageCache, writePageCache } from '@/lib/pageCache'
@@ -209,10 +209,11 @@ function ContractorDeals() {
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
                       <div className="font-bold text-sm truncate" style={{ color: '#0B2438' }} dir="auto">{d.rfq ? rfqDesc(d.rfq, locale) : L('Deal', 'ڈیل', 'صفقة')}</div>
-                      {refLine && <div className="text-xs text-gray-500 mt-0.5" dir="auto">{refLine}</div>}
+                      {/* round-8 UX-102: the request number and the day the offer was chosen */}
+                      {(refLine || d.accepted_at) && <div className="text-xs text-gray-500 mt-0.5" dir="auto">{[refLine, d.accepted_at ? L(`Offer chosen on ${new Date(d.accepted_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', timeZone: 'Asia/Riyadh' })}`, `آفر ${new Date(d.accepted_at).toLocaleDateString('ur-PK-u-nu-latn', { day: 'numeric', month: 'short', timeZone: 'Asia/Riyadh' })} کو منتخب ہوئی`, `اختير العرض في ${new Date(d.accepted_at).toLocaleDateString('ar-SA-u-ca-gregory-nu-latn', { day: 'numeric', month: 'long', timeZone: 'Asia/Riyadh' })}`) : ''].filter(Boolean).join(' · ')}</div>}
                       <div className="text-xs text-gray-500 mt-1 truncate" dir="auto"><SellerIcon name="store" className="w-3.5 h-3.5" /> {d.supplier?.company_name_ar || '—'}</div>
                       {/* the amount on its own wrapping line, never cut with the supplier name (UX-071) */}
-                      <div className="text-xs text-gray-500 mt-0.5 flex flex-wrap items-baseline gap-x-1"><span className="font-bold text-sm text-[#8F6820]">{amount.toLocaleString('en-US', { maximumFractionDigits: 2 })} {SAR}</span> <span className="text-xs">({vatTag(d, locale)})</span></div>
+                      <div className="text-xs text-gray-500 mt-0.5 flex flex-wrap items-baseline gap-x-1"><span className="font-bold text-sm text-[#8F6820]">{amount.toLocaleString('en-US', { maximumFractionDigits: 2 })} {SAR}</span> <span className="text-xs">({buyerBasisTag(d, locale)})</span></div>
                       {d.extras_pending && Array.isArray(d.extra_charges) && d.extra_charges.length > 0 && (
                         <div className="text-xs font-semibold text-[#8F6820] mt-0.5">{L('+ delivery charges, waiting for the supplier’s confirmation', '+ ڈیلیوری چارجز، سپلائر کی تصدیق کا انتظار', '+ رسوم التوصيل بانتظار تأكيد المورد')}</div>
                       )}

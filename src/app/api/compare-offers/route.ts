@@ -2,11 +2,16 @@ import { NextRequest, NextResponse } from 'next/server'
 import { isAdminSession, getRouteUser } from '@/lib/supabase/server'
 import { overHourlyLimit, overGlobalDailyLimit, RATE_LIMITED_AR } from '@/lib/rateLimit'
 import { aiJson } from '@/lib/ai'
+import { liveComparableOffers, offerComparable, issuesTaxInvoice } from '@/lib/vat'
+import { arCount } from '@/lib/text'
 
 export const runtime = 'nodejs'
 export const maxDuration = 30
 
-// POST /api/compare-offers  { rfqId }
+// POST /api/compare-offers  { rfqId, locale?, home? }
+// round-8 UX-004: only the offers the request page lets the buyer choose (liveComparableOffers: not declined/withdrawn,
+// price not expired, and with a tax invoice when the request asks for one), compared on what the buyer pays.
+// round-8 UX-057: the answer follows the reader's language, in plain words for a home buyer.
 // مستشار مقارنة العروض: يوازن السعر/التوريد/التقييم/التوثيق ويوصّي بالأفضل.
 export async function POST(req: NextRequest) {
   const { supabase: supabase, user } = await getRouteUser()
@@ -16,10 +21,13 @@ export async function POST(req: NextRequest) {
   let body: any = {}
   try { body = await req.json() } catch {}
   const rfqId = String(body?.rfqId || '')
+  const locale: 'ar' | 'en' | 'ur' = body?.locale === 'en' || body?.locale === 'ur' ? body.locale : 'ar'
+  const home = body?.home === true
+  const L = (en: string, ur: string, ar: string) => (locale === 'en' ? en : locale === 'ur' ? ur : ar)
   if (!rfqId) return NextResponse.json({ error: 'rfqId required' }, { status: 400 })
 
   // تحقّق الملكية (المقاول صاحب الطلب أو الأدمن)
-  const { data: rfq } = await supabase.from('rfqs').select('id, contractor_id, product_name, items, notes').eq('id', rfqId).single()
+  const { data: rfq } = await supabase.from('rfqs').select('id, contractor_id, product_name, items, notes, vat_invoice_required').eq('id', rfqId).single()
   if (!rfq) return NextResponse.json({ error: 'RFQ not found' }, { status: 404 })
   if (rfq.contractor_id !== user.id) {
     if (!(await isAdminSession(supabase))) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
@@ -27,15 +35,21 @@ export async function POST(req: NextRequest) {
 
   const { data: offers } = await supabase
     .from('offers')
-    .select('id, total_price, delivery_days, vat_included, vat_status, item_prices, status, supplier:profiles_public(company_name_ar, rating_avg, supplier_tier, city, verification_status)')
+    .select('id, total_price, delivery_days, vat_included, vat_status, item_prices, status, price_valid_until, supplier:profiles_public(company_name_ar, rating_avg, supplier_tier, city, verification_status)')
     .eq('rfq_id', rfqId)
     .neq('status', 'rejected')
     .order('total_price', { ascending: true })
 
-  const active = (offers || []).filter(o => o.status !== 'rejected')
+  const all = (offers || []) as any[]
+  const active = liveComparableOffers(all, rfq).sort((a: any, b: any) => offerComparable(a) - offerComparable(b))
+  // offers set aside only because they come without the tax invoice this request asks for
+  const noInvoice = rfq.vat_invoice_required ? liveComparableOffers(all, { vat_invoice_required: false }).filter((o: any) => !issuesTaxInvoice(o)).length : 0
   if (active.length < 2) {
-    return NextResponse.json({ ok: true, enough: false, message: 'لا يوجد عرضان أو أكثر للمقارنة بعد.' })
+    return NextResponse.json({ ok: true, enough: false, message: L('There are not yet two or more offers to compare.', 'ابھی موازنے کے لیے دو یا زیادہ آفرز نہیں ہیں۔', 'لا يوجد عرضان أو أكثر للمقارنة بعد.') })
   }
+  const excludedNote = noInvoice
+    ? L(`We left out ${noInvoice} offer${noInvoice === 1 ? '' : 's'} without a tax invoice. `, `ہم نے ٹیکس انوائس کے بغیر ${noInvoice} ${noInvoice === 1 ? 'آفر' : 'آفرز'} شامل نہیں کیں۔ `, `استبعدنا ${arCount(noInvoice, 'عرضاً واحداً', 'عرضين', 'عروض', 'عرضاً')} لا ${noInvoice === 1 ? 'يتضمّن' : 'تتضمّن'} فاتورة ضريبية. `)
+    : ''
 
   const tierAr: Record<string, string> = { company: 'شركة معتمدة', shop: 'محل أو مؤسسة', independent: 'وسيط تسعير', manufacturer: 'شركة معتمدة', commercial: 'شركة معتمدة', local: 'محل أو مؤسسة' }
   // Supplier names are supplier-controlled text: never put them in the prompt (prompt injection,
@@ -50,10 +64,9 @@ export async function POST(req: NextRequest) {
     offers: active.map((o, i) => ({
       offer_id: o.id,
       supplier: labelOf(i),
-      total_price_sar: o.total_price,
-      delivery_days: o.delivery_days ?? null,
-      vat_included: !!o.vat_included,
-      vat_status: o.vat_status || 'registered',
+      amount_buyer_pays_sar: Math.round(offerComparable(o) * 100) / 100, // VAT-inclusive, or the final price of a seller without a VAT number
+      delivery_working_days: o.delivery_days ?? null,
+      issues_tax_invoice: issuesTaxInvoice(o),
       supplier_rating: (o.supplier as any)?.rating_avg ?? null,
       supplier_type: tierAr[(o.supplier as any)?.supplier_tier] || (o.supplier as any)?.supplier_tier || null,
       verified: (o.supplier as any)?.verification_status === 'verified',
@@ -67,10 +80,12 @@ export async function POST(req: NextRequest) {
   const ai = await aiJson({
     maxTokens: 1500,
     system: `أنت مستشار مشتريات محايد في منصة سعودية لتسعير مواد البناء. قارن عروض الموردين لطلب تسعير واحد.
-وازن بين: السعر الإجمالي (ر.س)، مدة التوريد (أيام)، تقييم المورد، نوعه (مصنع/تاجر/محلي)، توثيقه، وشمول السعر للضريبة.
+وازن بين: المبلغ الذي يدفعه المشتري (amount_buyer_pays_sar، وهو موحّد الأساس: شامل الضريبة أو سعر نهائي لمن لا يفرضها، فقارنه مباشرة)، مدة التوريد (أيام عمل)، تقييم المورد، نوعه، توثيقه، وإصداره فاتورة ضريبية.
+${locale === 'en' ? 'Write summary, reasons and advice in clear English.' : locale === 'ur' ? 'summary، وجوہات اور مشورہ سادہ اردو میں لکھیں۔' : 'اكتب الملخّص والأسباب والنصيحة بالعربية الفصحى.'}
+${home ? 'المشتري صاحب بيت وليس مختصاً: استعمل كلمات بسيطة، ولا تستعمل مصطلحات المشتريات (ترسية، أمر شراء، RFQ، توريد)؛ قل «مدة التوصيل» و«طلبك».' : ''}
 إن طلب المشتري بعض المواد مع التركيب، فالعرض الذي يشمل التركيب يتضمّن سعره في الإجمالي؛ لا تقارن عرضاً بتركيب بعرض بدونه على السعر وحده.
 أعد:
-- summary: ملخّص موجز للمقارنة بالعربية.
+- summary: ملخّص موجز للمقارنة بلغة المشتري المطلوبة.
 - best_offer_id: معرّف أفضل عرض من القائمة (الأفضل قيمةً عموماً، ليس الأرخص دائماً).
 - ranked: ترتيب العروض من الأفضل للأقل، كل عنصر { offer_id, reason } بسبب موجز.
 - advice: نصيحة عملية واحدة للمشتري.
@@ -92,18 +107,19 @@ export async function POST(req: NextRequest) {
     },
   })
 
-  if (!ai) return NextResponse.json({ ok: true, enough: true, ai: false, message: 'تحليل الذكاء الاصطناعي غير متاح حالياً (المفتاح غير مُفعّل).' })
+  if (!ai) return NextResponse.json({ ok: true, enough: true, ai: false, message: L('The smart comparison is not available right now.', 'اسمارٹ موازنہ ابھی دستیاب نہیں۔', 'المقارنة الذكية غير متاحة حالياً.') })
 
   // اربط الاسم بأفضل عرض للعرض في الواجهة
   const byId: Record<string, any> = {}
-  for (const o of active) byId[o.id] = (o.supplier as any)?.company_name_ar || 'مورد'
+  for (const o of active) byId[o.id] = (o.supplier as any)?.company_name_ar || L('Supplier', 'سپلائر', 'مورد')
   const unlabel = (s: string) => active.reduce((acc: string, o: any, i: number) => acc.split(labelOf(i)).join(byId[o.id]), String(s || ''))
   return NextResponse.json({
     ok: true, enough: true, ai: true,
-    summary: unlabel(ai.summary),
-    best_offer_id: ai.best_offer_id,
+    summary: excludedNote + unlabel(ai.summary),
+    excluded_no_invoice: noInvoice,
+    best_offer_id: byId[ai.best_offer_id] ? ai.best_offer_id : null, // never an offer the page does not offer
     best_supplier: byId[ai.best_offer_id] || null,
-    ranked: (ai.ranked || []).map((r: any) => ({ ...r, reason: unlabel(r.reason), supplier: byId[r.offer_id] || null })),
+    ranked: (ai.ranked || []).filter((r: any) => !!byId[r.offer_id]).map((r: any) => ({ ...r, reason: unlabel(r.reason), supplier: byId[r.offer_id] || null })),
     advice: unlabel(ai.advice || ''),
   })
 }

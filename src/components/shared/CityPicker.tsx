@@ -30,7 +30,8 @@ export default function CityPicker({ city, region, locale, invalid = false, onPi
   const listRef = useRef<HTMLUListElement>(null)
   const sel = findCityOption(city, region)
   const shown = sel ? cityOptionLabel(sel, locale) : city ? getPlaceLabel(city, null, locale) : ''
-  const list = open ? searchCities(q, locale) : []
+  // round-8 UX-122: with a city chosen, the empty search lists it first
+  const list = open ? (() => { const all = searchCities(q, locale); return sel && !q.trim() ? [sel, ...all.filter(c => !(c.ar === sel.ar && c.region === sel.region))] : all })() : []
   useEffect(() => {
     if (!open) return
     const off = (e: MouseEvent | TouchEvent) => { if (boxRef.current && !boxRef.current.contains(e.target as Node)) setOpen(false) }
@@ -45,7 +46,9 @@ export default function CityPicker({ city, region, locale, invalid = false, onPi
         aria-activedescendant={open && list[active] ? optId(active) : undefined}
         aria-invalid={invalid || undefined} aria-label={ariaLabel || L('City', 'شہر', 'المدينة')} autoComplete="off"
         value={open ? q : shown}
-        placeholder={!open && region && !city ? getRegionLabel(region, locale) : L('Search for your city', 'اپنا شہر تلاش کریں', 'ابحث عن مدينتك')}
+        // round-8 UX-017: never the region as a grey «value»; UX-122: the chosen city stays visible while searching
+        placeholder={open && shown ? L(`${shown}: type to search`, `${shown}: تلاش کے لیے لکھیں`, `${shown} — اكتب للبحث`) : L('Search for your city', 'اپنا شہر تلاش کریں', 'ابحث عن مدينتك')}
+        data-missing={invalid || undefined}
         onFocus={() => { setOpen(true); setQ(''); setActive(0) }}
         onClick={() => { if (!open) { setOpen(true); setQ(''); setActive(0) } }}
         onChange={e => { setQ(e.target.value); setActive(0); setOpen(true) }}
@@ -60,7 +63,7 @@ export default function CityPicker({ city, region, locale, invalid = false, onPi
       {open && (
         <ul id={listId} ref={listRef} role="listbox" aria-label={L('Cities', 'شہر', 'المدن')}
           className="absolute z-30 mt-1 w-full max-h-64 overflow-y-auto rounded-xl border border-gray-200 bg-white shadow-lg py-1">
-          {list.length === 0 && <li className="px-3 py-3 text-[13px] text-gray-500">{L('No city by this name.', 'اس نام کا کوئی شہر نہیں۔', 'لا توجد مدينة بهذا الاسم.')}</li>}
+          {list.length === 0 && <li className="px-3 py-3 text-[13px] text-gray-500">{L('We found no city by this name. Choose the city nearest to you, and write your town’s name in the «District» box.', 'اس نام کا کوئی شہر نہیں ملا۔ اپنے قریب ترین شہر کو منتخب کریں، اور اپنے قصبے کا نام «محلہ» کے خانے میں لکھیں۔', 'لم نجد مدينة بهذا الاسم. اختر أقرب مدينة إليك، واكتب اسم بلدتك في خانة «الحي».')}</li>}
           {list.map((c, i) => {
             const on = !!sel && sel.ar === c.ar && sel.region === c.region
             return (

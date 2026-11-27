@@ -105,9 +105,9 @@ export default function VerifyGateProvider({ children }: { children: React.React
 
             {emailFirst && (
               <p role="status" className="rounded-xl border border-[#D4A543]/50 bg-[#FBF5E6] p-3 text-sm text-[#071827] leading-relaxed">
-                {L('The text-message service is temporarily down. Verify your email to continue now, and verify your mobile later.',
-                  'ٹیکسٹ میسج سروس عارضی طور پر بند ہے۔ ابھی جاری رکھنے کے لیے اپنی ای میل تصدیق کریں، اور موبائل بعد میں تصدیق کریں۔',
-                  'خدمة الرسائل النصية متوقفة مؤقتاً. وثّق بريدك الإلكتروني لتتابع الآن، ووثّق جوالك لاحقاً.')}
+                {L('The text message service is temporarily down, so the mobile cannot be verified now. Verify your email to continue: it is enough for now.',
+                  'ٹیکسٹ میسج سروس عارضی طور پر بند ہے، اس لیے ابھی موبائل کی تصدیق نہیں ہو سکتی۔ جاری رکھنے کے لیے اپنی ای میل کی تصدیق کریں: ابھی یہی کافی ہے۔',
+                  'خدمة الرسائل النصية متوقفة مؤقتاً، فلا يمكن توثيق الجوال الآن. وثّق بريدك الإلكتروني لتتابع، فهو يكفي الآن.')}
               </p>
             )}
             {emailFirst ? <>
@@ -117,12 +117,7 @@ export default function VerifyGateProvider({ children }: { children: React.React
                 <EmailVerify currentEmail={email} verified={false} locale={locale} onDone={() => refresh()} />
               </section>
             )}
-            {!phoneOk && (
-              <section className="rounded-2xl border border-gray-200 p-4">
-                <div className="font-bold text-[#0B2438] mb-1">{L('Mobile number (optional for now)', 'موبائل نمبر (فی الحال اختیاری)', 'رقم الجوال (اختياري الآن)')}</div>
-                <PhoneVerify initialPhone={p.phone || ''} locale={locale} verified={false} waVerified={!!p.whatsapp_verified_at} onDone={() => refresh()} />
-              </section>
-            )}
+            {/* no mobile section while texts cannot arrive: its code would never come (round-8 UX-014) */}
             </> : <>
             {!phoneOk && (
               <section className="rounded-2xl border border-gray-200 p-4">

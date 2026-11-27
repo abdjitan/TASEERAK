@@ -7,7 +7,6 @@ import PageLoader from '@/components/shared/PageLoader'
 import LoadError from '@/components/shared/LoadError'
 import { createClient } from '@/lib/supabase/client'
 import { readPageCache, writePageCache } from '@/lib/pageCache'
-import { FEATURES } from '@/lib/features'
 import { toast } from 'sonner'
 import Logo from '@/components/shared/Logo'
 import LanguageSwitcher from '@/components/shared/LanguageSwitcher'
@@ -16,13 +15,12 @@ import { getSubCategoryLabel, getProductLabel, getUnitLabel, getRegionLabel, SUB
 import { sectionOfSub, BROWSE_SECTIONS } from '@/lib/browseCategories'
 import { rfqDisplayName } from '@/lib/rfqName'
 import AppShell from '@/components/shared/AppShell'
-import { isSubscribed, isLaunchFree } from '@/lib/plans'
 import { getNav } from '@/lib/nav'
 import { AppIcon } from '@/components/AppIcon'
 import { isExpired, formatTimeLeft, deadlineUrgency, urgencyStyle, formatDateTime } from '@/lib/deadline'
-import { offerComparable, VAT_RATE } from '@/lib/vat'
+import { offerComparable, VAT_RATE, buyerBasisTag } from '@/lib/vat'
 import { dealTotal } from '@/lib/dealTotal'
-import { tierLabel, tierAllowed, sellerKindOf, rememberSellerKind, offerNeedsSupplier, offerHasOpenDiscount, offerHasOpenQuestion, offerOutcome, outcomeLabel, agentCapText, agentCapProgress, sectorName } from '@/lib/sellers'
+import { tierLabel, tierAllowed, sellerKindOf, rememberSellerKind, offerNeedsSupplier, offerHasOpenDiscount, offerHasOpenQuestion, offerPriceExpired, offerOutcome, outcomeLabel, agentCapText, agentCapProgress, sectorName } from '@/lib/sellers'
 import { SA_CITY_COORDS, distanceKm } from '@/lib/saCityCoords'
 import { clearAllLocalDrafts } from '@/lib/localDraft'
 import Glyph from '@/components/shared/Glyph'
@@ -119,6 +117,7 @@ export default function SupplierDashboard() {
   const autoTabDone = useRef(false)
   // UX-125: back from the set-up page: say the profile is ready
   const [welcome, setWelcome] = useState(false)
+  const [withdrawnIds, setWithdrawnIds] = useState<Set<string>>(new Set())
   // round-4 UX-140: a new team member lands here after joining
   const [joined, setJoined] = useState(false)
   useEffect(() => { try { const q = new URLSearchParams(window.location.search); if (q.get('welcome') === '1') setWelcome(true); if (q.get('joined') === '1') setJoined(true); if (q.get('welcome') || q.get('joined')) window.history.replaceState(null, '', '/supplier/dashboard') } catch {} }, [])
@@ -297,6 +296,12 @@ export default function SupplierDashboard() {
       const visibleRfqs = (rfqs || []).filter((r: any) => !dismissedIds.has(r.id) && !isExpired(r.expires_at))
 
       setOpenRfqs(visibleRfqs)
+      // round-8 UX-099: a withdrawn offer kept as a draft on this device and not sent again
+      try {
+        const w = new Set<string>()
+        for (const r of visibleRfqs) if (localStorage.getItem(`tsk_offer_withdrawn_${actId}_${r.id}`) === '1' && localStorage.getItem(`tsk_offer_draft_${actId}_${r.id}`)) w.add(r.id)
+        setWithdrawnIds(w)
+      } catch {}
       setHiddenRfqs((rfqs || []).filter((r: any) => dismissedIds.has(r.id) && !isExpired(r.expires_at)))
 
       // إنذار: طلبات تنتهي مهلتها قريباً (خلال 12 ساعة) — حثّ المورد على التسعير
@@ -304,7 +309,9 @@ export default function SupplierDashboard() {
       const pricedIds = new Set((offers || []).map((o: any) => o.rfq_id))
       const expiringSoon = visibleRfqs.filter((r: any) => { if (pricedIds.has(r.id)) return false; const u = deadlineUrgency(r.expires_at); return u === 'soon' || u === 'critical' })
       if (expiringSoon.length > 0 && !snap) {
-        toast(`${expiringSoon.length} ${expiringSoon.length === 1 ? L('request ends soon, price it now', 'درخواست کی مہلت جلد ختم ہو رہی ہے، جلدی قیمت دیں', 'طلب تنتهي مهلته قريباً، فسارِع بالتسعير') : L('requests end soon, price them now', 'درخواستوں کی مہلت جلد ختم ہو رہی ہے، جلدی قیمت دیں', 'طلبات تنتهي مهلتها قريباً، فسارِع بالتسعير')}`, { duration: 7000 })
+        // round-8 UX-116: counted Arabic («طلبان»), never «2 طلبات»
+        const ne = expiringSoon.length
+        toast(L(`${ne} ${ne === 1 ? 'request ends' : 'requests end'} soon, price ${ne === 1 ? 'it' : 'them'} now`, `${ne} ${ne === 1 ? 'درخواست کی' : 'درخواستوں کی'} مہلت جلد ختم ہو رہی ہے، جلدی قیمت دیں`, `${ne === 1 ? 'طلب واحد تنتهي مهلته' : arCount(ne, 'طلب', 'طلبان تنتهي مهلتهما', 'طلبات تنتهي مهلتها', 'طلباً تنتهي مهلتها')} قريباً، فسارِع بالتسعير`), { duration: 7000 })
       }
 
       setLoading(false)
@@ -338,9 +345,12 @@ export default function SupplierDashboard() {
         }, (payload: any) => {
           const n = payload.new
           if (n?.type === 'new_rfq') {
-            toast.success(n.title || (L('New request received', 'نئی قیمت کی درخواست موصول ہوئی', 'وصلك طلب تسعير جديد')), {
+            // round-8 UX-117: a neutral toast with a gold border (not a green «success»); UX-137: optional sound + tab flash
+            alertNewRequest()
+            toast(n.title || (L('New request received', 'نئی قیمت کی درخواست موصول ہوئی', 'وصلك طلب تسعير جديد')), {
               description: n.body || undefined, duration: 15000,
-              action: { label: L('Open the request', 'درخواست کھولیں', 'افتح الطلب'), onClick: () => { const rid = n.data?.rfq_id || n.rfq_id || (String(n.link || '').match(/rfq\/([0-9a-f-]{36})/) || [])[1]; window.location.href = rid ? `/supplier/dashboard/rfq/${rid}` : '/supplier/dashboard' } },
+              style: { background: '#FFFFFF', border: '2px solid #D4A543', color: '#071827' },
+              action: { label: L('Price now', 'ابھی قیمت دیں', 'سعّر الآن'), onClick: () => { const rid = n.data?.rfq_id || n.rfq_id || (String(n.link || '').match(/rfq\/([0-9a-f-]{36})/) || [])[1]; window.location.href = rid ? `/supplier/dashboard/rfq/${rid}` : '/supplier/dashboard' } },
             })
             load()
           }
@@ -359,6 +369,45 @@ export default function SupplierDashboard() {
     })
     return () => { if (ch) supabase.removeChannel(ch) }
   }, [])
+
+  // round-8 UX-137: an optional short tone and a flashing tab title when a new request arrives (off by default, per device)
+  const SOUND_KEY = 'tsk_new_rfq_sound'
+  const [soundOn, setSoundOn] = useState(false)
+  useEffect(() => { try { setSoundOn(localStorage.getItem(SOUND_KEY) === '1') } catch {} }, [])
+  const soundRef = useRef(false)
+  useEffect(() => { soundRef.current = soundOn }, [soundOn])
+  function playTone() {
+    try {
+      const AC: any = (window as any).AudioContext || (window as any).webkitAudioContext
+      if (!AC) return
+      const ctx = new AC()
+      const o = ctx.createOscillator(), g = ctx.createGain()
+      o.type = 'sine'; o.frequency.value = 880
+      g.gain.setValueAtTime(0.0001, ctx.currentTime)
+      g.gain.exponentialRampToValueAtTime(0.25, ctx.currentTime + 0.02)
+      g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.5)
+      o.connect(g); g.connect(ctx.destination); o.start(); o.stop(ctx.currentTime + 0.55)
+      o.onended = () => { try { ctx.close() } catch {} }
+    } catch {}
+  }
+  function alertNewRequest() {
+    if (!soundRef.current) return
+    playTone()
+    if (typeof document === 'undefined' || !document.hidden) return
+    const base = document.title
+    const flash = L('New request', 'نئی درخواست', 'طلب جديد')
+    let k = 0
+    const t = setInterval(() => {
+      document.title = k++ % 2 ? base : flash
+      if (!document.hidden || k > 40) { clearInterval(t); document.title = base }
+    }, 1000)
+  }
+  function toggleSound() {
+    const v = !soundOn
+    setSoundOn(v)
+    try { localStorage.setItem(SOUND_KEY, v ? '1' : '0') } catch {}
+    if (v) playTone() // a sample, and it unlocks audio on this page
+  }
 
   // round-7 UX-044: show a hidden request again (deletes this seller's rfq_dismissals row)
   async function unhideRfq(r: any) {
@@ -465,12 +514,8 @@ export default function SupplierDashboard() {
   const hasSaved = (name: string, unit: string, region: string) => savedNames.has(`${name}__${unit}__`) || (!!region && savedNames.has(`${name}__${unit}__${region}`))
   const savedOf = (rfq: any): { have: number; of: number } => {
     const lines: any[] = Array.isArray(rfq._myLines) ? rfq._myLines : []
-    const have = lines.filter((l: any) => {
-      if (hasSaved(l.product_name, l.unit || '', rfq.region || '')) return true
-      const sub = l.sub_category || detectSubCategory(l.product_name, l.sector)
-      const subName = sub ? getSubCategoryLabel(l.sector, sub, 'ar') : ''
-      return !!subName && hasSaved(subName, l.unit || '', rfq.region || '')
-    }).length
+    // round-8 UX-025: exact matches only (the same material); a category price is offered line by line on the pricing page
+    const have = lines.filter((l: any) => hasSaved(l.product_name, l.unit || '', rfq.region || '')).length
     return { have, of: lines.length }
   }
   // round-4 UX-188: an estimated value from the market index, when known
@@ -519,7 +564,10 @@ export default function SupplierDashboard() {
       <div className="max-w-6xl mx-auto">
         {welcome && (
           <div role="status" className="mb-5 flex items-start justify-between gap-3 rounded-2xl p-4 border border-emerald-200 bg-emerald-50 text-emerald-900 animate-fade-in">
-            <span className="font-bold"><Glyph e="✅" /> {L('Your profile is saved, and you are ready to receive requests.', 'آپ کی پروفائل محفوظ ہو گئی، اور آپ درخواستیں وصول کرنے کے لیے تیار ہیں۔', 'تم حفظ ملفك، وأصبحت جاهزاً لاستقبال الطلبات.')}</span>
+            {/* round-8 UX-136: say what the setup achieved: how many open requests match now */}
+            <span className="font-bold"><Glyph e="✅" /> {toPrice.length > 0
+              ? L(`Your profile is complete. Your choices now match ${toPrice.length} open request${toPrice.length === 1 ? '' : 's'}; start pricing below.`, `آپ کی پروفائل مکمل ہو گئی۔ آپ کے انتخاب اب ${toPrice.length} کھلی درخواستوں سے مماثل ہیں، نیچے قیمت دینا شروع کریں۔`, `اكتمل ملفك. تطابق اختياراتك الآن ${arCount(toPrice.length, 'طلباً مفتوحاً واحداً', 'طلبين مفتوحين', 'طلبات مفتوحة', 'طلباً مفتوحاً')}، ابدأ بتسعيرها أدناه.`)
+              : L('Your profile is complete. We will alert you as soon as a request matching your specialties arrives.', 'آپ کی پروفائل مکمل ہو گئی۔ آپ کے تخصصات سے مماثل درخواست آتے ہی ہم آپ کو بتائیں گے۔', 'اكتمل ملفك. سننبّهك فور وصول طلب مطابق لتخصصاتك.')}</span>
             <button type="button" onClick={() => setWelcome(false)} className="w-11 h-11 -m-2 grid place-items-center shrink-0 text-emerald-700" aria-label={L('Close', 'بند کریں', 'إغلاق')}><X className="w-4 h-4" aria-hidden /></button>
           </div>
         )}
@@ -539,15 +587,17 @@ export default function SupplierDashboard() {
               <div className="space-y-2">
                 {waiting.slice(0, 5).map((o: any) => {
                   const disc = offerHasOpenDiscount(o)
+                  const priceGone = !disc && !offerHasOpenQuestion(o) && offerPriceExpired(o)
                   return (
                     <div key={o.id} className="flex flex-wrap items-center justify-between gap-2 rounded-xl bg-[#D4A543]/10 px-3 py-2">
                       <div className="min-w-0">
                         <div className="text-sm font-bold text-[#0B2438] truncate">{o.rfq ? rfqDisplayName({ ...o.rfq, title: null }, locale) : '—'}</div>
                         <div className="text-[13px] text-gray-700">{disc
                           ? L(`The buyer asked for a discount — reply by ${formatDateTime(o.reduction_deadline)}`, `خریدار نے رعایت مانگی — ${formatDateTime(o.reduction_deadline)} تک جواب دیں`, `طلب المشتري خصماً، والمهلة حتى ${formatDateTime(o.reduction_deadline)}`)
+                          : priceGone ? L('Your price commitment has ended: renew the price so your offer can still be chosen', 'قیمت کی پابندی ختم ہو گئی: قیمت کی تجدید کریں تاکہ آپ کی آفر منتخب ہو سکے', 'انتهت صلاحية سعرك، فجدّد السعر ليبقى عرضك قابلاً للاختيار')
                           : L('A question from the buyer', 'خریدار کا سوال', 'سؤال من المشتري')}</div>
                       </div>
-                      <Link href={`/supplier/dashboard/rfq/${o.rfq_id}`} className="inline-flex items-center min-h-[44px] px-4 rounded-xl text-sm font-extrabold text-[#071827] shrink-0" style={{ background: 'linear-gradient(135deg,#F5C55B,#D4A543)' }}>{L('Reply now', 'ابھی جواب دیں', 'ردّ الآن')}</Link>
+                      <Link href={`/supplier/dashboard/rfq/${o.rfq_id}`} className="inline-flex items-center min-h-[44px] px-4 rounded-xl text-sm font-extrabold text-[#071827] shrink-0" style={{ background: 'linear-gradient(135deg,#F5C55B,#D4A543)' }}>{priceGone ? L('Renew the price', 'قیمت کی تجدید کریں', 'جدّد السعر') : L('Reply now', 'ابھی جواب دیں', 'ردّ الآن')}</Link>
                     </div>
                   )
                 })}
@@ -626,7 +676,7 @@ export default function SupplierDashboard() {
                   ) : (
                     <>
                       <div className="font-extrabold text-[#071827]">{L('Add your commercial registration to start pricing', 'قیمت دینا شروع کرنے کے لیے اپنی تجارتی رجسٹریشن شامل کریں', 'أضف سجلك التجاري لتبدأ التسعير')}</div>
-                      <div className="text-[13px] text-gray-700 mt-1 leading-relaxed">{L('Companies and shops price with a valid commercial registration (10 digits starting with 7). You can browse requests meanwhile.', 'کمپنیاں اور دکانیں درست تجارتی رجسٹریشن (7 سے شروع ہونے والے 10 ہندسے) کے ساتھ قیمت دیتی ہیں۔ اس دوران آپ درخواستیں دیکھ سکتے ہیں۔', 'تسعّر الشركات والمحلات بسجل تجاري صحيح (10 أرقام تبدأ بالرقم 7)، ويمكنك تصفّح الطلبات في أثناء ذلك.')}</div>
+                      <div className="text-[13px] text-gray-700 mt-1 leading-relaxed">{L('Companies and shops price with their commercial registration number (the unified national number of the business: 10 digits starting with 7). You can browse requests meanwhile.', 'کمپنیاں اور دکانیں اپنے تجارتی رجسٹریشن نمبر (ادارے کا متحدہ قومی نمبر: 7 سے شروع ہونے والے 10 ہندسے) کے ساتھ قیمت دیتی ہیں۔ اس دوران آپ درخواستیں دیکھ سکتے ہیں۔', 'تسعّر الشركات والمحلات برقم سجلها التجاري (الرقم الوطني الموحد للمنشأة: 10 أرقام تبدأ بالرقم 7)، ويمكنك تصفّح الطلبات في أثناء ذلك.')}</div>
                       <Link href="/settings?tab=docs" className="inline-flex items-center gap-1 mt-3 min-h-[44px] px-5 rounded-xl text-sm font-extrabold text-[#071827]" style={{ background: '#D4A543' }}>
                         {L('Add the commercial registration', 'تجارتی رجسٹریشن شامل کریں', 'أضف السجل التجاري')} <span aria-hidden="true">{FWD}</span>
                       </Link>
@@ -725,32 +775,12 @@ export default function SupplierDashboard() {
                 <span className="text-2xl"><Glyph e="📈" /></span>
                 <div className="flex-1">
                   <div className="font-bold text-sm" style={{ color: '#0B2438' }}>{L('Save your prices in «My prices»', 'اپنی قیمتیں «میری قیمتیں» میں محفوظ کریں', 'احفظ أسعارك في «أسعاري»')}</div>
-                  <div className="text-xs text-gray-500">{L('They are private, and fill in when you price the same material or its category in the same unit. Tap to add →', 'یہ نجی ہیں، اور اسی مال یا اس کے زمرے کی اسی یونٹ میں قیمت دیتے وقت بھر جاتی ہیں۔ شامل کرنے کے لیے دبائیں ←', 'أسعارك خاصة بك، وتُعبَّأ عند تسعير المادة نفسها أو فئتها بالوحدة نفسها. اضغط للإضافة ←')}</div>
+                  <div className="text-xs text-gray-500">{L('They are private, and appear as a suggestion when you price the same material or its category in the same unit, so you accept it in one tap.', 'یہ نجی ہیں، اور اسی مال یا اس کے زمرے کی اسی یونٹ میں قیمت دیتے وقت تجویز کے طور پر ظاہر ہوتی ہیں، جسے آپ ایک ٹچ میں قبول کرتے ہیں۔', 'أسعارك خاصة بك، وتظهر لك اقتراحاً عند تسعير المادة نفسها أو فئتها بالوحدة نفسها، فتعتمده بلمسة.')}</div>
                 </div>
               </div>
             </Link>
           ) })
-          if (FEATURES.subscription && !isMember && profile && profile.region && !isSubscribed(profile)) banners.push({ key: 'subscription', node: isLaunchFree(launchUntil) ? (
-            <Link href="/supplier/subscription" className="block rounded-2xl p-4 hover:shadow-md transition-all" style={{ background: 'linear-gradient(120deg,#0F6E56,#0B2438)' }}>
-              <div className="flex items-center gap-3">
-                <span className="text-2xl"><Glyph e="🎉" /></span>
-                <div className="flex-1">
-                  <div className="font-bold text-sm text-white">{L('Free launch period — all features open', 'مفت لانچ مدت — تمام سہولیات کھلی ہیں', 'فترة إطلاق مجانية — كل الميزات مفتوحة')}</div>
-                  <div className="text-xs text-emerald-50">{L('Enjoy everything free now. See the future plans →', 'ابھی سب کچھ مفت استعمال کریں۔ آئندہ پلان دیکھیں ←', 'استمتع بجميع الميزات مجاناً الآن. اطّلع على الباقات القادمة ←')}</div>
-                </div>
-              </div>
-            </Link>
-          ) : (
-            <Link href="/supplier/subscription" className="block rounded-2xl p-4 hover:shadow-md transition-all" style={{ background: 'linear-gradient(120deg,#0B2438,#102E45)' }}>
-              <div className="flex items-center gap-3">
-                <span className="text-2xl"><Glyph e="⭐" /></span>
-                <div className="flex-1">
-                  <div className="font-bold text-sm text-white">{L('Upgrade to Professional', 'پروفیشنل پلان پر اپ گریڈ کریں', 'رقِّ حسابك إلى الباقة الاحترافية')}</div>
-                  <div className="text-xs text-blue-100">{L('Unlimited offers + priority visibility + full price index. Tap for plans →', 'لامحدود آفرز + ترجیحی نمائش + قیمتوں کے اشاریے تک مکمل رسائی ←', 'عروض غير محدودة + أولوية في الظهور + وصول كامل إلى مؤشّر الأسعار ←')}</div>
-                </div>
-              </div>
-            </Link>
-          ) })
+          // round-8 UX-100: no upgrade banner and no plan prices: the service is free
           if (banners.length === 0) return null
           const [first, ...rest] = banners
           return (
@@ -791,6 +821,17 @@ export default function SupplierDashboard() {
           </div>
         )}
         <EnablePush variant="nudge" />
+        {!isMember && (
+          <div className="mb-4 flex justify-end">
+            <button type="button" role="switch" aria-checked={soundOn} onClick={toggleSound}
+              className="inline-flex items-center gap-2 min-h-[44px] px-3 rounded-full border border-gray-200 bg-white text-[13px] font-semibold text-[#0B2438]">
+              <span className={`relative inline-block w-9 h-5 rounded-full transition-colors ${soundOn ? 'bg-[#D4A543]' : 'bg-gray-300'}`} aria-hidden>
+                <span className={`absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-all ${soundOn ? 'start-[1.1rem]' : 'start-0.5'}`} />
+              </span>
+              {L('Sound alert when a new request arrives', 'نئی درخواست آنے پر آواز سے اطلاع', 'تنبيه صوتي عند وصول طلب جديد')}
+            </button>
+          </div>
+        )}
 
         <div className="mb-4 sm:mb-6 animate-fade-in">
           <h1 className="text-xl sm:text-2xl font-bold" style={{ color: '#0B2438' }}>{t.welcome}{L(', ', '، ', '، ')}{companyName || profile?.full_name || L('Supplier', 'سپلائر', 'مورّد')} <Glyph e="👋" /></h1>
@@ -810,7 +851,8 @@ export default function SupplierDashboard() {
             // round-4: for a company or shop the commercial registration is REQUIRED to price (my_pricing_gate), never «optional»
             { cr: true, ok: !crRequired && (!!(profile?.commercial_registration || '').trim() || profile?.verification_status === 'verified'), w: 25, label: L('Add your commercial registration (required to price)', 'اپنا تجارتی رجسٹریشن شامل کریں (قیمت دینے کے لیے ضروری)', 'أضف سجلك التجاري (مطلوب للتسعير)'), href: '/settings?tab=docs' },
             { ok: hasSpecialties, w: 25, label: L('Add specialties', 'تخصصات شامل کریں', 'أضف تخصصاتك'), href: '/supplier/specialties' },
-            { ok: !!(profile?.latitude || profile?.national_short_address), w: 20, label: L('Add map location', 'نقشے پر مقام شامل کریں', 'حدّد موقعك'), href: '/location' },
+            // round-8 UX-039: the city with the district (or a pin / national address) is enough
+            { ok: !!(profile?.city && (profile?.district || profile?.latitude || profile?.national_short_address)), w: 20, label: L('Set your city', 'اپنا شہر مقرر کریں', 'حدّد مدينتك'), href: '/location' },
             // UX-149: the rating comes from buyers after a deal, so it is not part of «completing» the profile
           ]
           const checks = allChecks.filter((c: any) => !(isIndependent && c.cr))
@@ -819,7 +861,7 @@ export default function SupplierDashboard() {
           const missing = checks.filter((c: any) => !c.ok)
           // profile complete: nothing left to do, so the card goes away (owner request, app parity 5b2c5c6)
           if (score >= 100) return null
-          const col = score >= 70 ? '#0F6E56' : score >= 40 ? '#D4A543' : '#0B2438'
+          const col = score >= 70 ? '#9D7425' : score >= 40 ? '#D4A543' : '#0B2438' // round-8 UX-117: not a success, so no green
           return (
             <>
               <button type="button" onClick={() => setShowScoreMobile(v => !v)} aria-expanded={showScoreMobile}
@@ -1021,7 +1063,7 @@ export default function SupplierDashboard() {
                       <div key={r.id} className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-gray-200 bg-gray-50 px-4 py-3">
                         <div className="min-w-0">
                           <div className="text-sm font-bold text-[#0B2438] line-clamp-1">{cardTitle(r)}</div>
-                          {r.expires_at && <div className="text-[12px] text-gray-600">{formatTimeLeft(r.expires_at, locale)}</div>}
+                          {r.expires_at && <div className="text-[12px] text-gray-600">{L(`Pricing closes in ${formatTimeLeft(r.expires_at, 'en')}`, `قیمت دینے کی مہلت ${formatTimeLeft(r.expires_at, 'ur')} میں ختم ہوگی`, `تنتهي مهلة التسعير بعد ${formatTimeLeft(r.expires_at, 'ar', { case: 'gen' })}`)}</div>}
                         </div>
                         <button type="button" onClick={() => unhideRfq(r)}
                           className="inline-flex items-center min-h-[44px] px-4 rounded-xl text-[13px] font-bold text-white shrink-0" style={{ background: '#0B2438' }}>
@@ -1054,12 +1096,15 @@ export default function SupplierDashboard() {
                           <div className="font-bold line-clamp-2" style={{ color: '#0B2438' }}>{cardTitle(rfq)}</div>
                           <div className="flex items-center gap-2 mt-1 flex-wrap">
                             {/* UX-149: one rule for «جديد» (not opened yet), gold like the top card */}
+                            {!offeredRfqIds.has(rfq.id) && withdrawnIds.has(rfq.id) && (
+                              <span className="badge text-[12px] font-bold text-[#071827]" style={{ background: '#F5C55B' }}>{L('You have a withdrawn offer not sent yet; finish sending it', 'آپ کی ایک واپس لی گئی آفر ابھی نہیں بھیجی گئی؛ بھیجنا مکمل کریں', 'لديك عرض مسحوب لم يُرسل بعد، أكمل الإرسال')}</span>
+                            )}
                             {isFresh(rfq) && (
                               <span className="badge text-[12px] font-bold text-[#071827]" style={{ background: '#F5C55B' }}>{L('New', 'نیا', 'جديد')}</span>
                             )}
                             <span className="badge text-[12px] bg-[#0B2438]/5 text-[#0B2438]">{rfqSection(rfq)}</span>
                             {!offeredRfqIds.has(rfq.id) && (() => { const sv = savedOf(rfq); return sv.have > 0 ? (
-                              <span className="badge text-[12px] font-semibold bg-[#0F6E56]/10 text-[#0F6E56]">{sv.of > 1
+                              <span className="badge text-[12px] font-semibold bg-[#D4A543]/10 text-[#8F6820]">{sv.of > 1
                                 ? L(`Saved prices for ${sv.have} of ${sv.of}`, `${sv.of} میں سے ${sv.have} کی محفوظ قیمتیں`, `لديك أسعار محفوظة لـ ${sv.have} من ${sv.of}`)
                                 : L('You have a saved price', 'آپ کی محفوظ قیمت موجود ہے', 'لديك سعر محفوظ')}</span>
                             ) : null })()}
@@ -1073,9 +1118,11 @@ export default function SupplierDashboard() {
                             {!offeredRfqIds.has(rfq.id) && estimateOf(rfq) > 0 && (() => {
                               // round-6 UX-111: a partial estimate says how many of my materials it covers
                               const e = estimateInfo(rfq); const v = e.sum.toLocaleString('en-US')
-                              return <span className="badge text-[12px] font-semibold bg-[#0B2438]/5 text-[#0B2438]">{e.known < e.of
+                              // round-8 UX-093 (5): a short chip with square corners so it never wraps inside a pill; the detail is in the title
+                              const full = e.known < e.of
                                 ? L(`Estimated value for ${e.known} of ${e.of} materials: about ${v} SAR (what buyers pay)`, `${e.of} میں سے ${e.known} اشیاء کی اندازاً مالیت: تقریباً ${v} ریال (جو خریدار ادا کرتے ہیں)`, `قيمة تقديرية لـ ${e.known} من ${arMaterials(e.of, 'obl')}: نحو ${v} ر.س (ما يدفعه المشترون)`)
-                                : L(`Estimated value about ${v} SAR (what buyers pay)`, `اندازاً مالیت تقریباً ${v} ریال (جو خریدار ادا کرتے ہیں)`, `قيمة تقديرية نحو ${v} ر.س (ما يدفعه المشترون)`)}</span>
+                                : L(`Estimated value about ${v} SAR (what buyers pay)`, `اندازاً مالیت تقریباً ${v} ریال (جو خریدار ادا کرتے ہیں)`, `قيمة تقديرية نحو ${v} ر.س (ما يدفعه المشترون)`)
+                              return <span title={full} className="inline-flex items-center px-2 py-0.5 rounded-lg text-[12px] font-semibold bg-[#0B2438]/5 text-[#0B2438]">{L(`≈ ${v} SAR estimated`, `≈ ${v} ریال اندازاً`, `≈ ${v} ر.س تقديرياً`)}{e.known < e.of ? L(` (${e.known} of ${e.of})`, ` (${e.of} میں سے ${e.known})`, ` (${e.known} من ${e.of})`) : ''}</span>
                             })()}
                           </div>
                         </div>
@@ -1157,9 +1204,13 @@ export default function SupplierDashboard() {
               </div>
             ) : (
               <div className="space-y-3">
-                {[...shownOffers].sort((a: any, b: any) => Number(needsMe(b)) - Number(needsMe(a))).map((offer: any) => { const oc = outcomeOf(offer); return (
-                  <Link key={offer.id} href={`/supplier/dashboard/rfq/${offer.rfq_id}${offer.status === 'accepted' ? '#deal' : ''}`} className={`block bg-white rounded-2xl p-5 border shadow-sm transition-all hover:shadow-md hover:border-[#D4A543]/40 ${
+                {[...shownOffers].sort((a: any, b: any) => Number(needsMe(b)) - Number(needsMe(a))).map((offer: any) => { const oc = outcomeOf(offer); const gone = offerPriceExpired(offer); return (
+                  /* round-8 UX-031: colour, link and action follow the outcome (a cancelled deal is never green nor «open the deal») */
+                  /* round-8 UX-007: a pending offer whose price commitment ran out asks for a renewal */
+                  <Link key={offer.id} href={`/supplier/dashboard/rfq/${offer.rfq_id}${oc === 'won' ? '#deal' : ''}`} className={`block bg-white rounded-2xl p-5 border shadow-sm transition-all hover:shadow-md hover:border-[#D4A543]/40 ${
                     oc === 'won' ? 'border-emerald-200 bg-emerald-50/50' :
+                    oc === 'closed' ? 'border-red-200 bg-gray-50' :
+                    gone ? 'border-2 border-[#D4A543]' :
                     oc !== 'pending' ? 'border-gray-200 bg-gray-50' : 'border-gray-100'
                   }`}>
                     <div className="flex flex-wrap items-start justify-between gap-2 mb-2">
@@ -1176,10 +1227,13 @@ export default function SupplierDashboard() {
                       </div>
                       <div className="text-end">
                         <div className="text-lg font-bold" style={{ color: '#0B2438' }}>{(+amountOf(offer).toFixed(2)).toLocaleString('en-US')} <span className="text-xs text-gray-500">{t.sar}</span></div>
-                        <div className="text-[12px] text-gray-500">{offer.vat_status === 'not_registered' ? L('(final price)', '(حتمی قیمت)', '(سعر نهائي)') : L('incl. VAT', 'VAT سمیت', 'شامل الضريبة')}</div>
-                        <span className={`badge text-[12px] ${
-                          oc === 'won' ? 'badge-green' : oc !== 'pending' ? 'bg-gray-100 text-gray-600' : 'badge-amber'
-                        }`}>{offerStatusLabel(offer)}</span>
+                        {/* round-8 UX-020: one basis tag for the same offer on every screen (buyerBasisTag) */}
+                        <div className="text-[12px] text-gray-500">{buyerBasisTag({ ...offer, supplier: { supplier_tier: profile?.supplier_tier, provider_type: profile?.provider_type } }, locale)}</div>
+                        {gone
+                          ? <span className="badge text-[12px] font-bold bg-white text-[#8F6820] border border-[#D4A543]">{L('Your price commitment has ended', 'قیمت کی پابندی ختم ہو گئی', 'انتهت صلاحية سعرك')}</span>
+                          : <span className={`badge text-[12px] ${
+                          oc === 'won' ? 'badge-green' : oc === 'closed' ? 'bg-red-50 text-red-800 border border-red-200' : oc !== 'pending' ? 'bg-gray-100 text-gray-600' : 'badge-amber'
+                        }`}>{offerStatusLabel(offer)}</span>}
                         {/* the buyer is waiting on the supplier: a discount request or an unanswered question (same badges as the app) */}
                         {offerHasOpenDiscount(offer) && (
                           <span className="block mt-1 badge text-[12px] font-bold" style={{ background: '#D4A543', color: '#071827' }}><Glyph e="📉" /> {L('Buyer asked for a discount', 'خریدار نے رعایت مانگی', 'طلب المشتري خصماً')}</span>
@@ -1194,11 +1248,14 @@ export default function SupplierDashboard() {
                       {offer.rfq?.region && <span><Glyph e="📍" /> {getRegionLabel(offer.rfq.region, locale)}</span>}
                       {sentBy(offer) && <span className="font-semibold text-gray-500">{sentBy(offer)}</span>}
                       {/* round-6 UX-142: the buyer opened my offer (offers.buyer_viewed_at, set by mark_offer_viewed) */}
-                      {oc === 'pending' && offer.buyer_viewed_at && <span className="font-semibold text-[#0B2438]"><Glyph e="👁" /> {L(`The buyer viewed your offer · ${timeAgo(offer.buyer_viewed_at, 'en')}`, `خریدار نے آپ کی آفر دیکھی · ${timeAgo(offer.buyer_viewed_at, 'ur')}`, `اطّلع المشتري على عرضك · ${timeAgo(offer.buyer_viewed_at, 'ar')}`)}</span>}
+                      {oc === 'pending' && !gone && offer.buyer_viewed_at && <span className="font-semibold text-[#0B2438]"><Glyph e="👁" /> {L(`The buyer viewed your offer · ${timeAgo(offer.buyer_viewed_at, 'en')}`, `خریدار نے آپ کی آفر دیکھی · ${timeAgo(offer.buyer_viewed_at, 'ur')}`, `اطّلع المشتري على عرضك · ${timeAgo(offer.buyer_viewed_at, 'ar')}`)}</span>}
                     </div>
+                    {gone && <p className="mt-2 text-[13px] text-[#0B2438] leading-relaxed">{L('Renew the price so your offer can still be chosen.', 'قیمت کی تجدید کریں تاکہ آپ کی آفر منتخب ہو سکے۔', 'جدّد السعر ليبقى عرضك قابلاً للاختيار.')}</p>}
                     <div className="mt-2.5 text-[13px] font-bold flex items-center gap-1" style={{ color: '#8F6820' }}>
-                      {offer.status === 'accepted'
+                      {oc === 'won'
                         ? L('Open the deal and the invoice', 'سودا اور انوائس کھولیں', 'افتح الصفقة والفاتورة')
+                        : oc === 'closed' ? L('View the details', 'تفصیلات دیکھیں', 'عرض التفاصيل')
+                        : gone ? L('Renew the price', 'قیمت کی تجدید کریں', 'جدّد السعر')
                         : needsMe(offer) ? L('Reply now', 'ابھی جواب دیں', 'ردّ الآن') : L('View my offer', 'میری آفر دیکھیں', 'اطّلع على عرضي')} <span aria-hidden="true">{FWD}</span>
                     </div>
                   </Link>

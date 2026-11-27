@@ -327,6 +327,12 @@ html[dir="ltr"] #taseerak-landing .hero::after {
     linear-gradient(270deg, rgba(5,11,18,.08) 0%, rgba(5,11,18,.2) 30%, rgba(5,11,18,.52) 61%, rgba(5,11,18,.76) 100%),
     linear-gradient(0deg, rgba(5,11,18,.4) 0%, rgba(5,11,18,.08) 36%, rgba(5,11,18,0) 74%);
 }
+/* phones: the darker overlay again (the rule above used to cancel it) and a soft text shadow (round-8 UX-126) */
+@media (max-width: 560px) {
+  #taseerak-landing .hero::after,
+  html[dir="ltr"] #taseerak-landing .hero::after { background: linear-gradient(180deg,rgba(5,11,18,.46),rgba(5,11,18,.44) 36%,rgba(5,11,18,.7) 100%); }
+  #taseerak-landing .hero h1, #taseerak-landing .hero p.lead, #taseerak-landing .hero .eyebrow { text-shadow: 0 2px 12px rgba(5,11,18,.55); }
+}
 /* «illustrative example» is a label, not a live signal: neutral, no green pulse */
 #taseerak-landing .lc-live { color: #48596e; background: #eef2f6; }
 #taseerak-landing .lc-live .pulse { background: #728196; animation: none; }

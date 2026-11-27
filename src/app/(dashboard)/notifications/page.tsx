@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { timeAgo, dayBucket, dayBucketLabel, dateLocale, type DayBucket } from '@/lib/text'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
@@ -78,13 +78,37 @@ export default function NotificationsPage() {
   }, [uid])
 
   // delete one notice or all of them, as in the app (round-6 UX-124; RLS «Users delete own notifications»)
-  async function removeOne(id: string) {
-    const prev = notifs
-    setNotifs(list => list.filter(x => x.id !== id))
+  // one tap hides it at once with «تراجع» for 5 seconds; the row is deleted only after that (round-8 UX-133)
+  const [undo, setUndo] = useState<{ n: any; index: number } | null>(null)
+  const undoTimer = useRef<any>(null)
+  const pendingDel = useRef<string | null>(null)
+  async function commitDelete(id: string) {
+    pendingDel.current = null
     const { error } = await createClient().from('notifications').delete().eq('id', id)
-    if (error) { setNotifs(prev); notify(L('Could not delete the notification. Try again.', 'اطلاع حذف نہیں ہو سکی۔ دوبارہ کوشش کریں۔', 'تعذّر حذف الإشعار. حاول مرة أخرى.'), { tone: 'error' }); return }
-    if (uid) writePageCache('notifs_' + uid, { role, list: prev.filter(x => x.id !== id) })
+    if (error) { notify(L('Could not delete the notification. Try again.', 'اطلاع حذف نہیں ہو سکی۔ دوبارہ کوشش کریں۔', 'تعذّر حذف الإشعار. حاول مرة أخرى.'), { tone: 'error' }); load(); return }
+    if (uid) setNotifs(list => { writePageCache('notifs_' + uid, { role, list }); return list })
   }
+  function removeOne(id: string) {
+    // a previous delete still waiting is done now
+    if (undoTimer.current) { clearTimeout(undoTimer.current); undoTimer.current = null }
+    if (pendingDel.current) commitDelete(pendingDel.current)
+    const index = notifs.findIndex(x => x.id === id)
+    if (index < 0) return
+    setUndo({ n: notifs[index], index })
+    setNotifs(list => list.filter(x => x.id !== id))
+    pendingDel.current = id
+    undoTimer.current = setTimeout(() => { undoTimer.current = null; setUndo(null); commitDelete(id) }, 5000)
+  }
+  function undoRemove() {
+    if (!undo) return
+    if (undoTimer.current) { clearTimeout(undoTimer.current); undoTimer.current = null }
+    pendingDel.current = null
+    const { n, index } = undo
+    setNotifs(list => { const next = list.slice(); next.splice(Math.min(index, next.length), 0, n); return next })
+    setUndo(null)
+  }
+  // leaving the page within the 5 seconds still deletes it
+  useEffect(() => () => { if (undoTimer.current) clearTimeout(undoTimer.current); if (pendingDel.current) createClient().from('notifications').delete().eq('id', pendingDel.current).then(() => {}, () => {}) }, [])
   async function removeAll() {
     if (!uid) return
     if (!(await askConfirm(L('Delete all notifications? This cannot be undone.', 'تمام اطلاعات حذف کریں؟ یہ واپس نہیں ہو سکتا۔', 'حذف كل الإشعارات؟ لا يمكن التراجع عن ذلك.'), { danger: true, okLabel: L('Delete all', 'سب حذف کریں', 'حذف الكل') }))) return
@@ -169,6 +193,12 @@ export default function NotificationsPage() {
                 </div>
               </section>
             ))}
+          </div>
+        )}
+        {undo && (
+          <div role="status" className="fixed bottom-[calc(16px+env(safe-area-inset-bottom))] inset-x-4 sm:inset-x-auto sm:start-1/2 sm:-translate-x-1/2 rtl:sm:translate-x-1/2 z-50 flex items-center justify-between gap-4 rounded-2xl bg-[#071827] text-white px-4 py-2 shadow-xl max-w-md">
+            <span className="text-sm">{L('Notification deleted', 'اطلاع حذف ہو گئی', 'حُذف الإشعار')}</span>
+            <button type="button" onClick={undoRemove} className="min-h-[44px] px-3 rounded-xl text-sm font-bold text-[#F5C55B] hover:bg-white/10">{L('Undo', 'واپس لیں', 'تراجع')}</button>
           </div>
         )}
       </div>

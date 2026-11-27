@@ -76,7 +76,10 @@ export function priceBasisLabel(o: any, locale: string): string {
 }
 
 // The short basis tag after a buyer-facing amount: «شامل الضريبة», or «سعر نهائي» (no VAT number, no VAT added).
+// round-8 UX-020: a seller without a VAT number (vat_status = not_registered, agents included) always reads
+// «سعر نهائي (بلا ضريبة)»; only a legacy agent offer ('supplier_invoice') keeps the bare «سعر نهائي».
 export function buyerBasisTag(o: any, locale: string): string {
+  if (vatStatusOf(o) === 'not_registered') return locale === 'en' ? 'final price (no VAT)' : locale === 'ur' ? 'حتمی قیمت (VAT کے بغیر)' : 'سعر نهائي (بلا ضريبة)'
   if (!showsVatBreakdown(o) && isIndependentOffer(o)) return locale === 'en' ? 'final price' : locale === 'ur' ? 'حتمی قیمت' : 'سعر نهائي'
   if (!showsVatBreakdown(o)) return locale === 'en' ? 'final price (no VAT)' : locale === 'ur' ? 'حتمی قیمت (VAT کے بغیر)' : 'سعر نهائي (بلا ضريبة)'
   return locale === 'en' ? 'incl. VAT' : locale === 'ur' ? 'VAT سمیت' : 'شامل الضريبة'
@@ -97,6 +100,8 @@ export function sellerInvoiceLabel(o: any, locale: string, who: 'buyer' | 'suppl
 // What the seller is asked to do before confirming delivery (UX-025 / UX-127).
 // Round-4 UX-181: the upload button is in the invoice step (above delivery), never «below».
 export function invoiceGateText(o: any, locale: string): string {
+  // round-8 UX-021: an agent who said the source shop is VAT-registered asks the shop for a TAX invoice
+  if (isIndependentOffer(o) && vatStatusOf(o) === 'registered') return locale === 'en' ? 'Next step: ask the source shop for a tax invoice in the buyer’s name (with the buyer’s VAT number if it shows below) at your offer’s price, upload it in the invoice step, then confirm delivery.' : locale === 'ur' ? 'اگلا قدم: ماخذ دکان سے خریدار کے نام (اور اگر نیچے نظر آئے تو اس کے VAT نمبر کے ساتھ) اور اپنی آفر کی قیمت پر ٹیکس انوائس لیں، اسے انوائس کے مرحلے میں اپ لوڈ کریں، پھر ڈیلیوری کی تصدیق کریں۔' : 'الخطوة التالية: اطلب من المحل المصدر فاتورة ضريبية باسم المشتري (وبرقمه الضريبي إن ظهر أدناه) وبسعر عرضك، ثم ارفعها في خطوة الفاتورة وأكّد التسليم.'
   if (isIndependentOffer(o)) return locale === 'en' ? 'Next step: ask the source shop for an invoice in the buyer’s name at your offer’s price, upload it in the invoice step, then confirm delivery.' : locale === 'ur' ? 'اگلا قدم: ماخذ دکان سے خریدار کے نام اور اپنی آفر کی قیمت پر انوائس لیں، اسے انوائس کے مرحلے میں اپ لوڈ کریں، پھر ڈیلیوری کی تصدیق کریں۔' : 'الخطوة التالية: اطلب من المحل المصدر فاتورة باسم المشتري وبسعر عرضك، ثم ارفعها في خطوة الفاتورة وأكّد التسليم.'
   if (showsVatBreakdown(o)) return locale === 'en' ? 'Upload your tax invoice in the invoice step first, then confirm delivery.' : locale === 'ur' ? 'پہلے انوائس کے مرحلے میں اپنی ٹیکس انوائس اپ لوڈ کریں، پھر ڈیلیوری کی تصدیق کریں۔' : 'ارفع فاتورتك الضريبية في خطوة الفاتورة أولاً، ثم أكّد التسليم.'
   return locale === 'en' ? 'Upload your sales invoice in the invoice step first, then confirm delivery.' : locale === 'ur' ? 'پہلے انوائس کے مرحلے میں اپنی سیلز انوائس اپ لوڈ کریں، پھر ڈیلیوری کی تصدیق کریں۔' : 'ارفع فاتورة البيع في خطوة الفاتورة أولاً، ثم أكّد التسليم.'

@@ -27,7 +27,7 @@ function askedPhone(): boolean { try { return new URLSearchParams(window.locatio
 
 const txt = {
   ar: { welcome:'أهلاً بعودتك', sub:'سجّل دخولك للمتابعة إلى حسابك', email:'البريد الإلكتروني', password:'كلمة المرور', login:'تسجيل الدخول', logging:'جارٍ الدخول...', noAccount:'ليس لديك حساب؟', register:'أنشئ حساباً جديداً', error:'البريد أو كلمة المرور غير صحيحة', copyright:'© 2026 تسعيرك · منصة التسعير والتوريد لمواد البناء', s_auth:'جارٍ تسجيل الدخول…', s_role:'الخطوة 2/3: جارٍ قراءة الصلاحية…', s_go:'جارٍ فتح حسابك…', err_timeout:'انتهت المهلة دون استجابة. قد يكون اتصالك بالإنترنت يحجب الخادم — جرّب شبكة أخرى (بيانات الجوال مثلاً) ثم أعد المحاولة.', brandH:'طلب تسعير واحد، ويتنافس عليه الموردون.', brandP:'سجّل دخولك وتابع طلباتك وعروضك في مكان واحد، من الطلب حتى الاستلام.', l1:'يظهر بجانب كل مورد توثيق سجلّه التجاري', l2:'قارن العروض واختر الأنسب لكل مادة', l3:'اكتب قائمة موادك أو صوّرها، ونرسلها إلى الموردين المناسبين', remember:'تذكّرني', forgot:'نسيت كلمة المرور؟', or:'أو', home:'الرئيسية', captchaErr:'يرجى إكمال خطوة التحقق (لستُ روبوتاً) ثم إعادة المحاولة.' },
-  en: { welcome:'Welcome back', sub:'Sign in to continue to your account', email:'Email Address', password:'Password', login:'Sign In', logging:'Signing in...', noAccount:"Don't have an account?", register:'Create a new account', error:'Invalid email or password', copyright:'© 2026 Taseerak · Procurement platform for construction materials', s_auth:'Signing in…', s_role:'Step 2/3: reading your role…', s_go:'Opening your account…', err_timeout:'Timed out with no response. Your network may be blocking the server — try another network (e.g. mobile data) and retry.', brandH:'One request, and suppliers compete for it.', brandP:'Sign in and track your requests and offers in one place, from request to delivery.', l1:'See whether each supplier’s commercial registration is verified', l2:'Compare offers and choose the best one for each item', l3:'Write or photograph your materials list; we send it to the right suppliers', remember:'Remember me', forgot:'Forgot password?', or:'or', home:'Home', captchaErr:'Please complete the “I am human” check and try again.' },
+  en: { welcome:'Welcome back', sub:'Sign in to continue to your account', email:'Email Address', password:'Password', login:'Sign In', logging:'Signing in...', noAccount:"Don't have an account?", register:'Create a new account', error:'Invalid email or password', copyright:'© 2026 Taseerak · Price requests for building and home materials', s_auth:'Signing in…', s_role:'Step 2/3: reading your role…', s_go:'Opening your account…', err_timeout:'Timed out with no response. Your network may be blocking the server — try another network (e.g. mobile data) and retry.', brandH:'One request, and suppliers compete for it.', brandP:'Sign in and track your requests and offers in one place, from request to delivery.', l1:'See whether each supplier’s commercial registration is verified', l2:'Compare offers and choose the best one for each item', l3:'Write or photograph your materials list; we send it to the right suppliers', remember:'Remember me', forgot:'Forgot password?', or:'or', home:'Home', captchaErr:'Please complete the “I am human” check and try again.' },
   ur: { welcome:'خوش آمدید', sub:'اپنے اکاؤنٹ تک جاری رکھنے کے لیے سائن ان کریں', email:'ای میل', password:'پاسورڈ', login:'سائن ان', logging:'سائن ان ہو رہا ہے...', noAccount:'اکاؤنٹ نہیں ہے؟', register:'نیا اکاؤنٹ بنائیں', error:'غلط ای میل یا پاسورڈ', copyright:'© ۲۰۲۶ تسعیرک · تعمیراتی سامان کا پلیٹ فارم', s_auth:'سائن ان ہو رہا ہے…', s_role:'مرحلہ 2/3: کردار پڑھا جا رہا ہے…', s_go:'آپ کا اکاؤنٹ کھل رہا ہے…', err_timeout:'کوئی جواب نہیں ملا۔ ہو سکتا ہے آپ کا نیٹ ورک سرور کو بلاک کر رہا ہو — دوسرا نیٹ ورک آزمائیں۔', brandH:'ایک درخواست، اور سپلائرز مقابلہ کرتے ہیں۔', brandP:'سائن ان کریں اور اپنی درخواستیں اور پیشکشیں ایک جگہ دیکھیں۔', l1:'دیکھیں کہ ہر سپلائر کا تجارتی رجسٹریشن تصدیق شدہ ہے یا نہیں', l2:'آفرز کا موازنہ کریں اور ہر چیز کے لیے سب سے موزوں چنیں', l3:'اپنے سامان کی فہرست لکھیں یا تصویر لیں؛ ہم اسے صحیح سپلائرز تک بھیجتے ہیں', remember:'مجھے یاد رکھیں', forgot:'پاسورڈ بھول گئے؟', or:'یا', home:'ہوم', captchaErr:'براہ کرم تصدیق مکمل کریں (میں روبوٹ نہیں ہوں) اور دوبارہ کوشش کریں۔' },
 }
 
@@ -47,18 +47,27 @@ function LoginForm() {
   }
   const [phoneOn, setPhoneOn] = useState<boolean | null>(PHONE_READY ? null : false)
   const [mode, setMode] = useState<'email' | 'phone'>(PHONE_READY && !askedEmail ? 'phone' : 'email')
+  // texts cannot arrive (sms_is_down): the page reads as «start free», never «welcome back», and offers
+  // no phone code (round-8 UX-001 / UX-013)
+  const [smsDown, setSmsDown] = useState(false)
   useEffect(() => {
-    if (!PHONE_READY) return
     let done = false
-    const settle = (on: boolean, smsDown: boolean) => {
+    const settle = (on: boolean, down: boolean) => {
+      setSmsDown(down)
       if (done) return
       done = true
       setPhoneOn(on)
-      if (!on || smsDown) setMode('email')
+      if (!on || (down && !askedPhone())) setMode('email')
+    }
+    if (!PHONE_READY) {
+      // phone sign-in is off on this build, but the outage still decides the wording
+      if (smsDownCached()) setSmsDown(true)
+      createClient().rpc('sms_is_down').then(({ data }: any) => { setSmsDown(data === true); try { sessionStorage.setItem(SMS_DOWN_KEY, data === true ? '1' : '0') } catch {} }, () => {})
+      return
     }
     // this browser session already knows the switches: show the form at once, refresh quietly
     const known = cachedFlag()
-    if (known !== null) settle(known, smsDownCached() && !askedPhone())
+    if (known !== null) settle(known, smsDownCached())
     const timer = setTimeout(() => settle(cachedFlag() ?? true, smsDownCached()), 1500)
     const sb = createClient()
     Promise.all([sb.rpc('app_flags'), sb.rpc('sms_is_down')]).then(([f, d]: any[]) => {
@@ -66,13 +75,15 @@ function LoginForm() {
       const down = d?.data === true
       try { sessionStorage.setItem(PHONE_FLAG_KEY, on ? '1' : '0'); sessionStorage.setItem(SMS_DOWN_KEY, down ? '1' : '0') } catch {}
       clearTimeout(timer)
-      settle(on, down && !askedPhone())
+      settle(on, down)
     }, () => { clearTimeout(timer); settle(cachedFlag() ?? true, smsDownCached()) })
     return () => clearTimeout(timer)
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
   // Phone sign-in off and the visitor did not ask for the email sign-in: most arrive from «Start now», so
   // open on «start free» with a clear «create an account» button; the «welcome back» form is one tap away (UX-003)
   const [emailFormOpen, setEmailFormOpen] = useState(askedEmail)
+  // the tab title follows the chosen language (round-8 UX-126)
+  useEffect(() => { try { document.title = L('Sign in · Taseerak', 'سائن اِن · تسعیرک', 'الدخول · تسعيرك') } catch {} }, [locale]) // eslint-disable-line react-hooks/exhaustive-deps
   const nextParam = searchParams.get('next') || ''
   const registerHref = nextParam ? `/register?next=${encodeURIComponent(nextParam)}` : '/register'
   // why the visitor is here when a link sent them (UX-097)
@@ -81,10 +92,12 @@ function LoginForm() {
   const pickedPack = packById(nextQuery.get('pack'))
   const pickedSection = BROWSE_SECTIONS.find(s => s.key === nextQuery.get('section')) || null
   const pickedLabel = pickedPack ? L(pickedPack.en, pickedPack.ur, pickedPack.ar) : pickedSection ? L(pickedSection.en, pickedSection.ur, pickedSection.ar) : ''
-  // «with your mobile number» only while the phone sign-in is on; otherwise the email account (round-6 UX-025)
-  const viaEn = phoneOn ? 'with your mobile number' : 'with your email'
-  const viaUr = phoneOn ? 'اپنے موبائل نمبر سے' : 'اپنی ای میل سے'
-  const viaAr = phoneOn ? 'برقم جوالك' : 'بالبريد الإلكتروني'
+  // «with your mobile number» only while the phone sign-in is on AND texts arrive; otherwise the email
+  // account (round-6 UX-025, round-8 UX-001)
+  const viaPhone = !!phoneOn && !smsDown
+  const viaEn = viaPhone ? 'with your mobile number' : 'with your email'
+  const viaUr = viaPhone ? 'اپنے موبائل نمبر سے' : 'اپنی ای میل سے'
+  const viaAr = viaPhone ? 'برقم جوالك' : 'بالبريد الإلكتروني'
   const nextNote = !nextParam ? ''
     // a visitor who built a list on the request page and pressed «إرسال» (round-4 UX-056)
     : /^\/contractor\/rfq\/quick\?(.*&)?guest=1/.test(nextParam)
@@ -100,7 +113,9 @@ function LoginForm() {
   const [otpStep, setOtpStep] = useState<'phone' | 'code' | 'name'>('phone')
   const otpBusy = mode === 'phone' && otpStep !== 'phone'
   const [bannedErr, setBannedErr] = useState(false)
-  const intro = mode === 'email' && !phoneOn && !emailFormOpen
+  const intro = mode === 'email' && (!phoneOn || smsDown) && !emailFormOpen
+  // the phone tab is hidden during the outage, unless the visitor asked for it with ?m=phone (round-8 UX-013)
+  const showTabs = !!phoneOn && (!smsDown || askedPhone())
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [showPass, setShowPass] = useState(false)
@@ -291,7 +306,7 @@ function LoginForm() {
                 With phone sign-in off, a new visitor sees «start free» + «create an account», never «welcome back» first (UX-003) */}
             {!otpBusy && <>
             <h1 className="text-[26px] font-bold text-navy mb-1">{mode === 'phone' ? L('Start with your mobile number', 'اپنے موبائل نمبر سے شروع کریں', 'ابدأ برقم جوالك') : intro ? L('Start free', 'مفت شروع کریں', 'ابدأ مجاناً') : t.welcome}</h1>
-            <p className="text-ink-2 text-sm mb-5">{mode === 'phone' ? L('We will send you a verification code by text message. If your number is new, we create a free buyer account for you.', 'ہم آپ کو ٹیکسٹ میسج سے تصدیقی کوڈ بھیجیں گے۔ اگر آپ کا نمبر نیا ہے تو ہم آپ کے لیے مفت خریدار اکاؤنٹ بنا دیں گے۔', 'سنرسل إليك رمز تحقق برسالة نصية. إن كان رقمك جديداً أنشأنا لك حساب مشتري مجاناً.') : intro ? L('Create your account with your email.', 'ای میل سے اپنا اکاؤنٹ بنائیں۔', 'أنشئ حسابك بالبريد الإلكتروني.') : t.sub}</p>
+            <p className="text-ink-2 text-sm mb-5">{mode === 'phone' && smsDown ? L('The text message service is temporarily down, so sign in or create your account with your email.', 'ٹیکسٹ میسج سروس عارضی طور پر بند ہے، اس لیے اپنی ای میل سے سائن اِن کریں یا اکاؤنٹ بنائیں۔', 'خدمة الرسائل النصية متوقفة مؤقتاً، فادخل أو أنشئ حسابك بالبريد الإلكتروني.') : mode === 'phone' ? L('We will send you a verification code by text message. If your number is new, we create a free buyer account for you.', 'ہم آپ کو ٹیکسٹ میسج سے تصدیقی کوڈ بھیجیں گے۔ اگر آپ کا نمبر نیا ہے تو ہم آپ کے لیے مفت خریدار اکاؤنٹ بنا دیں گے۔', 'سنرسل إليك رمز تحقق برسالة نصية. إن كان رقمك جديداً أنشأنا لك حساب مشتري مجاناً.') : intro ? (smsDown ? L('Create your account with your email, or sign in if you already have one.', 'ای میل سے اپنا اکاؤنٹ بنائیں، یا اگر اکاؤنٹ ہے تو سائن اِن کریں۔', 'أنشئ حسابك بالبريد الإلكتروني، أو سجّل الدخول إن كان لديك حساب.') : L('Create your account with your email.', 'ای میل سے اپنا اکاؤنٹ بنائیں۔', 'أنشئ حسابك بالبريد الإلكتروني.')) : t.sub}</p>
             </>}
 
             {nextNote && !otpBusy && (
@@ -302,7 +317,7 @@ function LoginForm() {
             )}
 
             {/* two ways in, side by side at the top, while phone sign-in is on (UX-130) */}
-            {phoneOn && !otpBusy && (
+            {showTabs && !otpBusy && (
               <div className="grid grid-cols-2 gap-1 p-1 rounded-xl mb-5" style={{ background: '#EEF2F6' }} role="tablist" aria-label={L('How to sign in', 'سائن اِن کا طریقہ', 'طريقة الدخول')}>
                 {([['phone', L('Mobile number (buyers)', 'موبائل نمبر (خریدار)', 'برقم الجوال (للمشترين)')], ['email', L('Email', 'ای میل', 'بالبريد الإلكتروني')]] as const).map(([m, label]) => (
                   <button key={m} type="button" role="tab" aria-selected={mode === m}

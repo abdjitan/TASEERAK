@@ -190,7 +190,7 @@ export default function ForgotPasswordPage() {
               {!signedIn && <div className="mt-5 rounded-xl bg-[#F5F7FA] border border-gray-200 p-3 text-sm text-gray-700">
                 <span className="font-bold text-[#0B2438]">{t.phoneQ}</span> {smsDown ? t.phoneADown : t.phoneA}{' '}
                 {smsDown
-                  ? <Link href="/support?topic=email" className="inline-flex items-center min-h-[44px] font-bold hover:underline" style={{ color: '#8F6820' }}>{t.supportBtn}</Link>
+                  ? <Link href="/support?topic=login" className="inline-flex items-center min-h-[44px] font-bold hover:underline" style={{ color: '#8F6820' }}>{t.supportBtn}</Link>
                   : <Link href="/login" className="inline-flex items-center min-h-[44px] font-bold hover:underline" style={{ color: '#8F6820' }}>{t.phoneBtn}</Link>}
               </div>}
               <p className="text-center text-sm text-gray-600 mt-3">

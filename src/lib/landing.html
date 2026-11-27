@@ -1,3 +1,4 @@
+<style>#taseerak-landing .hero-packs-m{display:none}@media (max-width:759px){#taseerak-landing .hero-packs-m{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:14px 0 4px;font-size:14px;color:#E8EDF2}#taseerak-landing .hero-packs-m a{display:inline-flex;align-items:center;min-height:44px;padding:0 14px;border-radius:999px;border:1px solid rgba(245,197,91,.55);color:#fff;font-weight:700;text-decoration:none;background:rgba(7,24,39,.35)}}</style>
 <noscript><style>#taseerak-landing .reveal{opacity:1!important;transform:none!important}</style></noscript>
 <!-- ============ NAVBAR ============ -->
 <header class="nav">
@@ -116,6 +117,14 @@
           <span data-i18n="hero_cta2">كيف يعمل؟</span>
         </a>
       </div>
+      <!-- phones: the home packs one tap from the top, not two screens down (round-8 UX-135) -->
+      <nav class="hero-packs-m hero-in d3">
+        <span data-i18n="hero_packs_or">أو ابدأ من:</span>
+        <a href="/contractor/rfq/quick?pack=bathroom" data-i18n="pk_bathroom">تجديد حمّام</a>
+        <a href="/contractor/rfq/quick?pack=paint" data-i18n="pk_paint">دهان شقة</a>
+        <a href="/contractor/rfq/quick?pack=ac" data-i18n="pk_ac">تكييف غرفة</a>
+        <a href="#packs" data-i18n="hero_packs_more">المزيد</a>
+      </nav>
       <p class="hero-seller hero-in d3"><span data-i18n="hero_seller_q">صاحب محل أو مورد مواد؟</span> <a href="/join" class="seller-pill" data-i18n="hero_seller_cta">سجّل كمورد</a></p>
 
       <div class="hero-trust hero-in d4">
@@ -134,7 +143,7 @@
         <div class="lc-head">
           <div class="lc-rfq">
             <div class="lc-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 21h16"/><path d="M7 21v-6h10v6"/><path d="M12 15V8"/><path d="M8 8h8"/><path d="M15 8V5h3"/></svg></div>
-            <div><div class="t1" data-i18n="lc_title">خلاط مغسلة</div><div class="t2" data-i18n="lc_sub">طلب تسعير · الحمّام والسباكة</div></div>
+            <div><div class="t1" data-i18n="lc_title">خلاط مغسلة</div><div class="t2" data-i18n="lc_sub">طلب تسعير · السباكة والمياه</div></div>
           </div>
           <span class="lc-live"><span class="pulse"></span><span data-i18n="lc_live">مثال توضيحي</span></span>
         </div>
@@ -262,28 +271,28 @@
         <span class="cat-body"><h3 data-i18n="cat_build">البناء والإنشاءات</h3><p data-i18n="cat_build_p">أسمنت، حديد، بلوك، خرسانة، عوازل.</p></span>
       </a>
       <a class="cat-card reveal d1" href="/contractor/rfq/quick?section=finishing" style="--img:url('/images/sections/finishing.webp')">
-        <span class="cat-body"><h3 data-i18n="cat_finish">الدهانات والتشطيبات</h3><p data-i18n="cat_finish_p">بلاط، رخام، دهانات، جبس، أبواب.</p></span>
+        <span class="cat-body"><h3 data-i18n="cat_finish">التشطيبات</h3><p data-i18n="cat_finish_p">بلاط، رخام، دهانات، جبس، أبواب.</p></span>
       </a>
       <a class="cat-card reveal d2" href="/contractor/rfq/quick?section=electrical" style="--img:url('/images/sections/lighting.webp')">
         <span class="cat-body"><h3 data-i18n="cat_light">الكهرباء والإنارة</h3><p data-i18n="cat_light_p">ثريات، سبوتات، إنارة خارجية وديكور.</p></span>
       </a>
       <a class="cat-card reveal d3" href="/contractor/rfq/quick?section=plumbing" style="--img:url('/images/sections/plumbing.webp')">
-        <span class="cat-body"><h3 data-i18n="cat_bath">الحمّام والسباكة</h3><p data-i18n="cat_bath_p">خلاطات، أدوات صحية، مواسير، سخانات.</p></span>
+        <span class="cat-body"><h3 data-i18n="cat_bath">السباكة والمياه</h3><p data-i18n="cat_bath_p">خلاطات، أدوات صحية، مواسير، سخانات.</p></span>
       </a>
       <a class="cat-card reveal" href="/contractor/rfq/quick?section=hvac_fire" style="--img:url('/images/sections/hvac_fire.webp')">
-        <span class="cat-body"><h3 data-i18n="cat_hvac">التكييف والحريق</h3><p data-i18n="cat_hvac_p">مكيفات، دكت، مراوح، رشاشات وإطفاء.</p></span>
+        <span class="cat-body"><h3 data-i18n="cat_hvac">التكييف والتهوية والحريق</h3><p data-i18n="cat_hvac_p">مكيفات، دكت، مراوح، رشاشات وإطفاء.</p></span>
       </a>
       <a class="cat-card reveal d1" href="/contractor/rfq/quick?section=furniture" style="--img:url('/images/sections/furniture.webp')">
         <span class="cat-body"><h3 data-i18n="cat_furn">الأثاث والديكور</h3><p data-i18n="cat_furn_p">طاولات، كنب، خزائن، ستائر، مجالس.</p></span>
       </a>
       <a class="cat-card reveal d2" href="/contractor/rfq/quick?section=tools" style="--img:url('/images/sections/tools.webp')">
-        <span class="cat-body"><h3 data-i18n="cat_tools">العدد والمعدات</h3><p data-i18n="cat_tools_p">عُدد يدوية وكهربائية، مسامير وأقفال، سقالات، سلامة.</p></span>
+        <span class="cat-body"><h3 data-i18n="cat_tools">العدد والمعدات والسلامة</h3><p data-i18n="cat_tools_p">عُدد يدوية وكهربائية، مسامير وأقفال، سقالات، سلامة.</p></span>
       </a>
       <a class="cat-card reveal d3" href="/contractor/rfq/quick?section=machinery" style="--img:url('/images/sections/machinery.webp')">
-        <span class="cat-body"><h3 data-i18n="cat_mach">الآليات الثقيلة</h3><p data-i18n="cat_mach_p">حفارات، رافعات، شاحنات، مضخات خرسانة.</p></span>
+        <span class="cat-body"><h3 data-i18n="cat_mach">الآليات والمعدات الثقيلة</h3><p data-i18n="cat_mach_p">حفارات، رافعات، شاحنات، مضخات خرسانة.</p></span>
       </a>
       <a class="cat-card reveal" href="/contractor/rfq/quick?section=outdoor" style="--img:url('/images/sections/outdoor.webp')">
-        <span class="cat-body"><h3 data-i18n="cat_out">الحدائق والخارجيات</h3><p data-i18n="cat_out_p">عشب، ري، إنترلوك، أسوار.</p></span>
+        <span class="cat-body"><h3 data-i18n="cat_out">الحدائق والأعمال الخارجية</h3><p data-i18n="cat_out_p">عشب، ري، إنترلوك، أسوار.</p></span>
       </a>
     </div>
   </div>

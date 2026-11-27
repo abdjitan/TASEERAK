@@ -165,7 +165,7 @@ function MyRequests() {
     }
     if (isFinite(best)) return L(`Best total: ${sar(best)} (${buyerBasisTag(bestO, 'en')})`, `بہترین کل: ${sar(best)} (${buyerBasisTag(bestO, 'ur')})`, `أفضل مجموع: ${sar(best)} (${buyerBasisTag(bestO, 'ar')})`)
     const k = Math.min(priced.size, n)
-    return k ? L(`${k} of ${n} items priced`, `${n} میں سے ${k} اشیاء کی قیمت آئی`, `سُعّرت ${k} من ${n}`) : ''
+    return k ? L(`${k} of ${n} items priced`, `${n} میں سے ${k} اشیاء کی قیمت آئی`, `سُعّرت ${k} من ${arCount(n, 'مادة واحدة', 'مادتين', 'مواد', 'مادة')}`) : ''
   }
   // a request with a selected material, or offers still to choose from, gets no deletion date (192, UX-020)
   const purgeOf = (r: any) => (Number(r?.rfq_item_awards?.[0]?.count) > 0 || stateOf(r) === 'choose' ? null : rfqPurgeInfo(r, locale))
@@ -225,7 +225,7 @@ function MyRequests() {
     const kept = keep.size
     const parts: string[] = []
     if (gone.length) parts.push(L(`${gone.length} request(s) deleted.`, `${gone.length} درخواستیں حذف ہو گئیں۔`, `حُذف ${arRequests(gone.length)}.`))
-    if (kept) parts.push(L(`${kept} request(s) were kept because they have a deal.`, `${kept} درخواستیں رکھی گئیں کیونکہ ان میں سودا ہو چکا ہے۔`, `أُبقي ${arRequests(kept)} لأنها تتضمّن صفقة.`))
+    if (kept) parts.push(L(`${kept} request(s) were kept because they have a deal.`, `${kept} درخواستیں رکھی گئیں کیونکہ ان میں سودا ہو چکا ہے۔`, `استُثني من الحذف ${arRequests(kept)} لوجود صفقة.`))
     if (failed) parts.push(L(`${failed} request(s) could not be deleted. Check your connection and try again.`, `${failed} درخواستیں حذف نہیں ہو سکیں۔ کنکشن چیک کر کے دوبارہ کوشش کریں۔`, `تعذّر حذف ${arRequests(failed)}. تحقّق من الاتصال وحاول مرة أخرى.`))
     if (parts.length) setStatus({ tone: failed ? 'err' : kept ? 'warn' : 'ok', text: parts.join(' ') })
   }
@@ -238,9 +238,14 @@ function MyRequests() {
     if (!pick.length) return
     setStatus(null)
     const one = pick.length === 1
-    if (!(await askConfirm(L(`Cancel ${one ? 'the selected request' : `${pick.length} requests`}? Cancelling stops new offers; the request stays in your history under «Cancelled», where you can review it or request it again.`,
-      `${one ? 'منتخب درخواست' : `${pick.length} درخواستیں`} منسوخ کریں؟ منسوخی سے نئی آفرز بند ہو جاتی ہیں؛ درخواست «منسوخ» میں محفوظ رہتی ہے۔`,
-      `إلغاء ${one ? 'الطلب المحدد' : arRequests(pick.length)}؟ الإلغاء يوقف استقبال العروض، ويبقى الطلب في سجلك ضمن «الملغاة» ويمكنك مراجعته أو طلبه مرة أخرى.`),
+    // round-8 UX-062: say how many of them hold offers not chosen yet (they cannot be chosen after cancelling)
+    const withOffers = pick.filter(r => liveComparableOffers(offersBy[r.id] || [], r).length > 0).length
+    const offersWarn = !withOffers ? ''
+      : one ? L(' It has offers you have not chosen yet, and you will not be able to choose any of them after cancelling.', ' اس میں ایسی آفرز ہیں جو آپ نے ابھی منتخب نہیں کیں، اور منسوخی کے بعد آپ ان میں سے کوئی منتخب نہیں کر سکیں گے۔', ' فيه عروض لم تخترها بعد، ولن تتمكّن من اختيار أيٍّ منها بعد الإلغاء.')
+      : L(` ${withOffers} of them have offers you have not chosen yet, and you will not be able to choose any of them after cancelling.`, ` ان میں سے ${withOffers} درخواستوں میں ایسی آفرز ہیں جو آپ نے ابھی منتخب نہیں کیں، اور منسوخی کے بعد آپ ان میں سے کوئی منتخب نہیں کر سکیں گے۔`, ` منها ${arCount(withOffers, 'طلب واحد فيه', 'طلبان فيهما', 'طلبات فيها', 'طلباً فيها')} عروض لم تخترها بعد، ولن تتمكّن من اختيار أيٍّ منها بعد الإلغاء.`)
+    if (!(await askConfirm(L(`Cancel ${one ? 'the selected request' : `${pick.length} requests`}? Cancelling stops new offers; the request stays in your history under «Cancelled», where you can review it or request it again.${offersWarn}`,
+      `${one ? 'منتخب درخواست' : `${pick.length} درخواستیں`} منسوخ کریں؟ منسوخی سے نئی آفرز بند ہو جاتی ہیں؛ درخواست «منسوخ» میں محفوظ رہتی ہے۔${offersWarn}`,
+      `إلغاء ${one ? 'الطلب المحدد' : arRequests(pick.length)}؟ الإلغاء يوقف استقبال العروض، ويبقى الطلب في سجلك ضمن «الملغاة» ويمكنك مراجعته أو طلبه مرة أخرى.${offersWarn}`),
       { danger: true, okLabel: one ? L('Yes, cancel the request', 'ہاں، درخواست منسوخ کریں', 'نعم، ألغِ الطلب') : L('Yes, cancel the requests', 'ہاں، درخواستیں منسوخ کریں', 'نعم، ألغِ الطلبات'), cancelLabel: L('Go back', 'واپس', 'تراجع') }))) return
     setCancelling(true)
     const sb = createClient()
@@ -260,7 +265,7 @@ function MyRequests() {
     setSel(new Set()); setSelecting(false)
     const parts: string[] = []
     if (go.length) parts.push(L(`${go.length} request(s) cancelled. You will find them under «Cancelled».`, `${go.length} درخواستیں منسوخ ہو گئیں، «منسوخ» میں دیکھیں۔`, `أُلغي ${arRequests(go.length)}، وتجدها ضمن «الملغاة».`))
-    if (keep.size) parts.push(L(`${keep.size} request(s) were kept because they have a deal.`, `${keep.size} درخواستیں رکھی گئیں کیونکہ ان میں سودا ہو چکا ہے۔`, `أُبقي ${arRequests(keep.size)} لأنها تتضمّن صفقة.`))
+    if (keep.size) parts.push(L(`${keep.size} request(s) were kept because they have a deal.`, `${keep.size} درخواستیں رکھی گئیں کیونکہ ان میں سودا ہو چکا ہے۔`, `استُثني من الإلغاء ${arRequests(keep.size)} لوجود صفقة.`))
     if (parts.length) setStatus({ tone: keep.size ? 'warn' : 'ok', text: parts.join(' ') })
   }
 

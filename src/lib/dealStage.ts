@@ -183,3 +183,51 @@ export function rfqStatusLabel(
   }
   return { key: 'ended', label: T('Ended without a choice', 'انتخاب کے بغیر ختم', 'انتهى دون اختيار') }
 }
+
+// ── round-8 UX-090: one wording for a supplier's delivery time, on every screen:
+// «خلال 3 أيام عمل (دون الجمعة)» (within = true, the default) or «3 أيام عمل (دون الجمعة)».
+export function deliveryDaysText(days: any, locale: string = 'ar', within: boolean = true): string {
+  const n = Math.floor(Number(days) || 0)
+  if (locale === 'en') return `${within ? 'Within ' : ''}${n} working day${n === 1 ? '' : 's'} (Friday not counted)`
+  if (locale === 'ur') return `${n} کاروباری ${n === 1 ? 'دن' : 'دنوں'}${within ? ' میں' : ''} (جمعہ کے علاوہ)`
+  const r = n >= 100 ? n % 100 : n
+  const ar = n === 1 ? 'يوم عمل واحد' : n === 2 ? (within ? 'يومَي عمل' : 'يوما عمل') : r >= 3 && r <= 10 ? `${n} أيام عمل` : `${n} يوم عمل`
+  return `${within ? 'خلال ' : ''}${ar} (دون الجمعة)`
+}
+
+// ── round-8 UX-030: a deal waiting on the seller (owner), the same rule on the web and in the app:
+// deliver it (accepted), confirm a payment the buyer recorded (paid, not confirmed), or answer a problem
+// the BUYER reported (open dispute not opened by the seller). A closed deal never needs anyone.
+export function supplierDealNeedsMe(d: any): boolean {
+  if (!d || d.deal_closed_at) return false
+  if (d.dispute_status === 'open') return !!d.dispute_by && d.dispute_by !== d.supplier_id
+  if (d.payment_status === 'paid' && !d.payment_confirmed_at) return true
+  const st = dealStage(d)
+  return st.key === 'accepted' || (st.key === 'paid' && !st.done)
+}
+/** An open problem the buyer reported on this deal (shown first, with a red-outlined chip). */
+export const buyerDisputeOpen = (d: any): boolean =>
+  d?.dispute_status === 'open' && !d?.deal_closed_at && !!d?.dispute_by && d.dispute_by !== d.supplier_id
+/** The chip for a buyer's open report: «بلاغ من المشتري — ردّ عليه». */
+export function buyerDisputeChip(locale: string = 'ar'): string {
+  return pick(['بلاغ من المشتري — ردّ عليه', 'Buyer reported a problem — reply', 'خریدار کی شکایت — جواب دیں'], locale)
+}
+
+// ── round-8 UX-032: the stage in the third person for a company team member (the account owner invoices,
+// delivers and confirms payment), one wording on the web and in the app.
+export function memberDealLabel(d: any, locale: string = 'ar'): string {
+  const st = dealStage(d, 'supplier', locale)
+  if (st.key === 'disputed' || st.key === 'closed' || st.done) return st.label
+  if (st.key === 'advance_due') return pick(['بانتظار دفعة المشتري المقدّمة، ثم يسلّم صاحب الحساب البضاعة', 'Waiting for the buyer’s advance payment, then the account owner delivers', 'خریدار کی پیشگی ادائیگی کا انتظار، پھر اکاؤنٹ کا مالک سامان دے گا'], locale)
+  if (st.key === 'paid') return pick(['دفع المشتري، وبانتظار تأكيد صاحب الحساب لاستلام المبلغ', 'The buyer paid; waiting for the account owner to confirm the payment', 'خریدار نے ادائیگی کر دی؛ اکاؤنٹ کے مالک کی تصدیق کا انتظار'], locale)
+  if (st.key === 'received') return pick(['استلم المشتري البضاعة، وبانتظار الدفع', 'The buyer received the goods; waiting for payment', 'خریدار کو سامان مل گیا؛ ادائیگی کا انتظار'], locale)
+  if (st.key === 'delivered') return pick(['أكّد صاحب الحساب التسليم، وبانتظار تأكيد المشتري', 'The account owner confirmed delivery; waiting for the buyer to confirm', 'اکاؤنٹ کے مالک نے ڈیلیوری کی تصدیق کر دی؛ خریدار کی تصدیق کا انتظار'], locale)
+  if (deliveryLate(d)) return pick(['تجاوز موعد التوصيل المتّفق عليه، ويتابعه صاحب الحساب.', 'The agreed delivery date has passed; the account owner is following it up.', 'طے شدہ ڈیلیوری کی تاریخ گزر گئی، اکاؤنٹ کا مالک اسے دیکھ رہا ہے۔'], locale)
+  return (d?.invoice_url || d?.supplier_invoice_url)
+    ? pick(['رفع صاحب الحساب الفاتورة، وبانتظار التسليم', 'The account owner uploaded the invoice; waiting for delivery', 'اکاؤنٹ کے مالک نے انوائس اپ لوڈ کر دی؛ ڈیلیوری کا انتظار'], locale)
+    : pick(['اختار المشتري الشركة، وبانتظار رفع صاحب الحساب للفاتورة', 'The buyer chose the company; waiting for the account owner to upload the invoice', 'خریدار نے کمپنی کو منتخب کیا؛ اکاؤنٹ کے مالک کی انوائس کا انتظار'], locale)
+}
+/** The one sentence a team member reads above the deals (UX-032). */
+export function memberDealsNote(locale: string = 'ar'): string {
+  return pick(['الصفقات بعد الترسية يديرها صاحب الحساب (الفاتورة والتسليم والدفع والتقييم)، ويمكنك متابعة مراحلها هنا.', 'After an award, deals are run by the account owner (invoice, delivery, payment and rating); you can follow their stages here.', 'ایوارڈ کے بعد ڈیلز اکاؤنٹ کا مالک چلاتا ہے (انوائس، ڈیلیوری، ادائیگی اور ریٹنگ)، آپ یہاں ان کے مراحل دیکھ سکتے ہیں۔'], locale)
+}

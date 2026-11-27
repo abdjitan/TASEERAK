@@ -67,7 +67,7 @@ export default function JoinSupplier() {
   const points: [string, string][] = [
     [L('Requests that match what you sell', 'آپ کے سامان کے مطابق درخواستیں', 'طلبات تناسب ما تبيعه'), L('Only requests for your materials and your area reach you.', 'صرف آپ کے سامان اور علاقے کی درخواستیں۔', 'لا تصلك إلا طلبات موادك ومنطقتك.')],
     [L('Price from your phone', 'اپنے فون سے قیمت دیں', 'سعّر من جوالك'), L('Price each item from your phone in a minute, and set delivery as free or with a charge.', 'ہر آئٹم کی قیمت ایک منٹ میں اپنے فون سے دیں، اور ڈیلیوری مفت یا فیس کے ساتھ مقرر کریں۔', 'سعّر كل مادة من جوالك خلال دقيقة، وحدّد التوصيل مجاناً أو برسوم.')],
-    [L('Competitors never see your prices', 'حریف آپ کی قیمتیں نہیں دیکھتے', 'منافسوك لا يرون أسعارك'), L('Only the buyer sees your offer.', 'آپ کی پیشکش صرف خریدار دیکھتا ہے۔', 'لا يرى عرضك إلا المشتري.')],
+    [L('Competitors never see your prices', 'حریف آپ کی قیمتیں نہیں دیکھتے', 'منافسوك لا يرون أسعارك'), L('Only the buyer sees your offer.', 'آپ کی آفر صرف خریدار دیکھتا ہے۔', 'لا يرى عرضك إلا المشتري.')],
     [L('Free during launch', 'لانچ کے دوران مفت', 'مجاني خلال الإطلاق'), L('No commission and no subscription.', 'کوئی کمیشن یا سبسکرپشن نہیں۔', 'بلا عمولة ولا اشتراك.')],
   ]
 
@@ -102,6 +102,7 @@ export default function JoinSupplier() {
           <div className="bg-white rounded-2xl p-4 border border-line">
             <div className="font-bold text-navy text-sm flex items-center gap-1.5"><SellerIcon name="building" /> {L('Company or shop', 'کمپنی یا دکان', 'شركة أو محل')}</div>
             <p className="text-[13px] text-ink-2 mt-1 leading-relaxed">{L('Your commercial registration (the unified number, 10 digits starting with 7). You can add your sales team later.', 'آپ کی تجارتی رجسٹریشن (متحدہ نمبر، 7 سے شروع 10 ہندسے)۔ سیلز ٹیم بعد میں شامل کر سکتے ہیں۔', 'سجلك التجاري (الرقم الوطني الموحد: 10 أرقام يبدأ بـ7)، ويمكنك إضافة فريق المبيعات لاحقاً.')}</p>
+            <p className="text-[13px] text-ink-2 mt-1 leading-relaxed">{L('Is your business VAT-registered? Add your VAT number after signing up; once our team verifies it, your offers carry the badge «Issues a VAT invoice».', 'کیا آپ کا ادارہ VAT میں رجسٹرڈ ہے؟ رجسٹریشن کے بعد اپنا VAT نمبر شامل کریں؛ ہماری ٹیم کی تصدیق کے بعد آپ کی آفرز پر «VAT انوائس جاری کرتا ہے» کا نشان ظاہر ہوگا۔', 'منشأتك مسجّلة في ضريبة القيمة المضافة؟ أضف رقمك الضريبي بعد التسجيل، وبعد أن يتحقق فريقنا منه تظهر على عروضك شارة «يُصدر فاتورة ضريبية».')}</p>
             <Link href={`/register?role=supplier&kind=company&only=1&email=1${carry}`} className="mt-2 inline-flex items-center min-h-[44px] px-4 rounded-xl text-[13px] font-bold text-[#0B2438] border-2 border-[#0B2438]/30 bg-white hover:border-[#0B2438]">{L('Sign up as a company or shop', 'کمپنی یا دکان کے طور پر رجسٹر کریں', 'سجّل كشركة أو محل')}</Link>
           </div>
           <div className="bg-white rounded-2xl p-4 border border-line">

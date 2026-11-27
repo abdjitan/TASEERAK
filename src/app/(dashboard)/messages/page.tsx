@@ -73,6 +73,10 @@ function Messages() {
   // the award check of the open conversation is done: quick replies wait for it, so the previous
   // conversation's replies never flash under the new one (round-6 UX-101)
   const [awardChecked, setAwardChecked] = useState(false)
+  // the seller's own offer on this request (VAT basis for an agent's reply, the buyer's «ask for a discount»
+  // link) and, after the choice, the delivery place for the buyer's «send the delivery location» (round-8)
+  const [chatOffer, setChatOffer] = useState<any>(null)
+  const [deliveryPlace, setDeliveryPlace] = useState('')
   const menuRef = useRef<HTMLDivElement>(null)
   // the ⋮ menu closes on a tap outside it and on Escape (round-6 UX-101)
   useEffect(() => {
@@ -169,13 +173,13 @@ function Messages() {
     let cancelled = false
     let ch: any
     // switching: never show the previous chat's messages under the new person (UX-102)
-    setMsgs([]); setMsgsLoading(true); setMsgsFailed(false); setDealId(null); setAwarded(true); setAwardChecked(false); setBstate(null)
+    setMsgs([]); setMsgsLoading(true); setMsgsFailed(false); setDealId(null); setAwarded(true); setAwardChecked(false); setBstate(null); setChatOffer(null); setDeliveryPlace('')
     ;(async () => {
       // Fetch the conversation directly — do NOT read the possibly-stale `convos` closure,
       // which made an awarded chat wrongly show the "20-message limit" lock (B9).
       // conversation + its latest 200 messages together, then the award check in one round (perf audit)
       const [{ data: conv }, { data, error: msgsErr }] = await Promise.all([
-        supabase.from('conversations').select('rfq_id, supplier_id').eq('id', activeId).single(),
+        supabase.from('conversations').select('rfq_id, supplier_id, contractor_id').eq('id', activeId).single(),
         supabase.from('messages').select('*').eq('conversation_id', activeId).order('created_at', { ascending: false }).limit(200),
       ])
       if (cancelled) return // guard against out-of-order resolution → no cross-conversation bleed
@@ -184,12 +188,24 @@ function Messages() {
       setMsgsLoading(false)
       let aw = false
       if (conv?.rfq_id && conv?.supplier_id) {
-        const [{ data: aws }, { data: ofs }] = await Promise.all([
+        const [{ data: aws }, { data: ofs }, { data: mine }] = await Promise.all([
           supabase.from('rfq_item_awards').select('id').eq('rfq_id', conv.rfq_id).eq('supplier_id', conv.supplier_id).limit(1),
           supabase.from('offers').select('id').eq('rfq_id', conv.rfq_id).eq('supplier_id', conv.supplier_id).eq('status', 'accepted').limit(1),
+          supabase.from('offers').select('id, vat_status, status').eq('rfq_id', conv.rfq_id).eq('supplier_id', conv.supplier_id).order('created_at', { ascending: false }).limit(1),
         ])
         aw = !!((aws && aws.length) || (ofs && ofs.length))
-        if (!cancelled) setDealId((ofs && ofs[0]?.id) || null)
+        if (!cancelled) { setDealId((ofs && ofs[0]?.id) || null); setChatOffer((mine && mine[0]) || null) }
+        // the buyer's own delivery place, written by the «send the delivery location» reply (UX-132)
+        if (aw && conv.contractor_id === me) {
+          const [{ data: rq }, { data: pv }] = await Promise.all([
+            supabase.from('rfqs').select('city').eq('id', conv.rfq_id).maybeSingle(),
+            supabase.from('rfq_private').select('delivery_location, delivery_geo').eq('rfq_id', conv.rfq_id).maybeSingle(),
+          ])
+          const geo = String((pv as any)?.delivery_geo || '').trim()
+          const parts = [(rq as any)?.city, (pv as any)?.delivery_location].filter(Boolean).join(L(', ', '، ', '، '))
+          const text = [parts, /^-?\d+(\.\d+)?,\s*-?\d+(\.\d+)?$/.test(geo) ? 'https://www.google.com/maps?q=' + encodeURIComponent(geo) : ''].filter(Boolean).join('\n')
+          if (!cancelled && text) setDeliveryPlace(L('Delivery location: ', 'ڈیلیوری کی جگہ: ', 'موقع التسليم: ') + text)
+        }
       }
       if (cancelled) return
       setAwarded(aw); setAwardChecked(true)
@@ -327,24 +343,27 @@ function Messages() {
   // be sent in a chat, so no reply asks for one
   const quick: string[] = !active || !awardChecked ? [] : awarded && iAmBuyer(active) ? [
     L('When will the order arrive?', 'آرڈر کب پہنچے گا؟', 'متى يصل الطلب؟'),
-    L('I will send you the delivery location.', 'میں آپ کو ڈیلیوری کی جگہ بھیجتا ہوں۔', 'سأرسل لك موقع التسليم.'),
+    // the real place, not a promise to send it (round-8 UX-132)
+    ...(deliveryPlace ? [deliveryPlace] : []),
     L('Please call me before you arrive.', 'پہنچنے سے پہلے مجھے کال کریں۔', 'اتصل بي قبل الوصول من فضلك.'),
     L('Please attach the invoice on the deal page.', 'براہ کرم ڈیل کے صفحے پر انوائس منسلک کریں۔', 'أرفق الفاتورة في صفحة الصفقة من فضلك.'),
   ] : awarded ? [
     L('Your order is ready.', 'آپ کا آرڈر تیار ہے۔', 'طلبك جاهز.'),
     L('When does delivery suit you?', 'ڈیلیوری آپ کے لیے کب مناسب ہے؟', 'متى يناسبك التسليم؟'),
-    L('Please send me the delivery location.', 'براہ کرم ڈیلیوری کی جگہ بھیجیں۔', 'أرسل لي موقع التسليم من فضلك.'),
+    L('Is there anything more I should know about the delivery location?', 'کیا ڈیلیوری کی جگہ کے بارے میں کوئی مزید وضاحت ہے؟', 'هل من توضيح إضافي لموقع التسليم؟'),
     L('The order is on its way.', 'آرڈر راستے میں ہے۔', 'الطلب في الطريق إليك.'),
   ] : iAmBuyer(active) ? [
     L('Does the price include delivery?', 'کیا قیمت میں ڈیلیوری شامل ہے؟', 'هل السعر شامل التوصيل؟'),
     L('When can you deliver?', 'آپ کب ڈیلیور کر سکتے ہیں؟', 'متى يمكنك التوصيل؟'),
     L('Is the material available now?', 'کیا مال ابھی دستیاب ہے؟', 'هل المادة متوفرة الآن؟'),
-    L('Can you lower the price a little?', 'کیا قیمت تھوڑی کم ہو سکتی ہے؟', 'هل يمكن تخفيض السعر قليلاً؟'),
     L('What is the brand, and where is it made?', 'برانڈ کیا ہے اور کہاں بنا ہے؟', 'ما الماركة وما بلد الصنع؟'),
   ] : [
-    vatRegistered
+    // an agent has no VAT number of his own: the answer follows the source shop on his offer (round-8 UX-024)
+    (agent ? chatOffer?.vat_status === 'registered' : vatRegistered)
       ? L('Prices include 15% VAT.', 'قیمتوں میں 15% VAT شامل ہے۔', 'الأسعار تشمل ضريبة القيمة المضافة 15%.')
-      : L('The price is final; no VAT is added.', 'قیمت حتمی ہے؛ اس پر VAT شامل نہیں کیا جاتا۔', 'السعر نهائي، ولا تُضاف إليه ضريبة القيمة المضافة.'),
+      : agent && !chatOffer
+        ? L('I will make clear in the offer whether the price includes VAT.', 'میں آفر میں واضح کروں گا کہ قیمت میں VAT شامل ہے یا نہیں۔', 'سأوضّح في العرض هل السعر شامل ضريبة القيمة المضافة.')
+        : L('The price is final; no VAT is added.', 'قیمت حتمی ہے؛ اس پر VAT شامل نہیں کیا جاتا۔', 'السعر نهائي، ولا تُضاف إليه ضريبة القيمة المضافة.'),
     L('Delivery within two days.', 'دو دن میں ڈیلیوری۔', 'التوصيل خلال يومين.'),
     agent
       ? L('The material is available at the source shop right now.', 'مال اس وقت ماخذ دکان پر دستیاب ہے۔', 'المادة متوفرة لدى المحل المصدر حالياً.')
@@ -446,7 +465,7 @@ function Messages() {
                 <div className="min-w-0 ps-1">
                   <div className="font-bold text-sm truncate" style={{ color: '#0B2438' }}>{counterpart(active)}</div>
                   {ctx(active) && (rfqHref(active)
-                    ? <Link href={rfqHref(active)} className="block text-xs text-[#8F6820] truncate hover:underline" dir="auto"><Glyph e="📦" /> {ctx(active)} · <span className="font-bold">{L('View request', 'درخواست دیکھیں', 'عرض الطلب')}</span></Link>
+                    ? <Link href={rfqHref(active)} className="flex items-center gap-1 min-h-[44px] -my-2.5 text-xs text-[#8F6820] truncate hover:underline" dir="auto"><Glyph e="📦" /> {ctx(active)} · <span className="font-bold">{L('View request', 'درخواست دیکھیں', 'عرض الطلب')}</span></Link>
                     : <div className="text-xs text-gray-500 truncate"><Glyph e="📦" /> {ctx(active)}</div>)}
                 </div>
                 {dealId && (
@@ -528,10 +547,11 @@ function Messages() {
                 <div ref={endRef} />
               </div>
               {chatBlocked && (
-                <div className="px-3 pt-2 text-xs text-red-700">
+                <div className="px-3 pt-2 text-[13px] leading-relaxed text-[#0B2438]">
                   {bstate?.i_blocked
                     ? L('You blocked this user. Unblock from the menu to message again.', 'آپ نے اس صارف کو بلاک کیا ہے۔ دوبارہ پیغام کے لیے مینو سے ان بلاک کریں۔', 'لقد حظرت هذا المستخدم. ألغِ الحظر من القائمة لمراسلته مجدداً.')
-                    : L('You can no longer send messages in this conversation.', 'آپ اس گفتگو میں مزید پیغام نہیں بھیج سکتے۔', 'لم يعد بإمكانك إرسال رسائل في هذه المحادثة.')}
+                    : <>{L('You can no longer send messages in this conversation. If you have a deal in progress with this party, contact support.', 'آپ اس گفتگو میں مزید پیغام نہیں بھیج سکتے۔ اگر اس فریق کے ساتھ آپ کا کوئی جاری سودا ہے تو سپورٹ سے رابطہ کریں۔', 'لم يعد بإمكانك إرسال رسائل في هذه المحادثة. إن كانت لديك صفقة قائمة مع هذا الطرف فتواصل مع الدعم.')}{' '}
+                      <Link href="/support?topic=deal" className="inline-flex items-center min-h-[44px] font-bold underline">{L('Contact support', 'سپورٹ سے رابطہ کریں', 'تواصل مع الدعم')}</Link></>}
                 </div>
               )}
               {!awarded && !chatBlocked && !msgsLoading && !msgsFailed && (
@@ -546,8 +566,13 @@ function Messages() {
                 <div className="px-3 pt-2 flex gap-2 overflow-x-auto" aria-label={L('Quick replies', 'فوری جوابات', 'ردود جاهزة')}>
                   {quick.map(t => (
                     <button key={t} type="button" onClick={() => setBody(t)}
-                      className="shrink-0 min-h-[44px] px-3.5 rounded-full text-sm font-semibold border border-[#0B2438]/15 bg-white text-[#0B2438] hover:border-[#D4A543]">{t}</button>
+                      className="shrink-0 min-h-[44px] px-3.5 rounded-full text-sm font-semibold border border-[#0B2438]/15 bg-white text-[#0B2438] hover:border-[#D4A543]">{t.length > 60 ? t.slice(0, 57) + '…' : t}</button>
                   ))}
+                  {/* a discount asked in the chat does not change the offer: the official request does (round-8 UX-068) */}
+                  {!awarded && iAmBuyer(active) && active?.rfq_id && chatOffer?.id && (
+                    <Link href={`/contractor/rfq/${active.rfq_id}/offer/${chatOffer.id}?reduce=1`}
+                      className="shrink-0 min-h-[44px] inline-flex items-center px-3.5 rounded-full text-sm font-bold border border-[#D4A543] bg-[#D4A543]/10 text-[#071827]">{L('Ask for an official discount', 'باضابطہ رعایت مانگیں', 'اطلب تخفيضاً رسمياً')}</Link>
+                  )}
                 </div>
               )}
               {/* a price lowered in the chat does not change the offer in the comparison (round-7 UX-137) */}

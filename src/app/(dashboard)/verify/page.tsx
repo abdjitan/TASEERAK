@@ -73,7 +73,7 @@ function Verify() {
           <h1 className="text-2xl font-bold text-[#071827]">{L('Verify your account', 'اپنا اکاؤنٹ تصدیق کریں', 'وثّق حسابك')}</h1>
           {/* while SMS is down the intro says the same thing as the steps below (round-7 UX-221) */}
           <p className="text-sm text-gray-600 mt-1">{emailFirst
-            ? L('One step now: verify your email to continue, and verify your mobile later when the text-message service is back.', 'ابھی ایک قدم: جاری رکھنے کے لیے اپنی ای میل تصدیق کریں، اور ٹیکسٹ میسج سروس واپس آنے پر موبائل بعد میں تصدیق کریں۔', 'خطوة واحدة الآن: وثّق بريدك الإلكتروني لتتابع، ووثّق جوالك لاحقاً حين تعود خدمة الرسائل.')
+            ? L('One step now: verify your email to continue.', 'ابھی ایک قدم: جاری رکھنے کے لیے اپنی ای میل کی تصدیق کریں۔', 'خطوة واحدة الآن: وثّق بريدك الإلكتروني لتتابع.')
             : isBuyer
             ? L('One quick step to protect your account and deals: your mobile number.', 'اکاؤنٹ اور سودوں کے تحفظ کے لیے ایک آسان قدم: موبائل نمبر۔', 'خطوة واحدة سريعة لحماية حسابك وصفقاتك: رقم جوالك.')
             : L('Two quick steps to protect your account and deals: your mobile number and your email.', 'اکاؤنٹ اور سودوں کے تحفظ کے لیے دو آسان قدم: موبائل نمبر اور ای میل۔', 'خطوتان سريعتان لحماية حسابك وصفقاتك: رقم جوالك وبريدك الإلكتروني.')}</p>
@@ -116,12 +116,13 @@ function Verify() {
           return (<>
             {emailFirst && (
               <p role="status" className="rounded-xl border border-[#D4A543]/50 bg-[#FBF5E6] p-3 text-sm text-[#071827] leading-relaxed">
-                {L('The text-message service is temporarily down. Verify your email to continue now, and verify your mobile later.',
-                  'ٹیکسٹ میسج سروس عارضی طور پر بند ہے۔ ابھی جاری رکھنے کے لیے اپنی ای میل تصدیق کریں، اور موبائل بعد میں تصدیق کریں۔',
-                  'خدمة الرسائل النصية متوقفة مؤقتاً. وثّق بريدك الإلكتروني لتتابع الآن، ووثّق جوالك لاحقاً.')}
+                {L('The text message service is temporarily down, so the mobile cannot be verified or changed now. Verify your email: it is enough for now.',
+                  'ٹیکسٹ میسج سروس عارضی طور پر بند ہے، اس لیے ابھی موبائل کی تصدیق یا تبدیلی نہیں ہو سکتی۔ اپنی ای میل کی تصدیق کریں: ابھی یہی کافی ہے۔',
+                  'خدمة الرسائل النصية متوقفة مؤقتاً، فلا يمكن توثيق الجوال أو تغييره الآن. وثّق بريدك الإلكتروني، فهو يكفي الآن.')}
               </p>
             )}
-            {emailFirst ? <>{emailSec(1)}{phoneSec(2)}</> : <>{phoneSec(1)}{emailSec(2)}</>}
+            {/* no mobile step while texts cannot arrive: its code would never come (round-8 UX-014) */}
+            {emailFirst ? <>{emailSec(1)}</> : <>{phoneSec(1)}{emailSec(2)}</>}
 
             <button type="button" disabled={!canGo}
               onClick={() => { window.location.href = next || home }}

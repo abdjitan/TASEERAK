@@ -6,6 +6,7 @@ import { useEffect, useRef, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { FIREBASE_CONFIG, firebaseReady, toE164 } from '@/lib/firebaseConfig'
 import { Check } from 'lucide-react'
+import { smsIsDown } from '@/components/shared/signOutGuard'
 
 // a verified number changes the verify banner, so its once-per-session cache is dropped
 function clearBannerCache() { try { sessionStorage.removeItem('tsk_pvb') } catch {} }
@@ -50,6 +51,15 @@ export default function PhoneVerify({ initialPhone, locale, verified, waVerified
   const boxId = useRef('recaptcha-' + Math.random().toString(36).slice(2)).current
 
   useEffect(() => { setPhone(initialPhone || '') }, [initialPhone])
+  // texts cannot arrive (sms_is_down): no «send code» that ends in a vague error; the verified email is
+  // enough for now (round-8 UX-014)
+  const [smsOff, setSmsOff] = useState(false)
+  useEffect(() => { let on = true; smsIsDown().then(v => { if (on) setSmsOff(v) }, () => {}); return () => { on = false } }, [])
+  const smsOffNote = (
+    <p className="mt-1.5 text-[12px] leading-relaxed rounded-lg p-2.5 bg-warn-bg border border-warn-border text-warn-text" role="status">
+      {L('The text message service is temporarily down, so the mobile cannot be verified or changed now. Verify your email instead: it is enough for now.', 'ٹیکسٹ میسج سروس عارضی طور پر بند ہے، اس لیے ابھی موبائل کی تصدیق یا تبدیلی نہیں ہو سکتی۔ اس کے بجائے اپنی ای میل کی تصدیق کریں: ابھی یہی کافی ہے۔', 'خدمة الرسائل النصية متوقفة مؤقتاً، فلا يمكن توثيق الجوال أو تغييره الآن. وثّق بريدك الإلكتروني، فهو يكفي الآن.')}
+    </p>
+  )
   // the invisible reCAPTCHA lives outside the React tree so switching screens never detaches it
   useEffect(() => {
     const el = document.createElement('div'); el.id = boxId
@@ -157,9 +167,15 @@ export default function PhoneVerify({ initialPhone, locale, verified, waVerified
         {waVerified
           ? <span className="font-bold text-[#0F6E56] inline-flex items-center gap-1"><Check className="w-3.5 h-3.5" aria-hidden />{L('WhatsApp confirmed', 'واٹس ایپ تصدیق شدہ', 'واتساب مؤكَّد')}</span>
           : <span className="text-gray-500">{L('WhatsApp not confirmed yet', 'واٹس ایپ ابھی تصدیق نہیں', 'لم يتأكد الواتساب بعد')}</span>}
-        <button type="button" onClick={() => { setOpen(true); setStep('enter') }} className="min-h-[44px] font-bold text-[#8F6820] hover:underline">{L('Change number', 'نمبر بدلیں', 'تغيير الرقم')}</button>
+        {!smsOff && <button type="button" onClick={() => { setOpen(true); setStep('enter') }} className="min-h-[44px] font-bold text-[#8F6820] hover:underline">{L('Change number', 'نمبر بدلیں', 'تغيير الرقم')}</button>}
       </div>
     )
+  }
+  if (smsOff && (!open || step === 'enter')) {
+    return (<>
+      {initialPhone && !verified && <span dir="ltr" className="block mt-1 text-sm font-bold text-[#0B2438]">{initialPhone}</span>}
+      {smsOffNote}
+    </>)
   }
   if (!open) {
     return (
@@ -174,7 +190,7 @@ export default function PhoneVerify({ initialPhone, locale, verified, waVerified
     <div className="mt-2 rounded-xl border border-gray-200 bg-gray-50/60 p-3 space-y-2">
       {step === 'enter' && busy && <p className="text-[12px] text-gray-600">{L('Sending the code…', 'کوڈ بھیجا جا رہا ہے…', 'جارٍ إرسال الرمز…')}</p>}
       {step === 'enter' && !busy && (<>
-        <p className="text-[12px] text-gray-600">{L('We will send a 6-digit code by SMS. Use a number that has WhatsApp: platform notifications arrive there.', 'ہم SMS سے 6 ہندسوں کا کوڈ بھیجیں گے۔ ایسا نمبر استعمال کریں جس پر واٹس ایپ ہو: پلیٹ فارم کی اطلاعات وہیں آتی ہیں۔', 'سنرسل رمزاً من 6 أرقام برسالة نصية. استخدم رقماً عليه واتساب، فإشعارات المنصة تصل إليه.')}</p>
+        <p className="text-[12px] text-gray-600">{L('We will send a 6-digit code by text message. Use a number that has WhatsApp: platform notifications arrive there.', 'ہم ٹیکسٹ میسج سے 6 ہندسوں کا کوڈ بھیجیں گے۔ ایسا نمبر استعمال کریں جس پر واٹس ایپ ہو: پلیٹ فارم کی اطلاعات وہیں آتی ہیں۔', 'سنرسل رمزاً من 6 أرقام برسالة نصية. استخدم رقماً عليه واتساب، فإشعارات المنصة تصل إليه.')}</p>
         <div className="flex gap-2">
           <input value={phone} onChange={(e) => setPhone(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); if (!busy) send() } }} inputMode="tel" autoComplete="tel" dir="ltr" className="input-field flex-1 min-w-0" placeholder="05XXXXXXXX" aria-label={L('Mobile number', 'موبائل نمبر', 'رقم الجوال')} />
           <button type="button" onClick={send} disabled={busy} className="min-h-[48px] text-sm px-4 rounded-xl font-bold text-white disabled:opacity-50 whitespace-nowrap" style={{ background: '#0B2438' }}>{busy ? '…' : L('Send code', 'کوڈ بھیجیں', 'أرسل الرمز')}</button>

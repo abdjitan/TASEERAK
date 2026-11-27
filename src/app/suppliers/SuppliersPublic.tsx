@@ -1,4 +1,5 @@
 'use client'
+import { useEffect, useState } from 'react'
 // The public suppliers page body, translated (UX-115). Registered suppliers and the directory of
 // businesses that have not joined are counted separately (UX-022), the directory shows no Google
 // ratings, and every listed business can register or ask to be removed.
@@ -17,6 +18,9 @@ export default function SuppliersPublic({ ranked, listings }: { ranked: any[]; l
   const verifiedCount = ranked.filter((r: any) => r.verification_status === 'verified').length
   // nothing to list yet: the page says «coming soon» once, at the top, instead of promising first (round-6 UX-138)
   const empty = ranked.length === 0 && listings.length === 0
+  // a signed-in seller is not invited to sign up again (round-8 UX-125): the role this device last showed
+  const [roleHint, setRoleHint] = useState<string | null>(null)
+  useEffect(() => { try { setRoleHint(localStorage.getItem('tsk_role_hint')) } catch {} }, [])
   const removeHref = (name: string) => `mailto:${OPERATOR.email}?subject=${encodeURIComponent(L('Directory removal request', 'ڈائریکٹری سے ہٹانے کی درخواست', 'طلب إزالة من الدليل'))}&body=${encodeURIComponent(name)}`
 
   return (
@@ -43,8 +47,12 @@ export default function SuppliersPublic({ ranked, listings }: { ranked: any[]; l
           <div className="text-4xl mb-3 text-[#0B2438]"><Glyph e="🏗" /></div>
           <p className="text-sm text-gray-600">{L('You can already send a price request: it reaches the suppliers who specialise in your materials.', 'آپ ابھی قیمت کی درخواست بھیج سکتے ہیں: یہ آپ کے سامان کے ماہر سپلائرز تک پہنچتی ہے۔', 'يمكنك الآن إرسال طلب تسعير، فيصل إلى الموردين المختصين بموادك.')}</p>
           <div className="mt-5 flex flex-wrap items-center justify-center gap-2">
-            <Link href="/contractor/rfq/quick" className="btn-orange text-sm">{L('Start now for free', 'ابھی مفت شروع کریں', 'ابدأ الآن مجاناً')}</Link>
-            <Link href="/join" className="btn-ghost text-sm">{L('Sign up as a supplier', 'سپلائر کے طور پر رجسٹر کریں', 'سجّل كمورد')}</Link>
+            {roleHint === 'supplier'
+              ? <Link href="/supplier/dashboard" className="btn-orange text-sm">{L('Open new requests', 'نئی درخواستیں کھولیں', 'افتح الطلبات الجديدة')}</Link>
+              : <>
+                <Link href="/contractor/rfq/quick" className="btn-orange text-sm">{L('Start now for free', 'ابھی مفت شروع کریں', 'ابدأ الآن مجاناً')}</Link>
+                {roleHint !== 'contractor' && roleHint !== 'admin' && <Link href="/join" className="btn-ghost text-sm">{L('Sign up as a supplier', 'سپلائر کے طور پر رجسٹر کریں', 'سجّل كمورد')}</Link>}
+              </>}
           </div>
         </div>
       ) : (

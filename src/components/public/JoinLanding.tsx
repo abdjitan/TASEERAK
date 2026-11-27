@@ -1,5 +1,6 @@
 'use client'
 
+import { sourceShopVisibilityText } from '@/components/rfq/SourceShop'
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { INVITE_CODE_KEY, JoinSteps } from '@/components/public/JoinSupplier'
@@ -59,8 +60,8 @@ export default function JoinLanding({ kind }: { kind: 'company' | 'independent' 
         [L('VAT invoice', 'VAT انوائس', 'الفاتورة الضريبية'), L('Most requests from companies and contractors require a VAT invoice, and in them the offers that do not come with a VAT invoice are shown in a separate collapsed section. If your business is registered for VAT, add your VAT number; once our team verifies it, your offers carry the badge «Issues a VAT invoice».', 'کمپنیوں اور ٹھیکیداروں کی زیادہ تر درخواستوں میں VAT انوائس شرط ہوتی ہے، اور ان میں VAT انوائس جاری نہ کرنے والی آفرز ایک الگ بند حصے میں دکھائی جاتی ہیں۔ اگر آپ کا ادارہ VAT میں رجسٹرڈ ہے تو اپنا VAT نمبر شامل کریں؛ ہماری ٹیم کی تصدیق کے بعد آپ کی آفرز پر «VAT انوائس جاری کرتا ہے» کا نشان ظاہر ہوگا۔', 'أغلب طلبات الشركات والمقاولين تشترط فاتورة ضريبية، وتُعرض فيها العروض التي لا تُصدر فاتورة ضريبية في قسم منفصل مطويّ. إن كانت منشأتك مسجّلة في ضريبة القيمة المضافة فأضف رقمك الضريبي، وبعد أن يتحقق فريقنا منه تظهر على عروضك شارة «يُصدر فاتورة ضريبية».')],
       ]
     : [
-        [L('For those who know the market without a shop', 'جو مارکیٹ جانتے ہیں مگر دکان نہیں', 'لمن يعرف السوق ولا يملك محلاً'), L('Bring buyers the prices of shops and suppliers you know; the deal is done with the shop’s invoice in the buyer’s name, and in every offer you say whether the source shop is VAT-registered.', 'جن دکانوں کو آپ جانتے ہیں ان کی قیمتیں خریداروں تک لائیں؛ سودا دکان کی خریدار کے نام انوائس سے ہوتا ہے، اور ہر آفر میں آپ بتاتے ہیں کہ ماخذ دکان VAT میں رجسٹرڈ ہے یا نہیں۔', 'قدّم للمشترين أسعار المحلات والموردين الذين تعرفهم، وتتم الصفقة بفاتورة المحل باسم المشتري، وتذكر في كل عرض هل المحل المصدر مسجّل في ضريبة القيمة المضافة.')],
-        [L('Your sources are protected', 'آپ کے ذرائع محفوظ', 'مصادرك محفوظة'), L('Before the buyer chooses your offer, they see only the shop’s district and city; after it, the shop name (never its phone).', 'خریدار کے آپ کی آفر چننے سے پہلے وہ صرف دکان کا محلہ اور شہر دیکھتا ہے؛ بعد میں دکان کا نام (فون کبھی نہیں)۔', 'قبل أن يختار المشتري عرضك لا يرى إلا الحي والمدينة، وبعده يرى اسم المحل دون رقم هاتفه.')],
+        [L('For those who know the market without a shop', 'جو مارکیٹ جانتے ہیں مگر دکان نہیں', 'لمن يعرف السوق ولا يملك محلاً'), L('Bring buyers the prices of the shops you know; the deal is done with the shop’s invoice in the buyer’s name, and in every offer you say whether the source shop is VAT-registered.', 'جن دکانوں کو آپ جانتے ہیں ان کی قیمتیں خریداروں تک لائیں؛ سودا دکان کی خریدار کے نام انوائس سے ہوتا ہے، اور ہر آفر میں آپ بتاتے ہیں کہ ماخذ دکان VAT میں رجسٹرڈ ہے یا نہیں۔', 'قدّم للمشترين أسعار المحلات التي تعرفها، وتتم الصفقة بفاتورة المحل باسم المشتري، وتذكر في كل عرض هل المحل المصدر مسجّل في ضريبة القيمة المضافة.')],
+        [L('Your sources are protected', 'آپ کے ذرائع محفوظ', 'مصادرك محفوظة'), sourceShopVisibilityText(locale)], // round-8 UX-112 (4): one wording
         [L('A deal limit that grows', 'بڑھتی ہوئی حد', 'حدّ صفقة يكبر معك'), L('Up to 15,000 SAR per deal at first, then 50,000 after successful deals, then no limit.', 'شروع میں فی سودا 15,000 ریال، کامیاب سودوں کے بعد 50,000، پھر کوئی حد نہیں۔', 'حتى 15,000 ر.س للصفقة في البداية، ثم 50,000 بعد صفقات ناجحة، ثم بلا حد.')],
       ]
 

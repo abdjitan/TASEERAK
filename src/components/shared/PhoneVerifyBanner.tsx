@@ -85,18 +85,32 @@ export default function PhoneVerifyBanner() {
   if (!show || pathname.startsWith('/messages') || pathname.startsWith('/settings') || pathname.startsWith('/admin') || pathname.startsWith('/verify') || pathname.startsWith('/banned')) return null
   const isBuyer = st?.role === 'contractor'
 
+  // a buyer browses freely and verifies at the send step: on the home and view pages only, with «Later»;
+  // a seller always sees it (round-8 UX-015)
+  if (show === 'sms' && isBuyer && (phoneLater || !buyerPhonePage(pathname))) return null
+  const laterSms = () => {
+    try { localStorage.setItem(PHONE_SNOOZE_KEY, String(Date.now() + 3 * 24 * 3600 * 1000)) } catch {}
+    setPhoneLater(true)
+  }
   if (show === 'sms') return (
     <div className="ts-no-print print:hidden mb-4 rounded-2xl border border-[#D4A543]/50 bg-[#D4A543]/10 px-4 py-3 flex flex-wrap items-center justify-between gap-3">
       <div className="text-sm min-w-0">
         <div className="font-bold text-[#071827]">{L('Verify your email', 'اپنی ای میل تصدیق کریں', 'وثّق بريدك الإلكتروني')}</div>
         <div className="text-[13px] text-gray-600 mt-0.5">{L(
-          'The text message service is temporarily down. Verify your email to continue now, and verify your mobile later.',
-          'ٹیکسٹ میسج سروس عارضی طور پر بند ہے۔ ابھی جاری رکھنے کے لیے اپنی ای میل تصدیق کریں، اور موبائل بعد میں تصدیق کریں۔',
-          'خدمة الرسائل النصية متوقفة مؤقتاً. وثّق بريدك الإلكتروني لتتابع الآن، ووثّق جوالك لاحقاً.')}</div>
+          'The text message service is temporarily down, so the mobile cannot be verified now. Verify your email: it is enough for now.',
+          'ٹیکسٹ میسج سروس عارضی طور پر بند ہے، اس لیے ابھی موبائل کی تصدیق نہیں ہو سکتی۔ اپنی ای میل کی تصدیق کریں: ابھی یہی کافی ہے۔',
+          'خدمة الرسائل النصية متوقفة مؤقتاً، فلا يمكن توثيق الجوال الآن. وثّق بريدك الإلكتروني، فهو يكفي الآن.')}</div>
       </div>
-      <Link href="/verify" className="min-h-[44px] inline-flex items-center px-4 rounded-xl bg-[#D4A543] text-[#071827] text-sm font-bold whitespace-nowrap">
-        {L('Verify your email', 'ای میل تصدیق کریں', 'وثّق بريدك')}
-      </Link>
+      <div className="flex items-center gap-2">
+        {isBuyer && (
+          <button type="button" onClick={laterSms} className="min-h-[44px] px-4 rounded-xl border border-gray-200 text-sm font-bold text-[#0B2438] bg-white hover:bg-gray-50">
+            {L('Later', 'بعد میں', 'لاحقاً')}
+          </button>
+        )}
+        <Link href="/verify" className="min-h-[44px] inline-flex items-center px-4 rounded-xl bg-[#D4A543] text-[#071827] text-sm font-bold whitespace-nowrap">
+          {L('Verify your email', 'ای میل تصدیق کریں', 'وثّق بريدك')}
+        </Link>
+      </div>
     </div>
   )
 
