@@ -13,7 +13,7 @@ import { arCount, arMaterials } from '@/lib/text'
 // onboarding and /supplier/specialties. Nothing is chosen for him:
 //   1. the 10 browse sections as cards; tapping one opens it (a panel under the grid, a sheet on phones);
 //   2. inside, the section's lists (sub-categories) with a checkbox each, all unticked;
-//   3. ticking a list (or tapping its row) opens its materials, all ticked and shown at once; he unticks
+//   3. tapping a list opens its materials, none ticked (owner 2026-11-27); he ticks what he sells or «اختر الكل»; the row checkbox ticks the whole list
 //      what he does not sell and presses «تم». Unticking every material unticks the list.
 // Values: `specialties` = the chosen sub-category keys (saved with save_supplier_specialties and
 // sectorsFor([], keys)); `excluded` = the Arabic names of the materials he unticked inside the chosen
@@ -161,9 +161,9 @@ export default function SellWhatPicker({ specialties, onChange, excluded = [], o
     setOpenSec(null); setOpenGroup(null)
     if (sec) setTimeout(() => cardRefs.current[sec]?.focus(), 0)
   }
-  // a row: unticked → tick and open its materials; ticked → open / close its materials
+  // a row opens / closes its materials. Owner 2026-11-27: opening a list selects nothing; the seller ticks
+  // what he sells, or uses «اختر الكل» (the row's checkbox also selects the whole list)
   function tapRow(k: string) {
-    if (!sel.has(k)) { setGroups([k], true); setOpenGroup(k); return }
     setOpenGroup(g => (g === k ? null : k))
   }
   function tapBox(k: string) {
@@ -253,8 +253,8 @@ export default function SellWhatPicker({ specialties, onChange, excluded = [], o
         </div>
         <p className="text-[13px] text-gray-600 mb-2.5">
           {independent
-            ? L('Tick the lists you price, then untick in each list what you do not price.', 'جن فہرستوں کی آپ قیمت دیتے ہیں انہیں منتخب کریں، پھر ہر فہرست سے وہ ہٹا دیں جس کی قیمت نہیں دیتے۔', 'علِّم القوائم التي تسعّرها، ثم أزل من كل قائمة ما لا تسعّره.')
-            : L('Tick the lists you sell, then untick in each list what you do not sell.', 'جو فہرستیں آپ بیچتے ہیں انہیں منتخب کریں، پھر ہر فہرست سے وہ ہٹا دیں جو نہیں بیچتے۔', 'علِّم القوائم التي تبيعها، ثم أزل من كل قائمة ما لا تبيعه.')}
+            ? L('Open a list and tick the materials you price, or use «Select all».', 'فہرست کھولیں اور جن اشیاء کی قیمت دیتے ہیں انہیں منتخب کریں، یا «سب منتخب کریں» دبائیں۔', 'افتح القائمة وعلِّم المواد التي تسعّرها، أو اضغط «اختر الكل».')
+            : L('Open a list and tick the materials you sell, or use «Select all».', 'فہرست کھولیں اور جو اشیاء بیچتے ہیں انہیں منتخب کریں، یا «سب منتخب کریں» دبائیں۔', 'افتح القائمة وعلِّم المواد التي تبيعها، أو اضغط «اختر الكل».')}
         </p>
         {packs.length > 0 && (
           <div className="flex flex-wrap items-center gap-1.5 mb-3">
@@ -306,7 +306,7 @@ export default function SellWhatPicker({ specialties, onChange, excluded = [], o
                   <div id={`swp-list-${k}`} role="group" aria-label={label} className="px-3 pb-3">
                     {all.length > 0 ? (<>
                       <div className="flex items-center justify-between gap-2 border-t border-[#D4A543]/30 pt-1">
-                        <span className="text-[12.5px] text-gray-600">{independent ? L('Untick what you do not price.', 'جس کی قیمت نہیں دیتے اسے ہٹا دیں۔', 'أزل ما لا تسعّره.') : L('Untick what you do not sell.', 'جو نہیں بیچتے اسے ہٹا دیں۔', 'أزل ما لا تبيعه.')}</span>
+                        <span className="text-[12.5px] text-gray-600">{independent ? L('Tick what you price.', 'جس کی قیمت دیتے ہیں اسے منتخب کریں۔', 'علِّم ما تسعّره.') : L('Tick what you sell.', 'جو بیچتے ہیں اسے منتخب کریں۔', 'علِّم ما تبيعه.')}</span>
                         {on && kept === all.length
                           ? <button type="button" disabled={disabled} onClick={() => setGroups([k], false)} className="min-h-[44px] px-2 text-[13px] font-bold text-[#8F6820] underline shrink-0">{L('Clear all', 'سب ہٹائیں', 'إلغاء الكل')}</button>
                           : <button type="button" disabled={disabled} onClick={() => setGroups([k], true)} className="min-h-[44px] px-2 text-[13px] font-bold text-[#8F6820] underline shrink-0">{L('Select all', 'سب منتخب کریں', 'اختر الكل')}</button>}
