@@ -67,6 +67,7 @@ const BY_SUB: Record<string, BrowseSection> = {
   kitchen_appliances: 'furniture',  // built-in appliances and kitchen fittings
   office_furniture: 'furniture',
   fitted_furniture: 'furniture',
+  pipe_supports: 'building',        // strut, pipe clamps and hangers sit with the anchors (fischer / Hilti review 2026-11-27)
 }
 
 export function sectionOfSub(subKey: string | null | undefined, groupKey: string | null | undefined): BrowseSection | null {
@@ -101,6 +102,8 @@ const SUB_GROUP: Partial<Record<BrowseSection, Record<string, string>>> = {
     paint: 'fin_paint', store_paint: 'fin_paint', plaster: 'fin_plaster', store_adhesives: 'fin_adhesives',
   },
   tools: { store_hand_tools: 'tools_hand', store_power_tools: 'tools_power', store_bits: 'tools_bits' },
+  // fischer / Hilti review 2026-11-27: mechanical and chemical anchors show as one group
+  building: { store_anchors: 'bld_anchors', chemical_anchors: 'bld_anchors', pipe_supports: 'bld_supports', firestop: 'bld_firestop' },
   outdoor: {
     hardscape: 'out_hardscape', fencing: 'out_fencing', shades_screens: 'out_shades', pools: 'out_pools', fountains: 'out_pools',
     irrigation: 'out_irrigation', turf: 'out_planting', planters: 'out_planting', playground: 'out_planting',
@@ -120,6 +123,11 @@ const LABEL: Partial<Record<BrowseSection, Record<string, { ar: string; en: stri
     rawmaterials: { ar: 'الركام ومواد الردم والأساس', en: 'Aggregates, fill & sub-base', ur: 'بجری، بھرائی اور بیس' },
     scaffolding: { ar: 'السقالات والدعامات', en: 'Scaffolding & shoring', ur: 'سکیفولڈنگ' },
     formwork: { ar: 'الطوبار والشدّات (خشبية ومعدنية)', en: 'Formwork & shuttering (timber & steel)', ur: 'شٹرنگ اور فارم ورک (لکڑی اور اسٹیل)' },
+    // fischer / Hilti review 2026-11-27
+    bld_anchors: { ar: 'الأنكرات والخوابير والتثبيت الكيميائي', en: 'Anchors, wall plugs & chemical anchoring', ur: 'اینکر، وال پلگ اور کیمیکل اینکرنگ' },
+    store_fasteners: { ar: 'المسامير والبراغي والصواميل', en: 'Nails, screws, bolts & nuts', ur: 'کیل، پیچ، بولٹ اور نٹ' },
+    bld_supports: { ar: 'أنظمة التثبيت والدعامات (سترت وعلاقات مواسير)', en: 'Support systems (strut, pipe clamps & hangers)', ur: 'سپورٹ سسٹمز (اسٹرٹ، پائپ کلیمپ اور ہینگر)' },
+    bld_firestop: { ar: 'منع انتشار الحريق (فايرستوب)', en: 'Firestop', ur: 'فائر اسٹاپ' },
   },
   finishing: {
     fin_paint: { ar: 'الدهانات', en: 'Paints', ur: 'پینٹ' },
@@ -138,7 +146,7 @@ const LABEL: Partial<Record<BrowseSection, Record<string, { ar: string; en: stri
   plumbing: {
     plb_sanitary: { ar: 'الأدوات الصحية', en: 'Sanitary ware & mixers', ur: 'سینیٹری کا سامان' },
     plb_pipes: { ar: 'المواسير', en: 'Pipes', ur: 'پائپ' },
-    plb_valves: { ar: 'الوصلات والمحابس والحوامل', en: 'Fittings, valves & supports', ur: 'فٹنگز، والو اور سپورٹ' },
+    plb_valves: { ar: 'الوصلات والمحابس', en: 'Fittings & valves', ur: 'فٹنگز اور والو' }, // supports moved to «البناء» (2026-11-27)
     plb_equipment: { ar: 'المضخات والخزانات والسخانات والمعالجة', en: 'Pumps, tanks, heaters & treatment', ur: 'پمپ، ٹینک، ہیٹر اور ٹریٹمنٹ' },
     plb_small: { ar: 'لوازم سباكة صغيرة', en: 'Small plumbing supplies', ur: 'پلمبنگ کا چھوٹا سامان' },
   },
@@ -219,7 +227,7 @@ const CHEM_GROUPS: { key: string; ar: string; en: string; ur: string; icon: stri
 ]
 // «العزل المائي» is its own group (owner 2026-10-31: «العزل» only, not «عزل الأساسات»; piles stay under «الأساسات»)
 const WATERPROOF_GROUP = { key: 'waterproofing', ar: 'العزل المائي', en: 'Waterproofing', ur: 'واٹر پروفنگ', icon: '🛡' }
-SECTION_ORDER.building = ['concrete', 'steel', 'masonry', 'rawmaterials', 'formwork', 'scaffolding', 'waterproofing', 'building_insulation', 'infrastructure', 'chem_admix', 'chem_repair', 'chem_seal', 'chem_fire', 'store_fasteners']
+SECTION_ORDER.building = ['concrete', 'steel', 'masonry', 'rawmaterials', 'formwork', 'scaffolding', 'waterproofing', 'building_insulation', 'infrastructure', 'chem_admix', 'chem_repair', 'chem_seal', 'chem_fire', 'bld_firestop', 'bld_anchors', 'store_fasteners', 'bld_supports']
 
 function getTradeGroups(section: BrowseSection): SectionGroup[] {
   const out: Record<string, SectionGroup> = {}
@@ -256,9 +264,12 @@ export function sectionCount(section: BrowseSection): number {
 // file a free-text item («not in the list») under the right specialty so it reaches the
 // specialist suppliers instead of the whole sector.
 export type SectionSub = { sector: Sector; key: string; group: string; ar: string; en: string; ur: string }
-const subsCache: Partial<Record<BrowseSection, SectionSub[]>> = {}
+// Rebuilt when the taxonomy changes (an admin may add a sub-category; hydrateTaxonomy bumps the version).
+const subsCache: Partial<Record<BrowseSection, { v: number; subs: SectionSub[] }>> = {}
 export function subsOfSection(section: BrowseSection): SectionSub[] {
-  if (subsCache[section]) return subsCache[section]!
+  const v = taxonomyVersion()
+  const hit = subsCache[section]
+  if (hit && hit.v === v) return hit.subs
   const out: SectionSub[] = []
   for (const [sector, subs] of Object.entries(SUB_CATEGORIES)) {
     for (const [key, v] of Object.entries(subs as any)) {
@@ -266,5 +277,6 @@ export function subsOfSection(section: BrowseSection): SectionSub[] {
       if (sectionOfSub(key, sub.group) === section) out.push({ sector: sector as Sector, key, group: sub.group, ar: sub.ar, en: sub.en, ur: sub.ur })
     }
   }
-  return (subsCache[section] = out)
+  subsCache[section] = { v, subs: out }
+  return out
 }

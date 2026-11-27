@@ -134,7 +134,12 @@ export const SUB_CATEGORIES: Record<Sector, Record<string, SubCategory>> = {
     piling: { ar: 'أوتاد وخوازيق الأساسات', en: 'Piling & Foundations', ur: 'پائلنگ', icon: '🛠', group: 'infrastructure',
       keywords: ['أوتاد','اوتاد','pile','piling','خازوق','وتد خرساني'] },
     construction_chemicals: { ar: 'مواد كيميائية للبناء', en: 'Construction Chemicals', ur: 'کیمیکل', icon: '🧪', group: 'infrastructure',
-      keywords: ['جراوت','grout','إضافات','additive','سيليكون إنشائي','epoxy','معالجة خرسانة','curing','كيماوي','مبيد النمل الأبيض','مادة معالجة الخرسانة','مادة ربط الخرسانة','مثبت كيميائي','حشوة فواصل التمدد','لاصق بلوك','مونة رقيقة','مونة إصلاح الخرسانة','سيليكون','silicone','مانع تسرب','sealant','ماستك','فوم بولي','مقاوم للحريق','معجون حريق','fire putty','water plug','بوليمر','بولي سلفايد','بولي يوريثان','لملء الفراغات','weather seal','chemical anchor','anchor bolt resin','curing compound','admixture'] },
+      keywords: ['جراوت','grout','إضافات','additive','سيليكون إنشائي','epoxy','معالجة خرسانة','curing','كيماوي','مبيد النمل الأبيض','مادة معالجة الخرسانة','مادة ربط الخرسانة','حشوة فواصل التمدد','لاصق بلوك','مونة رقيقة','مونة إصلاح الخرسانة','سيليكون','silicone','مانع تسرب','sealant','ماستك','فوم بولي','مقاوم للحريق','دهان منتفخ','fireproofing','water plug','بوليمر','بولي سلفايد','بولي يوريثان','لملء الفراغات','weather seal','curing compound','admixture'] },
+    // fischer / Hilti review 2026-11-27: chemical anchoring and firestop get their own specialties (migration 296)
+    chemical_anchors: { ar: 'التثبيت الكيميائي (مونة حقن وكبسولات)', en: 'Chemical Anchoring (Injection Mortars & Capsules)', ur: 'کیمیکل اینکرنگ (انجیکشن مارٹر اور کیپسول)', icon: '🧪', group: 'infrastructure',
+      keywords: ['مثبت كيميائي','تثبيت كيميائي','أنكر كيميائي','كيميكال أنكر','chemical anchor','anchor bolt resin','resin anchor','injection mortar','مونة حقن','كبسولة أنكر','كبسولات تثبيت','capsule anchor','جلبة شبكية','sieve sleeve','أشاير','rebar doweling'] },
+    firestop: { ar: 'منتجات منع انتشار الحريق (فايرستوب)', en: 'Firestop Products', ur: 'فائر اسٹاپ مصنوعات', icon: '🔥', group: 'infrastructure',
+      keywords: ['فايرستوب','فاير ستوب','firestop','fire stop','منع انتشار الحريق','حريق','مقاوم للحريق','سيليكون مقاوم للحريق','أكريليك مقاوم للحريق','فوم مقاوم للحريق','طوق حريق','fire collar','شريط حريق','لوح حريق','مونة حريق','وسائد حريق','سدادات حريق','جلبة حريق','رذاذ حريق','معجون حريق','fire putty','عازل للحريق','حاجز حريق','fire barrier','intumescent sealant','fire rated sealant'] },
     drainage: { ar: 'صرف خارجي وبنية تحتية', en: 'External Drainage', ur: 'نکاسی', icon: '🚧', group: 'drainage_grp',
       keywords: ['صرف أمطار','storm','drainage','منهول','manhole','تفتيش','ductile','دكتايل','حديد مرن','RCP','خرسانية مسلحة','صرف','مصارف','مصرف','بيارة','خزان صرف صحي','septic'] },
     // ═══ الكسارات والمواد الأولية وأعمال الموقع ═══
@@ -341,8 +346,11 @@ export const SUB_CATEGORIES: Record<Sector, Record<string, SubCategory>> = {
     // ═══ لوازم وإكسسوارات السباكة (محلات صغيرة) ═══
     faucets_mixers: { ar: 'خلاطات وأدوات صحية', en: 'Faucets & Sanitary Fixtures', ur: 'نل', icon: '🚿', group: 'plumbing_supplies',
       keywords: ['خلاط','صنبور','حنفية','مخلط','faucet','mixer','tap','بطارية مغسلة','خلاط مطبخ','مغسلة','حوض','مجلى','مبولة','wash basin','sink','urinal','كرسي حمام','مرحاض','WC'] },
-    valves_fittings: { ar: 'محابس ووصلات وحوامل', en: 'Valves, Fittings & Supports', ur: 'والو', icon: '🔩', group: 'plumbing_supplies',
-      keywords: ['محبس','صمام زاوية','angle valve','gate valve','محبس زاوية','وصلة','وصلات','كوع','تي','fitting','elbow','tee','كوبلن','نبل','فلانش','فلنشة','flange','عازل اهتزاز','اهتزاز','مواسير تمدد','expansion joint','تمدد','حوامل','تعليقات','pipe support','hanger','مجمع توزيع مياه'] },
+    valves_fittings: { ar: 'محابس ووصلات', en: 'Valves & Fittings', ur: 'والو', icon: '🔩', group: 'plumbing_supplies',
+      keywords: ['محبس','صمام زاوية','angle valve','gate valve','محبس زاوية','وصلة','وصلات','كوع','تي','fitting','elbow','tee','كوبلن','نبل','فلانش','فلنشة','flange','عازل اهتزاز','اهتزاز','مواسير تمدد','expansion joint','تمدد','مجمع توزيع مياه'] },
+    // fischer / Hilti review 2026-11-27: strut, pipe clamps and hangers (migration 296)
+    pipe_supports: { ar: 'أنظمة التثبيت والدعامات (سترت وعلاقات مواسير)', en: 'Support Systems (Strut, Pipe Clamps & Hangers)', ur: 'سپورٹ سسٹمز (اسٹرٹ، پائپ کلیمپ اور ہینگر)', icon: '🔧', group: 'plumbing_supplies',
+      keywords: ['سترت','strut','يونيسترت','unistrut','قناة تثبيت','قناة التثبيت','علاقة مواسير','علاقة','كلامب','clamp','كلفيس','clevis','حوامل','حامل','تعليقات','pipe support','hanger','دعامات','كابولي','cantilever','يو بولت','u-bolt','حذاء مواسير','pipe shoe','علاقة سلك','wire suspension','صامولة زنبركية','spring nut'] },
     copper_fittings: { ar: 'لوازم نحاسية', en: 'Copper Fittings', ur: 'تانبے', icon: '🟠', group: 'plumbing_supplies',
       keywords: ['نحاس','copper','لوازم نحاسية','وصلة نحاس','كوع نحاس'] },
     traps_drains: { ar: 'سيفونات ومصافي', en: 'Traps & Drains', ur: 'سائفن', icon: '🚽', group: 'plumbing_supplies',
@@ -427,7 +435,7 @@ export const SUB_CATEGORIES: Record<Sector, Record<string, SubCategory>> = {
     store_lighting: { ar: 'لمبات وإنارة بسيطة', en: 'Bulbs & Lighting', ur: 'بلب', icon: '💡', group: 'store_electrical',
       keywords: ['لمبة','بلب','bulb','إنارة','سبوت','spot','led','مصباح','كشاف صغير','نجفة'] },
     store_elec_access: { ar: 'إكسسوارات كهرباء', en: 'Electrical Accessories', ur: 'الیکٹریکل لوازم', icon: '⚡', group: 'store_electrical',
-      keywords: ['قاطع صغير','MCB','فيش','plug','شريط لحام','كماشة كهرب','عازل','تيب','محول صغير','شاحن','مشترك كهرباء','موزع أفياش','جهاز قياس كهرباء'] },
+      keywords: ['قاطع صغير','MCB','فيش كهرباء','فيشة','plug','شريط لحام','كماشة كهرب','عازل','تيب','محول صغير','شاحن','مشترك كهرباء','موزع أفياش','جهاز قياس كهرباء'] },
     store_elec_consumables: { ar: 'مستهلكات كهرباء (شرائط/تايات/جلاند)', en: 'Electrical Consumables', ur: 'الیکٹریکل سامان', icon: '🔌', group: 'store_electrical',
       keywords: ['شريط عزل','تيب لحام','أربطة كابلات','تايات','cable tie','جلبة كابل','جلاند','gland','واغو','wago','كلامة','هيت شرنك','heat shrink','كم حراري','علبة توزيع','junction box','كوبلن مواسير كهرباء','كوندويت','شمع تزليق', 'شريط تلوين', 'ترميز الكابلات', 'ترميز كابلات'] },
     // ═══ عُدد يدوية وكهربائية ═══
@@ -439,7 +447,10 @@ export const SUB_CATEGORIES: Record<Sector, Record<string, SubCategory>> = {
       keywords: ['ريشة','ريش','لقمة','drill bit','همر','SDS','قرص قص','قرص','تجليخ','grinding','disc','شفرة','blade','صنفرة', 'حجر شحذ', 'شحذ'] },
     // ═══ مسامير وبراغي ومثبتات ═══
     store_fasteners: { ar: 'مسامير وبراغي وصواميل', en: 'Screws, Bolts & Nuts', ur: 'پیچ', icon: '🔩', group: 'store_fasteners',
-      keywords: ['مسمار','مسامير','برغي','screw','bolt','nail','صامولة','صواميل','nut','مثبت','رول بلت','خابور','خوابير','anchor','براغي','فيشر','سيخ مسنن','وردات','أنكر بولت'] },
+      keywords: ['مسمار','مسامير','برغي','screw','bolt','nail','صامولة','صواميل','nut','مثبت','براغي','سيخ مسنن','قضيب ملولب','threaded rod','وردات','وردة','washer','أنكر بولت','ذاتي الحفر','self-drilling','بارود','طلقات'] },
+    // fischer / Hilti review 2026-11-27: anchors and wall plugs apart from screws and nails (migration 296)
+    store_anchors: { ar: 'أنكرات وخوابير التثبيت', en: 'Anchors & Wall Plugs', ur: 'اینکر اور وال پلگ', icon: '🔩', group: 'store_fasteners',
+      keywords: ['أنكر','أنكرات','anchor','خابور','خوابير','فيشر','رول بلت','برغي تمدد','برغي خرسانة','concrete screw','wall plug','توجل','toggle','مولي','molly','دروب إن','drop-in','wedge','sleeve anchor','undercut','تجويف سفلي','أنكر كيميائي','قضيب أنكر','مسدس حقن','فوهة خلط','frame fixing'] },
     // ═══ سلامة ومستهلكات ═══
     store_safety: { ar: 'معدات سلامة وقفازات', en: 'Safety & PPE', ur: 'حفاظتی سامان', icon: '🦺', group: 'store_safety',
       keywords: ['خوذة','قفازات','gloves','نظارة','حذاء سلامة','سترة','كمامة','mask','PPE','وقاية','حزام أمان','لوحات إرشادية للسلامة والإخلاء','أقماع وحواجز مرورية','شريط تحذيري','شبكة أمان للمباني','أفرول عمل','حقيبة إسعافات أولية','سدادات وواقيات الأذن'] },
@@ -469,28 +480,28 @@ export const SUB_CATEGORIES: Record<Sector, Record<string, SubCategory>> = {
 export const PRODUCT_SUB: Record<string, string> = {
   'عازل رطوبة للأسطح والجدران': 'waterproofing',
   'عازل حراري مجاري هواء': 'duct_insulation',
-  'انكر وتد (Wedge Anchor / Through Bolt)': 'store_fasteners',
-  'انكر دروب إن (Drop-in Anchor)': 'store_fasteners',
-  'انكر كُم (Sleeve Anchor)': 'store_fasteners',
-  'برغي خرسانة (Concrete Screw / Screw Anchor)': 'store_fasteners',
-  'انكر ثقيل للأحمال (Heavy-duty Anchor)': 'store_fasteners',
-  'انكر سقف بمسمار للتعليق (Ceiling Nail Anchor)': 'store_fasteners',
-  'مونة حقن كيميائية إيبوكسي (Injection Epoxy Mortar)': 'construction_chemicals',
-  'مونة حقن هايبرد/فينيل إستر سريعة (Hybrid / Vinylester Injection Mortar)': 'construction_chemicals',
-  'انكر كيميائي كبسولة (Chemical Capsule Anchor)': 'construction_chemicals',
-  'قضيب انكر كيميائي مع صامولة ووردة (Chemical Anchor Rod / Stud)': 'store_fasteners',
-  'جلبة شبكية للانكر الكيميائي في الطوب المفرغ (Mesh / Sieve Sleeve)': 'construction_chemicals',
-  'مسدس حقن الانكر الكيميائي (Injection Dispenser)': 'store_hand_tools',
-  'فوهة خلط للانكر الكيميائي (Static Mixer Nozzle)': 'store_consumables',
-  'فرشاة ومنفاخ تنظيف ثقوب الانكر (Hole Cleaning Brush & Blow-out Pump)': 'store_consumables',
-  'وردة تعبئة للانكرات (Filling / Dynamic Washer)': 'store_fasteners',
-  'خابور إطار للأبواب والشبابيك (Frame Fixing)': 'store_fasteners',
-  'خابور معدني للجدران المفرغة والجبس بورد (Metal Cavity Anchor / Molly)': 'store_fasteners',
-  'خابور فراشة/توجل للأسقف المفرغة (Spring / Tilt Toggle)': 'store_fasteners',
-  'خابور جبس بورد بلاستيك/زماك ذاتي الثقب (Self-drill Plasterboard Plug)': 'store_fasteners',
-  'خابور الخرسانة الخلوية (الطوب الخفيف/سيبوريكس) (Aerated Concrete Plug)': 'store_fasteners',
+  'انكر وتد (Wedge Anchor / Through Bolt)': 'store_anchors',
+  'انكر دروب إن (Drop-in Anchor)': 'store_anchors',
+  'انكر كُم (Sleeve Anchor)': 'store_anchors',
+  'برغي خرسانة (Concrete Screw / Screw Anchor)': 'store_anchors',
+  'انكر ثقيل للأحمال (Heavy-duty Anchor)': 'store_anchors',
+  'انكر سقف بمسمار للتعليق (Ceiling Nail Anchor)': 'store_anchors',
+  'مونة حقن كيميائية إيبوكسي (Injection Epoxy Mortar)': 'chemical_anchors',
+  'مونة حقن هايبرد/فينيل إستر سريعة (Hybrid / Vinylester Injection Mortar)': 'chemical_anchors',
+  'انكر كيميائي كبسولة (Chemical Capsule Anchor)': 'chemical_anchors',
+  'قضيب انكر كيميائي مع صامولة ووردة (Chemical Anchor Rod / Stud)': 'store_anchors',
+  'جلبة شبكية للانكر الكيميائي في الطوب المفرغ (Mesh / Sieve Sleeve)': 'chemical_anchors',
+  'مسدس حقن الانكر الكيميائي (Injection Dispenser)': 'store_anchors',
+  'فوهة خلط للانكر الكيميائي (Static Mixer Nozzle)': 'store_anchors',
+  'فرشاة ومنفاخ تنظيف ثقوب الانكر (Hole Cleaning Brush & Blow-out Pump)': 'store_anchors',
+  'وردة تعبئة للانكرات (Filling / Dynamic Washer)': 'store_anchors',
+  'خابور إطار للأبواب والشبابيك (Frame Fixing)': 'store_anchors',
+  'خابور معدني للجدران المفرغة والجبس بورد (Metal Cavity Anchor / Molly)': 'store_anchors',
+  'خابور فراشة/توجل للأسقف المفرغة (Spring / Tilt Toggle)': 'store_anchors',
+  'خابور جبس بورد بلاستيك/زماك ذاتي الثقب (Self-drill Plasterboard Plug)': 'store_anchors',
+  'خابور الخرسانة الخلوية (الطوب الخفيف/سيبوريكس) (Aerated Concrete Plug)': 'store_anchors',
   'مسمار عزل حراري بقرص (Insulation Fixing)': 'thermal_insulation',
-  'طقم تثبيت مغسلة ومرحاض (Sanitary Fixing Set)': 'store_fasteners',
+  'طقم تثبيت مغسلة ومرحاض (Sanitary Fixing Set)': 'store_anchors',
   'مسامير بارود للخرسانة والحديد (Powder-actuated Nails)': 'store_fasteners',
   'طلقات بارود (Powder Cartridges / Boosters)': 'store_fasteners',
   'مسامير مسدس الغاز للخرسانة (Gas Nails)': 'store_fasteners',
@@ -498,30 +509,30 @@ export const PRODUCT_SUB: Record<string, string> = {
   'برغي ذاتي الحفر مع وردة مطاط للساندوتش بانل (Self-drilling Screw + EPDM Washer)': 'store_fasteners',
   'برغي خشب وتشبورد (Chipboard / Wood Screw)': 'store_fasteners',
   'صامولة وصل طويلة للقضبان الملولبة (Coupling Nut)': 'store_fasteners',
-  'قناة تثبيت يونيسترت (Strut Channel)': 'valves_fittings',
-  'صامولة زنبركية للقناة (Channel Spring Nut)': 'valves_fittings',
-  'زوايا ووصلات قناة التثبيت (Channel Brackets & Connectors)': 'valves_fittings',
-  'ذراع حامل كابولي (Cantilever Bracket)': 'valves_fittings',
-  'قاعدة تثبيت قناة/قضيب (Channel Base Plate / Rod Hanger)': 'valves_fittings',
-  'علاقة مواسير مبطنة بالمطاط (Rubber-lined Pipe Clamp)': 'valves_fittings',
-  'كلامب مواسير ثقيل للأحمال (Heavy-duty Pipe Clamp)': 'valves_fittings',
-  'علاقة كلفيس/حلقة لمواسير الحريق والرشاشات (Clevis / Ring Hanger)': 'valves_fittings',
-  'كلامب كمرة (Beam Clamp)': 'valves_fittings',
-  'حامل انزلاقي/أسطواني للمواسير الساخنة (Pipe Slide / Roller Support)': 'valves_fittings',
+  'قناة تثبيت يونيسترت (Strut Channel)': 'pipe_supports',
+  'صامولة زنبركية للقناة (Channel Spring Nut)': 'pipe_supports',
+  'زوايا ووصلات قناة التثبيت (Channel Brackets & Connectors)': 'pipe_supports',
+  'ذراع حامل كابولي (Cantilever Bracket)': 'pipe_supports',
+  'قاعدة تثبيت قناة/قضيب (Channel Base Plate / Rod Hanger)': 'pipe_supports',
+  'علاقة مواسير مبطنة بالمطاط (Rubber-lined Pipe Clamp)': 'pipe_supports',
+  'كلامب مواسير ثقيل للأحمال (Heavy-duty Pipe Clamp)': 'pipe_supports',
+  'علاقة كلفيس/حلقة لمواسير الحريق والرشاشات (Clevis / Ring Hanger)': 'pipe_supports',
+  'كلامب كمرة (Beam Clamp)': 'pipe_supports',
+  'حامل انزلاقي/أسطواني للمواسير الساخنة (Pipe Slide / Roller Support)': 'pipe_supports',
   'كلبس ماسورة وسرج تثبيت (Pipe / Conduit Saddle Clip)': 'store_elec_access',
   'قناة انكر مصبوبة في الخرسانة (Cast-in Anchor Channel)': 'curtain_wall',
-  'طوق حريق للمواسير البلاستيكية (Firestop Collar)': 'construction_chemicals',
-  'شريط حريق منتفخ للمواسير (Intumescent Wrap Strip)': 'construction_chemicals',
-  'لوح حريق مغطى للفتحات (Coated Firestop Board / Batt)': 'construction_chemicals',
-  'مونة حريق للفتحات الكبيرة (Firestop Mortar)': 'construction_chemicals',
-  'وسائد حريق (Firestop Pillows)': 'construction_chemicals',
-  'كتل/سدادات حريق للكابلات (Firestop Blocks / Plugs)': 'construction_chemicals',
-  'جلبة حريق لعبور الكابلات (Cable Transit Firestop Sleeve)': 'construction_chemicals',
-  'رذاذ حريق مرن للفواصل وأعلى الجدران (Firestop Joint Spray)': 'construction_chemicals',
-  'طلاء حريق للكابلات (Ablative Cable Coating)': 'construction_chemicals',
-  'جلبة حريق تُصب في البلاطة (Cast-in Firestop Device)': 'construction_chemicals',
-  'وسادات معجون حريق لعلب الكهرباء (Firestop Putty Pads)': 'construction_chemicals',
-  'ملصق تعريف أنظمة الحريق (Firestop Identification Label)': 'construction_chemicals',
+  'طوق حريق للمواسير البلاستيكية (Firestop Collar)': 'firestop',
+  'شريط حريق منتفخ للمواسير (Intumescent Wrap Strip)': 'firestop',
+  'لوح حريق مغطى للفتحات (Coated Firestop Board / Batt)': 'firestop',
+  'مونة حريق للفتحات الكبيرة (Firestop Mortar)': 'firestop',
+  'وسائد حريق (Firestop Pillows)': 'firestop',
+  'كتل/سدادات حريق للكابلات (Firestop Blocks / Plugs)': 'firestop',
+  'جلبة حريق لعبور الكابلات (Cable Transit Firestop Sleeve)': 'firestop',
+  'رذاذ حريق مرن للفواصل وأعلى الجدران (Firestop Joint Spray)': 'firestop',
+  'طلاء حريق للكابلات (Ablative Cable Coating)': 'firestop',
+  'جلبة حريق تُصب في البلاطة (Cast-in Firestop Device)': 'firestop',
+  'وسادات معجون حريق لعلب الكهرباء (Firestop Putty Pads)': 'firestop',
+  'ملصق تعريف أنظمة الحريق (Firestop Identification Label)': 'firestop',
   'فوم مسدس احترافي (Gun-grade PU Foam)': 'store_adhesives',
   'منظف الفوم (PU Foam Cleaner)': 'store_adhesives',
   'لاصق تركيب بديل المسامير (Construction / Mounting Adhesive)': 'store_adhesives',
@@ -571,9 +582,9 @@ export const PRODUCT_SUB: Record<string, string> = {
   'جراوت إيبوكسي لقواعد المعدات (Epoxy Grout)': 'construction_chemicals',
   'جراوت سريع الشك لأغطية المناهل والإصلاح السريع (Rapid-set Grout)': 'construction_chemicals',
   'جراوت حقن كابلات الشد اللاحق (Post-tension Duct Grout)': 'construction_chemicals',
-  'مثبت كيميائي إيبوكسي إنشائي (Epoxy Anchoring Resin)': 'construction_chemicals',
-  'مثبت كيميائي بوليستر/فينيل إستر (Polyester / Vinylester Anchor)': 'construction_chemicals',
-  'كبسولات تثبيت كيميائية (Resin Capsule Anchors)': 'construction_chemicals',
+  'مثبت كيميائي إيبوكسي إنشائي (Epoxy Anchoring Resin)': 'chemical_anchors',
+  'مثبت كيميائي بوليستر/فينيل إستر (Polyester / Vinylester Anchor)': 'chemical_anchors',
+  'كبسولات تثبيت كيميائية (Resin Capsule Anchors)': 'chemical_anchors',
   'مونة إصلاح إنشائية عالية المقاومة R4 (Structural Repair Mortar)': 'construction_chemicals',
   'مونة إصلاح خفيفة للأسقف والجدران (Lightweight Repair Mortar)': 'construction_chemicals',
   'خرسانة دقيقة قابلة للصب (Micro-concrete)': 'construction_chemicals',
@@ -671,7 +682,7 @@ export const PRODUCT_SUB: Record<string, string> = {
   'شريط بيوتيل لاصق للتسربات (وجه ألمنيوم)': 'store_consumables',
   'شريط بيوتيل وجهين (للصاج والزجاج)': 'store_consumables',
   'شريط بيتوميني ذاتي اللصق (فلاشينج)': 'waterproofing',
-  'شريط عازل للحريق والمياه للفواصل (FWBT)': 'construction_chemicals',
+  'شريط عازل للحريق والمياه للفواصل (FWBT)': 'firestop',
   'شريط مانع انزلاق للدرج': 'store_safety',
   'شريط فوم عازل للأبواب والنوافذ': 'store_consumables',
   'شريط تمدد لعزل فواصل النوافذ (Expanding Tape)': 'aluminum',
@@ -913,7 +924,7 @@ export const PRODUCT_SUB: Record<string, string> = {
   'برغي سداسي مجلفن DIN 933 (Hex Bolt)': 'store_fasteners',
   'برغي ذاتي التسنين برأس مسطّح مع خابور (Self-tapping Screw + Plug)': 'store_fasteners',
   'مسامير فولاذ للخرسانة (Hardened Concrete Nails)': 'store_fasteners',
-  'خابور مسمار بلاستيك سريع (Nail-in / Hammer-drive Plug)': 'store_fasteners',
+  'خابور مسمار بلاستيك سريع (Nail-in / Hammer-drive Plug)': 'store_anchors',
   'برايمر زنك فوسفات للحديد (Zinc Phosphate Primer)': 'paint',
   'بخاخ دهان تخطيط وتعليم المواقع (Marking Spray Paint)': 'store_paint',
 }
@@ -1046,6 +1057,7 @@ const SUB_UNITS: Record<string, string> = {
   store_wires: 'م.ط', store_switches: 'عدد', store_lighting: 'عدد', store_elec_access: 'عدد',
   store_hand_tools: 'عدد', store_power_tools: 'عدد', store_bits: 'عدد',
   store_fasteners: 'عدد', store_safety: 'عدد', store_consumables: 'عدد',
+  store_anchors: 'علبة', chemical_anchors: 'خرطوش', firestop: 'عدد', pipe_supports: 'عدد', // 2026-11-27
   store_paint: 'عدد', store_adhesives: 'عدد',
   // 2026-11-02 review: specialties that had no default unit (126 catalog items showed a blank unit)
   steel_sections: 'طول (6م)', drywall_metal: 'حبة (3م)', wiring_devices: 'عدد', led_strips: 'م.ط',
@@ -1101,6 +1113,8 @@ const SUB_UNIT_OPTIONS: Record<string, string[]> = {
   store_faucets: PIECE, store_valves: PIECE, store_hoses: ['عدد', 'لفة', 'م.ط'],
   store_wires: ['لفة', 'م.ط'], store_switches: ['عدد', 'كرتون'], store_lighting: ['عدد', 'كرتون'], store_elec_access: ['عدد', 'كرتون'],
   store_hand_tools: PIECE, store_power_tools: PIECE, store_bits: PIECE,
+  store_anchors: ['علبة', 'عدد', 'كرتون'], chemical_anchors: ['خرطوش', 'علبة', 'كرتون', 'عدد'], // 2026-11-27
+  firestop: ['عدد', 'خرطوش', 'علبة', 'م.ط', 'م²', 'لفة', 'كيس', 'سطل'], pipe_supports: ['عدد', 'علبة', 'م.ط', 'طقم'],
   store_fasteners: ['علبة', 'عدد', 'كغ', 'كرتون'], store_safety: ['عدد', 'طقم', 'كرتون'], store_consumables: ['عدد', 'لفة', 'كرتون'],
   store_paint: ['جالون', 'لتر', 'سطل', 'عدد'], store_adhesives: ['عدد', 'علبة', 'كرتون'],
   // 2026-11-02 review
@@ -1490,6 +1504,7 @@ export const SPEC_REQUIRED_SUBS = new Set<string>([
   'tiles', 'marble', 'wood_floor', 'gypsum', 'drywall_metal', 'false_ceiling', 'aluminum', 'curtain_wall', 'wood_doors', 'fire_doors',
   'lv_cables', 'mv_cables', 'store_wires', 'conduits', 'breakers', 'panels',
   'drainage_pipes', 'water_supply', 'pressure_pipes', 'chilled_water_pipes', 'fire_fighting', 'ductwork', 'store_fasteners',
+  'store_anchors', // 2026-11-27: the anchors moved out of store_fasteners keep their required sizes
 ])
 // «الماركة أو اسم المنتج» (owner 2026-10-31: e.g. grout → «فوسروك رندروك»; optional, but it makes
 // pricing easier). Asked for every material except machinery hire and bulk site materials.
@@ -1667,6 +1682,8 @@ export function getUnitLabel(unit: string | null | undefined, locale: string): s
 
 export const SECTOR_PRODUCTS: Record<Sector, string[]> = {
   civil: [
+    // ═══ 2026-11-27: fischer / Hilti range review ═══
+    'مونة حقن لتثبيت أشاير حديد التسليح (Rebar Doweling Injection Mortar)', 'حاجز حريق لحافة البلاطة والتجاويف (Edge-of-slab / Cavity Fire Barrier)', 'لفافة حريق للدكت والكابلات (Endothermic Fire Wrap)',
     // ═══ 2026-10-19: brand catalogs (Hilti, fischer, Würth, Fosroc, Sika, MBS, Mapei, Bostik, Henkel, Soudal…) + Masdar ═══
     'مونة حقن كيميائية إيبوكسي (Injection Epoxy Mortar)', 'مونة حقن هايبرد/فينيل إستر سريعة (Hybrid / Vinylester Injection Mortar)', 'انكر كيميائي كبسولة (Chemical Capsule Anchor)', 'جلبة شبكية للانكر الكيميائي في الطوب المفرغ (Mesh / Sieve Sleeve)',
     'طوق حريق للمواسير البلاستيكية (Firestop Collar)', 'شريط حريق منتفخ للمواسير (Intumescent Wrap Strip)', 'لوح حريق مغطى للفتحات (Coated Firestop Board / Batt)', 'مونة حريق للفتحات الكبيرة (Firestop Mortar)',
@@ -2050,6 +2067,8 @@ export const SECTOR_PRODUCTS: Record<Sector, string[]> = {
     'بروفايل ليد مقاوم للماء (نيون بار)',
   ],
   mechanical: [
+    // ═══ 2026-11-27: fischer / Hilti range review ═══
+    'برغي حرف T للقناة (Channel T-bolt)', 'برغي يو لتثبيت المواسير (U-bolt)', 'علاقة سلك قابلة للضبط للأسقف والمعدات (Wire Suspension Kit)', 'قاعدة حذاء للمواسير المعزولة (Pipe Shoe)',
     // ═══ 2026-10-19: brand catalogs (Hilti, fischer, Würth, Fosroc, Sika, MBS, Mapei, Bostik, Henkel, Soudal…) + Masdar ═══
     'قناة تثبيت يونيسترت (Strut Channel)', 'صامولة زنبركية للقناة (Channel Spring Nut)', 'زوايا ووصلات قناة التثبيت (Channel Brackets & Connectors)', 'ذراع حامل كابولي (Cantilever Bracket)',
     'قاعدة تثبيت قناة/قضيب (Channel Base Plate / Rod Hanger)', 'علاقة مواسير مبطنة بالمطاط (Rubber-lined Pipe Clamp)', 'كلامب مواسير ثقيل للأحمال (Heavy-duty Pipe Clamp)', 'علاقة كلفيس/حلقة لمواسير الحريق والرشاشات (Clevis / Ring Hanger)',
@@ -2207,6 +2226,8 @@ export const SECTOR_PRODUCTS: Record<Sector, string[]> = {
     'عربة أسطوانات غاز',
   ],
   supply_store: [
+    // ═══ 2026-11-27: fischer / Hilti range review ═══
+    'أنكر تجويف سفلي للأحمال الثقيلة (Undercut Anchor)', 'قضيب أنكر كيميائي داخلي السن (Internal-threaded Anchor Rod)', 'برغي حلقة وأنكر سقالات (Eye Bolt / Scaffold Anchor)', 'أداة تركيب أنكر الدروب إن (Drop-in Setting Tool)', 'برغي ذاتي الحفر للحديد والصاج (Self-drilling Tek Screw)', 'برغي ألواح الأسمنت بورد (Cement Board Screw)', 'برغي واجهات وكلادينج ستانلس (Facade / Cladding Screw)', 'خرطوشة غاز لمسدس المسامير (Gas Fuel Cell)', 'مسمار ملولب يُثبَّت بالبارود (Threaded Stud)', 'ريشة همر SDS-plus للخرسانة (SDS-plus Hammer Drill Bit)',
     // ═══ 2026-10-19: brand catalogs (Hilti, fischer, Würth, Fosroc, Sika, MBS, Mapei, Bostik, Henkel, Soudal…) + Masdar ═══
     'انكر وتد (Wedge Anchor / Through Bolt)', 'انكر دروب إن (Drop-in Anchor)', 'انكر كُم (Sleeve Anchor)', 'برغي خرسانة (Concrete Screw / Screw Anchor)',
     'انكر ثقيل للأحمال (Heavy-duty Anchor)', 'انكر سقف بمسمار للتعليق (Ceiling Nail Anchor)', 'قضيب انكر كيميائي مع صامولة ووردة (Chemical Anchor Rod / Stud)', 'مسدس حقن الانكر الكيميائي (Injection Dispenser)',
@@ -2943,7 +2964,7 @@ const CATALOG_ROUTE: Record<string, [Sector, string]> = {
   'أباجورة': ['supply_store', 'store_lighting'],
   'فرشاة سلك (كأس / دائرية)': ['supply_store', 'store_bits'],
   'فوم عازل': ['supply_store', 'store_adhesives'],
-  'فيشر': ['supply_store', 'store_fasteners'],
+  'فيشر': ['supply_store', 'store_anchors'],
   'مفتاح ربط': ['supply_store', 'store_hand_tools'],
   'لوحة تحكم حريق': ['electrical', 'fire_alarm'],
   // plumbing
@@ -3214,6 +3235,89 @@ export const INACTIVE_SUBS: [Sector, string][] = [
   ['architectural', 'louvers'], // its only product (car shade) belongs to «المظلات والسواتر»
 ]
 
+// fischer / Hilti range review (2026-11-27): the specialty of every product of the four new
+// specialties (store_anchors, chemical_anchors, firestop, pipe_supports) and of the lines next to them.
+// Applied last in applyCatalogFixes, so it beats keywords, PRODUCT_SUB and CATALOG_ROUTE. Old names
+// (renamed products, stored on earlier requests) follow their product.
+const FIXINGS_SUB: Record<string, string> = {
+  'أنكر وتد (Wedge Anchor / Through Bolt)': 'store_anchors',
+  'أنكر دروب إن (Drop-in Anchor)': 'store_anchors',
+  'أنكر كُم (Sleeve Anchor)': 'store_anchors',
+  'برغي خرسانة (Concrete Screw / Screw Anchor)': 'store_anchors',
+  'أنكر ثقيل للأحمال (Heavy-duty Anchor)': 'store_anchors',
+  'أنكر سقف بمسمار للتعليق (Ceiling Nail Anchor)': 'store_anchors',
+  'قضيب أنكر كيميائي مع صامولة ووردة (Chemical Anchor Rod / Stud)': 'store_anchors',
+  'مسدس حقن الأنكر الكيميائي (Injection Dispenser)': 'store_anchors',
+  'فوهة خلط للأنكر الكيميائي (Static Mixer Nozzle)': 'store_anchors',
+  'فرشاة ومنفاخ تنظيف ثقوب الأنكر (Hole Cleaning Brush & Blow-out Pump)': 'store_anchors',
+  'وردة تعبئة للأنكرات (Filling / Dynamic Washer)': 'store_anchors',
+  'خابور إطار للأبواب والشبابيك (Frame Fixing)': 'store_anchors',
+  'خابور معدني للجدران المفرغة والجبس بورد (Metal Cavity Anchor / Molly)': 'store_anchors',
+  'خابور فراشة/توجل للأسقف المفرغة (Spring / Tilt Toggle)': 'store_anchors',
+  'خابور جبس بورد بلاستيك/زماك ذاتي الثقب (Self-drill Plasterboard Plug)': 'store_anchors',
+  'خابور الخرسانة الخلوية (الطوب الخفيف/سيبوريكس) (Aerated Concrete Plug)': 'store_anchors',
+  'خابور مسمار بلاستيك سريع (Nail-in / Hammer-drive Plug)': 'store_anchors',
+  'طقم تثبيت مغسلة ومرحاض (Sanitary Fixing Set)': 'store_anchors',
+  'برغي تمدد (رول بلت)': 'store_anchors',
+  'خابور بلاستيك (فيشر)': 'store_anchors',
+  'خوابير بلاستيك': 'store_anchors',
+  'أنكر تجويف سفلي للأحمال الثقيلة (Undercut Anchor)': 'store_anchors',
+  'قضيب أنكر كيميائي داخلي السن (Internal-threaded Anchor Rod)': 'store_anchors',
+  'برغي حلقة وأنكر سقالات (Eye Bolt / Scaffold Anchor)': 'store_anchors',
+  'أداة تركيب أنكر الدروب إن (Drop-in Setting Tool)': 'store_anchors',
+  'برغي ذاتي التسنين برأس مسطّح مع خابور (Self-tapping Screw + Plug)': 'store_fasteners',
+  'مسامير تأسيس (أنكر بولت J/L) لقواعد الأعمدة': 'store_fasteners',
+  'برغي ذاتي الحفر للحديد والصاج (Self-drilling Tek Screw)': 'store_fasteners',
+  'برغي ألواح الأسمنت بورد (Cement Board Screw)': 'store_fasteners',
+  'برغي واجهات وكلادينج ستانلس (Facade / Cladding Screw)': 'store_fasteners',
+  'خرطوشة غاز لمسدس المسامير (Gas Fuel Cell)': 'store_fasteners',
+  'مسمار ملولب يُثبَّت بالبارود (Threaded Stud)': 'store_fasteners',
+  'أنكر كيميائي كبسولة (Chemical Capsule Anchor)': 'chemical_anchors',
+  'جلبة شبكية للأنكر الكيميائي في الطوب المفرغ (Mesh / Sieve Sleeve)': 'chemical_anchors',
+  'مثبت كيميائي إيبوكسي إنشائي (Epoxy Anchoring Resin)': 'chemical_anchors',
+  'مثبت كيميائي بوليستر/فينيل إستر (Polyester / Vinylester Anchor)': 'chemical_anchors',
+  'مونة حقن لتثبيت أشاير حديد التسليح (Rebar Doweling Injection Mortar)': 'chemical_anchors',
+  'طوق حريق للمواسير البلاستيكية (Firestop Collar)': 'firestop',
+  'شريط حريق منتفخ للمواسير (Intumescent Wrap Strip)': 'firestop',
+  'لوح حريق مغطى للفتحات (Coated Firestop Board / Batt)': 'firestop',
+  'مونة حريق للفتحات الكبيرة (Firestop Mortar)': 'firestop',
+  'وسائد حريق (Firestop Pillows)': 'firestop',
+  'كتل/سدادات حريق للكابلات (Firestop Blocks / Plugs)': 'firestop',
+  'جلبة حريق لعبور الكابلات (Cable Transit Firestop Sleeve)': 'firestop',
+  'رذاذ حريق مرن للفواصل وأعلى الجدران (Firestop Joint Spray)': 'firestop',
+  'طلاء حريق للكابلات (Ablative Cable Coating)': 'firestop',
+  'جلبة حريق تُصب في البلاطة (Cast-in Firestop Device)': 'firestop',
+  'وسادات معجون حريق لعلب الكهرباء (Firestop Putty Pads)': 'firestop',
+  'ملصق تعريف أنظمة الحريق (Firestop Identification Label)': 'firestop',
+  'شريط عازل للحريق والمياه للفواصل (FWBT)': 'firestop',
+  'سيليكون مقاوم للحريق (Fire Rated)': 'firestop',
+  'أكريليك مقاوم للحريق (Intumescent)': 'firestop',
+  'فوم مقاوم للحريق (PU Fire Foam)': 'firestop',
+  'معجون حريق لفتحات الكابلات والمواسير (Fire Putty)': 'firestop',
+  'حاجز حريق لحافة البلاطة والتجاويف (Edge-of-slab / Cavity Fire Barrier)': 'firestop',
+  'لفافة حريق للدكت والكابلات (Endothermic Fire Wrap)': 'firestop',
+  'دهان منتفخ مقاوم للحريق للحديد (Intumescent Paint, Cellulosic)': 'construction_chemicals',
+  'دهان منتفخ إيبوكسي (Epoxy Intumescent, Hydrocarbon)': 'construction_chemicals',
+  'مونة رش أسمنتية مقاومة للحريق (Cementitious Fireproofing Spray)': 'construction_chemicals',
+  'مونة تثبيت وتعشيق سريعة (Rapid Anchoring Mortar / Hydraulic Cement)': 'construction_chemicals',
+  'قناة تثبيت يونيسترت (Strut Channel)': 'pipe_supports',
+  'صامولة زنبركية للقناة (Channel Spring Nut)': 'pipe_supports',
+  'زوايا ووصلات قناة التثبيت (Channel Brackets & Connectors)': 'pipe_supports',
+  'ذراع حامل كابولي (Cantilever Bracket)': 'pipe_supports',
+  'قاعدة تثبيت قناة/قضيب (Channel Base Plate / Rod Hanger)': 'pipe_supports',
+  'علاقة مواسير مبطنة بالمطاط (Rubber-lined Pipe Clamp)': 'pipe_supports',
+  'كلامب مواسير ثقيل للأحمال (Heavy-duty Pipe Clamp)': 'pipe_supports',
+  'علاقة كلفيس/حلقة لمواسير الحريق والرشاشات (Clevis / Ring Hanger)': 'pipe_supports',
+  'كلامب كمرة (Beam Clamp)': 'pipe_supports',
+  'حامل انزلاقي/أسطواني للمواسير الساخنة (Pipe Slide / Roller Support)': 'pipe_supports',
+  'حوامل وتعليقات أنابيب': 'pipe_supports',
+  'برغي حرف T للقناة (Channel T-bolt)': 'pipe_supports',
+  'برغي يو لتثبيت المواسير (U-bolt)': 'pipe_supports',
+  'علاقة سلك قابلة للضبط للأسقف والمعدات (Wire Suspension Kit)': 'pipe_supports',
+  'قاعدة حذاء للمواسير المعزولة (Pipe Shoe)': 'pipe_supports',
+  'ريشة همر SDS-plus للخرسانة (SDS-plus Hammer Drill Bit)': 'store_bits',
+}
+
 /** The current catalog name of a product (follows CATALOG_RENAME), e.g. for a name stored on an old request. */
 export function catalogName(name: string): string {
   let n = (name || '').trim()
@@ -3265,6 +3369,9 @@ export function catalogName(name: string): string {
     const sub = PRODUCT_SUB[catalogName(oldName)]
     if (sub && !PRODUCT_SUB[oldName]) PRODUCT_SUB[oldName] = sub
   }
+  for (const [name, sub] of Object.entries(FIXINGS_SUB)) PRODUCT_SUB[name] = sub
+  for (const oldName of Object.keys(CATALOG_RENAME)) { const sub = FIXINGS_SUB[catalogName(oldName)]; if (sub) PRODUCT_SUB[oldName] = sub }
+  DETECT_CACHE.clear() // results cached above were computed before the pins
   for (const [s, key] of INACTIVE_SUBS) delete (SUB_CATEGORIES[s] as any)[key]
 })()
 /** a renamed product keeps its translations and spec fields (run at load and after each lazy load) */

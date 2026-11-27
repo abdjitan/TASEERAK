@@ -3410,4 +3410,104 @@ export const SPEC_GROUPS: Array<{ products: string[]; spec: SpecField[] }> = [
     { key: 'thickness', ar: 'السماكة', en: 'Thickness', options: ['9 مم','12 مم','18 مم','25 مم','50 مم'] },
     { key: 'unit', ar: 'وحدة الطلب', en: 'Order unit', options: ['م² (متر مربع)','عدد'] },
   ] },
+  // ═══ 2026-11-27: fischer / Hilti range review ═══
+  { products: ['أنكر تجويف سفلي للأحمال الثقيلة (Undercut Anchor)'], spec: [
+    { key: 's1', ar: 'القطر', en: 'القطر', options: ['M6','M8','M10','M12','M16','M20'] },
+    { key: 's2', ar: 'المادة', en: 'المادة', options: ['مجلفن','ستانلس A4'] },
+    { key: 'unit', ar: 'وحدة الطلب', en: 'Order unit', options: ['حبة','علبة'] },
+  ] },
+  { products: ['قضيب أنكر كيميائي داخلي السن (Internal-threaded Anchor Rod)'], spec: [
+    { key: 's1', ar: 'المقاس', en: 'المقاس', options: ['M6','M8','M10','M12','M16','M20'] },
+    { key: 's2', ar: 'المادة', en: 'المادة', options: ['مجلفن','ستانلس A4'] },
+    { key: 'unit', ar: 'وحدة الطلب', en: 'Order unit', options: ['حبة','علبة'] },
+  ] },
+  { products: ['برغي حلقة وأنكر سقالات (Eye Bolt / Scaffold Anchor)'], spec: [
+    { key: 's1', ar: 'المقاس', en: 'المقاس', options: ['M10','M12','M16'] },
+    { key: 's2', ar: 'التثبيت', en: 'التثبيت', options: ['مع خابور نايلون','مع أنكر معدني','برغي فقط'] },
+    { key: 's3', ar: 'المادة', en: 'المادة', options: ['مجلفن','ستانلس'] },
+    { key: 'unit', ar: 'وحدة الطلب', en: 'Order unit', options: ['حبة','علبة'] },
+  ] },
+  { products: ['أداة تركيب أنكر الدروب إن (Drop-in Setting Tool)'], spec: [
+    { key: 's1', ar: 'المقاس', en: 'المقاس', options: ['M6','M8','M10','M12','M16','M20'] },
+    { key: 'unit', ar: 'وحدة الطلب', en: 'Order unit', options: ['حبة'] },
+  ] },
+  { products: ['برغي ذاتي الحفر للحديد والصاج (Self-drilling Tek Screw)'], spec: [
+    { key: 's1', ar: 'القطر', en: 'القطر', options: ['3.5','4.2','4.8','5.5','6.3 مم'] },
+    { key: 's2', ar: 'الرأس', en: 'الرأس', options: ['سداسي بوردة','مستدير (وافر)','غاطس'] },
+    { key: 's3', ar: 'المادة', en: 'المادة', options: ['مجلفن','ستانلس'] },
+    { key: 'unit', ar: 'وحدة الطلب', en: 'Order unit', options: ['علبة'] },
+  ] },
+  { products: ['برغي ألواح الأسمنت بورد (Cement Board Screw)'], spec: [
+    { key: 's1', ar: 'الطول', en: 'الطول', options: ['25','32','41 مم'] },
+    { key: 's2', ar: 'الهيكل', en: 'الهيكل', options: ['معدني','خشبي'] },
+    { key: 'unit', ar: 'وحدة الطلب', en: 'Order unit', options: ['علبة'] },
+  ] },
+  { products: ['برغي واجهات وكلادينج ستانلس (Facade / Cladding Screw)'], spec: [
+    { key: 's1', ar: 'المادة', en: 'المادة', options: ['ستانلس A2','ستانلس A4'] },
+    { key: 's2', ar: 'الرأس', en: 'الرأس', options: ['بلون الواجهة','بدون لون'] },
+    { key: 'unit', ar: 'وحدة الطلب', en: 'Order unit', options: ['علبة'] },
+  ] },
+  { products: ['خرطوشة غاز لمسدس المسامير (Gas Fuel Cell)'], spec: [
+    { key: 'unit', ar: 'وحدة الطلب', en: 'Order unit', options: ['حبة','علبة'] },
+  ] },
+  { products: ['مسمار ملولب يُثبَّت بالبارود (Threaded Stud)'], spec: [
+    { key: 's1', ar: 'المقاس', en: 'المقاس', options: ['M6','M8','M10'] },
+    { key: 's2', ar: 'الأساس', en: 'الأساس', options: ['خرسانة','حديد'] },
+    { key: 'unit', ar: 'وحدة الطلب', en: 'Order unit', options: ['علبة'] },
+  ] },
+  { products: ['ريشة همر SDS-plus للخرسانة (SDS-plus Hammer Drill Bit)'], spec: [
+    { key: 's1', ar: 'القطر', en: 'القطر', options: ['5','6','8','10','12','14','16','18','20','22','25 مم'] },
+    { key: 's2', ar: 'الطول الكلي', en: 'الطول الكلي', options: ['110','160','210','260','460 مم'] },
+    { key: 'unit', ar: 'وحدة الطلب', en: 'Order unit', options: ['حبة','طقم'] },
+  ] },
+  { products: ['مونة حقن لتثبيت أشاير حديد التسليح (Rebar Doweling Injection Mortar)'], spec: [
+    { key: 's1', ar: 'الحجم', en: 'الحجم', options: ['330','500','585 مل'] },
+    { key: 's2', ar: 'القاعدة', en: 'القاعدة', options: ['إيبوكسي','هايبرد / فينيل إستر'] },
+    { key: 'unit', ar: 'وحدة الطلب', en: 'Order unit', options: ['خرطوش','كرتون'] },
+  ] },
+  { products: ['حاجز حريق لحافة البلاطة والتجاويف (Edge-of-slab / Cavity Fire Barrier)'], spec: [
+    { key: 's1', ar: 'مقاومة الحريق', en: 'مقاومة الحريق', options: ['60','120','240 دقيقة'] },
+    { key: 's2', ar: 'العرض', en: 'العرض', options: ['حتى 100 مم','100–200 مم','أكثر من 200 مم'] },
+    { key: 'unit', ar: 'وحدة الطلب', en: 'Order unit', options: ['م.ط'] },
+  ] },
+  { products: ['لفافة حريق للدكت والكابلات (Endothermic Fire Wrap)'], spec: [
+    { key: 's1', ar: 'الاستخدام', en: 'الاستخدام', options: ['مجاري هواء','حوامل كابلات','مواسير'] },
+    { key: 'unit', ar: 'وحدة الطلب', en: 'Order unit', options: ['لفة','م²'] },
+  ] },
+  { products: ['برغي حرف T للقناة (Channel T-bolt)'], spec: [
+    { key: 's1', ar: 'المقاس', en: 'المقاس', options: ['M8','M10','M12','M16'] },
+    { key: 's2', ar: 'التشطيب', en: 'التشطيب', options: ['مجلفن','ستانلس'] },
+    { key: 'unit', ar: 'وحدة الطلب', en: 'Order unit', options: ['علبة','حبة'] },
+  ] },
+  { products: ['برغي يو لتثبيت المواسير (U-bolt)'], spec: [
+    { key: 's1', ar: 'قطر الماسورة', en: 'قطر الماسورة', options: ['1/2"','1"','2"','3"','4"','6"','8"'] },
+    { key: 's2', ar: 'التشطيب', en: 'التشطيب', options: ['مجلفن','غمس ساخن','ستانلس'] },
+    { key: 'unit', ar: 'وحدة الطلب', en: 'Order unit', options: ['حبة','علبة'] },
+  ] },
+  { products: ['علاقة سلك قابلة للضبط للأسقف والمعدات (Wire Suspension Kit)'], spec: [
+    { key: 's1', ar: 'طول السلك', en: 'طول السلك', options: ['1','2','3','5 م'] },
+    { key: 's2', ar: 'الطرف', en: 'الطرف', options: ['حلقة','خطاف','ملولب M6–M8'] },
+    { key: 'unit', ar: 'وحدة الطلب', en: 'Order unit', options: ['طقم'] },
+  ] },
+  { products: ['قاعدة حذاء للمواسير المعزولة (Pipe Shoe)'], spec: [
+    { key: 's1', ar: 'قطر الماسورة', en: 'قطر الماسورة', options: ['2"–4"','6"–8"','10"–12"','أكبر'] },
+    { key: 's2', ar: 'النوع', en: 'النوع', options: ['انزلاقي','موجّه','ثابت'] },
+    { key: 'unit', ar: 'وحدة الطلب', en: 'Order unit', options: ['حبة'] },
+  ] },
+  { products: ['خابور بلاستيك (فيشر)'], spec: [
+    { key: 's1', ar: 'القطر', en: 'القطر', options: ['5','6','8','10','12','14 مم'] },
+    { key: 's2', ar: 'النوع', en: 'النوع', options: ['عادي للخرسانة والطوب المصمت','عام لكل الجدران (يونيفرسال)','طويل للإطارات'] },
+    { key: 'unit', ar: 'وحدة الطلب', en: 'Order unit', options: ['علبة','كرتون'] },
+  ] },
+  { products: ['سيخ مسنن (قضيب ملولب)'], spec: [
+    { key: 's1', ar: 'القطر', en: 'القطر', options: ['M6','M8','M10','M12','M16','M20','M24'] },
+    { key: 's2', ar: 'الطول', en: 'الطول', options: ['1 م','2 م','3 م'] },
+    { key: 's3', ar: 'المادة والدرجة', en: 'المادة والدرجة', options: ['مجلفن 4.8','مجلفن 8.8','غمس ساخن','ستانلس A2','ستانلس A4'] },
+    { key: 'unit', ar: 'وحدة الطلب', en: 'Order unit', options: ['حبة','ربطة'] },
+  ] },
+  { products: ['وردات (حلقات معدنية)'], spec: [
+    { key: 's1', ar: 'النوع', en: 'النوع', options: ['مسطحة','زنبركية','عريضة (فندر)'] },
+    { key: 's2', ar: 'المقاس', en: 'المقاس', options: ['M6','M8','M10','M12','M16','M20'] },
+    { key: 's3', ar: 'المادة', en: 'المادة', options: ['مجلفن','ستانلس'] },
+  ] },
 ]

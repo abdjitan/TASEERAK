@@ -8,7 +8,7 @@ import Logo from '@/components/shared/Logo'
 import LanguageSwitcher from '@/components/shared/LanguageSwitcher'
 import AppShell from '@/components/shared/AppShell'
 import { getNav } from '@/lib/nav'
-import { SECTOR_LABELS, UNIT_OPTIONS, SUB_CATEGORIES, getGroupedSubCategories, getUnitLabel, getRegionLabel, getDefaultUnit } from '@/types'
+import { UNIT_OPTIONS, SUB_CATEGORIES, getGroupedSubCategories, getUnitLabel, getRegionLabel, getDefaultUnit } from '@/types'
 import CityPicker from '@/components/shared/CityPicker'
 import CatIcon from '@/components/shared/CatIcon'
 import LoadError from '@/components/shared/LoadError'
@@ -17,7 +17,7 @@ import { timeAgo as timeAgoText } from '@/lib/text'
 import { askConfirm } from '@/lib/askConfirm'
 import { Check, X } from 'lucide-react'
 import { normalizeText } from '@/lib/normalize'
-import { sectionLabelOf } from '@/lib/sellers'
+import { itemSectionLabel } from '@/lib/sellers'
 import { BROWSE_SECTIONS, subsOfSection } from '@/lib/browseCategories'
 // Arabic-Indic / Persian digits and «٫» from Arabic and Urdu keyboards → 12.5 (type=number refused them silently)
 const latinNum = (v: string) => String(v ?? '').replace(/[٠-٩]/g, d => String('٠١٢٣٤٥٦٧٨٩'.indexOf(d))).replace(/[۰-۹]/g, d => String('۰۱۲۳۴۵۶۷۸۹'.indexOf(d))).replace(/[٫,]/g, '.').replace(/[^0-9.]/g, '')
@@ -103,8 +103,6 @@ export default function SupplierPricesPage() {
   const [manualSection, setManualSection] = useState('')
   // UX-083: the unit fills in from the item (still editable)
   useEffect(() => { if (product && sector && !unit) { try { const u = getDefaultUnit(product, sector as any); if (u) setUnit(u) } catch {} } }, [product, sector]) // eslint-disable-line react-hooks/exhaustive-deps
-  // UX-144: sector names in the reader's language
-  const secLabel = (s: string) => (locale === 'en' ? ({ civil: 'Civil', architectural: 'Architectural', electrical: 'Electrical', mechanical: 'Mechanical', equipment: 'Machinery', supply_store: 'General supplies' } as any)[s] : locale === 'ur' ? ({ civil: 'سول', architectural: 'تعمیراتی', electrical: 'برقی', mechanical: 'مکینیکل', equipment: 'مشینری', supply_store: 'عام سامان' } as any)[s] : ({ ...(SECTOR_LABELS as any), mechanical: 'ميكانيكا', supply_store: 'مستلزمات عامة' } as any)[s]) || s
 
   // تصفّح متدرّج + بحث للسلع (نفس شكل صفحة طلب التسعير)
   const subGroups = useMemo(() => (sector ? getGroupedSubCategories(sector as any) : []), [sector])
@@ -412,7 +410,7 @@ export default function SupplierPricesPage() {
                     <div className="flex-1 min-w-0">
                       <div className="font-bold" style={{ color: '#0B2438' }}>{nameOf(p)}</div>
                       <div className="flex items-center gap-2 mt-1 flex-wrap text-xs text-gray-500">
-                        {keyOf(p) && <span className="badge text-[12px] bg-[#0B2438]/5 text-[#0B2438]">{sectionLabelOf(p.sector, keyOf(p), locale) || secLabel(p.sector)}</span>}
+                        {itemSectionLabel(p.sector, keyOf(p), p.product_name, locale) && <span className="badge text-[12px] bg-[#0B2438]/5 text-[#0B2438]">{itemSectionLabel(p.sector, keyOf(p), p.product_name, locale)}</span>}
                         {p.region && <span><Glyph e="📍" /> {getRegionLabel(p.region, locale)}</span>}
                         <span><Glyph e="🕐" /> {T.lastUpdate}: {timeAgoText(p.updated_at, locale)}</span>
                         {/* round-8 UX-142: a price saved more than 30 days ago may be out of date */}

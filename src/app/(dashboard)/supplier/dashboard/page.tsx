@@ -12,7 +12,6 @@ import Logo from '@/components/shared/Logo'
 import LanguageSwitcher from '@/components/shared/LanguageSwitcher'
 import { useTranslation } from '@/i18n'
 import { getSubCategoryLabel, getProductLabel, getUnitLabel, getRegionLabel, SUB_CATEGORIES, detectSubCategory } from '@/types'
-import { sectionOfSub, BROWSE_SECTIONS } from '@/lib/browseCategories'
 import { rfqDisplayName } from '@/lib/rfqName'
 import AppShell from '@/components/shared/AppShell'
 import { getNav } from '@/lib/nav'
@@ -20,7 +19,7 @@ import { AppIcon } from '@/components/AppIcon'
 import { isExpired, formatTimeLeft, deadlineUrgency, urgencyStyle, formatDateTime } from '@/lib/deadline'
 import { offerComparable, VAT_RATE, buyerBasisTag } from '@/lib/vat'
 import { dealTotal } from '@/lib/dealTotal'
-import { tierLabel, tierAllowed, sellerKindOf, rememberSellerKind, offerNeedsSupplier, offerHasOpenDiscount, offerHasOpenQuestion, offerPriceExpired, offerOutcome, outcomeLabel, agentCapText, agentCapProgress, sectorName } from '@/lib/sellers'
+import { tierLabel, tierAllowed, sellerKindOf, rememberSellerKind, offerNeedsSupplier, offerHasOpenDiscount, offerHasOpenQuestion, offerPriceExpired, offerOutcome, outcomeLabel, agentCapText, agentCapProgress, itemSectionLabel } from '@/lib/sellers'
 import { SA_CITY_COORDS, distanceKm } from '@/lib/saCityCoords'
 import { clearAllLocalDrafts } from '@/lib/localDraft'
 import Glyph from '@/components/shared/Glyph'
@@ -498,16 +497,12 @@ export default function SupplierDashboard() {
   const needsMe = (o: any) => offerNeedsSupplier(o)
   const offerStatusLabel = (o: any) => outcomeLabel(outcomeOf(o), locale)
   // UX-108: the browse section (10 sections) instead of the old engineering sector names
-  const sectionName = (sector: string, sub?: string | null): string => {
-    const g = sub ? (SUB_CATEGORIES as any)[sector]?.[sub]?.group : null
-    const k = sectionOfSub(sub || null, g || null)
-    const s = k ? BROWSE_SECTIONS.find(x => x.key === k) : null
-    return s ? L(s.en, s.ur, s.ar) : (sectorName(sector, locale) || sector)
-  }
+  // owner 2026-11-27: never the sector name; the sub-category is detected from the product name when missing
+  const sectionName = (sector: string, sub?: string | null, product?: string | null): string => itemSectionLabel(sector, sub || null, product || null, locale)
   const rfqSection = (rfq: any): string => {
     const its: any[] = Array.isArray(rfq?.items) && rfq.items.length ? rfq.items : []
-    const first = its.find((it: any) => it?.sub_category) || null
-    return first ? sectionName(first.sector || rfq.sector, first.sub_category) : sectionName(rfq?.sector, rfq?.sub_category)
+    for (const it of its) { const n = sectionName(it?.sector || rfq?.sector, it?.sub_category, it?.product_name); if (n) return n }
+    return sectionName(rfq?.sector, rfq?.sub_category, rfq?.product_name)
   }
   // UX-169: how many of my materials in this request already have a saved price
   // round-4 UX-065: a line has a saved price for its product or its category, in its unit, for this region or any region
@@ -1102,7 +1097,7 @@ export default function SupplierDashboard() {
                             {isFresh(rfq) && (
                               <span className="badge text-[12px] font-bold text-[#071827]" style={{ background: '#F5C55B' }}>{L('New', 'نیا', 'جديد')}</span>
                             )}
-                            <span className="badge text-[12px] bg-[#0B2438]/5 text-[#0B2438]">{rfqSection(rfq)}</span>
+                            {rfqSection(rfq) && <span className="badge text-[12px] bg-[#0B2438]/5 text-[#0B2438]">{rfqSection(rfq)}</span>}
                             {!offeredRfqIds.has(rfq.id) && (() => { const sv = savedOf(rfq); return sv.have > 0 ? (
                               <span className="badge text-[12px] font-semibold bg-[#D4A543]/10 text-[#8F6820]">{sv.of > 1
                                 ? L(`Saved prices for ${sv.have} of ${sv.of}`, `${sv.of} میں سے ${sv.have} کی محفوظ قیمتیں`, `لديك أسعار محفوظة لـ ${sv.have} من ${sv.of}`)
@@ -1220,7 +1215,7 @@ export default function SupplierDashboard() {
                         }`}>{oc === 'won' ? <Glyph e="✅" /> : oc !== 'pending' ? <Glyph e="📭" /> : <Glyph e="⏳" />}</div>
                         <div className="min-w-0">
                           <span className="font-bold line-clamp-2" style={{ color: '#0B2438' }}>{offer.rfq ? rfqDisplayName({ ...offer.rfq, title: null }, locale) : '—'}</span>
-                          {offer.rfq?.sector && (
+                          {offer.rfq?.sector && rfqSection(offer.rfq) && (
                             <span className="badge text-[12px] bg-[#0B2438]/5 text-[#0B2438] mx-2">{rfqSection(offer.rfq)}</span>
                           )}
                         </div>

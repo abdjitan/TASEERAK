@@ -8,14 +8,13 @@ import PageLoader from '@/components/shared/PageLoader'
 import DistrictField from '@/components/shared/DistrictField'
 import CityPicker from '@/components/shared/CityPicker'
 import LocationPicker from '@/components/shared/LocationPicker'
-import SpecialtyPicker from '@/components/shared/SpecialtyPicker'
-import SupplierPackPicker from '@/components/shared/SupplierPackPicker'
+import SellWhatPicker from '@/components/shared/SellWhatPicker'
 import SellerKindPicker from '@/components/shared/SellerKindPicker'
-import { SIGNUP_KIND_KEY, SELLER_KINDS, sellerKindLabel, sellerKindOf, sectorsFor, COMPANY_ACTIVITIES, sectorName } from '@/lib/sellers'
+import { SIGNUP_KIND_KEY, SELLER_KINDS, sellerKindLabel, sellerKindOf, sectorsFor, COMPANY_ACTIVITIES, sectorName, legacySpecialties } from '@/lib/sellers'
 import SellerIcon from '@/components/shared/SellerIcon'
 import { askConfirm } from '@/lib/askConfirm'
 import { rememberBuyerType } from '@/lib/buyerType'
-import { Check, Star } from 'lucide-react'
+import { Check, Star, ChevronDown } from 'lucide-react'
 import LanguageSwitcher from '@/components/shared/LanguageSwitcher'
 import { SECTOR_LABELS, SUB_CATEGORIES, CITIES_BY_REGION } from '@/types'
 import { CONTRACTOR_FEATURES } from '@/lib/features'
@@ -39,14 +38,14 @@ const TR = {
     title: 'إعداد ملفك التجاري', subC: 'أضف موقعك، ليصل طلبك إلى الموردين القريبين منك.', subS: 'أضف موقعك وما تبيعه لتظهر للمشترين وتصلك الطلبات المطابقة',
     location: 'الموقع', deliveryAddr: 'عنوان التوصيل', region: 'المنطقة', selectRegion: 'اختر المنطقة', selectCity: 'اختر المدينة', city: 'المدينة', district: 'الحي',
     sectorsTitleC: 'قطاعات عملك', sectorsHintC: 'اختياري: يمكنك تخطّي هذه الخطوة، فطلبك يصل إلى الموردين المناسبين بحسب المواد التي تطلبها.',
-    sectorsTitleS: 'تخصصاتك والمواد', sectorsHintS: 'اختر ما تبيعه، وتُحدَّد قطاعاتك منه تلقائياً',
+    sectorsTitleS: 'ماذا تبيع؟', sectorsHintS: 'اختر الأقسام التي تبيع منها، وتصلك طلباتها فقط.',
     classTitle: 'نوع الحساب', classHint: 'هل تمثّل شركة أو محلاً، أم تعمل وسيط تسعير؟ لا يمكن تغييره لاحقاً إلا بطلب من الدعم وموافقة الإدارة.',
     minOrder: 'الحد الأدنى لقيمة الطلب (ر.س) — اختياري', minOrderPh: 'مثال: 50000', minOrderHint: 'اتركه فارغاً لقبول كل الطلبات، أو حدّده لتصفية الطلبات حسب قدرتك التوريدية.',
     gradeTitle: 'درجة تصنيف شركتك (للمقاولين)', gradeSub: 'من رخصتك (وزارة الشؤون البلدية) — يستخدمها الموردون لتصفية الطلبات حسب حجم المشروع. اختياري.',
     verifyTitle: 'وثّق نشاطك التجاري', verifyBody: 'أرفق مستندات منشأتك ليراجعها الفريق، فتظهر شارة «موثّق» على عروضك لدى المشترين وترتفع فرصك في الفوز بالطلبات.', verifyCta: 'احفظ وابدأ التوثيق', verifyLocked: 'أكمل موقعك وما تبيعه أعلاه لتُفتح خطوة التوثيق.',
     addMatTitle: 'لا تجد مادة تورّدها في القائمة؟', addMatPh: 'اسم المادة...', addMatBtn: 'إضافة', remove: 'إزالة',
     save: 'حفظ ومتابعة', saving: 'جارٍ الحفظ...', later: 'لاحقاً', selected: 'محدد',
-    needLoc: 'اختر المدينة', needSector: 'اختر قطاعاً واحداً على الأقل', saved: 'تم حفظ ملفك',
+    needLoc: 'اختر المدينة', needSector: 'اختر قسماً واحداً على الأقل مما تبيعه', saved: 'تم حفظ ملفك',
     progress: 'اكتمال ملفك', stepKind: 'نوع الحساب', stepActivity: 'النشاط الرئيسي', stepLocation: 'الموقع', stepSectors: 'القطاعات', stepSpecialties: 'ما تبيعه', stepVerify: 'التوثيق (لاحقاً)', stepMap: 'الموقع على الخريطة', stepBiz: 'اسم المحل', stepCr: 'السجل التجاري', left: 'باقٍ',
     warn: 'بدون موقعك وما تبيعه لن تظهر للمشترين ولن تصلك أي طلبات.',
     company: 'ملف الشركة', required: 'مطلوب', optional: 'اختياري',
@@ -62,14 +61,14 @@ const TR = {
     title: 'Set up your business profile', subC: 'Add your location, so your request reaches the suppliers near you.', subS: 'Add your location and what you sell to appear to buyers and receive matching requests',
     location: 'Location', deliveryAddr: 'Delivery address', region: 'Region', selectRegion: 'Choose the region', selectCity: 'Choose the city', city: 'City', district: 'District',
     sectorsTitleC: 'Your sectors', sectorsHintC: 'Optional: you can skip this. Your request reaches the right suppliers based on the materials you ask for.',
-    sectorsTitleS: 'Specialties & materials', sectorsHintS: 'Choose what you sell; your sectors follow from it',
+    sectorsTitleS: 'What do you sell?', sectorsHintS: 'Choose the sections you sell from; only their requests reach you.',
     classTitle: 'Account type', classHint: 'Do you represent a company or shop, or work as a pricing agent? It can only be changed later through Support, with admin approval.',
     minOrder: 'Min order value (SAR) — optional', minOrderPh: 'e.g. 50000', minOrderHint: 'Leave empty to accept all requests — or set it to filter by your supply capacity.',
     gradeTitle: 'Company grade (contractors)', gradeSub: 'From your license (Ministry of Municipal Affairs) — suppliers use it to filter by project size. Optional.',
     verifyTitle: 'Verify your business', verifyBody: 'Attach your business documents for the team to review; a «Verified» badge then shows on your offers and raises your chance of winning requests.', verifyCta: 'Save & start verification', verifyLocked: 'Complete your location and what you sell above to unlock verification.',
     addMatTitle: "Can't find a material you supply?", addMatPh: 'Material name...', addMatBtn: 'Add', remove: 'Remove',
     save: 'Save & continue', saving: 'Saving...', later: 'Later', selected: 'selected',
-    needLoc: 'Choose the city', needSector: 'Select at least one sector', saved: 'Profile saved',
+    needLoc: 'Choose the city', needSector: 'Choose at least one section you sell from', saved: 'Profile saved',
     progress: 'Profile completion', stepKind: 'Account type', stepActivity: 'Main activity', stepLocation: 'Location', stepSectors: 'Sectors', stepSpecialties: 'What you sell', stepVerify: 'Verification (later)', stepMap: 'Map location', stepBiz: 'Shop name', stepCr: 'Commercial registration', left: 'Left',
     warn: "Without your location and what you sell you won't appear to buyers and won't receive any requests.",
     company: 'Company profile', required: 'Required', optional: 'Optional',
@@ -85,14 +84,14 @@ const TR = {
     title: 'اپنی کاروباری پروفائل ترتیب دیں', subC: 'اپنا مقام شامل کریں تاکہ آپ کی درخواست قریبی سپلائرز تک پہنچے۔', subS: 'خریداروں کو نظر آنے اور مماثل درخواستیں وصول کرنے کے لیے مقام اور آپ کیا بیچتے ہیں شامل کریں',
     location: 'مقام', deliveryAddr: 'ڈیلیوری کا پتہ', region: 'علاقہ', selectRegion: 'علاقہ منتخب کریں', selectCity: 'شہر منتخب کریں', city: 'شہر', district: 'محلہ',
     sectorsTitleC: 'آپ کے شعبے', sectorsHintC: 'اختیاری: آپ یہ مرحلہ چھوڑ سکتے ہیں۔ آپ کی درخواست مطلوبہ مواد کے مطابق درست سپلائرز تک پہنچتی ہے۔',
-    sectorsTitleS: 'تخصصات اور مال', sectorsHintS: 'منتخب کریں آپ کیا بیچتے ہیں؛ آپ کے شعبے اسی سے طے ہوں گے',
+    sectorsTitleS: 'آپ کیا بیچتے ہیں؟', sectorsHintS: 'وہ سیکشن منتخب کریں جن سے آپ بیچتے ہیں؛ صرف انہی کی درخواستیں آپ تک پہنچیں گی۔',
     classTitle: 'اکاؤنٹ کی قسم', classHint: 'کیا آپ کمپنی یا دکان کی نمائندگی کرتے ہیں یا قیمت ایجنٹ ہیں؟ بعد میں صرف سپورٹ کے ذریعے، انتظامیہ کی منظوری سے بدلا جا سکتا ہے۔',
     minOrder: 'کم از کم آرڈر قیمت (ریال) — اختیاری', minOrderPh: 'مثال: 50000', minOrderHint: 'تمام درخواستوں کے لیے خالی چھوڑیں یا اپنی صلاحیت کے مطابق مقرر کریں۔',
     gradeTitle: 'کمپنی کا درجہ (ٹھیکیداروں کے لیے)', gradeSub: 'آپ کے لائسنس سے — سپلائرز پروجیکٹ سائز کے مطابق فلٹر کرتے ہیں۔ اختیاری۔',
     verifyTitle: 'اپنے کاروبار کی تصدیق کریں', verifyBody: 'اپنے ادارے کی دستاویزات منسلک کریں تاکہ ٹیم جائزہ لے؛ پھر آپ کی آفرز پر «تصدیق شدہ» بیج دکھے گا۔', verifyCta: 'محفوظ کریں اور تصدیق شروع کریں', verifyLocked: 'تصدیق کھولنے کے لیے اوپر اپنا مقام اور آپ کیا بیچتے ہیں مکمل کریں۔',
     addMatTitle: 'فہرست میں کوئی مواد نہیں؟', addMatPh: 'مواد کا نام...', addMatBtn: 'شامل کریں', remove: 'ہٹائیں',
     save: 'محفوظ کریں اور جاری رکھیں', saving: 'محفوظ ہو رہا ہے...', later: 'بعد میں', selected: 'منتخب',
-    needLoc: 'شہر منتخب کریں', needSector: 'کم از کم ایک شعبہ منتخب کریں', saved: 'پروفائل محفوظ',
+    needLoc: 'شہر منتخب کریں', needSector: 'کم از کم ایک سیکشن منتخب کریں جس سے آپ بیچتے ہیں', saved: 'پروفائل محفوظ',
     progress: 'پروفائل تکمیل', stepKind: 'اکاؤنٹ کی قسم', stepActivity: 'بنیادی سرگرمی', stepLocation: 'مقام', stepSectors: 'شعبے', stepSpecialties: 'آپ کیا بیچتے ہیں', stepVerify: 'تصدیق (بعد میں)', stepMap: 'نقشے پر مقام', stepBiz: 'دکان کا نام', stepCr: 'تجارتی رجسٹریشن', left: 'باقی',
     warn: 'اپنے مقام اور آپ کیا بیچتے ہیں، اس کے بغیر آپ خریداروں کو نظر نہیں آئیں گے اور کوئی درخواست موصول نہیں ہوگی۔',
     company: 'کمپنی پروفائل', required: 'ضروری', optional: 'اختیاری',
@@ -125,7 +124,6 @@ export default function OnboardingPage() {
   const [lng, setLng] = useState<number | null>(null)
   const [sectors, setSectors] = useState<string[]>([])
   const [specialties, setSpecialties] = useState<string[]>([])
-  const [openSector, setOpenSector] = useState<string | null>(null)
   const [supplierTier, setSupplierTier] = useState<string | null>(null)
   const [providerType, setProviderType] = useState('')
   const [crNo, setCrNo] = useState('') // UX-125: say which CR was entered at sign-up
@@ -157,7 +155,8 @@ export default function OnboardingPage() {
     stepSpecialties: locale === 'en' ? 'What you price' : locale === 'ur' ? 'آپ کس چیز کی قیمت دیتے ہیں' : 'ما تسعّره',
     warn: locale === 'en' ? 'Without your city and what you price, no requests will reach you.' : locale === 'ur' ? 'اپنے شہر اور آپ کس چیز کی قیمت دیتے ہیں، اس کے بغیر کوئی درخواست نہیں پہنچے گی۔' : 'بدون مدينتك وما تسعّره لن تصلك أي طلبات.',
     needSpec: locale === 'en' ? 'Pick at least one kind of material you price so requests can reach you' : locale === 'ur' ? 'کم از کم ایک قسم منتخب کریں جس کی آپ قیمت دیتے ہیں تاکہ درخواستیں آپ تک پہنچیں' : 'اختر نوعاً واحداً على الأقل مما تسعّره حتى تصلك الطلبات',
-    sectorsHintS: locale === 'en' ? 'Choose what you price; your sectors follow from it' : locale === 'ur' ? 'منتخب کریں کہ آپ کس چیز کی قیمت دیتے ہیں؛ شعبے اسی سے طے ہوں گے' : 'اختر ما تسعّره، وتُحدَّد قطاعاتك منه تلقائياً',
+    sectorsTitleS: locale === 'en' ? 'What do you price?' : locale === 'ur' ? 'آپ کس چیز کی قیمت دیتے ہیں؟' : 'ما الذي تسعّره؟',
+    sectorsHintS: locale === 'en' ? 'Choose the sections you price from; only their requests reach you.' : locale === 'ur' ? 'وہ سیکشن منتخب کریں جن کی آپ قیمت دیتے ہیں؛ صرف انہی کی درخواستیں آپ تک پہنچیں گی۔' : 'اختر الأقسام التي تسعّر منها، وتصلك طلباتها فقط.',
   }
   // a company's main activity is chosen (provider_type is one of the four activities, not the bare «company»)
   const hasActivity = COMPANY_ACTIVITIES.some(a => a.k === providerType) || providerType === 'dealer'
@@ -235,7 +234,9 @@ export default function OnboardingPage() {
       ])
       if (psErr || pspErr) { setLoadFailed(true); showErr(t.loadFailed) }
       if (ps) setSectors(ps.map((r: any) => r.sector))
-      if (psp) setSpecialties(psp.map((r: any) => r.specialty))
+      // a seller chooses by section: old rows with sectors and no specialty show as every specialty of them
+      const isSup = (p?.role || metaRole) === 'supplier'
+      if (psp) setSpecialties(isSup ? legacySpecialties((ps || []).map((r: any) => r.sector), psp.map((r: any) => r.specialty)) : psp.map((r: any) => r.specialty))
       setLoading(false)
     })()
   }, [])
@@ -294,11 +295,11 @@ export default function OnboardingPage() {
       setSectors(prev => prev.filter(x => x !== s))
     } else setSectors(prev => [...prev, s])
   }
-  function toggleSpecialty(k: string) { setSpecialties(prev => prev.includes(k) ? prev.filter(x => x !== k) : [...prev, k]) }
-  function addExtraMaterial(sector: string) {
+  // a suggested material goes to the team without a sector (the admin files it when approving)
+  function addExtraMaterial() {
     const v = extraMaterialInput.trim()
-    if (!v || !sector) return
-    setExtraMaterials(prev => prev.some(m => m.name === v && m.sector === sector) ? prev : [...prev, { sector, name: v }])
+    if (!v) return
+    setExtraMaterials(prev => prev.some(m => m.name === v) ? prev : [...prev, { sector: '', name: v }])
     setExtraMaterialInput('')
   }
 
@@ -322,12 +323,13 @@ export default function OnboardingPage() {
     // القطاعات إلزامية للمورّد فقط؛ المشتري يكفيه الموقع (التوجيه يتم من مواد الطلب).
     // UX-139: a material typed but not added with «إضافة» is added on save
     const pendingMat = extraMaterialInput.trim()
-    const extraNow = pendingMat && role === 'supplier' ? [...extraMaterials.filter(m => !(m.name === pendingMat)), { sector: openSector || sectors[0] || '', name: pendingMat }] : extraMaterials
+    const extraNow = pendingMat && role === 'supplier' ? [...extraMaterials.filter(m => !(m.name === pendingMat)), { sector: '', name: pendingMat }] : extraMaterials
     if (pendingMat && role === 'supplier') { setExtraMaterials(extraNow); setExtraMaterialInput('') }
     if (role === 'supplier' && specialties.length === 0) { showErr(ta.needSpec, 'ob-specs'); return }
     // نتحقّق من البيانات قبل أي كتابة: قطاعات معروفة فقط (عمود enum) وبلا تكرار.
     // UX-038: the sectors follow from the materials chosen (picking materials without ticking a sector still saves)
-    const validSectors = Array.from(new Set(sectorsFor(sectors, specialties).filter(s => Object.prototype.hasOwnProperty.call(SECTOR_LABELS, s))))
+    // owner 2026-11-27: a seller's sectors come only from what he sells (the section picker); a buyer keeps his optional sectors
+    const validSectors = Array.from(new Set(sectorsFor(role === 'supplier' ? [] : sectors, specialties).filter(s => Object.prototype.hasOwnProperty.call(SECTOR_LABELS, s))))
     const validSpecialties = Array.from(new Set(specialties.filter(k => typeof k === 'string' && k.trim() !== '')))
     if (role === 'supplier' && validSectors.length === 0) { showErr(t.needSector, 'ob-specs'); return }
     if (role === 'supplier' && !isIndividual && (lat == null || lng == null)) {
@@ -494,8 +496,8 @@ export default function OnboardingPage() {
                     </div>
                   )}
                 </>) : (<>
-                  {/* round-2 UX-076: for a company the picker below already names the kind; say it once */}
-                  {isIndividual && <p className="text-sm text-navy"><b>{locale === 'en' ? 'Account type:' : locale === 'ur' ? 'اکاؤنٹ کی قسم:' : 'نوع الحساب:'}</b> {sellerKindLabel(sellerKindOf(providerType), locale)}</p>}
+                  {/* owner 2026-11-27: one line for the fixed kind and how to change it (both kinds) */}
+                  <p className="text-sm text-navy"><b>{locale === 'en' ? 'Account type:' : locale === 'ur' ? 'اکاؤنٹ کی قسم:' : 'نوع الحساب:'}</b> {sellerKindLabel(sellerKindOf(providerType), locale)} <span className="text-[13px] text-gray-600">· <a href="/support?topic=kind" className="inline-flex items-center min-h-[44px] underline text-navy">{locale === 'en' ? 'Change it through Support' : locale === 'ur' ? 'سپورٹ کے ذریعے بدلیں' : 'تغييره عن طريق الدعم'}</a></span></p>
                   {/* UX-039: a company / shop without a CR keeps the field (it cannot price without one) */}
                   {!isIndividual && !crNo && (
                     <div className="mt-2 mb-3 rounded-xl ring-2 ring-[#D4A543] p-2">
@@ -508,13 +510,10 @@ export default function OnboardingPage() {
                     </div>
                   )}
                   {crNo && <p className="text-sm text-navy mt-1"><b>{locale === 'en' ? 'Your commercial registration no.:' : locale === 'ur' ? 'آپ کا تجارتی رجسٹریشن نمبر:' : 'رقم سجلك التجاري:'}</b> <span dir="ltr">{crNo}</span></p>}
-                  {/* round-5 UX-163: for a company the picker below already says how to change the kind */}
-                  {isIndividual && <p className="text-[13px] text-gray-600 mt-1">{locale === 'en' ? 'To change it, ' : locale === 'ur' ? 'بدلنے کے لیے ' : 'لتغيير نوع الحساب '}<a href="/support?topic=kind" className="font-bold underline text-navy">{locale === 'en' ? 'ask Support' : locale === 'ur' ? 'سپورٹ سے درخواست کریں' : 'اطلب ذلك من الدعم'}</a>.</p>}
                   {!isIndividual && (
                     <div className="mt-3">
-                      <SellerKindPicker providerType={providerType || null} supplierTier={supplierTier} locale={locale}
-                        onChange={(pt: string, tr: string | null) => { setProviderType(pt); setSupplierTier(tr) }}
-                        onVerify={() => save('/settings?tab=docs')} verifyLocked={!profileComplete} />
+                      <SellerKindPicker compact providerType={providerType || null} supplierTier={supplierTier} locale={locale}
+                        onChange={(pt: string, tr: string | null) => { setProviderType(pt); setSupplierTier(tr) }} />
                     </div>
                   )}
                 </>)}
@@ -681,51 +680,30 @@ export default function OnboardingPage() {
               )}
 
               {role === 'supplier' && (
-                <div className="mt-4 space-y-4">
-                  {/* الطريقة السريعة: باقات جاهزة حسب نوع النشاط */}
-                  <div>
-                    <p className="text-sm font-bold text-navy mb-0.5">{isIndividual
-                      ? (locale === 'en' ? 'What kinds of materials do you price? Pick one or more' : locale === 'ur' ? 'آپ کس قسم کے مال کی قیمت دیتے ہیں؟ ایک یا زیادہ منتخب کریں' : 'ما أنواع المواد التي تسعّرها؟ اختر نوعاً أو أكثر')
-                      : (locale === 'en' ? 'What do you sell? Pick one or more' : locale === 'ur' ? 'آپ کیا بیچتے ہیں؟ ایک یا زیادہ منتخب کریں' : 'ماذا تبيع؟ اختر نوعاً أو أكثر')}</p>
-                    <p className="text-xs text-gray-500 mb-2.5">{locale === 'en' ? 'One tap selects everything that kind of business sells. You can fine-tune below.' : locale === 'ur' ? 'ایک کلک میں سب منتخب، نیچے تبدیل کر سکتے ہیں۔' : 'بضغطة واحدة تُختار كل المواد التي يبيعها هذا النوع من المحلات، ويمكنك التعديل في الأسفل.'}</p>
-                    <SupplierPackPicker sectors={sectors} specialties={specialties} locale={locale}
-                      onChange={(n: any) => { setSectors(n.sectors); setSpecialties(n.specialties) }} />
-                  </div>
-                  <details className="group">
-                    <summary className="cursor-pointer min-h-[44px] flex items-center text-[13px] font-bold text-[#8F6820] select-none">{locale === 'en' ? 'Fine-tune materials (optional)' : locale === 'ur' ? 'تفصیل سے منتخب کریں (اختیاری)' : 'تعديل المواد بالتفصيل (اختياري)'} {specialties.length > 0 && `· ${specialties.length}`}</summary>
-                    <div className="mt-3">
-                  <SpecialtyPicker
-                    sectors={sectors} specialties={specialties}
-                    openSector={openSector} onOpenSector={setOpenSector}
-                    onToggleSector={toggleSector} onToggleSpecialty={toggleSpecialty}
-                    locale={locale} dir={dir} removeLabel={t.remove}
-                    renderSectorExtra={(sector) => {
-                      const sectorMats = extraMaterials.filter(m => m.sector === sector)
-                      return (
-                        <div className="mt-3 pt-3 border-t border-gray-100">
-                          <div className="text-[12px] font-bold text-gray-600 mb-1.5">{t.addMatTitle}</div>
-                          <div className="flex gap-2">
-                            <input type="text" value={extraMaterialInput} onChange={(e: any) => setExtraMaterialInput(e.target.value)}
-                              onKeyDown={(e: any) => { if (e.key === 'Enter') { e.preventDefault(); addExtraMaterial(sector) } }}
-                              className="input-field flex-1" placeholder={t.addMatPh} aria-label={t.addMatTitle} />
-                            <button type="button" onClick={() => addExtraMaterial(sector)} className="min-h-[44px] px-4 rounded-xl text-sm font-bold text-white shrink-0" style={{ background: '#0B2438' }}>{t.addMatBtn}</button>
-                          </div>
-                          {sectorMats.length > 0 && (
-                            <div className="flex flex-wrap gap-2 mt-2">
-                              {sectorMats.map((m: any) => (
-                                <span key={m.name} className="inline-flex items-center gap-1.5 text-xs bg-[#D4A543]/10 text-[#6C531F] border border-[#D4A543]/40 rounded-lg px-2.5 py-1.5">
-                                  {m.name}
-                                  <button type="button" onClick={() => setExtraMaterials(prev => prev.filter(x => !(x.name === m.name && x.sector === sector)))} aria-label={t.remove} className="w-11 h-11 -my-3 -me-2 grid place-items-center text-[#8F6820] hover:text-[#071827]"><Glyph e="×" /></button>
-                                </span>
-                              ))}
-                            </div>
-                          )}
+                <div className="mt-3">
+                  {/* owner 2026-11-27: one way to choose: the 10 sections, then (optional) the exact materials */}
+                  <SellWhatPicker specialties={specialties} onChange={setSpecialties} locale={locale} independent={isIndividual} showMatches
+                    extra={
+                      <div className="rounded-2xl border border-gray-100 p-3">
+                        <label htmlFor="ob-extra-mat" className="block text-[13px] font-bold text-gray-700 mb-1.5">{t.addMatTitle}</label>
+                        <div className="flex gap-2">
+                          <input id="ob-extra-mat" type="text" value={extraMaterialInput} onChange={(e: any) => setExtraMaterialInput(e.target.value)}
+                            onKeyDown={(e: any) => { if (e.key === 'Enter') { e.preventDefault(); addExtraMaterial() } }}
+                            className="input-field flex-1" placeholder={t.addMatPh} />
+                          <button type="button" onClick={() => addExtraMaterial()} className="min-h-[44px] px-4 rounded-xl text-sm font-bold shrink-0 border-2 border-[#0B2438] text-[#0B2438] bg-white">{t.addMatBtn}</button>
                         </div>
-                      )
-                    }}
-                  />
-                    </div>
-                  </details>
+                        {extraMaterials.length > 0 && (
+                          <div className="flex flex-wrap gap-2 mt-2">
+                            {extraMaterials.map((m: any) => (
+                              <span key={m.name} className="inline-flex items-center gap-1.5 text-xs bg-[#D4A543]/10 text-[#6C531F] border border-[#D4A543]/40 rounded-lg px-2.5 py-1.5">
+                                {m.name}
+                                <button type="button" onClick={() => setExtraMaterials(prev => prev.filter(x => x.name !== m.name))} aria-label={`${t.remove}: ${m.name}`} className="w-11 h-11 -my-3 -me-2 grid place-items-center text-[#8F6820] hover:text-[#071827]"><Glyph e="×" /></button>
+                              </span>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    } />
                 </div>
               )}
             </div>
@@ -752,17 +730,21 @@ export default function OnboardingPage() {
 
             {/* التوثيق (للمورّد) — بوابة إيراد: مقفلة حتى يكتمل الملف أعلاه، ثم تحفظ وتنقل لتبويب المستندات */}
             {role === 'supplier' && isIndividual && (
-              <div className="rounded-2xl p-5 shadow-sm" style={{ borderInlineStartWidth: 4, borderInlineStartColor: '#D4A543', background: 'rgba(212,165,67,0.06)', border: '1px solid rgba(212,165,67,0.3)' }}>
-                <div className="text-sm font-bold text-navy mb-1"><Star className="inline-block w-[1em] h-[1em] align-[-0.15em]" style={{ color: '#9D7425' }} aria-hidden /> {locale === 'en' ? 'Your trust comes from ratings' : locale === 'ur' ? 'آپ کا اعتماد ریٹنگ سے بنتا ہے' : 'تُبنى ثقتك من التقييمات'}</div>
+              <details className="group rounded-2xl p-5 shadow-sm" style={{ borderInlineStartWidth: 4, borderInlineStartColor: '#D4A543', background: 'rgba(212,165,67,0.06)', border: '1px solid rgba(212,165,67,0.3)' }}>
+                {/* owner 2026-11-27: the rules fold behind one line (progressive disclosure) */}
+                <summary className="cursor-pointer select-none list-none min-h-[44px] flex items-center justify-between gap-2 text-sm font-bold text-navy">
+                  <span><Star className="inline-block w-[1em] h-[1em] align-[-0.15em]" style={{ color: '#9D7425' }} aria-hidden /> {locale === 'en' ? 'How does a pricing agent work?' : locale === 'ur' ? 'قیمت ایجنٹ کیسے کام کرتا ہے؟' : 'كيف يعمل وسيط التسعير؟'}</span>
+                  <ChevronDown className="w-4 h-4 shrink-0 text-[#8F6820] transition-transform group-open:rotate-180" aria-hidden />
+                </summary>
                 {/* UX-144: five short points instead of one long paragraph */}
-                <ul className="text-xs text-gray-600 leading-relaxed list-disc ps-5 space-y-0.5">
+                <ul className="mt-1 text-xs text-gray-600 leading-relaxed list-disc ps-5 space-y-0.5">
                   <li>{locale === 'en' ? 'You bring shop prices to buyers without a shop of your own.' : locale === 'ur' ? 'آپ اپنی دکان کے بغیر دکانوں کی قیمتیں خریداروں تک لاتے ہیں۔' : 'تجلب أسعار المحلات للمشترين دون أن تملك محلاً.'}</li>
                   <li>{sourceShopVisibilityText(locale)}</li>
                   <li>{locale === 'en' ? 'The shop issues the invoice in the buyer’s name at your quoted price.' : locale === 'ur' ? 'دکان آپ کی قیمت پر خریدار کے نام انوائس جاری کرتی ہے۔' : 'يُصدر المحل الفاتورة باسم المشتري بالسعر نفسه الذي في عرضك.'}</li>
                   <li>{locale === 'en' ? 'Your limit starts at 15,000 SAR per deal, rises to 50,000 SAR after 3 successful deals, and has no cap after 10.' : locale === 'ur' ? 'آپ کی حد فی سودا 15,000 ریال سے شروع ہوتی ہے، 3 کامیاب سودوں کے بعد 50,000 ریال ہو جاتی ہے، اور 10 کے بعد کوئی حد نہیں۔' : 'يبدأ حدّك بـ 15,000 ر.س للصفقة الواحدة، ويرتفع إلى 50,000 ر.س بعد 3 صفقات ناجحة، ثم بلا حد بعد 10 صفقات.'}</li>
-                  <li>{locale === 'en' ? 'After every deal the buyer rates your price accuracy and service.' : locale === 'ur' ? 'ہر سودے کے بعد خریدار آپ کی قیمت کی درستی اور سروس کو ریٹ کرتا ہے۔' : 'بعد كل صفقة يقيّم المشتري دقة سعرك وخدمتك.'}</li>
+                  <li>{locale === 'en' ? 'After every deal the buyer rates your price accuracy and service; your trust comes from these ratings.' : locale === 'ur' ? 'ہر سودے کے بعد خریدار آپ کی قیمت کی درستی اور سروس کو ریٹ کرتا ہے؛ آپ کا اعتماد انہی ریٹنگز سے بنتا ہے۔' : 'بعد كل صفقة يقيّم المشتري دقة سعرك وخدمتك، ومن هذه التقييمات تُبنى ثقتك.'}</li>
                 </ul>
-              </div>
+              </details>
             )}
             {/* owner 2026-11-25 (tax-invoice rules): a company or shop is invited to add its VAT number (optional) */}
             {role === 'supplier' && !!providerType && !isIndividual && (
@@ -780,7 +762,7 @@ export default function OnboardingPage() {
                     : <p className="text-[13px] text-gray-700 mt-1 leading-relaxed">{locale === 'en' ? 'Your VAT number is being reviewed by the Taseerak team; the badge «Issues a VAT invoice» appears on your offers once it is verified.' : locale === 'ur' ? 'آپ کا VAT نمبر تسعیرک ٹیم کے جائزے میں ہے؛ تصدیق کے بعد آپ کی آفرز پر «VAT انوائس جاری کرتا ہے» کا نشان ظاہر ہوگا۔' : 'رقمك الضريبي قيد المراجعة لدى فريق تسعيرك، وتظهر شارة «يُصدر فاتورة ضريبية» على عروضك بعد التحقق منه.'}</p>}
                   </>
                 ) : (<>
-                  <p className="text-xs text-gray-600 mb-3 leading-relaxed">{locale === 'en' ? 'Most requests from companies and contractors require a VAT invoice, and in them the offers that do not come with a VAT invoice are shown in a separate collapsed section. If your business is registered for VAT, add your VAT number; once our team verifies it, your offers carry the badge «Issues a VAT invoice».' : locale === 'ur' ? 'کمپنیوں اور ٹھیکیداروں کی زیادہ تر درخواستوں میں VAT انوائس شرط ہوتی ہے، اور ان میں VAT انوائس جاری نہ کرنے والی آفرز ایک الگ بند حصے میں دکھائی جاتی ہیں۔ اگر آپ کا ادارہ VAT میں رجسٹرڈ ہے تو اپنا VAT نمبر شامل کریں؛ ہماری ٹیم کی تصدیق کے بعد آپ کی آفرز پر «VAT انوائس جاری کرتا ہے» کا نشان ظاہر ہوگا۔' : 'أغلب طلبات الشركات والمقاولين تشترط فاتورة ضريبية، وتُعرض فيها العروض التي لا تُصدر فاتورة ضريبية في قسم منفصل مطويّ. إن كانت منشأتك مسجّلة في ضريبة القيمة المضافة فأضف رقمك الضريبي، وبعد أن يتحقق فريقنا منه تظهر على عروضك شارة «يُصدر فاتورة ضريبية».'}</p>
+                  <p className="text-xs text-gray-600 mb-3 leading-relaxed">{locale === 'en' ? 'Most company requests ask for a VAT invoice. If you are registered, add your number; after we verify it, your offers carry «Issues a VAT invoice».' : locale === 'ur' ? 'کمپنیوں کی زیادہ تر درخواستیں VAT انوائس مانگتی ہیں۔ اگر آپ رجسٹرڈ ہیں تو اپنا نمبر شامل کریں؛ تصدیق کے بعد آپ کی آفرز پر «VAT انوائس جاری کرتا ہے» ظاہر ہوگا۔' : 'أغلب طلبات الشركات تشترط فاتورة ضريبية. إن كنت مسجّلاً فأضف رقمك، وبعد التحقق منه تظهر على عروضك شارة «يُصدر فاتورة ضريبية».'}</p>
                   <label htmlFor="ob-sup-vat" className="block text-xs font-bold text-navy mb-1">{locale === 'en' ? 'VAT number' : locale === 'ur' ? 'VAT نمبر' : 'الرقم الضريبي'}</label>
                   <input id="ob-sup-vat" value={supVat} onChange={(e: any) => setSupVat(normalizeCrInput(e.target.value).slice(0, 15))} inputMode="numeric" dir="ltr" maxLength={15} className="input-field" placeholder="3XXXXXXXXXXXXX3" aria-invalid={!!supVat && supVat.length === 15 && !isVatNo(supVat)} />
                   {!!supVat && supVat.length === 15 && !isVatNo(supVat) && <p role="alert" className="text-[12px] text-red-700 mt-1">{vatFormatMsg(locale)}</p>}
@@ -802,26 +784,13 @@ export default function OnboardingPage() {
                       <div className="font-bold text-navy text-sm">{t.verifyTitle}</div>
                       <p className="text-xs text-gray-600 mt-1 leading-relaxed">{t.verifyBody}</p>
                       <button type="button" onClick={() => save('/settings?tab=docs')} disabled={saving}
-                        className="inline-flex items-center mt-2 min-h-[44px] text-sm font-bold text-white px-4 rounded-lg disabled:opacity-60" style={{ background: '#0B2438' }}>
+                        className="inline-flex items-center mt-2 min-h-[44px] text-sm font-bold px-4 rounded-lg border-2 border-[#0B2438] text-[#0B2438] bg-white disabled:opacity-60">
                         {saving ? t.saving : <>{t.verifyCta} <span aria-hidden="true">{locale === 'en' ? '→' : '←'}</span></>}
                       </button>
                     </div>
                   </div>
                 </div>
-              ) : (
-                <div className="rounded-2xl p-5 border border-dashed" style={{ borderInlineStartWidth: 4, borderInlineStartColor: '#cbd2e0', background: '#f8fafc', borderColor: '#e4e9f2' }}>
-                  <div className="flex items-start gap-3">
-                    <span className="text-2xl shrink-0 opacity-50 grayscale"><Glyph e="🛡" /></span>
-                    <div className="flex-1">
-                      <div className="flex items-center gap-1.5 font-bold text-gray-500 text-sm">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4 shrink-0"><rect x="4" y="10" width="16" height="11" rx="2" /><path d="M8 10V7a4 4 0 0 1 8 0v3" /></svg>
-                        {t.verifyTitle}
-                      </div>
-                      <p className="text-[13px] text-gray-600 mt-1 leading-relaxed">{t.verifyLocked}</p>
-                    </div>
-                  </div>
-                </div>
-              )
+              ) : null /* owner 2026-11-27: the locked card is gone; the side list shows «التوثيق (لاحقاً)» */
             )}
 
             {err && <div id="onboarding-err" role="alert" className="bg-red-50 border border-red-200 text-red-700 text-sm rounded-lg p-3">{err}</div>}

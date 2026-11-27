@@ -11,7 +11,7 @@ import { askConfirm } from '@/lib/askConfirm'
 // from CR verification, so it is shown here read-only with what it takes to reach "company".
 // The kind itself is fixed once chosen (owner 2026-11-16, migration 215): only the company activity
 // can still change; switching company ↔ pricing agent needs a new account.
-export default function SellerKindPicker({ providerType, supplierTier, locale, onChange, onVerify, verifyLocked }: {
+export default function SellerKindPicker({ providerType, supplierTier, locale, onChange, onVerify, verifyLocked, compact = false }: {
   providerType: string | null | undefined
   supplierTier: string | null | undefined
   locale: string
@@ -20,6 +20,8 @@ export default function SellerKindPicker({ providerType, supplierTier, locale, o
   onVerify?: () => void
   /** round-7 UX-145: before the profile is complete there is no «وثّق الآن» yet */
   verifyLocked?: boolean
+  /** onboarding: only the kind and the activity (the page shows the account-type note and verification itself) */
+  compact?: boolean
 }) {
   const L = (en: string, ur: string, ar: string) => (locale === 'en' ? en : locale === 'ur' ? ur : ar)
   const pick = (o: any) => (locale === 'en' ? o.en : locale === 'ur' ? o.ur : o.ar)
@@ -61,7 +63,7 @@ export default function SellerKindPicker({ providerType, supplierTier, locale, o
 
   return (
     <div className="space-y-3">
-      <div className="grid sm:grid-cols-2 gap-2">
+      {!(compact && kindLocked) && <div className="grid sm:grid-cols-2 gap-2">
         {(['company', 'independent'] as SellerKind[]).filter(k => !kindLocked || k === kind).map(k => {
           const on = kind === k
           const info = SELLER_KINDS[k]
@@ -74,11 +76,11 @@ export default function SellerKindPicker({ providerType, supplierTier, locale, o
             </button>
           )
         })}
-      </div>
+      </div>}
       {!kind && (
         <p className="text-xs text-[#8F6820] font-semibold">{L('Choose carefully: the account type can only be changed later through Support.', 'احتیاط سے منتخب کریں: اکاؤنٹ کی قسم بعد میں صرف سپورٹ کے ذریعے بدلی جا سکتی ہے۔', 'اختر بعناية: لا يمكن تغيير نوع الحساب لاحقاً إلا عن طريق الدعم.')}</p>
       )}
-      {kindLocked && (
+      {kindLocked && !compact && (
         <p className="text-xs text-gray-500">{L('The account type is fixed. To change it, ', 'اکاؤنٹ کی قسم مقرر ہے۔ بدلنے کے لیے ', 'نوع الحساب ثابت. لتغيير النوع ')}<a href="/support?topic=kind" className="font-bold underline text-navy">{L('request it from Support', 'سپورٹ سے درخواست کریں', 'اطلب ذلك من الدعم')}</a>{L(' (admin approval).', ' (انتظامیہ کی منظوری)۔', ' (بموافقة الإدارة).')}</p>
       )}
 
@@ -101,7 +103,7 @@ export default function SellerKindPicker({ providerType, supplierTier, locale, o
         </div>
       )}
 
-      {kind && <div className="rounded-xl bg-gray-50 border border-gray-100 px-3 py-2.5 text-xs text-gray-600 leading-relaxed">
+      {kind && !compact && <div className="rounded-xl bg-gray-50 border border-gray-100 px-3 py-2.5 text-xs text-gray-600 leading-relaxed">
         <div>
           {L('How buyers see you:', 'خریدار آپ کو اس طرح دیکھتے ہیں:', 'تظهر للمشترين ضمن:')} <b className="text-navy">{tierLabel(tier, locale)}</b>
         </div>

@@ -1,8 +1,8 @@
 // Seller structure (migration 123): two account kinds, three buyer-facing tiers, and the
 // quote-level source/availability. One place for the labels so every page says the same thing.
 
-import { SUB_CATEGORIES, getSectorLabel } from '@/types'
-import { BROWSE_SECTIONS, sectionOfSub } from '@/lib/browseCategories'
+import { SUB_CATEGORIES, getSectorLabel, detectSubCategory, type Sector } from '@/types'
+import { BROWSE_SECTIONS, sectionOfSub, subsOfSection, type BrowseSection } from '@/lib/browseCategories'
 
 export type Locale = 'ar' | 'en' | 'ur' | string
 type T3 = { ar: string; en: string; ur: string }
@@ -260,6 +260,42 @@ export function sectionLabelOf(sector: string | null | undefined, subKey: string
   const sec = sectionOfSub(subKey, group)
   const b = sec ? BROWSE_SECTIONS.find(x => x.key === sec) : null
   return b ? pick(b, locale) : ''
+}
+
+// ── «ماذا تبيع؟» by browse section (owner 2026-11-27: no engineering sectors on seller screens) ──
+// The seller picks sections; what is saved is still the sub-category keys (profile_specialties), and
+// the sectors follow from them with sectorsFor([], keys). Shared with the mobile app.
+
+/** A browse section's name in the reader's language. */
+export function sectionName(section: BrowseSection | string | null | undefined, locale: Locale): string {
+  const b = section ? BROWSE_SECTIONS.find(x => x.key === section) : null
+  return b ? pick(b, locale) : ''
+}
+/** Every sub-category key of one browse section (no repeats). */
+export function sectionKeys(section: BrowseSection): string[] {
+  return Array.from(new Set(subsOfSection(section).map(s => s.key)))
+}
+/** The sections that hold at least one of the chosen keys, in BROWSE_SECTIONS order. */
+export function sectionsOfSpecialties(specs: string[]): BrowseSection[] {
+  const set = new Set(specs)
+  return BROWSE_SECTIONS.map(s => s.key).filter(k => sectionKeys(k).some(x => set.has(x)))
+}
+/** Older rows: sectors saved with no specialty at all meant «everything in the sector». Shown (and
+ *  saved again) as every specialty of those sectors, which routes the same way. */
+export function legacySpecialties(sectors: string[], specs: string[]): string[] {
+  if (specs.length || !sectors.length) return specs
+  return Array.from(new Set(sectors.flatMap(s => Object.keys(((SUB_CATEGORIES as any)[s]) || {}))))
+}
+// A sector that maps to one section only, for a line whose sub-category cannot be told.
+const SECTOR_ONLY_SECTION: Record<string, BrowseSection> = { civil: 'building', electrical: 'electrical', equipment: 'machinery' }
+/** A request line's section for a seller screen, never the engineering sector: from its sub-category,
+ *  else detected from the product name, else the sector's only section. '' when it cannot be told. */
+export function itemSectionLabel(sector: string | null | undefined, subKey: string | null | undefined, productName: string | null | undefined, locale: Locale): string {
+  let sub = subKey || null
+  if (!sub && productName && sector && (SUB_CATEGORIES as any)[sector]) sub = detectSubCategory(productName, sector as Sector)
+  const l = sectionLabelOf(sector, sub, locale)
+  if (l) return l
+  return sectionName(SECTOR_ONLY_SECTION[sector || ''] || null, locale)
 }
 
 // ── Pricing-agent deal cap (migrations 213/214) ────────────────────────────────────────────────

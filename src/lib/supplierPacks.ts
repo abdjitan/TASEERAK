@@ -18,9 +18,9 @@ export const SUPPLIER_PACKS: SupplierPack[] = [
     id: 'general_building', icon: '🧱', ar: 'مواد بناء عامة', en: 'General building materials', ur: 'عمومی تعمیراتی سامان',
     hint: { ar: 'أسمنت، بلك، حديد، رمل، عوازل', en: 'Cement, blocks, rebar, sand, insulation', ur: 'سیمنٹ، بلاک، سریا، ریت' },
     specialties: {
-      civil: ['cement', 'blocks', 'rebar', 'steel_mesh', 'aggregates', 'waterproofing', 'construction_chemicals', 'formwork_ply'],
+      civil: ['cement', 'blocks', 'rebar', 'steel_mesh', 'aggregates', 'waterproofing', 'construction_chemicals', 'chemical_anchors', 'formwork_ply'],
       architectural: ['plaster', 'tile_adhesive'],
-      supply_store: ['store_fasteners', 'store_hand_tools', 'store_consumables', 'store_safety', 'store_adhesives'],
+      supply_store: ['store_fasteners', 'store_anchors', 'store_hand_tools', 'store_consumables', 'store_safety', 'store_adhesives'],
     },
   },
   {
@@ -35,7 +35,7 @@ export const SUPPLIER_PACKS: SupplierPack[] = [
     id: 'plumbing_shop', icon: '🚿', ar: 'سباكة وأدوات صحية', en: 'Plumbing & sanitary', ur: 'پلمبنگ اور سینیٹری',
     hint: { ar: 'مواسير، خلاطات، سخانات، مضخات', en: 'Pipes, mixers, heaters, pumps', ur: 'پائپ، مکسر، ہیٹر، پمپ' },
     specialties: {
-      mechanical: ['water_supply', 'drainage_pipes', 'pumps', 'tanks_heaters', 'faucets_mixers', 'valves_fittings', 'traps_drains', 'flex_hoses', 'plumbing_consumables', 'shower_accessories', 'floats_tanks'],
+      mechanical: ['water_supply', 'drainage_pipes', 'pumps', 'tanks_heaters', 'faucets_mixers', 'valves_fittings', 'pipe_supports', 'traps_drains', 'flex_hoses', 'plumbing_consumables', 'shower_accessories', 'floats_tanks'],
       architectural: ['sanitary_ware', 'bath_accessories'],
       supply_store: ['store_faucets', 'store_valves', 'store_hoses'],
     },
@@ -52,7 +52,17 @@ export const SUPPLIER_PACKS: SupplierPack[] = [
     id: 'hardware', icon: '🔩', ar: 'عدد وأدوات وخردوات', en: 'Tools & hardware', ur: 'اوزار اور ہارڈویئر',
     hint: { ar: 'عدد، مسامير، أقفال، سلامة', en: 'Tools, fasteners, locks, safety', ur: 'اوزار، پیچ، تالے' },
     specialties: {
-      supply_store: ['store_hand_tools', 'store_power_tools', 'store_bits', 'store_fasteners', 'store_safety', 'store_consumables', 'store_paint', 'store_adhesives', 'store_hinges', 'store_locks', 'store_handles', 'store_closers'],
+      supply_store: ['store_hand_tools', 'store_power_tools', 'store_bits', 'store_fasteners', 'store_anchors', 'store_safety', 'store_consumables', 'store_paint', 'store_adhesives', 'store_hinges', 'store_locks', 'store_handles', 'store_closers'],
+    },
+  },
+  {
+    // fischer / Hilti review 2026-11-27: a fixings dealer picks anchors, chemical anchoring, strut and firestop in one tap
+    id: 'fixings', icon: '🔩', ar: 'أنظمة التثبيت والأنكرات', en: 'Fixings & anchoring systems', ur: 'فکسنگ اور اینکرنگ سسٹمز',
+    hint: { ar: 'أنكرات وخوابير، تثبيت كيميائي، براغي، سترت وعلاقات مواسير، فايرستوب', en: 'Anchors and plugs, chemical anchoring, screws, strut and pipe hangers, firestop', ur: 'اینکر اور پلگ، کیمیکل اینکرنگ، پیچ، اسٹرٹ، فائر اسٹاپ' },
+    specialties: {
+      supply_store: ['store_anchors', 'store_fasteners', 'store_bits'],
+      civil: ['chemical_anchors', 'firestop'],
+      mechanical: ['pipe_supports'],
     },
   },
   {

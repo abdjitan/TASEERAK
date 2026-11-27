@@ -10,7 +10,7 @@ import Glyph from '@/components/shared/Glyph'
 import LoadError from '@/components/shared/LoadError'
 import { arCount } from '@/lib/text'
 import Link from 'next/link'
-import { sectionLabelOf, offerOutcome, sectorName } from '@/lib/sellers'
+import { sectionLabelOf, offerOutcome } from '@/lib/sellers'
 import { detectSubCategory } from '@/types'
 
 // أداء المورّد: قمع (عرض → فوز/خسارة/انتظار) + نسبة الفوز حسب القطاع + اتجاه شهري.
@@ -90,10 +90,7 @@ export default function SupplierAnalyticsPage() {
   const totalOffers = Number(a?.total_offers) || 0
   const decided = won + lost
   const winRate: number | null = a?.win_rate != null ? Math.round(Number(a.win_rate)) /* round-5 UX-169: already a percent (migration 269) */ : decided ? Math.round((won / decided) * 100) : null
-  const sectors: any[] = Array.isArray(a?.by_sector) ? a.by_sector : []
   const monthly: any[] = Array.isArray(a?.monthly) ? a.monthly : []
-  // UX-144: sector names in the reader's language
-  const sl = (s: string) => sectorName(s, locale) || s // round-6 UX-106
   // UX-034: «2026-11» → «نوفمبر 2026» in the reader's language (never ISO)
   const monthLabel = (m: string) => { const [y, mo] = String(m || '').split('-').map(Number); if (!y || !mo) return m; return new Date(y, mo - 1, 1).toLocaleDateString(locale === 'en' ? 'en-GB' : locale === 'ur' ? 'ur-PK' : 'ar-SA-u-ca-gregory-nu-latn', { month: 'long', year: 'numeric' }) }
 
@@ -163,26 +160,7 @@ export default function SupplierAnalyticsPage() {
                 </ul>
               </div>
             )}
-            {!(bySection && bySection.length > 0) && sectors.length > 0 && (
-              <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 mb-4">
-                <h2 className="text-sm font-bold mb-3" style={{ color: '#0B2438' }}>{L('By section', 'سیکشن کے لحاظ سے', 'حسب القسم')}</h2>
-                <ul className="divide-y divide-gray-100">
-                  {sectors.map((s: any) => {
-                    const t = Number(s.total) || 0, w = Number(s.won) || 0, l = Number(s.lost) || 0
-                    const dec = w + l
-                    return (
-                      <li key={s.sector} className="py-2.5 flex items-center justify-between gap-3 text-sm">
-                        <span className="font-semibold text-[#0B2438]">{sl(s.sector)}</span>
-                        <span className="text-gray-700">{dec
-                          ? L(`Chosen in ${w} of ${dec}`, `${dec} میں سے ${w} منتخب`, `اختيرت ${w} من ${dec}`)
-                          : L('Waiting for the buyer', 'خریدار کے فیصلے کی منتظر', 'بانتظار قرار المشتري')}
-                          <span className="text-gray-500"> · {L(`${t} offer${t === 1 ? '' : 's'}`, `${t} آفر`, arCount(t, 'عرض واحد', 'عرضان', 'عروض', 'عرضاً'))}</span></span>
-                      </li>
-                    )
-                  })}
-                </ul>
-              </div>
-            )}
+            {/* owner 2026-11-27: no fallback by engineering sector (by_sector); sellers see sections only */}
 
             {/* آخر ستة أشهر — صفوف نصية */}
             {monthly.length > 0 && (
