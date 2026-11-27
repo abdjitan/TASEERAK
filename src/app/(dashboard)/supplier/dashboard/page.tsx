@@ -19,13 +19,15 @@ import { AppIcon } from '@/components/AppIcon'
 import { isExpired, formatTimeLeft, deadlineUrgency, urgencyStyle, formatDateTime } from '@/lib/deadline'
 import { offerComparable, VAT_RATE, buyerBasisTag } from '@/lib/vat'
 import { dealTotal } from '@/lib/dealTotal'
-import { tierLabel, tierAllowed, sellerKindOf, rememberSellerKind, offerNeedsSupplier, offerHasOpenDiscount, offerHasOpenQuestion, offerPriceExpired, offerOutcome, outcomeLabel, agentCapText, agentCapProgress, itemSectionLabel } from '@/lib/sellers'
+import { tierLabel, tierAllowed, sellerKindOf, rememberSellerKind, offerNeedsSupplier, offerHasOpenDiscount, offerHasOpenQuestion, offerPriceExpired, offerOutcome, outcomeLabel, agentCapText, agentCapProgress, itemSectionLabel, legacySpecialties, sectionsOfSpecialties, sectionKeys, sectionName as browseSectionName } from '@/lib/sellers'
+import { sectionOfSub, type BrowseSection } from '@/lib/browseCategories'
+import { supplierDealNeedsMe } from '@/lib/dealStage'
 import { SA_CITY_COORDS, distanceKm } from '@/lib/saCityCoords'
 import { clearAllLocalDrafts } from '@/lib/localDraft'
 import Glyph from '@/components/shared/Glyph'
 import { daysText, arMaterials, arCount, timeAgo } from '@/lib/text'
 import { askConfirm } from '@/lib/askConfirm'
-import { Check, ChevronDown, ChevronUp, Star, X } from 'lucide-react'
+import { Check, ChevronDown, ChevronUp, Star, X, Inbox, Hourglass, Truck, Wallet, MapPin, Clock, Package, Pencil, Tag, UserPlus, Zap, Lightbulb, ShieldCheck, ArrowLeft, ArrowRight, CircleCheck, Circle } from 'lucide-react'
 import { realtimeTopic } from '@/lib/realtimeTopic'
 
 const txt = {
@@ -76,8 +78,6 @@ export default function SupplierDashboard() {
   const [crRequired, setCrRequired] = useState(false)
   // round-5 UX-219: a pricing agent's per-deal cap and progress (my_agent_deal_cap, 213/214)
   const [agentCap, setAgentCap] = useState<{ cap: any; deals: any } | null>(null)
-  // round-5 UX-168: on a phone the performance numbers fold under «أداؤك هذا الشهر»
-  const [showStatsMobile, setShowStatsMobile] = useState(false)
   const [launchUntil, setLaunchUntil] = useState<any>(null)
   // round-7 UX-241: matching requests that ended this week with no offer from me (my_missed_rfqs, lead migration)
   const [missed, setMissed] = useState(0)
@@ -142,12 +142,25 @@ export default function SupplierDashboard() {
     if (profile.vat_declared_unregistered_at) { setVatNotReg(true); return }
     try { setVatNotReg(localStorage.getItem('tsk_vat_not_reg_' + profile.id) === '1') } catch {}
   }, [profile?.id, profile?.vat_declared_unregistered_at])
+  useEffect(() => {
+    if (!profile?.id) return
+    try { setSetupHidden(localStorage.getItem('tsk_sup_setup_hidden_' + profile.id) === '1') } catch {}
+  }, [profile?.id])
+  function hideSetup() {
+    setSetupHidden(true)
+    try { localStorage.setItem('tsk_sup_setup_hidden_' + (profile?.id || ''), '1') } catch {}
+  }
   async function declareNotRegistered() {
     setVatNotReg(true)
     try { localStorage.setItem('tsk_vat_not_reg_' + (profile?.id || ''), '1') } catch {}
     try { await createClient().rpc('declare_vat_unregistered') } catch {}
   }
-  const [showScoreMobile, setShowScoreMobile] = useState(false) // بطاقة قوة الملف على الجوال
+  // owner 2026-11-27 (home redesign): what he sells as chips, branches for the set-up list (same rows as before, kept as lists)
+  const [mySpecList, setMySpecList] = useState<string[]>([])
+  const [mySectorList, setMySectorList] = useState<string[]>([])
+  const [branchCount, setBranchCount] = useState(0)
+  // the set-up card can be folded away once the required steps are done (per device)
+  const [setupHidden, setSetupHidden] = useState(false)
   // Requests this supplier already opened (this device) — unopened, unpriced ones glow until opened.
   const [seen, setSeen] = useState<Set<string>>(new Set())
   useEffect(() => {
@@ -174,6 +187,9 @@ export default function SupplierDashboard() {
         setProfile(snap.p); setIsMember(!!snap.isMember); setCrRequired(!!snap.crRequired); setLaunchUntil(snap.launchUntil ?? null); setPricesCount(snap.pricesCount ?? 0)
         setMyOffers(snap.offers || []); setHasSectors(snap.hasSectors !== false); setHasSpecialties(snap.hasSpecialties !== false)
         if (Array.isArray(snap.savedNames)) setSavedNames(new Set(snap.savedNames))
+        if (Array.isArray(snap.specs)) setMySpecList(snap.specs)
+        if (Array.isArray(snap.sectors)) setMySectorList(snap.sectors)
+        setBranchCount(Number(snap.branchCount) || 0)
         setOpenRfqs(snap.openRfqs || []); setLoading(false)
       }
       // A team member works on behalf of their company: everything below reads the company.
@@ -242,10 +258,13 @@ export default function SupplierDashboard() {
       // جلب قطاعات المورد المتخصص فيها
       const mySectors = (sectorRows || []).map((r: any) => r.sector)
       setHasSectors(mySectors.length > 0)
+      setMySectorList(mySectors)
+      setBranchCount((myBranches || []).length)
 
       // جلب التخصصات الفرعية للمورد
       const mySpecialties = (specRows || []).map((r: any) => r.specialty)
       setHasSpecialties(mySpecialties.length > 0)
+      setMySpecList(mySpecialties)
 
       // فلترة الطلبات حسب تصنيف المورد
       const minVal = p?.min_order_value || 0
@@ -318,6 +337,7 @@ export default function SupplierDashboard() {
       writePageCache(cacheKey, {
         actId, isMember: actId !== session.user.id, crRequired: crReq, p, launchUntil: cfg?.launch_free_until || null, pricesCount: lpCount ?? 0,
         offers: offers || [], hasSectors: mySectors.length > 0, hasSpecialties: mySpecialties.length > 0, openRfqs: visibleRfqs, savedNames: savedList,
+        specs: mySpecialties, sectors: mySectors, branchCount: (myBranches || []).length,
       })
     } catch (e) {
       console.error('[supplier/dashboard] load failed:', e)
@@ -542,6 +562,71 @@ export default function SupplierDashboard() {
 
   const companyName = locale === 'en' && profile?.company_name_en ? profile.company_name_en : profile?.company_name_ar
 
+  // ── Home redesign (owner 2026-11-27: «الصفحة فاضية»): everything below reads the data loaded above ──
+  const isIndep = sellerKindOf(profile?.provider_type) === 'independent'
+  // round-8 UX-041: a pricing agent «prices» materials, he does not «sell» them
+  const sellWord = isIndep ? L('What you price', 'آپ کیا قیمت دیتے ہیں', 'ما تسعّره') : L('What you sell', 'آپ کیا بیچتے ہیں', 'ما تبيعه')
+  const editSellWord = isIndep ? L('Edit what you price', 'قیمت والی اشیاء میں ترمیم کریں', 'عدّل ما تسعّره') : L('Edit what you sell', 'فروخت کی اشیاء میں ترمیم کریں', 'عدّل ما تبيعه')
+  // deals waiting on the seller (deliver, confirm a payment, answer a problem): the same rule as /supplier/deals
+  const dealsNeedingMe = myOffers.filter((o: any) => o.status === 'accepted' && supplierDealNeedsMe({ ...o, invoice_url: o.invoice_url ?? o.supplier_invoice_url ?? null })).length
+  const replyCount = myOffers.filter(needsMe).length
+  // round-4 UX-068: the VAT wording follows the accepted offers themselves
+  const wonList = myOffers.filter(isWon)
+  const nRegWon = wonList.filter((o: any) => o.vat_status === 'not_registered').length
+  const vatTag = wonList.length && nRegWon === wonList.length ? L('(final prices)', '(حتمی قیمتیں)', '(أسعار نهائية)') : nRegWon > 0 ? L('(what the buyer pays)', '(جو خریدار ادا کرتا ہے)', '(ما يدفعه المشتري)') : L('(incl. VAT)', '(VAT سمیت)', '(شاملة الضريبة)')
+  const thisMonth = months[months.length - 1]
+  // what he sells, by browse section (older rows with sectors only mean every list of those sectors)
+  const effSpecs = legacySpecialties(mySectorList, mySpecList)
+  const effSet = new Set(effSpecs)
+  const sellSections = sectionsOfSpecialties(effSpecs).map((k: BrowseSection) => {
+    const keys = sectionKeys(k)
+    return { key: k, name: browseSectionName(k, locale), picked: keys.filter((x: string) => effSet.has(x)).length, of: keys.length }
+  })
+  const sectionIconSrc = (k: string) => `/images/section-icons/${k}.webp`
+  // a section photo for the empty state (there is no electrical photo; lighting stands in for it)
+  const sectionPhotoSrc = (k: string) => `/images/sections/${k === 'electrical' ? 'lighting' : k}.webp`
+  // a request line's browse section key, for the medallion on the card (never the engineering sector)
+  const SECTOR_ONLY: Record<string, BrowseSection> = { civil: 'building', electrical: 'electrical', equipment: 'machinery' }
+  const lineSectionKey = (sector: string | null | undefined, sub: string | null | undefined, product: string | null | undefined): BrowseSection | null => {
+    let key = sub || null
+    const subs: any = sector ? (SUB_CATEGORIES as any)[sector] : null
+    if (!key && product && subs) key = detectSubCategory(product, sector as any)
+    const sec = key ? sectionOfSub(key, subs?.[key]?.group || null) : null
+    return sec || (sector ? SECTOR_ONLY[sector] || null : null)
+  }
+  const rfqSectionKey = (rfq: any): BrowseSection | null => {
+    const lines: any[] = Array.isArray(rfq?._myLines) && rfq._myLines.length ? rfq._myLines : Array.isArray(rfq?.items) ? rfq.items : []
+    for (const l of lines) { const k = lineSectionKey(l?.sector || rfq?.sector, l?.sub_category, l?.product_name); if (k) return k }
+    return lineSectionKey(rfq?.sector, rfq?.sub_category, rfq?.product_name)
+  }
+  // set-up checklist (owner only): the required steps first, the optional ones say so
+  const kindCompany = !!profile && !isIndep
+  const setupSteps: { key: string; ok: boolean; required: boolean; label: string; href: string }[] = !profile || isMember ? [] : [
+    // round-8 UX-039: the city with the district (or a pin / national address) is enough
+    { key: 'loc', required: true, ok: !!(profile.city && (profile.district || profile.latitude || profile.national_short_address)), href: profile.region ? '/location' : '/onboarding',
+      label: L('Set your city and district', 'اپنا شہر اور محلہ مقرر کریں', 'حدّد مدينتك وحيّك') },
+    { key: 'sell', required: true, ok: hasSpecialties || hasSectors, href: '/supplier/specialties',
+      label: isIndep ? L('Choose what you price', 'منتخب کریں آپ کیا قیمت دیتے ہیں', 'اختر ما تسعّره') : L('Choose what you sell', 'منتخب کریں آپ کیا بیچتے ہیں', 'اختر ما تبيعه') },
+    // round-4: for a company or shop the commercial registration is REQUIRED to price (my_pricing_gate)
+    ...(kindCompany ? [{ key: 'cr', required: crRequired, ok: !crRequired && (!!(profile.commercial_registration || '').trim() || profile.verification_status === 'verified'), href: '/settings?tab=docs',
+      label: crRequired ? L('Add the commercial registration (required to price)', 'تجارتی رجسٹریشن شامل کریں (قیمت دینے کے لیے ضروری)', 'أضف السجل التجاري (مطلوب للتسعير)') : L('Add the commercial registration for the «Verified» badge', '«تصدیق شدہ» نشان کے لیے تجارتی رجسٹریشن شامل کریں', 'أضف السجل التجاري لتحصل على شارة «موثّق»') }] : []),
+    // owner 2026-11-25: the VAT number is asked, never imposed
+    ...(kindCompany ? [{ key: 'vat', required: false, ok: !!profile.vat_number || vatNotReg, href: '/settings?tab=profile#set-vat',
+      label: L('VAT number (optional)', 'VAT نمبر (اختیاری)', 'الرقم الضريبي (اختياري)') }] : []),
+    { key: 'prices', required: false, ok: Number(pricesCount) > 0, href: '/supplier/prices',
+      label: L('Save your prices (fills offers in one tap)', 'اپنی قیمتیں محفوظ کریں (ایک ٹچ میں آفر)', 'احفظ أسعارك (تملأ العرض بلمسة)') },
+    ...(kindCompany && profile.provider_type !== 'retail_shop' ? [{ key: 'branches', required: false, ok: branchCount > 0, href: '/supplier/branches',
+      label: L('Add your branches (optional)', 'اپنی شاخیں شامل کریں (اختیاری)', 'أضف فروعك (اختياري)') }] : []),
+  ]
+  const setupDone = setupSteps.filter(s => s.ok).length
+  const requiredMissing = setupSteps.filter(s => s.required && !s.ok)
+  const showSetup = setupSteps.length > 0 && setupDone < setupSteps.length && (requiredMissing.length > 0 || !setupHidden)
+  const setupPct = setupSteps.length ? Math.round((setupDone / setupSteps.length) * 100) : 100
+  const ArrowFwd = dir === 'rtl' ? ArrowLeft : ArrowRight
+  const scrollToList = () => document.getElementById('sup-list')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  const goRequests = () => { setTab('rfqs'); setRfqFilter('toprice'); scrollToList() }
+  const goOffers = (f: 'all' | 'pending' | 'won' | 'lost' | 'reply') => { setTab('offers'); setOfferFilter(f); scrollToList() }
+
   const nav = getNav('supplier', locale, '/supplier/dashboard')
   if (toPrice.length > 0) nav[0] = { ...nav[0], badge: toPrice.length } // UX-119: requests still waiting for my price
 
@@ -572,6 +657,120 @@ export default function SupplierDashboard() {
             <button type="button" onClick={() => setJoined(false)} className="w-11 h-11 -m-2 grid place-items-center shrink-0 text-emerald-700" aria-label={L('Close', 'بند کریں', 'إغلاق')}><X className="w-4 h-4" aria-hidden /></button>
           </div>
         )}
+        {/* ── Hero (owner 2026-11-27): greeting, one status line, the one next action ── */}
+        {(() => {
+          const needsProfile = !isMember && requiredMissing.some(s => s.key === 'loc' || s.key === 'sell')
+          const n = toPrice.length
+          const status = needsProfile
+            ? (isIndep
+              ? L('Complete your profile so buyers’ requests that match what you price reach you.', 'اپنی پروفائل مکمل کریں تاکہ آپ کی قیمت والی اشیاء سے مماثل درخواستیں آپ تک پہنچیں۔', 'أكمل ملفك لتصلك طلبات المشترين المطابقة لما تسعّره.')
+              : L('Complete your profile so buyers’ requests that match what you sell reach you.', 'اپنی پروفائل مکمل کریں تاکہ آپ کی فروخت سے مماثل درخواستیں آپ تک پہنچیں۔', 'أكمل ملفك لتصلك طلبات المشترين المطابقة لما تبيعه.'))
+            : n > 0
+              ? L(`You have ${n} new request${n === 1 ? '' : 's'} waiting for your price`, `${n} نئی درخواستیں آپ کی قیمت کی منتظر ہیں`, `لديك ${arCount(n, 'طلب واحد جديد ينتظر', 'طلبان جديدان ينتظران', 'طلبات جديدة تنتظر', 'طلباً جديداً ينتظر')} تسعيرك`)
+              : openRfqs.length > 0
+                ? L('You have priced every open request; we will alert you as soon as a new one arrives.', 'آپ نے ہر کھلی درخواست کی قیمت دے دی؛ نئی درخواست آتے ہی ہم آپ کو بتائیں گے۔', 'سعّرتَ كل الطلبات المفتوحة، وسنُعلمك فور وصول طلب جديد.')
+                : isIndep
+                  ? L('No new requests right now; we will alert you as soon as a request matching what you price arrives.', 'ابھی کوئی نئی درخواست نہیں؛ آپ کی قیمت والی اشیاء سے مماثل درخواست آتے ہی ہم آپ کو بتائیں گے۔', 'لا طلبات جديدة الآن، وسنُعلمك فور وصول طلب يطابق ما تسعّره.')
+                  : L('No new requests right now; we will alert you as soon as a request matching what you sell arrives.', 'ابھی کوئی نئی درخواست نہیں؛ آپ کی فروخت سے مماثل درخواست آتے ہی ہم آپ کو بتائیں گے۔', 'لا طلبات جديدة الآن، وسنُعلمك فور وصول طلب يطابق ما تبيعه.')
+          const gold = 'inline-flex items-center gap-1.5 min-h-[44px] px-5 rounded-xl text-sm font-extrabold text-[#071827] shadow-sm hover:brightness-105 transition'
+          const ghost = 'inline-flex items-center gap-1.5 min-h-[44px] px-4 rounded-xl text-sm font-bold text-white border border-white/35 hover:bg-white/10 transition'
+          const goldBg = { background: 'linear-gradient(135deg,#F5C55B,#D4A543)' }
+          const cluster: string[] = sellSections.length ? sellSections.slice(0, 4).map(s => s.key) : ['building', 'finishing', 'electrical', 'plumbing']
+          return (
+            <section className={`relative overflow-hidden mb-4 rounded-3xl p-5 sm:p-7 text-white animate-fade-in ${freshCount ? 'tsk-glow' : ''}`}
+              style={{ background: 'linear-gradient(125deg,#071827 0%,#0B2438 55%,#102E45 100%)', border: '1px solid rgba(212,165,67,.35)' }}>
+              <div aria-hidden className="pointer-events-none absolute -top-28 -end-24 w-80 h-80 rounded-full opacity-20" style={{ background: 'radial-gradient(circle,#F5C55B 0%,transparent 65%)' }} />
+              <div aria-hidden className="pointer-events-none absolute bottom-0 inset-x-0 h-px" style={{ background: 'linear-gradient(90deg,transparent,#D4A543,transparent)' }} />
+              <div className="relative flex items-center justify-between gap-6">
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-2 flex-wrap text-[12.5px] font-semibold text-[#F5C55B]">
+                    <span>{tierLabel(profile?.supplier_tier, locale, false)}</span>
+                    {profile?.verification_status === 'verified' && <span className="inline-flex items-center gap-1 text-white/85"><ShieldCheck className="w-3.5 h-3.5 text-[#F5C55B]" aria-hidden />{L('Verified', 'تصدیق شدہ', 'موثّق')}</span>}
+                    {/* round-4 UX-087: the rating buyers gave this seller */}
+                    {Number(profile?.rating_count) > 0 && (
+                      <span className="inline-flex items-center gap-1 text-white/85"><Star className="w-3.5 h-3.5 shrink-0" style={{ color: '#F5C55B', fill: '#F5C55B' }} aria-hidden />
+                        {L(`${Number(profile.rating_avg || 0).toFixed(1)} of 5 (${profile.rating_count} rating${Number(profile.rating_count) === 1 ? '' : 's'})`, `5 میں سے ${Number(profile.rating_avg || 0).toFixed(1)} (${profile.rating_count} ریٹنگ)`, `${Number(profile.rating_avg || 0).toFixed(1)} من 5 (${arCount(Number(profile.rating_count), 'تقييم واحد', 'تقييمان', 'تقييمات', 'تقييماً')})`)}</span>
+                    )}
+                  </div>
+                  <h1 className="mt-1.5 text-xl sm:text-[1.7rem] font-extrabold leading-snug flex items-center gap-2 flex-wrap">
+                    <span className="min-w-0 break-words">{t.welcome}{L(', ', '، ', '، ')}{companyName || profile?.full_name || L('Supplier', 'سپلائر', 'مورّد')}</span> <Glyph e="👋" />
+                  </h1>
+                  <p className="mt-2 text-sm sm:text-[15px] text-white/90 leading-relaxed font-semibold">{status}</p>
+                  {!needsProfile && n > 0 && (
+                    <p className="mt-1 text-[13px] text-white/70">{freshCount
+                      ? L(`${freshCount} new — price early to stand out`, `${freshCount} نئی — جلد قیمت دیں`, `منها ${freshCount === 1 ? 'طلب جديد لم تفتحه' : `${arCount(freshCount, 'طلب', 'طلبان', 'طلبات', 'طلباً')} جديدة لم تفتحها`}، والتسعير المبكر يرفع فرصتك`)
+                      : L('Price early to raise your chances', 'جلد قیمت دیں', 'التسعير المبكر يرفع فرصتك')}</p>
+                  )}
+                  <div className="mt-4 flex flex-wrap gap-2">
+                    {!isMember && requiredMissing.length > 0
+                      ? <Link href={requiredMissing[0].href} className={gold} style={goldBg}>{L('Complete your profile', 'اپنی پروفائل مکمل کریں', 'أكمل ملفك')} <ArrowFwd className="w-4 h-4" aria-hidden /></Link>
+                      : n > 0
+                        ? <button type="button" onClick={goRequests} className={gold} style={goldBg}>{L('Price the new requests', 'نئی درخواستوں کی قیمت دیں', 'سعّر الطلبات الجديدة')} <ArrowFwd className="w-4 h-4" aria-hidden /></button>
+                        : !isMember
+                          ? (Number(pricesCount) === 0
+                            ? <Link href="/supplier/prices" className={gold} style={goldBg}>{L('Add your saved prices', 'اپنی محفوظ قیمتیں شامل کریں', 'أضف أسعارك المحفوظة')} <ArrowFwd className="w-4 h-4" aria-hidden /></Link>
+                            : <Link href="/supplier/specialties" className={gold} style={goldBg}>{editSellWord} <ArrowFwd className="w-4 h-4" aria-hidden /></Link>)
+                          : null}
+                    {myOffers.length > 0 && <button type="button" onClick={() => goOffers(replyCount ? 'reply' : 'all')} className={ghost}>{t.tabOffers}{replyCount > 0 && <span className="inline-grid place-items-center min-w-[1.4rem] h-[1.4rem] px-1 rounded-full text-[12px] font-extrabold bg-[#D4A543] text-[#071827]">{replyCount}</span>}</button>}
+                  </div>
+                </div>
+                {/* the sections he sells (or the main ones), as the brand medallions */}
+                <div aria-hidden className="hidden sm:grid grid-cols-2 gap-2.5 shrink-0">
+                  {cluster.map((k, i) => (
+                    <span key={k} className="grid place-items-center w-16 h-16 lg:w-[72px] lg:h-[72px] rounded-2xl bg-white/[0.06] border border-white/10" style={{ transform: i % 2 ? 'translateY(10px)' : undefined }}>
+                      <img src={sectionIconSrc(k)} alt="" className="w-12 h-12 lg:w-14 lg:h-14" />
+                    </span>
+                  ))}
+                </div>
+              </div>
+            </section>
+          )
+        })()}
+
+        {/* ── Today at a glance: four tiles, each opens its own list ── */}
+        {(() => {
+          const tiles: { key: string; icon: any; value: string; label: string; sub: string; hot: boolean; onClick?: () => void; href?: string }[] = [
+            { key: 'new', icon: Inbox, value: String(toPrice.length), hot: toPrice.length > 0, onClick: goRequests,
+              label: L('Waiting for your price', 'آپ کی قیمت کی منتظر', 'تنتظر تسعيرك'),
+              sub: freshCount ? L(`${freshCount} new`, `${freshCount} نئی`, `منها ${freshCount} ${freshCount === 1 ? 'جديد' : 'جديدة'}`) : (isIndep ? L('Match what you price', 'آپ کی اشیاء سے مماثل', 'تطابق ما تسعّره') : L('Match what you sell', 'آپ کی فروخت سے مماثل', 'تطابق ما تبيعه')) },
+            { key: 'pending', icon: Hourglass, value: String(pending), hot: false, onClick: () => goOffers('pending'),
+              label: t.pendingOffers, sub: L('Your sent offers', 'آپ کی بھیجی گئی آفرز', 'عروضك المرسلة') },
+            // deals after the award stay with the account owner: a team member sees the offers that need a reply instead
+            isMember
+              ? { key: 'reply', icon: Zap, value: String(replyCount), hot: replyCount > 0, onClick: () => goOffers('reply'),
+                label: t.revenue, sub: L('Questions and discounts', 'سوالات اور رعایتیں', 'أسئلة وطلبات خصم') }
+              : { key: 'deals', icon: Truck, value: String(dealsNeedingMe), hot: dealsNeedingMe > 0, href: '/supplier/deals',
+                label: L('Deals needing your action', 'آپ کی کارروائی کے منتظر سودے', 'صفقات تنتظر إجراءك'), sub: L('Delivery, payment, problems', 'ڈیلیوری، ادائیگی، مسائل', 'تسليم، دفع، بلاغات') },
+            { key: 'sales', icon: Wallet, value: thisMonth.sales ? thisMonth.sales.toLocaleString('en-US') : '0', hot: false, onClick: () => goOffers('won'),
+              label: `${L('Sales this month', 'اس ماہ کی فروخت', 'مبيعات هذا الشهر')} ${vatTag}`, sub: t.sar },
+          ]
+          return (
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-5 stagger">
+              {tiles.map(tl => {
+                const Ico = tl.icon
+                const cls = `group text-start flex flex-col justify-between gap-2 min-h-[112px] rounded-2xl p-4 border bg-white shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all ${tl.hot ? 'border-[#D4A543] ring-1 ring-[#D4A543]/25' : 'border-gray-100'}`
+                const inner = (
+                  <>
+                    <div className="flex items-start justify-between gap-2">
+                      <span className={`grid place-items-center w-10 h-10 rounded-xl ${tl.hot ? 'text-[#071827]' : 'text-[#0B2438] bg-[#0B2438]/[0.06]'}`} style={tl.hot ? { background: 'linear-gradient(135deg,#F5C55B,#D4A543)' } : undefined}><Ico className="w-5 h-5" aria-hidden /></span>
+                      <span className="text-2xl font-extrabold tabular-nums text-[#0B2438] truncate">{tl.value}</span>
+                    </div>
+                    <div className="min-w-0">
+                      <div className="text-[13px] font-bold text-[#0B2438] leading-snug">{tl.label}</div>
+                      <div className="text-[12px] text-gray-500 truncate">{tl.sub}</div>
+                    </div>
+                  </>
+                )
+                return tl.href
+                  ? <Link key={tl.key} href={tl.href} className={cls}>{inner}</Link>
+                  : <button key={tl.key} type="button" onClick={tl.onClick} className={cls}>{inner}</button>
+              })}
+            </div>
+          )
+        })()}
+
+        <div className="lg:grid lg:grid-cols-[minmax(0,1fr)_340px] lg:gap-6 lg:items-start">
+        <div className="min-w-0">
         {(() => {
           const waiting = myOffers.filter(needsMe)
           if (!waiting.length) return null
@@ -600,26 +799,6 @@ export default function SupplierDashboard() {
             </div>
           )
         })()}
-        {toPrice.length > 0 && (
-          <div className={`mb-5 rounded-2xl p-4 sm:p-5 border-2 animate-fade-in ${freshCount ? 'tsk-glow' : ''}`} style={{ borderColor: '#D4A543', background: 'linear-gradient(120deg,#071827,#0B2438 60%,#102E45)' }}>
-            <div className="flex items-center justify-between gap-3 flex-wrap">
-              <div className="flex items-center gap-3">
-                <span className="relative grid place-items-center w-11 h-11 rounded-xl text-xl text-[#071827]" style={{ background: 'linear-gradient(135deg,#F5C55B,#D4A543)' }}>
-                  <Glyph e="🔔" />
-                  {freshCount > 0 && <span className="absolute -top-1 -end-1 min-w-5 h-5 px-1 rounded-full bg-white text-[#071827] text-[12px] font-bold grid place-items-center border border-[#D4A543]">{freshCount}</span>}
-                </span>
-                <div>
-                  <div className="font-extrabold text-white">{L(`${toPrice.length} request${toPrice.length === 1 ? '' : 's'} waiting for your price`, `${toPrice.length} درخواستیں آپ کی قیمت کی منتظر`, `${arCount(toPrice.length, 'طلب واحد', 'طلبان', 'طلبات', 'طلباً')} بانتظار تسعيرك`)}</div>
-                  <div className="text-[13px] text-white/80">{freshCount ? L(`${freshCount} new — price early to stand out`, `${freshCount} نئی — جلد قیمت دیں`, `منها ${freshCount === 1 ? 'طلب جديد لم تفتحه' : `${arCount(freshCount, 'طلب', 'طلبان', 'طلبات', 'طلباً')} جديدة لم تفتحها`}، والتسعير المبكر يرفع فرصتك`) : L('Price early to raise your chances', 'جلد قیمت دیں', 'التسعير المبكر يرفع فرصتك')}</div>
-                </div>
-              </div>
-              <button type="button" onClick={() => { setTab('rfqs'); setRfqFilter('toprice'); document.getElementById('sup-list')?.scrollIntoView({ behavior: 'smooth', block: 'start' }) }}
-                className="inline-flex items-center gap-1 min-h-[44px] text-sm font-bold text-white px-4 rounded-xl border border-white/40 hover:bg-white/10">
-                {L('Show them', 'دیکھیں', 'اعرضها')} <span aria-hidden="true">{FWD}</span>
-              </button>
-            </div>
-          </div>
-        )}
         {isMember && (
           <div className="rounded-xl px-4 py-2.5 mb-4 text-sm border flex flex-wrap items-center justify-between gap-2" style={{ background: '#0B24380A', borderColor: '#0B243826', color: '#0B2438' }}>
             <span><Glyph e="👥" /> {locale === 'en' ? 'You are working on behalf of' : locale === 'ur' ? 'آپ اس کمپنی کی جانب سے کام کر رہے ہیں:' : 'تعمل باسم'} <b>{companyName}</b></span>
@@ -816,195 +995,8 @@ export default function SupplierDashboard() {
           </div>
         )}
         <EnablePush variant="nudge" />
-        {!isMember && (
-          <div className="mb-4 flex justify-end">
-            <button type="button" role="switch" aria-checked={soundOn} onClick={toggleSound}
-              className="inline-flex items-center gap-2 min-h-[44px] px-3 rounded-full border border-gray-200 bg-white text-[13px] font-semibold text-[#0B2438]">
-              <span className={`relative inline-block w-9 h-5 rounded-full transition-colors ${soundOn ? 'bg-[#D4A543]' : 'bg-gray-300'}`} aria-hidden>
-                <span className={`absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-all ${soundOn ? 'start-[1.1rem]' : 'start-0.5'}`} />
-              </span>
-              {L('Sound alert when a new request arrives', 'نئی درخواست آنے پر آواز سے اطلاع', 'تنبيه صوتي عند وصول طلب جديد')}
-            </button>
-          </div>
-        )}
 
-        <div className="mb-4 sm:mb-6 animate-fade-in">
-          <h1 className="text-xl sm:text-2xl font-bold" style={{ color: '#0B2438' }}>{t.welcome}{L(', ', '، ', '، ')}{companyName || profile?.full_name || L('Supplier', 'سپلائر', 'مورّد')} <Glyph e="👋" /></h1>
-          <p className="text-gray-500 mt-1 text-sm">{t.subtitle}</p>
-          {/* round-4 UX-087: the rating buyers gave this seller */}
-          {Number(profile?.rating_count) > 0 && (
-            <p className="mt-1 text-[13px] font-semibold text-[#0B2438] flex items-center gap-1 flex-wrap"><Star className="w-4 h-4 shrink-0" style={{ color: '#9D7425', fill: '#9D7425' }} aria-hidden /> {L(`Your rating: ${Number(profile.rating_avg || 0).toFixed(1)} of 5 (${profile.rating_count} rating${Number(profile.rating_count) === 1 ? '' : 's'})`, `آپ کی ریٹنگ: 5 میں سے ${Number(profile.rating_avg || 0).toFixed(1)} (${profile.rating_count} ریٹنگ)`, `تقييمك: ${Number(profile.rating_avg || 0).toFixed(1)} من 5 (${arCount(Number(profile.rating_count), 'تقييم واحد', 'تقييمان', 'تقييمات', 'تقييماً')})`)}</p>
-          )}
-        </div>
-
-        {/* نقاط اكتمال الملف + خطوات رفعها — مخفية على الجوال افتراضياً كي تظهر الطلبات أولاً */}
-        {!isMember && (() => {
-          // independent sellers have no CR: drop that step and scale the rest to 100 (as in the app)
-          const isIndependent = sellerKindOf(profile?.provider_type) === 'independent'
-          const allChecks = [
-            // UX-037: verification is optional: a light weight, said as optional, never a red alarm on day one
-            // round-4: for a company or shop the commercial registration is REQUIRED to price (my_pricing_gate), never «optional»
-            { cr: true, ok: !crRequired && (!!(profile?.commercial_registration || '').trim() || profile?.verification_status === 'verified'), w: 25, label: L('Add your commercial registration (required to price)', 'اپنا تجارتی رجسٹریشن شامل کریں (قیمت دینے کے لیے ضروری)', 'أضف سجلك التجاري (مطلوب للتسعير)'), href: '/settings?tab=docs' },
-            { ok: hasSpecialties, w: 25, label: L('Add specialties', 'تخصصات شامل کریں', 'أضف تخصصاتك'), href: '/supplier/specialties' },
-            // round-8 UX-039: the city with the district (or a pin / national address) is enough
-            { ok: !!(profile?.city && (profile?.district || profile?.latitude || profile?.national_short_address)), w: 20, label: L('Set your city', 'اپنا شہر مقرر کریں', 'حدّد مدينتك'), href: '/location' },
-            // UX-149: the rating comes from buyers after a deal, so it is not part of «completing» the profile
-          ]
-          const checks = allChecks.filter((c: any) => !(isIndependent && c.cr))
-          const totalW = checks.reduce((s: number, c: any) => s + c.w, 0) || 1
-          const score = Math.round(checks.reduce((s: number, c: any) => s + (c.ok ? c.w : 0), 0) / totalW * 100)
-          const missing = checks.filter((c: any) => !c.ok)
-          // profile complete: nothing left to do, so the card goes away (owner request, app parity 5b2c5c6)
-          if (score >= 100) return null
-          const col = score >= 70 ? '#9D7425' : score >= 40 ? '#D4A543' : '#0B2438' // round-8 UX-117: not a success, so no green
-          return (
-            <>
-              <button type="button" onClick={() => setShowScoreMobile(v => !v)} aria-expanded={showScoreMobile}
-                className="sm:hidden mb-4 inline-flex items-center gap-1 min-h-[44px] text-[13px] font-bold px-3 rounded-full border border-gray-200 bg-white text-gray-700">
-                {L('Profile completion', 'پروفائل کی تکمیل', 'اكتمال ملفك')}: {score}% {showScoreMobile ? <ChevronUp className="w-4 h-4" aria-hidden /> : <ChevronDown className="w-4 h-4" aria-hidden />}
-              </button>
-            <div className={`mb-6 ${showScoreMobile ? 'grid' : 'hidden'} sm:grid sm:grid-cols-3 gap-4 animate-fade-in`}>
-              <div className="bg-white rounded-2xl p-4 border border-gray-100 shadow-sm flex items-center gap-3">
-                <div className="relative w-16 h-16 shrink-0">
-                  <svg viewBox="0 0 36 36" className="w-16 h-16 -rotate-90">
-                    <circle cx="18" cy="18" r="15.5" fill="none" stroke="#eef1f6" strokeWidth="4" />
-                    <circle cx="18" cy="18" r="15.5" fill="none" stroke={col} strokeWidth="4" strokeLinecap="round" strokeDasharray={`${(score * 0.974).toFixed(1)} 97.4`} />
-                  </svg>
-                  <div className="absolute inset-0 grid place-items-center">
-                    <span className="text-lg font-extrabold" style={{ color: '#0B2438' }}>{score}</span>
-                  </div>
-                </div>
-                <div>
-                  <div className="text-xs font-bold" style={{ color: '#0B2438' }}>{L('Profile completion', 'پروفائل کی تکمیل', 'اكتمال ملفك')}</div>
-                  <div className="text-[12px] text-gray-500">{score}% — {score >= 70 ? L('Excellent', 'بہترین', 'ممتاز') : score >= 40 ? L('Good', 'اچھا', 'جيد') : L('Getting started', 'آغاز', 'في البداية')}</div>
-                </div>
-              </div>
-              {missing.length > 0 && (
-                <div className="sm:col-span-2 bg-white rounded-2xl p-4 border border-gray-100 shadow-sm">
-                  <div className="text-xs font-bold mb-2" style={{ color: '#0B2438' }}>{L('Strengthen your profile:', 'اپنی پروفائل مضبوط کریں:', 'عزّز ملفك:')}</div>
-                  <div className="flex flex-wrap gap-2">
-                    {missing.map((c: any) => c.info
-                      ? <span key="info" className="text-[12px] text-gray-600 px-1 py-1.5">{c.label}</span>
-                      : <Link key={c.href} href={c.href} className="inline-flex items-center min-h-[44px] text-[13px] font-semibold px-3 rounded-full border border-dashed transition-all hover:bg-[#D4A543]/10" style={{ borderColor: '#D4A543', color: '#8F6820' }}>+ {c.label}</Link>)}
-                  </div>
-                </div>
-              )}
-            </div>
-            </>
-          )
-        })()}
-
-        {/* numbers and the sales chart wait for the first offer (persona review: zeros on day one) */}
-        {/* round-5 UX-168: on a phone the numbers and the sales fold under «أداؤك هذا الشهر», so the requests come first */}
-        {myOffers.length > 0 && (
-          <button type="button" onClick={() => setShowStatsMobile(v => !v)} aria-expanded={showStatsMobile}
-            className="sm:hidden mb-4 inline-flex items-center gap-1 min-h-[44px] text-[13px] font-bold px-3 rounded-full border border-gray-200 bg-white text-gray-700">
-            <Glyph e="📊" /> {L('Your performance and sales', 'آپ کی کارکردگی اور فروخت', 'أداؤك ومبيعاتك')} {showStatsMobile ? <ChevronUp className="w-4 h-4" aria-hidden /> : <ChevronDown className="w-4 h-4" aria-hidden />}
-          </button>
-        )}
-        {myOffers.length > 0 && <div className={`${showStatsMobile ? 'grid' : 'hidden'} sm:grid grid-cols-2 lg:grid-cols-3 gap-4 mb-8 stagger`}>
-          {/* UX-082: each card opens its own filtered list, and the numbers match the list and the tabs */}
-          {/* round-5 UX-168: «بانتظار تسعيرك» is already counted on the top card and the filter chip, so no card here */}
-          {[
-            { label: t.pendingOffers, value: pending, icon: 'waiting', tone: 'warning', go: 'offers', f: 'pending' },
-            { label: t.acceptedOffers, value: accepted, icon: 'completed', tone: 'success', go: 'offers', f: 'won' },
-            { label: t.revenue, value: myOffers.filter(needsMe).length, icon: 'waiting', tone: 'warning', go: 'offers', f: 'reply' },
-          ].map(({ label, value, icon, tone, go, f }) => (
-            <button key={label} type="button" onClick={() => { setTab(go); if (go === 'rfqs') setRfqFilter(f); else setOfferFilter(f as any); document.getElementById('sup-list')?.scrollIntoView({ behavior: 'smooth', block: 'start' }) }}
-              className={`text-start bg-white rounded-2xl p-5 border shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-300 ${tab === go && (go === 'rfqs' ? rfqFilter === f : offerFilter === f) ? 'border-[#D4A543] ring-1 ring-[#D4A543]/30' : 'border-gray-100'}`}>
-              <div className="flex items-start justify-between gap-2 min-w-0">
-                <AppIcon name={icon} tone={tone} variant="tone" size={44} />
-                <div className="text-xl sm:text-2xl font-bold truncate tabular-nums" style={{ color: '#0B2438' }}>{value}</div>
-              </div>
-              <div className="text-xs text-gray-500 mt-3 font-medium">{label}</div>
-            </button>
-          ))}
-        </div>}
-
-        {/* مبيعاتك (اختيار المالك: دائرة نتائج العروض + بطاقات بأسهم مقارنة بالشهر الماضي) */}
-        {myOffers.length > 0 && (() => {
-          // round-2 UX-010: cancelled / expired requests are not «not chosen» and stay out of the chart
-          const rejected = lostCount
-          const totalOffers = accepted + pending + rejected
-          const C = 2 * Math.PI * 58
-          const seg = (n: number) => (totalOffers ? (n / totalOffers) * C : 0)
-          const parts = [
-            { n: accepted, color: '#0F6E56', label: L('Chosen', 'منتخب', 'اختيرت') },
-            { n: pending, color: '#D4A543', label: L('Waiting for the buyer', 'خریدار کے فیصلے کی منتظر', 'بانتظار قرار المشتري') },
-            { n: rejected, color: '#B4B2A9', label: L('Not chosen', 'منتخب نہیں', 'لم تُختر') }, // neutral grey (UX-116)
-          ]
-          // round-4 UX-068: the VAT wording follows the accepted offers themselves
-          const acc = myOffers.filter(isWon)
-          const nReg = acc.filter((o: any) => o.vat_status === 'not_registered').length
-          const vatTag = acc.length && nReg === acc.length ? L('(final prices)', '(حتمی قیمتیں)', '(أسعار نهائية)') : nReg > 0 ? L('(what the buyer pays)', '(جو خریدار ادا کرتا ہے)', '(ما يدفعه المشتري)') : L('(incl. VAT)', '(VAT سمیت)', '(شاملة الضريبة)')
-          const thisM = months[months.length - 1], lastM = months[months.length - 2]
-          const salesDelta = lastM.sales ? Math.round(((thisM.sales - lastM.sales) / lastM.sales) * 100) : null
-          const dealsDelta = thisM.deals - lastM.deals
-          const Arrow = ({ up, text }: { up: boolean; text: string }) => (
-            <div className={`text-xs font-bold mt-0.5 ${up ? 'text-emerald-700' : 'text-gray-600'}`}>{up ? <Glyph e="📈" /> : <Glyph e="📉" />} {text}</div>
-          )
-          let offset = 0
-          return (
-            <div className={`${showStatsMobile ? 'block' : 'hidden'} sm:block mb-8 bg-white rounded-2xl border border-gray-100 shadow-sm p-5 animate-fade-in`}>
-              <div className="flex items-start justify-between gap-3 flex-wrap mb-4">
-                <div>
-                  <h2 className="font-extrabold text-[#0B2438]">{L('Your sales', 'آپ کی فروخت', 'مبيعاتك')}</h2>
-                  <p className="text-xs text-gray-500">{L('Your offers and this month vs last month', 'آپ کی آفرز اور اس ماہ کا موازنہ', 'نتائج عروضك، وهذا الشهر مقارنة بالشهر الماضي')}</p>
-                </div>
-                <Link href="/supplier/analytics" className="inline-flex items-center gap-1 min-h-[44px] text-[13px] font-bold text-[#8F6820] hover:underline">{L('Full performance', 'مکمل کارکردگی', 'أداؤك بالتفصيل')} <span aria-hidden="true">{FWD}</span></Link>
-              </div>
-              <div className="grid sm:grid-cols-[minmax(0,220px)_1fr] gap-5 items-center">
-                {/* donut: how many offers won, waiting, not chosen; win rate in the middle */}
-                <div className="flex flex-col items-center">
-                  <svg viewBox="0 0 160 160" className="w-40 h-40" role="img" aria-label={L(`Offers: ${accepted} chosen, ${pending} waiting, ${rejected} not chosen`, `آفرز: ${accepted} منتخب، ${pending} منتظر، ${rejected} منتخب نہیں`, `العروض: ${accepted} اختيرت، ${pending} بانتظار قرار المشتري، ${rejected} لم تُختر`)}>
-                    <circle cx="80" cy="80" r="58" fill="none" stroke="#EEF1F5" strokeWidth="18" />
-                    {totalOffers > 0 && parts.map((p, k) => {
-                      const len = seg(p.n); const el = len > 0 ? (
-                        <circle key={k} cx="80" cy="80" r="58" fill="none" stroke={p.color} strokeWidth="18"
-                          strokeDasharray={`${Math.max(0, len - 2)} ${C}`} strokeDashoffset={-offset} transform="rotate(-90 80 80)" />
-                      ) : null
-                      offset += len; return el
-                    })}
-                    <text x="80" y="80" textAnchor="middle" className="fill-[#0B2438]" style={{ fontSize: 28, fontWeight: 800 }}>{decided ? winRate + '%' : '—'}</text>
-                    <text x="80" y="102" textAnchor="middle" className="fill-gray-500" style={{ fontSize: 12 }}>{decided ? L(`won ${accepted} of ${decided}`, `${decided} میں سے ${accepted} جیتے`, `فزت بـ ${accepted} من ${decided}`) : L('win rate', 'کامیابی', 'نسبة الفوز')}</text>
-                  </svg>
-                  <div className="flex flex-wrap justify-center gap-x-3 gap-y-1 mt-2 text-[12px] text-gray-600">
-                    {parts.map(p => (
-                      <span key={p.label} className="inline-flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-sm" style={{ background: p.color }} />{p.label} <b className="text-[#0B2438]">{p.n}</b></span>
-                    ))}
-                  </div>
-                </div>
-                {/* number + arrow vs last month */}
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="rounded-xl bg-[#F6F7F9] p-3.5">
-                    <div className="text-[12px] text-gray-500">{L('Sales this month', 'اس ماہ کی فروخت', 'مبيعات هذا الشهر')} {vatTag}</div>
-                    <div className="text-xl sm:text-2xl font-extrabold text-[#0B2438] tabular-nums">{thisM.sales.toLocaleString('en-US')} <span className="text-xs text-gray-500 font-bold">{t.sar}</span></div>
-                    {salesDelta !== null
-                      ? <Arrow up={salesDelta >= 0} text={L(`${Math.abs(salesDelta)}% vs last month`, `${Math.abs(salesDelta)}% پچھلے ماہ سے`, `${Math.abs(salesDelta)}% عن الشهر الماضي`)} />
-                      : <div className="text-xs text-gray-500 mt-0.5">{L('No sales last month', 'پچھلے ماہ فروخت نہیں', 'لا مبيعات الشهر الماضي')}</div>}
-                  </div>
-                  <div className="rounded-xl bg-[#F6F7F9] p-3.5">
-                    <div className="text-[12px] text-gray-500">{L('Deals this month', 'اس ماہ کی ڈیلز', 'صفقات هذا الشهر')}</div>
-                    <div className="text-xl sm:text-2xl font-extrabold text-[#0B2438] tabular-nums">{thisM.deals}</div>
-                    {dealsDelta !== 0
-                      ? <Arrow up={dealsDelta > 0} text={L(`${Math.abs(dealsDelta)} ${dealsDelta > 0 ? 'more' : 'fewer'} than last month`, `پچھلے ماہ سے ${Math.abs(dealsDelta)} ${dealsDelta > 0 ? 'زیادہ' : 'کم'}`, `${arCount(Math.abs(dealsDelta), 'صفقة واحدة', 'صفقتان', 'صفقات', 'صفقة')} ${dealsDelta > 0 ? 'أكثر' : 'أقل'} من الشهر الماضي`)} />
-                      : <div className="text-xs text-gray-500 mt-0.5">{L('Same as last month', 'پچھلے ماہ جتنی', 'مثل الشهر الماضي')}</div>}
-                  </div>
-                  <div className="rounded-xl bg-[#F6F7F9] p-3.5">
-                    <div className="text-[12px] text-gray-500">{L('Deals value', 'سودوں کی مالیت', 'قيمة الصفقات')} {vatTag}</div>
-                    <div className="text-lg font-extrabold text-[#0B2438] tabular-nums">{totalRevenue.toLocaleString('en-US')} <span className="text-xs text-gray-500 font-bold">{t.sar}</span></div>
-                  </div>
-                  <div className="rounded-xl bg-[#F6F7F9] p-3.5">
-                    <div className="text-[12px] text-gray-500">{L('Average deal', 'اوسط ڈیل', 'متوسط الصفقة')}</div>
-                    <div className="text-lg font-extrabold text-[#0B2438] tabular-nums">{avgDeal ? avgDeal.toLocaleString('en-US') : '—'} {avgDeal ? <span className="text-xs text-gray-500 font-bold">{t.sar}</span> : null}</div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )
-        })()}
-
-        <div className="flex gap-2 mb-6" id="sup-list" style={{ scrollMarginTop: '70px' }}>
+        <div className="flex flex-wrap items-center gap-2 mb-6" id="sup-list" style={{ scrollMarginTop: '70px' }}>
           {[{ key: 'rfqs', label: t.tabRfqs, n: null, alert: 0 }, { key: 'offers', label: t.tabOffers, n: myOffers.length, alert: myOffers.filter(needsMe).length }].map((tab_: any) => (
             <button key={tab_.key} onClick={() => setTab(tab_.key)} aria-pressed={tab === tab_.key}
               className={`inline-flex items-center gap-1.5 min-h-[44px] px-4 sm:px-5 rounded-xl text-sm font-semibold transition-all ${tab === tab_.key ? 'text-white' : 'bg-white text-gray-700 border border-gray-200'}`}
@@ -1014,6 +1006,16 @@ export default function SupplierDashboard() {
               {tab_.alert > 0 && <span className="inline-grid place-items-center min-w-[1.4rem] h-[1.4rem] px-1 rounded-full text-[12px] font-extrabold bg-[#D4A543] text-[#071827]" aria-label={L('need your reply', 'آپ کے جواب کی منتظر', 'بحاجة لردّك')}>{tab_.alert}</span>}
             </button>
           ))}
+          {/* round-8 UX-137: optional sound alert for a new request (owner only) */}
+          {!isMember && (
+            <button type="button" role="switch" aria-checked={soundOn} onClick={toggleSound}
+              className="ms-auto inline-flex items-center gap-2 min-h-[44px] px-3 rounded-full border border-gray-200 bg-white text-[13px] font-semibold text-[#0B2438]">
+              <span className={`relative inline-block w-9 h-5 rounded-full transition-colors ${soundOn ? 'bg-[#D4A543]' : 'bg-gray-300'}`} aria-hidden>
+                <span className={`absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-all ${soundOn ? 'start-[1.1rem]' : 'start-0.5'}`} />
+              </span>
+              {L('Sound alert when a new request arrives', 'نئی درخواست آنے پر آواز سے اطلاع', 'تنبيه صوتي عند وصول طلب جديد')}
+            </button>
+          )}
         </div>
 
         {tab === 'rfqs' && (() => {
@@ -1071,7 +1073,39 @@ export default function SupplierDashboard() {
               </div>
             )}
             {loadFailed && <LoadError onRetry={() => { load() }} className="mb-4" message={displayedRfqs.length ? staleMsg : undefined} />}
-            {loadFailed && displayedRfqs.length === 0 ? null : displayedRfqs.length === 0 ? (
+            {loadFailed && displayedRfqs.length === 0 ? null : displayedRfqs.length === 0 && openRfqs.length === 0 && rfqFilter !== 'expiring' ? (
+              /* owner 2026-11-27: no requests yet is a purposeful page, not white space */
+              (() => {
+                const ill: string[] = sellSections.length ? sellSections.slice(0, 5).map(s => s.key) : ['building', 'finishing', 'electrical', 'plumbing', 'tools']
+                const btn = 'inline-flex items-center justify-center gap-1.5 min-h-[44px] px-4 rounded-xl text-[13px] font-bold'
+                return (
+                  <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+                    <div className="relative h-40 sm:h-48" aria-hidden>
+                      <img src={sectionPhotoSrc(ill[0])} alt="" className="absolute inset-0 w-full h-full object-cover" />
+                      <div className="absolute inset-0" style={{ background: 'linear-gradient(180deg,rgba(7,24,39,.55) 0%,rgba(11,36,56,.88) 100%)' }} />
+                      <div className="absolute inset-x-0 bottom-4 flex justify-center gap-2 sm:gap-3">
+                        {ill.map((k, i) => (
+                          <span key={k} className="grid place-items-center w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-[#071827]/70 border border-[#D4A543]/40 backdrop-blur-sm" style={{ transform: i % 2 ? 'translateY(-8px)' : undefined }}>
+                            <img src={sectionIconSrc(k)} alt="" className="w-9 h-9 sm:w-11 sm:h-11" />
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                    <div className="p-5 sm:p-7 text-center">
+                      <h3 className="text-lg font-extrabold text-[#0B2438]">{t.noRfqs}</h3>
+                      <p className="mt-1.5 text-sm text-gray-600 leading-relaxed max-w-md mx-auto">{isIndep
+                        ? L('Buyers’ requests that match what you price in your city will reach you here.', 'آپ کے شہر میں آپ کی قیمت والی اشیاء سے مماثل خریداروں کی درخواستیں یہاں آئیں گی۔', 'ستصلك هنا طلبات المشترين التي تطابق ما تسعّره في مدينتك.')
+                        : L('Buyers’ requests that match what you sell in your city will reach you here.', 'آپ کے شہر میں آپ کی فروخت سے مماثل خریداروں کی درخواستیں یہاں آئیں گی۔', 'ستصلك هنا طلبات المشترين التي تطابق ما تبيعه في مدينتك.')}</p>
+                      <div className="mt-5 grid sm:grid-cols-3 gap-2 max-w-xl mx-auto">
+                        {!isMember && <Link href="/supplier/specialties" className={`${btn} text-white`} style={{ background: '#0B2438' }}><Pencil className="w-4 h-4" aria-hidden />{editSellWord}</Link>}
+                        {!isMember && <Link href="/supplier/prices" className={`${btn} text-[#071827]`} style={{ background: 'linear-gradient(135deg,#F5C55B,#D4A543)' }}><Tag className="w-4 h-4" aria-hidden />{L('Add your saved prices', 'اپنی محفوظ قیمتیں شامل کریں', 'أضف أسعارك المحفوظة')}</Link>}
+                        <Link href="/invite-friends" className={`${btn} text-[#0B2438] border border-[#0B2438]/25 bg-white ${isMember ? 'sm:col-start-2' : ''}`}><UserPlus className="w-4 h-4" aria-hidden />{L('Invite buyers', 'خریداروں کو مدعو کریں', 'ادعُ مشترين')}</Link>
+                      </div>
+                    </div>
+                  </div>
+                )
+              })()
+            ) : displayedRfqs.length === 0 ? (
               <div className="bg-white rounded-2xl p-8 sm:p-16 border border-gray-100 text-center">
                 <div className="text-5xl mb-4 animate-float">{rfqFilter === 'expiring' ? <Glyph e="⏰" /> : <Glyph e="📭" />}</div>
                 <h3 className="text-lg font-bold mb-2" style={{ color: '#0B2438' }}>{rfqFilter === 'expiring' ? L('Nothing ending soon', 'کوئی درخواست جلد ختم نہیں ہو رہی', 'لا توجد طلبات تنتهي قريباً') : rfqFilter === 'toprice' && openRfqs.length > 0 ? L('You have priced every open request', 'آپ نے ہر کھلی درخواست کی قیمت دے دی ہے', 'سعّرتَ كل الطلبات المفتوحة') : t.noRfqs}</h3>
@@ -1085,10 +1119,25 @@ export default function SupplierDashboard() {
                   <Link key={rfq.id} href={`/supplier/dashboard/rfq/${rfq.id}`} onClick={() => markSeen(rfq.id)}
                     className={`block bg-white rounded-2xl p-5 border shadow-sm hover:shadow-md hover:border-[#D4A543]/30 hover:-translate-y-0.5 transition-all duration-300 ${isFresh(rfq) ? 'tsk-glow border-[#D4A543]' : 'border-gray-100'}`}>
                     <div className="mb-3">
-                      <div className="flex items-center gap-3 min-w-0">
-                        <AppIcon name="orders" tone="brand" variant="tone" size={44} />
+                      <div className="flex items-start gap-3 min-w-0">
+                        {/* owner 2026-11-27: the browse section's medallion (never the engineering sector) */}
+                        {(() => { const sk = rfqSectionKey(rfq); return sk
+                          ? <img src={sectionIconSrc(sk)} alt="" aria-hidden className="w-12 h-12 shrink-0 rounded-xl" />
+                          : <AppIcon name="orders" tone="brand" variant="tone" size={44} /> })()}
                         <div className="min-w-0">
                           <div className="font-bold line-clamp-2" style={{ color: '#0B2438' }}>{cardTitle(rfq)}</div>
+                          {/* city · time left · item count; round-5 UX-215: city and region (as in the app) */}
+                          <div className="flex items-center gap-x-1.5 gap-y-1 mt-1 flex-wrap text-[12.5px] text-gray-600 font-medium">
+                            {(rfq.city || rfq.region) && <span className="inline-flex items-center gap-1"><MapPin className="w-3.5 h-3.5 shrink-0" aria-hidden />{[rfq.city, getRegionLabel(rfq.region, locale)].filter(Boolean).join(L(', ', '، ', '، '))}</span>}
+                            {rfq.expires_at && (() => {
+                              const u = deadlineUrgency(rfq.expires_at); const st = urgencyStyle(u)
+                              return <><span aria-hidden className="text-gray-300">·</span><span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full font-bold" style={{ background: st.bg, color: st.fg }}><Clock className="w-3.5 h-3.5 shrink-0" aria-hidden />{formatTimeLeft(rfq.expires_at, locale)}</span></>
+                            })()}
+                            <span aria-hidden className="text-gray-300">·</span>
+                            {Array.isArray(rfq.items) && rfq.items.length > 1
+                              ? (() => { const n = Number(rfq._myItemCount) || rfq.items.length; return <span className="inline-flex items-center gap-1"><Package className="w-3.5 h-3.5 shrink-0" aria-hidden />{L(`${n} ${n === 1 ? 'material' : 'materials'} in your specialty`, `آپ کے تخصص میں ${n} اشیاء`, `${arMaterials(n)} ضمن تخصصك`)}</span> })()
+                              : <span className="inline-flex items-center gap-1"><Package className="w-3.5 h-3.5 shrink-0" aria-hidden />{rfq.quantity} {getUnitLabel(rfq.unit, locale)}</span>}
+                          </div>
                           <div className="flex items-center gap-2 mt-1 flex-wrap">
                             {/* UX-149: one rule for «جديد» (not opened yet), gold like the top card */}
                             {!offeredRfqIds.has(rfq.id) && withdrawnIds.has(rfq.id) && (
@@ -1124,11 +1173,7 @@ export default function SupplierDashboard() {
                       </div>
                     </div>
                     <div className="flex items-center gap-4 text-xs text-gray-500 font-medium flex-wrap">
-                      {Array.isArray(rfq.items) && rfq.items.length > 1
-                        ? (() => { const n = Number(rfq._myItemCount) || rfq.items.length; return <span><Glyph e="📦" /> {L(`${n} ${n === 1 ? 'material' : 'materials'} in your specialty`, `آپ کے تخصص میں ${n} اشیاء`, `${arMaterials(n)} ضمن تخصصك`)}</span> })()
-                        : <span><Glyph e="📦" /> {rfq.quantity} {getUnitLabel(rfq.unit, locale)}</span>}
-                      {/* round-5 UX-215: city and region (as in the app), plus a rough distance from the city centre */}
-                      <span><Glyph e="📍" /> {[rfq.city, getRegionLabel(rfq.region, locale)].filter(Boolean).join(L(', ', '، ', '، '))}</span>
+                      {/* round-5 UX-215: a rough distance from the city centre (city, time left and item count sit under the title) */}
                       {(() => { const km = kmTo(rfq); return km != null ? <span className="font-semibold text-[#0B2438]">{L(`about ${km} km away`, `تقریباً ${km} کلومیٹر دور`, `على بُعد نحو ${km} كم`)}</span> : null })()}
                       {rfq.created_at && <span><Glyph e="🗓" /> {formatDateTime(rfq.created_at)}</span>}
                       {rfq.specification && !(Array.isArray(rfq.items) && rfq.items.length > 1) && <span className="truncate max-w-[180px]"><Glyph e="⚙" /> {rfq.specification}</span>}
@@ -1136,14 +1181,6 @@ export default function SupplierDashboard() {
                       {!(Number(rfq.offer_count) > 0)
                         ? <span className="font-bold text-[#8F6820]">{L('Nobody has priced it yet: be the first', 'ابھی کسی نے قیمت نہیں دی: پہلے بنیں', 'لم يسعّره أحد بعد، كن أول من يسعّره')}</span>
                         : <span><Glyph e="💬" /> {Number(rfq.offer_count) === 1 ? L('Only one offer so far', 'اب تک صرف ایک آفر', 'عرض واحد فقط حتى الآن') : L(`${rfq.offer_count} offers`, `${rfq.offer_count} آفرز`, arCount(Number(rfq.offer_count), 'عرض واحد', 'عرضان', 'عروض', 'عرضاً'))}</span>}
-                      {rfq.expires_at && (() => {
-                        const u = deadlineUrgency(rfq.expires_at); const st = urgencyStyle(u)
-                        return (
-                          <span className="px-2 py-0.5 rounded-full font-bold ms-auto" style={{ background: st.bg, color: st.fg }}>
-                            {u === 'critical' ? <Glyph e="🔴" /> : u === 'soon' ? <Glyph e="🟠" /> : <Glyph e="⏰" />} {formatTimeLeft(rfq.expires_at, locale)}
-                          </span>
-                        )
-                      })()}
                     </div>
                     <div className="mt-3 flex items-center justify-between gap-2 border-t border-gray-100 pt-3">
                       {offeredRfqIds.has(rfq.id)
@@ -1259,6 +1296,192 @@ export default function SupplierDashboard() {
             )}
           </div>
         )}
+        </div>
+
+        {/* ── Side column (desktop) / after the requests (phone): set-up, what you sell, performance, tips ── */}
+        <aside className="mt-6 lg:mt-0 space-y-4">
+          {/* set-up checklist, only while incomplete (owner only) */}
+          {showSetup && (() => {
+            const C = 2 * Math.PI * 15.5
+            return (
+              <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 animate-fade-in">
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="relative w-14 h-14 shrink-0">
+                    <svg viewBox="0 0 36 36" className="w-14 h-14 -rotate-90" aria-hidden>
+                      <circle cx="18" cy="18" r="15.5" fill="none" stroke="#EEF1F5" strokeWidth="3.5" />
+                      <circle cx="18" cy="18" r="15.5" fill="none" stroke="#D4A543" strokeWidth="3.5" strokeLinecap="round" strokeDasharray={`${(setupPct / 100 * C).toFixed(1)} ${C.toFixed(1)}`} />
+                    </svg>
+                    <span className="absolute inset-0 grid place-items-center text-[13px] font-extrabold text-[#0B2438] tabular-nums">{setupPct}%</span>
+                  </div>
+                  <div className="min-w-0">
+                    <h2 className="font-extrabold text-[#0B2438]">{L('Set up your account', 'اپنا اکاؤنٹ تیار کریں', 'جهّز حسابك')}</h2>
+                    <p className="text-[12.5px] text-gray-500">{L(`${setupDone} of ${setupSteps.length} steps done`, `${setupSteps.length} میں سے ${setupDone} مراحل مکمل`, `أنجزتَ ${setupDone} من ${setupSteps.length} خطوات`)}</p>
+                  </div>
+                </div>
+                <ul className="space-y-1">
+                  {setupSteps.map(s => (
+                    <li key={s.key}>
+                      {s.ok ? (
+                        <div className="flex items-center gap-2.5 min-h-[44px] px-2 text-[13px] text-gray-500">
+                          <CircleCheck className="w-5 h-5 shrink-0 text-[#0F6E56]" aria-hidden />
+                          <span className="line-through decoration-gray-300">{s.label}</span>
+                        </div>
+                      ) : (
+                        <Link href={s.href} className="flex items-center gap-2.5 min-h-[44px] px-2 rounded-xl text-[13px] font-bold text-[#0B2438] hover:bg-[#D4A543]/10">
+                          <Circle className={`w-5 h-5 shrink-0 ${s.required ? 'text-[#D4A543]' : 'text-gray-300'}`} aria-hidden />
+                          <span className="flex-1">{s.label}</span>
+                          <ArrowFwd className="w-4 h-4 shrink-0 text-[#8F6820]" aria-hidden />
+                        </Link>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+                {requiredMissing.length === 0 && (
+                  <button type="button" onClick={hideSetup} className="mt-2 inline-flex items-center min-h-[44px] px-2 text-[12.5px] font-bold text-gray-500 hover:text-[#0B2438]">{L('Hide this list', 'یہ فہرست چھپائیں', 'إخفاء هذه القائمة')}</button>
+                )}
+              </div>
+            )
+          })()}
+
+          {/* «ما تبيعه» / «ما تسعّره»: the sections he chose, as medallion chips */}
+          {sellSections.length > 0 ? (
+            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 animate-fade-in">
+              <div className="flex items-center justify-between gap-2 mb-3">
+                <h2 className="font-extrabold text-[#0B2438]">{sellWord}</h2>
+                <span className="text-[12px] text-gray-500">{L(`${sellSections.length} section${sellSections.length === 1 ? '' : 's'}`, `${sellSections.length} سیکشن`, arCount(sellSections.length, 'قسم واحد', 'قسمان', 'أقسام', 'قسماً'))}</span>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {sellSections.map(s => (
+                  <span key={s.key} className="inline-flex items-center gap-2 min-h-[44px] ps-1 pe-3 rounded-full border border-[#0B2438]/10 bg-[#0B2438]/[0.03]">
+                    <img src={sectionIconSrc(s.key)} alt="" aria-hidden className="w-9 h-9 shrink-0" />
+                    <span className="min-w-0">
+                      <span className="block text-[13px] font-bold text-[#0B2438] leading-tight">{s.name}</span>
+                      <span className="block text-[11.5px] text-gray-500 leading-tight">{s.picked >= s.of
+                        ? L('All lists', 'تمام فہرستیں', 'كل القوائم')
+                        : L(`${s.picked} of ${s.of} lists`, `${s.of} میں سے ${s.picked} فہرستیں`, `${s.picked} من ${s.of} قوائم`)}</span>
+                    </span>
+                  </span>
+                ))}
+              </div>
+              {!isMember
+                ? <Link href="/supplier/specialties" className="mt-3 inline-flex items-center gap-1.5 min-h-[44px] px-4 rounded-xl text-[13px] font-bold text-[#0B2438] border border-[#0B2438]/25 hover:bg-[#0B2438]/5"><Pencil className="w-4 h-4" aria-hidden />{editSellWord}</Link>
+                : <p className="mt-3 text-[12.5px] text-gray-500">{L('The account owner edits this list.', 'یہ فہرست اکاؤنٹ کا مالک تبدیل کرتا ہے۔', 'يعدّل مالك الحساب هذه القائمة.')}</p>}
+            </div>
+          ) : !isMember && (
+            <Link href="/supplier/specialties" className="block rounded-2xl p-5 border-2 border-[#D4A543] text-white shadow-sm hover:shadow-md transition-all animate-fade-in" style={{ background: 'linear-gradient(135deg,#0B2438,#102E45)' }}>
+              <div className="flex -space-x-3 rtl:space-x-reverse mb-3" aria-hidden>
+                {['building', 'finishing', 'electrical', 'plumbing', 'tools'].map(k => (
+                  <img key={k} src={sectionIconSrc(k)} alt="" className="w-11 h-11 rounded-full ring-2 ring-[#0B2438] bg-[#0B2438]" />
+                ))}
+              </div>
+              <div className="font-extrabold">{isIndep ? L('Choose what you price', 'منتخب کریں آپ کیا قیمت دیتے ہیں', 'اختر ما تسعّره') : L('Choose what you sell', 'منتخب کریں آپ کیا بیچتے ہیں', 'اختر ما تبيعه')}</div>
+              <p className="text-[13px] text-white/80 mt-1 leading-relaxed">{L('Pick your sections and lists; only the requests that match them reach you.', 'اپنے سیکشن اور فہرستیں منتخب کریں؛ صرف انہی سے مماثل درخواستیں آپ تک پہنچیں گی۔', 'اختر أقسامك وقوائمك، فلا تصلك إلا الطلبات المطابقة لها.')}</p>
+              <span className="mt-3 inline-flex items-center gap-1.5 min-h-[44px] px-5 rounded-xl text-sm font-extrabold text-[#071827]" style={{ background: 'linear-gradient(135deg,#F5C55B,#D4A543)' }}>{L('Choose now', 'ابھی منتخب کریں', 'اختر الآن')} <ArrowFwd className="w-4 h-4" aria-hidden /></span>
+            </Link>
+          )}
+
+          {/* مبيعاتك (اختيار المالك: دائرة نتائج العروض + بطاقات بأسهم مقارنة بالشهر الماضي) — after the first offer */}
+          {myOffers.length > 0 && (() => {
+            // round-2 UX-010: cancelled / expired requests are not «not chosen» and stay out of the chart
+            const rejected = lostCount
+            const totalOffers = accepted + pending + rejected
+            const C = 2 * Math.PI * 58
+            const seg = (n: number) => (totalOffers ? (n / totalOffers) * C : 0)
+            const parts = [
+              { n: accepted, color: '#0F6E56', label: L('Chosen', 'منتخب', 'اختيرت') },
+              { n: pending, color: '#D4A543', label: L('Waiting for the buyer', 'خریدار کے فیصلے کی منتظر', 'بانتظار قرار المشتري') },
+              { n: rejected, color: '#B4B2A9', label: L('Not chosen', 'منتخب نہیں', 'لم تُختر') }, // neutral grey (UX-116)
+            ]
+            const thisM = months[months.length - 1], lastM = months[months.length - 2]
+            const salesDelta = lastM.sales ? Math.round(((thisM.sales - lastM.sales) / lastM.sales) * 100) : null
+            const dealsDelta = thisM.deals - lastM.deals
+            const Arrow = ({ up, text }: { up: boolean; text: string }) => (
+              <div className={`text-[11.5px] font-bold mt-0.5 ${up ? 'text-emerald-700' : 'text-gray-600'}`}>{up ? <Glyph e="📈" /> : <Glyph e="📉" />} {text}</div>
+            )
+            let offset = 0
+            return (
+              <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 animate-fade-in">
+                <div className="flex items-start justify-between gap-3 flex-wrap mb-3">
+                  <div>
+                    <h2 className="font-extrabold text-[#0B2438]">{L('Your sales', 'آپ کی فروخت', 'مبيعاتك')}</h2>
+                    <p className="text-xs text-gray-500">{L('Your offers and this month vs last month', 'آپ کی آفرز اور اس ماہ کا موازنہ', 'نتائج عروضك، وهذا الشهر مقارنة بالشهر الماضي')}</p>
+                  </div>
+                  <Link href="/supplier/analytics" className="inline-flex items-center gap-1 min-h-[44px] text-[13px] font-bold text-[#8F6820] hover:underline">{L('Details', 'تفصیل', 'بالتفصيل')} <span aria-hidden="true">{FWD}</span></Link>
+                </div>
+                {/* donut: how many offers won, waiting, not chosen; win rate in the middle */}
+                <div className="flex flex-col items-center">
+                  <svg viewBox="0 0 160 160" className="w-36 h-36" role="img" aria-label={L(`Offers: ${accepted} chosen, ${pending} waiting, ${rejected} not chosen`, `آفرز: ${accepted} منتخب، ${pending} منتظر، ${rejected} منتخب نہیں`, `العروض: ${accepted} اختيرت، ${pending} بانتظار قرار المشتري، ${rejected} لم تُختر`)}>
+                    <circle cx="80" cy="80" r="58" fill="none" stroke="#EEF1F5" strokeWidth="18" />
+                    {totalOffers > 0 && parts.map((p, k) => {
+                      const len = seg(p.n); const el = len > 0 ? (
+                        <circle key={k} cx="80" cy="80" r="58" fill="none" stroke={p.color} strokeWidth="18"
+                          strokeDasharray={`${Math.max(0, len - 2)} ${C}`} strokeDashoffset={-offset} transform="rotate(-90 80 80)" />
+                      ) : null
+                      offset += len; return el
+                    })}
+                    <text x="80" y="80" textAnchor="middle" className="fill-[#0B2438]" style={{ fontSize: 28, fontWeight: 800 }}>{decided ? winRate + '%' : '—'}</text>
+                    <text x="80" y="102" textAnchor="middle" className="fill-gray-500" style={{ fontSize: 12 }}>{decided ? L(`won ${accepted} of ${decided}`, `${decided} میں سے ${accepted} جیتے`, `فزت بـ ${accepted} من ${decided}`) : L('win rate', 'کامیابی', 'نسبة الفوز')}</text>
+                  </svg>
+                  <div className="flex flex-wrap justify-center gap-x-3 gap-y-1 mt-2 text-[12px] text-gray-600">
+                    {parts.map(p => (
+                      <span key={p.label} className="inline-flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-sm" style={{ background: p.color }} />{p.label} <b className="text-[#0B2438]">{p.n}</b></span>
+                    ))}
+                  </div>
+                </div>
+                {/* number + arrow vs last month */}
+                <div className="grid grid-cols-2 gap-2.5 mt-4">
+                  <div className="rounded-xl bg-[#F6F7F9] p-3">
+                    <div className="text-[11.5px] text-gray-500">{L('Sales this month', 'اس ماہ کی فروخت', 'مبيعات هذا الشهر')} {vatTag}</div>
+                    <div className="text-lg font-extrabold text-[#0B2438] tabular-nums break-all">{thisM.sales.toLocaleString('en-US')} <span className="text-xs text-gray-500 font-bold">{t.sar}</span></div>
+                    {salesDelta !== null
+                      ? <Arrow up={salesDelta >= 0} text={L(`${Math.abs(salesDelta)}% vs last month`, `${Math.abs(salesDelta)}% پچھلے ماہ سے`, `${Math.abs(salesDelta)}% عن الشهر الماضي`)} />
+                      : <div className="text-[11.5px] text-gray-500 mt-0.5">{L('No sales last month', 'پچھلے ماہ فروخت نہیں', 'لا مبيعات الشهر الماضي')}</div>}
+                  </div>
+                  <div className="rounded-xl bg-[#F6F7F9] p-3">
+                    <div className="text-[11.5px] text-gray-500">{L('Deals this month', 'اس ماہ کی ڈیلز', 'صفقات هذا الشهر')}</div>
+                    <div className="text-lg font-extrabold text-[#0B2438] tabular-nums">{thisM.deals}</div>
+                    {dealsDelta !== 0
+                      ? <Arrow up={dealsDelta > 0} text={L(`${Math.abs(dealsDelta)} ${dealsDelta > 0 ? 'more' : 'fewer'} than last month`, `پچھلے ماہ سے ${Math.abs(dealsDelta)} ${dealsDelta > 0 ? 'زیادہ' : 'کم'}`, `${arCount(Math.abs(dealsDelta), 'صفقة واحدة', 'صفقتان', 'صفقات', 'صفقة')} ${dealsDelta > 0 ? 'أكثر' : 'أقل'} من الشهر الماضي`)} />
+                      : <div className="text-[11.5px] text-gray-500 mt-0.5">{L('Same as last month', 'پچھلے ماہ جتنی', 'مثل الشهر الماضي')}</div>}
+                  </div>
+                  <div className="rounded-xl bg-[#F6F7F9] p-3">
+                    <div className="text-[11.5px] text-gray-500">{L('Deals value', 'سودوں کی مالیت', 'قيمة الصفقات')} {vatTag}</div>
+                    <div className="text-base font-extrabold text-[#0B2438] tabular-nums break-all">{totalRevenue.toLocaleString('en-US')} <span className="text-xs text-gray-500 font-bold">{t.sar}</span></div>
+                  </div>
+                  <div className="rounded-xl bg-[#F6F7F9] p-3">
+                    <div className="text-[11.5px] text-gray-500">{L('Average deal', 'اوسط ڈیل', 'متوسط الصفقة')}</div>
+                    <div className="text-base font-extrabold text-[#0B2438] tabular-nums break-all">{avgDeal ? avgDeal.toLocaleString('en-US') : '—'} {avgDeal ? <span className="text-xs text-gray-500 font-bold">{t.sar}</span> : null}</div>
+                  </div>
+                </div>
+              </div>
+            )
+          })()}
+
+          {/* «كيف تفوز بالعروض؟» three short tips */}
+          <div className="rounded-2xl p-5 border border-[#D4A543]/35 animate-fade-in" style={{ background: 'linear-gradient(160deg,#FFFBF1,#FFFFFF)' }}>
+            <h2 className="font-extrabold text-[#0B2438] flex items-center gap-2"><Lightbulb className="w-5 h-5 text-[#D4A543]" aria-hidden />{L('How do you win offers?', 'آفرز کیسے جیتیں؟', 'كيف تفوز بالعروض؟')}</h2>
+            <ol className="mt-3 space-y-3">
+              {[
+                { icon: Clock, title: L('Price quickly', 'جلد قیمت دیں', 'سعّر بسرعة'), body: L('Buyers often choose from the first offers; an early price raises your chance.', 'خریدار اکثر پہلی آفرز میں سے چنتے ہیں؛ جلد قیمت آپ کا موقع بڑھاتی ہے۔', 'يختار المشترون غالباً من العروض الأولى، والتسعير المبكر يرفع فرصتك.') },
+                { icon: Tag, title: L('Use saved prices', 'محفوظ قیمتیں استعمال کریں', 'استعمل أسعارك المحفوظة'), body: L('Saved prices fill the offer in one tap, so you reply in seconds.', 'محفوظ قیمتیں ایک ٹچ میں آفر بھر دیتی ہیں، تو آپ سیکنڈوں میں جواب دیتے ہیں۔', 'تملأ أسعارك المحفوظة العرض بلمسة، فتردّ في ثوانٍ.'), href: isMember ? undefined : '/supplier/prices' },
+                { icon: Truck, title: L('A clear delivery time', 'واضح ڈیلیوری وقت', 'مدة توريد واضحة'), body: L('State a delivery time you can keep; buyers trust a clear, kept promise.', 'ایسا ڈیلیوری وقت لکھیں جو آپ نبھا سکیں؛ خریدار واضح وعدے پر بھروسہ کرتے ہیں۔', 'اذكر مدة توريد تلتزم بها، فالمشتري يثق بالوعد الواضح المُنجَز.') },
+              ].map((tp, i) => {
+                const Ico = tp.icon
+                return (
+                  <li key={i} className="flex items-start gap-3">
+                    <span className="grid place-items-center w-9 h-9 shrink-0 rounded-xl bg-[#0B2438] text-[#F5C55B]"><Ico className="w-[18px] h-[18px]" aria-hidden /></span>
+                    <div className="min-w-0">
+                      <div className="text-[13px] font-extrabold text-[#0B2438]">{tp.title}</div>
+                      <p className="text-[12.5px] text-gray-600 leading-relaxed">{tp.body}</p>
+                      {tp.href && Number(pricesCount) === 0 && <Link href={tp.href} className="inline-flex items-center gap-1 min-h-[44px] text-[12.5px] font-bold text-[#8F6820] hover:underline">{L('Add your prices', 'اپنی قیمتیں شامل کریں', 'أضف أسعارك')} <span aria-hidden="true">{FWD}</span></Link>}
+                    </div>
+                  </li>
+                )
+              })}
+            </ol>
+          </div>
+        </aside>
+        </div>
       </div>
     </AppShell>
   )
